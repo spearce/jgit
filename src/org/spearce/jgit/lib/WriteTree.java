@@ -69,6 +69,11 @@ public class WriteTree extends TreeVisitor {
 
     protected void visitSymlink(final SymlinkTreeEntry s) throws IOException {
         super.visitSymlink(s);
+
+        if (!objdb.checkObject(s.getId())) {
+            throw new CorruptObjectException("Missing symlink blob "
+                    + s.getId());
+        }
     }
 
     protected void visitTree(final Tree t) throws IOException {
@@ -102,6 +107,7 @@ public class WriteTree extends TreeVisitor {
             while (i.hasNext()) {
                 final TreeEntry e = (TreeEntry) i.next();
                 final byte[] mode;
+
                 if (e instanceof Tree) {
                     mode = TREE_MODE;
                 } else if (e instanceof SymlinkTreeEntry) {
