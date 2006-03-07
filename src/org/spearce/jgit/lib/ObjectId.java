@@ -60,6 +60,10 @@ public class ObjectId {
         id = i;
     }
 
+    public byte[] getBytes() {
+        return id;
+    }
+
     public int hashCode() {
         int r = 0;
         for (int k = 0; k < 20; k++) {

@@ -1,20 +1,30 @@
 package org.spearce.jgit.lib;
 
+import java.io.UnsupportedEncodingException;
+
 public abstract class TreeEntry {
     private final Tree parent;
 
     private ObjectId id;
 
+    private final byte[] nameUTF8;
+
     private final String name;
 
-    public TreeEntry(final Tree parent, final ObjectId id, final String name) {
-        this.parent = parent;
-        this.id = id;
-        this.name = name;
+    protected TreeEntry(final Tree myParent, final ObjectId myId,
+            final byte[] myNameUTF8) throws UnsupportedEncodingException {
+        parent = myParent;
+        id = myId;
+        nameUTF8 = myNameUTF8;
+        name = nameUTF8 != null ? new String(nameUTF8, "UTF-8") : null;
     }
 
     public Tree getParent() {
         return parent;
+    }
+
+    public byte[] getNameUTF8() {
+        return nameUTF8;
     }
 
     public String getName() {
@@ -26,6 +36,17 @@ public abstract class TreeEntry {
     }
 
     public void setId(final ObjectId n) {
+        // If we have a parent and our id is being cleared or changed then force
+        // the parent's id to become unset as it depends on our id.
+        //
+        final Tree p = getParent();
+        if (p != null) {
+            if ((id == null && n != null) || (id != null && n == null)
+                    || !id.equals(n)) {
+                p.setId(null);
+            }
+        }
+
         id = n;
     }
 

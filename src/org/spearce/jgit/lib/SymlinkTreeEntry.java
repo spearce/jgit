@@ -1,9 +1,11 @@
 package org.spearce.jgit.lib;
 
+import java.io.UnsupportedEncodingException;
+
 public class SymlinkTreeEntry extends TreeEntry {
     public SymlinkTreeEntry(final Tree parent, final ObjectId id,
-            final String name) {
-        super(parent, id, name);
+            final byte[] nameUTF8) throws UnsupportedEncodingException {
+        super(parent, id, nameUTF8);
     }
 
     public String toString() {

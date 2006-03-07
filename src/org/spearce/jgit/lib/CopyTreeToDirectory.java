@@ -5,12 +5,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class CopyTreeOut extends TreeVisitor {
+public class CopyTreeToDirectory extends TreeVisitor {
     private final byte[] copyBuffer = new byte[8192];
 
     private File dest;
 
-    public CopyTreeOut(final File x) {
+    public CopyTreeToDirectory(final File x) {
         dest = x;
     }
 

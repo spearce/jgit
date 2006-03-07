@@ -21,12 +21,23 @@ public class ObjectDatabase {
         objectsDir = new File(db, "objects");
     }
 
+    public File getObjectsDirectory() {
+        return objectsDir;
+    }
+
+    public File objectFile(final ObjectId objectId) {
+        final String n = objectId.toString();
+        return new File(new File(objectsDir, n.substring(0, 2)), n.substring(2));
+    }
+
+    public boolean checkObject(final ObjectId objectId) {
+        return objectFile(objectId).isFile();
+    }
+
     private InputStream openObjectStream(final ObjectId objectId)
             throws IOException {
         try {
-            final String n = objectId.toString();
-            return new FileInputStream(new File(new File(objectsDir, n
-                    .substring(0, 2)), n.substring(2)));
+            return new FileInputStream(objectFile(objectId));
         } catch (FileNotFoundException fnfe) {
             return null;
         }
@@ -102,11 +113,11 @@ public class ObjectDatabase {
         try {
             final ObjectReader or = new ObjectReader(id, fis);
             try {
-                if ("commit".equals(or.getType())) {
-                    return mapTree(new Commit(this, id, or.getBufferedReader())
-                            .getTreeId());
-                } else if ("tree".equals(or.getType())) {
+                if ("tree".equals(or.getType())) {
                     return new Tree(this, id, or.getInputStream());
+                } else if ("commit".equals(or.getType())) {
+                    return new Commit(this, id, or.getBufferedReader())
+                            .getTree();
                 } else {
                     throw new CorruptObjectException("Not a tree-ish: " + id);
                 }

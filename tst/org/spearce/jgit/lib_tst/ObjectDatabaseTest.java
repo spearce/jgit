@@ -2,15 +2,17 @@ package org.spearce.jgit.lib_tst;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 
 import junit.framework.TestCase;
 
 import org.spearce.jgit.lib.Commit;
-import org.spearce.jgit.lib.CopyTreeOut;
+import org.spearce.jgit.lib.CopyTreeToDirectory;
 import org.spearce.jgit.lib.ObjectDatabase;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreePrinter;
+import org.spearce.jgit.lib.WriteTree;
 
 public class ObjectDatabaseTest extends TestCase {
     public void testConnect() throws IOException {
@@ -39,7 +41,6 @@ public class ObjectDatabaseTest extends TestCase {
         final Tree t = d.mapTree(c.getTreeId());
         assertNotNull(t);
         assertEquals(c.getTreeId(), t.getTreeId());
-        assertNotNull(t.getTreeEntries());
         new TreePrinter(System.err).visit(t);
     }
 
@@ -74,7 +75,21 @@ public class ObjectDatabaseTest extends TestCase {
                 "/Users/spearce/cgwork/PlayAreas/test1/.git"));
         final String id = "facb516c64c3ab5729a457b2f2aa42f7d6feafd1";
         final Tree t = d.mapTree(new ObjectId(id));
-        new CopyTreeOut(new File("/Users/spearce/cgwork/PlayAreas/Eclipse2"))
+        new CopyTreeToDirectory(new File(
+                "/Users/spearce/cgwork/PlayAreas/Eclipse2")).visit(t);
+    }
+
+    public void testWriteTree() throws NoSuchAlgorithmException, IOException {
+        final ObjectDatabase d1;
+        final ObjectDatabase d2;
+
+        d1 = new ObjectDatabase(new File(
+                "/Users/spearce/cgwork/PlayAreas/test1/.git"));
+        d2 = new ObjectDatabase(new File(
+                "/Users/spearce/cgwork/PlayAreas/test4/.git"));
+        final String id = "facb516c64c3ab5729a457b2f2aa42f7d6feafd1";
+        final Tree t = d1.mapTree(new ObjectId(id));
+        new WriteTree(d2, new File("/Users/spearce/cgwork/PlayAreas/Eclipse2"))
                 .visit(t);
     }
 }

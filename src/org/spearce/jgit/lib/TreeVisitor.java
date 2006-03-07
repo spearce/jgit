@@ -16,7 +16,7 @@ public abstract class TreeVisitor {
     }
 
     protected void visitTree(final Tree t) throws IOException {
-        final Iterator i = t.getTreeEntries().iterator();
+        final Iterator i = t.entryIterator();
         while (i.hasNext()) {
             visit((TreeEntry) i.next());
         }

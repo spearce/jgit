@@ -3,13 +3,19 @@ package org.spearce.jgit.lib;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.UnsupportedEncodingException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class Tree extends TreeEntry implements Treeish {
     private final ObjectDatabase objdb;
 
-    private List entries;
+    private Collection allEntries;
+
+    private Map entriesByName;
 
     public Tree(final ObjectDatabase db, final ObjectId myId,
             final InputStream is) throws IOException {
@@ -18,9 +24,14 @@ public class Tree extends TreeEntry implements Treeish {
     }
 
     public Tree(final ObjectDatabase db, final Tree parent,
-            final ObjectId myId, final String name) {
-        super(parent, myId, name);
+            final ObjectId myId, final byte[] nameUTF8)
+            throws UnsupportedEncodingException {
+        super(parent, myId, nameUTF8);
         objdb = db;
+    }
+
+    public boolean isModified() {
+        return getId() == null;
     }
 
     public boolean isRoot() {
@@ -31,12 +42,20 @@ public class Tree extends TreeEntry implements Treeish {
         return objdb;
     }
 
-    public ObjectId getTreeId() {
+    public final ObjectId getTreeId() {
         return getId();
     }
 
-    public List getTreeEntries() throws IOException {
-        if (entries == null) {
+    public final Tree getTree() {
+        return this;
+    }
+
+    public boolean isLoaded() {
+        return entriesByName != null;
+    }
+
+    public Iterator entryIterator() throws IOException {
+        if (!isLoaded()) {
             final ObjectReader or = objdb.openTree(getId());
             try {
                 readTree(or.getInputStream());
@@ -44,7 +63,7 @@ public class Tree extends TreeEntry implements Treeish {
                 or.close();
             }
         }
-        return entries;
+        return allEntries.iterator();
     }
 
     public String toString() {
@@ -56,14 +75,14 @@ public class Tree extends TreeEntry implements Treeish {
     }
 
     private void readTree(final InputStream is) throws IOException {
-        final ArrayList tempEnts = new ArrayList();
+        final Map tempEnts = new TreeMap();
         for (;;) {
             int c;
             int mode;
             final ByteArrayOutputStream nameBuf;
             final byte[] entId;
+            final byte[] name;
             final ObjectId id;
-            final String name;
             final TreeEntry ent;
             int entIdLen;
 
@@ -113,7 +132,7 @@ public class Tree extends TreeEntry implements Treeish {
             }
 
             id = new ObjectId(entId);
-            name = new String(nameBuf.toByteArray(), "UTF-8");
+            name = nameBuf.toByteArray();
             if ((mode & 040000) != 0) {
                 ent = new Tree(objdb, this, id, name);
             } else if ((mode & 020000) != 0) {
@@ -121,9 +140,10 @@ public class Tree extends TreeEntry implements Treeish {
             } else {
                 ent = new FileTreeEntry(this, id, name, (mode & 0100) != 0);
             }
-            tempEnts.add(ent);
+            tempEnts.put(ent.getName(), ent);
         }
 
-        entries = tempEnts;
+        entriesByName = tempEnts;
+        allEntries = Collections.unmodifiableCollection(entriesByName.values());
     }
 }

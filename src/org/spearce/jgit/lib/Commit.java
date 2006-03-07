@@ -96,10 +96,6 @@ public class Commit implements Treeish {
         return treeObj;
     }
 
-    public List getTreeEntries() throws IOException {
-        return getTree().getTreeEntries();
-    }
-
     public String getAuthor() {
         return author;
     }
