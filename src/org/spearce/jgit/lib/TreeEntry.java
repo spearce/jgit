@@ -12,11 +12,16 @@ public abstract class TreeEntry {
     private final String name;
 
     protected TreeEntry(final Tree myParent, final ObjectId myId,
-            final byte[] myNameUTF8) throws UnsupportedEncodingException {
+            final byte[] myNameUTF8) {
         parent = myParent;
         id = myId;
         nameUTF8 = myNameUTF8;
-        name = nameUTF8 != null ? new String(nameUTF8, "UTF-8") : null;
+        try {
+            name = nameUTF8 != null ? new String(nameUTF8, "UTF-8") : null;
+        } catch (UnsupportedEncodingException uee) {
+            throw new RuntimeException("This JVM doesn't support UTF-8 even"
+                    + " though it should.", uee);
+        }
     }
 
     public Tree getParent() {
@@ -31,6 +36,14 @@ public abstract class TreeEntry {
         return name;
     }
 
+    public boolean isModified() {
+        return getId() == null;
+    }
+
+    public void setModified() {
+        setId(null);
+    }
+
     public ObjectId getId() {
         return id;
     }
@@ -40,7 +53,7 @@ public abstract class TreeEntry {
         // the parent's id to become unset as it depends on our id.
         //
         final Tree p = getParent();
-        if (p != null) {
+        if (p != null && id != n) {
             if ((id == null && n != null) || (id != null && n == null)
                     || !id.equals(n)) {
                 p.setId(null);

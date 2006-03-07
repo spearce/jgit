@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class Commit implements Treeish {
-    private final ObjectDatabase objdb;
+    private final Repository objdb;
 
     private final ObjectId commitId;
 
@@ -23,7 +23,7 @@ public class Commit implements Treeish {
 
     private Tree treeObj;
 
-    public Commit(final ObjectDatabase db, final ObjectId id,
+    public Commit(final Repository db, final ObjectId id,
             final BufferedReader br) throws IOException {
         objdb = db;
         commitId = id;
@@ -32,45 +32,42 @@ public class Commit implements Treeish {
         final StringBuffer tempMessage;
         final char[] readBuf;
         int readLen;
-        String line;
+        String n;
 
-        line = br.readLine();
-        if (line == null || !line.startsWith("tree ")) {
-            throw new CorruptObjectException("No tree found in commit " + id);
+        n = br.readLine();
+        if (n == null || !n.startsWith("tree ")) {
+            throw new CorruptObjectException(commitId, "no tree");
         }
-        treeId = new ObjectId(line.substring("tree ".length()));
+        treeId = new ObjectId(n.substring("tree ".length()));
 
         tempParents = new ArrayList(2);
         for (;;) {
-            line = br.readLine();
-            if (line == null) {
-                throw new CorruptObjectException("Commit header corrupt " + id);
+            n = br.readLine();
+            if (n == null) {
+                throw new CorruptObjectException(commitId, "early eof");
             }
-            if (line.startsWith("parent ")) {
-                tempParents
-                        .add(new ObjectId(line.substring("parent ".length())));
+            if (n.startsWith("parent ")) {
+                tempParents.add(new ObjectId(n.substring("parent ".length())));
             } else {
                 break;
             }
         }
         parentIds = Collections.unmodifiableList(tempParents);
 
-        if (line == null || !line.startsWith("author ")) {
-            throw new CorruptObjectException("No author found in commit " + id);
+        if (n == null || !n.startsWith("author ")) {
+            throw new CorruptObjectException(commitId, "no author");
         }
-        author = line.substring("author ".length());
+        author = n.substring("author ".length());
 
-        line = br.readLine();
-        if (line == null || !line.startsWith("committer ")) {
-            throw new CorruptObjectException("No committer found in commit "
-                    + id);
+        n = br.readLine();
+        if (n == null || !n.startsWith("committer ")) {
+            throw new CorruptObjectException(commitId, "no committer");
         }
-        committer = line.substring("committer ".length());
+        committer = n.substring("committer ".length());
 
-        line = br.readLine();
-        if (line == null || !line.equals("")) {
-            throw new CorruptObjectException(
-                    "No blank line after header in commit " + id);
+        n = br.readLine();
+        if (n == null || !n.equals("")) {
+            throw new CorruptObjectException(commitId, "malformed header");
         }
 
         tempMessage = new StringBuffer();
@@ -92,6 +89,9 @@ public class Commit implements Treeish {
     public Tree getTree() throws IOException {
         if (treeObj == null) {
             treeObj = objdb.mapTree(getTreeId());
+            if (treeObj == null) {
+                throw new MissingObjectException("tree", getTreeId());
+            }
         }
         return treeObj;
     }

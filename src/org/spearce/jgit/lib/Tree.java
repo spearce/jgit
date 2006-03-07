@@ -3,7 +3,6 @@ package org.spearce.jgit.lib;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -11,35 +10,39 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class Tree extends TreeEntry implements Treeish {
-    private final ObjectDatabase objdb;
+    private final Repository r;
 
     private Collection allEntries;
 
     private Map entriesByName;
 
-    public Tree(final ObjectDatabase db, final ObjectId myId,
-            final InputStream is) throws IOException {
+    public Tree(final Repository db) {
+        this(db, null, null, null);
+    }
+
+    public Tree(final Repository db, final ObjectId myId, final InputStream is)
+            throws IOException {
         this(db, null, myId, null);
         readTree(is);
     }
 
-    public Tree(final ObjectDatabase db, final Tree parent,
-            final ObjectId myId, final byte[] nameUTF8)
-            throws UnsupportedEncodingException {
+    public Tree(final Repository db, final Tree parent, final ObjectId myId,
+            final byte[] nameUTF8) {
         super(parent, myId, nameUTF8);
-        objdb = db;
-    }
-
-    public boolean isModified() {
-        return getId() == null;
+        r = db;
+        if (myId == null) {
+            entriesByName = new TreeMap();
+            allEntries = Collections.unmodifiableCollection(entriesByName
+                    .values());
+        }
     }
 
     public boolean isRoot() {
         return getParent() == null;
     }
 
-    public ObjectDatabase getDatabase() {
-        return objdb;
+    public Repository getDatabase() {
+        return r;
     }
 
     public final ObjectId getTreeId() {
@@ -54,16 +57,43 @@ public class Tree extends TreeEntry implements Treeish {
         return entriesByName != null;
     }
 
-    public Iterator entryIterator() throws IOException {
+    public FileTreeEntry addFile(final String name, final ObjectId id)
+            throws IOException, MissingObjectException {
+        ensureLoaded();
+        final FileTreeEntry n;
+        n = new FileTreeEntry(this, id, name.getBytes("UTF-8"), false);
+        entriesByName.put(n.getName(), n);
+        setModified();
+        return n;
+    }
+
+    public Tree addTree(final String name, final ObjectId id)
+            throws IOException, MissingObjectException {
+        ensureLoaded();
+        final Tree n;
+        n = new Tree(r, this, id, name.getBytes("UTF-8"));
+        entriesByName.put(n.getName(), n);
+        setModified();
+        return n;
+    }
+
+    public Iterator entryIterator() throws IOException, MissingObjectException {
+        ensureLoaded();
+        return allEntries.iterator();
+    }
+
+    private void ensureLoaded() throws IOException, MissingObjectException {
         if (!isLoaded()) {
-            final ObjectReader or = objdb.openTree(getId());
+            final ObjectReader or = r.openTree(getId());
+            if (or == null) {
+                throw new MissingObjectException("tree", getId());
+            }
             try {
                 readTree(or.getInputStream());
             } finally {
                 or.close();
             }
         }
-        return allEntries.iterator();
     }
 
     public String toString() {
@@ -91,8 +121,7 @@ public class Tree extends TreeEntry implements Treeish {
                 break;
             }
             if (c < '0' || c > '7') {
-                throw new CorruptObjectException("Invalid tree entry in "
-                        + getId());
+                throw new CorruptObjectException(getId(), "invalid mode");
             }
             mode = c - '0';
             for (;;) {
@@ -101,8 +130,7 @@ public class Tree extends TreeEntry implements Treeish {
                     break;
                 }
                 if (c < '0' || c > '7') {
-                    throw new CorruptObjectException("Invalid tree entry in "
-                            + getId());
+                    throw new CorruptObjectException(getId(), "invalid mode");
                 }
                 mode *= 8;
                 mode += c - '0';
@@ -112,8 +140,7 @@ public class Tree extends TreeEntry implements Treeish {
             for (;;) {
                 c = is.read();
                 if (c == -1) {
-                    throw new CorruptObjectException("Invalid tree entry in "
-                            + getId());
+                    throw new CorruptObjectException(getId(), "unexpected eof");
                 }
                 if (0 == c) {
                     break;
@@ -127,14 +154,13 @@ public class Tree extends TreeEntry implements Treeish {
                 entIdLen += c;
             }
             if (entIdLen != entId.length) {
-                throw new CorruptObjectException("Invalid tree entry in "
-                        + getId());
+                throw new CorruptObjectException(getId(), "missing hash");
             }
 
             id = new ObjectId(entId);
             name = nameBuf.toByteArray();
             if ((mode & 040000) != 0) {
-                ent = new Tree(objdb, this, id, name);
+                ent = new Tree(r, this, id, name);
             } else if ((mode & 020000) != 0) {
                 ent = new SymlinkTreeEntry(this, id, name);
             } else {

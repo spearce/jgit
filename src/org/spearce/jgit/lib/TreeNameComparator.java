@@ -32,12 +32,12 @@ public class TreeNameComparator implements Comparator {
         try {
             if (a instanceof TreeEntry) {
                 return ((TreeEntry) a).getNameUTF8();
-            }
-            if (a instanceof String) {
+            } else if (a instanceof String) {
                 return ((String) a).getBytes("UTF-8");
+            } else {
+                throw new IllegalArgumentException("Not a TreeEntry"
+                        + " or String: " + a);
             }
-            throw new IllegalArgumentException("Not a TreeEntry or String: "
-                    + a);
         } catch (UnsupportedEncodingException uee) {
             throw new RuntimeException("JVM does not support UTF-8."
                     + "  It should have.", uee);

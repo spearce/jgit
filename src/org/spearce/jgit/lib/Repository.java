@@ -5,42 +5,70 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class ObjectDatabase {
+public class Repository {
     private static final String[] refSearchPaths = { "", "refs/", "refs/tags/",
             "refs/heads/", };
 
-    private final File db;
+    private final File gitDir;
 
     private final File objectsDir;
 
-    public ObjectDatabase(final File d) {
-        db = d.getAbsoluteFile();
-        objectsDir = new File(db, "objects");
+    private final File refsDir;
+
+    public Repository(final File d) {
+        gitDir = d.getAbsoluteFile();
+        objectsDir = new File(gitDir, "objects");
+        refsDir = new File(gitDir, "refs");
+    }
+
+    public void initialize() throws IOException {
+        final FileWriter cfg;
+
+        if (gitDir.exists()) {
+            throw new IllegalStateException("Repository already exists: "
+                    + gitDir);
+        }
+
+        gitDir.mkdirs();
+
+        objectsDir.mkdirs();
+        new File(objectsDir, "pack").mkdir();
+        new File(objectsDir, "info").mkdir();
+
+        refsDir.mkdir();
+        new File(refsDir, "heads").mkdir();
+        new File(refsDir, "tags").mkdir();
+
+        new File(gitDir, "branches").mkdir();
+        new File(gitDir, "remotes").mkdir();
+        writeSymref("HEAD", "refs/heads/master");
+
+        // TODO: Implement a real config file reader/writer
+        cfg = new FileWriter(new File(gitDir, "config"));
+        try {
+            cfg.write("[core]\n");
+            cfg.write("\trepositoryformatversion = 0\n");
+            cfg.write("\tfilemode = true\n");
+        } finally {
+            cfg.close();
+        }
     }
 
     public File getObjectsDirectory() {
         return objectsDir;
     }
 
-    public File objectFile(final ObjectId objectId) {
+    public File toFile(final ObjectId objectId) {
         final String n = objectId.toString();
         return new File(new File(objectsDir, n.substring(0, 2)), n.substring(2));
     }
 
-    public boolean checkObject(final ObjectId objectId) {
-        return objectFile(objectId).isFile();
-    }
-
-    private InputStream openObjectStream(final ObjectId objectId)
-            throws IOException {
-        try {
-            return new FileInputStream(objectFile(objectId));
-        } catch (FileNotFoundException fnfe) {
-            return null;
-        }
+    public boolean hasObject(final ObjectId objectId) {
+        return toFile(objectId).isFile();
     }
 
     public ObjectReader openBlob(final ObjectId id) throws IOException {
@@ -54,7 +82,7 @@ public class ObjectDatabase {
             if ("blob".equals(or.getType())) {
                 return or;
             } else {
-                throw new CorruptObjectException("Not a blob " + id);
+                throw new CorruptObjectException(id, "not a blob");
             }
         } catch (IOException ioe) {
             fis.close();
@@ -73,7 +101,7 @@ public class ObjectDatabase {
             if ("tree".equals(or.getType())) {
                 return or;
             } else {
-                throw new CorruptObjectException("Not a tree " + id);
+                throw new CorruptObjectException(id, "not a tree");
             }
         } catch (IOException ioe) {
             fis.close();
@@ -93,7 +121,7 @@ public class ObjectDatabase {
                 if ("commit".equals(or.getType())) {
                     return new Commit(this, id, or.getBufferedReader());
                 } else {
-                    throw new CorruptObjectException("Not a commit: " + id);
+                    throw new CorruptObjectException(id, "not a commit");
                 }
             } finally {
                 or.close();
@@ -119,7 +147,7 @@ public class ObjectDatabase {
                     return new Commit(this, id, or.getBufferedReader())
                             .getTree();
                 } else {
-                    throw new CorruptObjectException("Not a tree-ish: " + id);
+                    throw new CorruptObjectException(id, "not a tree-ish");
                 }
             } finally {
                 or.close();
@@ -130,8 +158,62 @@ public class ObjectDatabase {
         }
     }
 
+    public ObjectId resolveRevision(final String r) throws IOException {
+        ObjectId id = null;
+
+        if (ObjectId.isId(r)) {
+            id = new ObjectId(r);
+        }
+        if (id == null) {
+            for (int k = 0; k < refSearchPaths.length; k++) {
+                id = readRef(refSearchPaths[k] + r);
+                if (id != null) {
+                    break;
+                }
+            }
+        }
+        return id;
+    }
+
+    private InputStream openObjectStream(final ObjectId objectId)
+            throws IOException {
+        try {
+            return new FileInputStream(toFile(objectId));
+        } catch (FileNotFoundException fnfe) {
+            return null;
+        }
+    }
+
+    private void writeSymref(final String name, final String target)
+            throws IOException {
+        final File s = new File(gitDir, name);
+        final File t = File.createTempFile("srf", null, gitDir);
+        FileWriter w = new FileWriter(t);
+        try {
+            w.write("ref: ");
+            w.write(target);
+            w.write('\n');
+            w.close();
+            w = null;
+            if (!t.renameTo(s)) {
+                s.getParentFile().mkdirs();
+                if (!t.renameTo(s)) {
+                    t.delete();
+                    throw new WritingNotSupportedException("Unable to"
+                            + " write symref " + name + " to point to "
+                            + target);
+                }
+            }
+        } finally {
+            if (w != null) {
+                w.close();
+                t.delete();
+            }
+        }
+    }
+
     private ObjectId readRef(final String name) throws IOException {
-        final File f = new File(db, name);
+        final File f = new File(gitDir, name);
         if (!f.isFile()) {
             return null;
         }
@@ -153,24 +235,7 @@ public class ObjectDatabase {
         }
     }
 
-    public ObjectId resolveRevision(final String r) throws IOException {
-        ObjectId id = null;
-
-        if (ObjectId.isId(r)) {
-            id = new ObjectId(r);
-        }
-        if (id == null) {
-            for (int k = 0; k < refSearchPaths.length; k++) {
-                id = readRef(refSearchPaths[k] + r);
-                if (id != null) {
-                    break;
-                }
-            }
-        }
-        return id;
-    }
-
     public String toString() {
-        return "ObjectDatabase[" + db + "]";
+        return "Repository[" + gitDir + "]";
     }
 }

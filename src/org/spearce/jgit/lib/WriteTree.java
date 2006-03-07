@@ -1,19 +1,12 @@
 package org.spearce.jgit.lib;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.zip.DeflaterOutputStream;
 
 public class WriteTree extends TreeVisitor {
     private static final TreeNameComparator TNC = new TreeNameComparator();
@@ -37,42 +30,36 @@ public class WriteTree extends TreeVisitor {
         }
     }
 
-    private final ObjectDatabase objdb;
+    private final Repository r;
 
-    private final byte[] copybuf;
+    private final ObjectWriter ow;
 
-    private final MessageDigest md;
-
-    private final boolean writeAll;
+    private boolean writeAll;
 
     private File src;
 
-    public WriteTree(final ObjectDatabase db, final File sourceDir)
-            throws NoSuchAlgorithmException {
-        objdb = db;
-        copybuf = new byte[8192];
-        md = MessageDigest.getInstance("SHA-1");
-        writeAll = true;
+    public WriteTree(final Repository db, final File sourceDir) {
+        r = db;
+        ow = new ObjectWriter(r);
+        writeAll = false;
         src = sourceDir;
+    }
+
+    public void setWriteAll(final boolean t) {
+        writeAll = t;
     }
 
     protected void visitFile(final FileTreeEntry f) throws IOException {
         super.visitFile(f);
-        final File d = new File(src, f.getName());
-        final FileInputStream is = new FileInputStream(d);
-        try {
-            f.setId(writeObject("blob", (int) d.length(), is));
-        } finally {
-            is.close();
+        if (f.isModified()) {
+            f.setId(ow.writeBlob(new File(src, f.getName())));
         }
     }
 
     protected void visitSymlink(final SymlinkTreeEntry s) throws IOException {
         super.visitSymlink(s);
-
-        if (!objdb.checkObject(s.getId())) {
-            throw new CorruptObjectException("Missing symlink blob "
-                    + s.getId());
+        if (!r.hasObject(s.getId())) {
+            throw new MissingObjectException("blob", s.getId());
         }
     }
 
@@ -94,7 +81,6 @@ public class WriteTree extends TreeVisitor {
 
             final ByteArrayOutputStream o = new ByteArrayOutputStream();
             final ArrayList r = new ArrayList();
-            final byte[] d;
             Iterator i;
 
             i = t.entryIterator();
@@ -116,7 +102,8 @@ public class WriteTree extends TreeVisitor {
                     mode = ((FileTreeEntry) e).isExecutable() ? EXECUTABLE_FILE_MODE
                             : PLAIN_FILE_MODE;
                 } else {
-                    throw new IOException("Object not supported in Tree:" + e);
+                    throw new WritingNotSupportedException("Object type not"
+                            + " supported as member of Tree:" + e);
                 }
 
                 o.write(mode);
@@ -125,68 +112,7 @@ public class WriteTree extends TreeVisitor {
                 o.write(0);
                 o.write(e.getId().getBytes());
             }
-            d = o.toByteArray();
-            t.setId(writeObject("tree", d.length, new ByteArrayInputStream(d)));
+            t.setId(ow.writeTree(o.toByteArray()));
         }
-    }
-
-    private ObjectId writeObject(final String type, int len,
-            final InputStream is) throws IOException {
-        final File t = File.createTempFile("noz", null, objdb
-                .getObjectsDirectory());
-        final DeflaterOutputStream ts = new DeflaterOutputStream(
-                new FileOutputStream(t));
-        ObjectId id = null;
-        try {
-            final byte[] header = (type + " " + len + "\0").getBytes("UTF-8");
-            int r;
-
-            md.update(header);
-            ts.write(header);
-
-            while ((r = is.read(copybuf)) > 0 && len > 0) {
-                if (r > len) {
-                    r = len;
-                }
-                md.update(copybuf, 0, r);
-                ts.write(copybuf, 0, r);
-                len -= r;
-            }
-            if (len != 0) {
-                throw new CorruptObjectException("Input was short: " + len);
-            }
-
-            ts.close();
-            id = new ObjectId(md.digest());
-        } finally {
-            if (id == null) {
-                md.reset();
-                ts.close();
-                t.delete();
-            }
-        }
-
-        if (objdb.checkObject(id)) {
-            // Object is already in the repository so remove the temporary file.
-            //
-            t.delete();
-        } else {
-            final File o = objdb.objectFile(id);
-            o.getParentFile().mkdir();
-            if (!t.renameTo(o)) {
-                if (!objdb.checkObject(id)) {
-                    // The object failed to be renamed into its proper location
-                    // and it doesn't exist in the repository either. (The
-                    // rename could have failed if another process was placing
-                    // the object there at the same time as us.) We really don't
-                    // know what went wrong, so abort.
-                    //
-                    t.delete();
-                    throw new IOException("Failed to write object " + id);
-                }
-            }
-        }
-
-        return id;
     }
 }

@@ -33,7 +33,7 @@ public class CopyTreeToDirectory extends TreeVisitor {
         final ObjectReader or = f.openBlob();
         final InputStream is;
         if (or == null) {
-            throw new CorruptObjectException("Missing blob " + f.getId());
+            throw new MissingObjectException("blob", f.getId());
         }
         is = or.getInputStream();
         try {

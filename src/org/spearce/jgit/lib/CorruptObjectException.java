@@ -5,7 +5,7 @@ import java.io.IOException;
 public class CorruptObjectException extends IOException {
     private static final long serialVersionUID = 1L;
 
-    public CorruptObjectException(final String message) {
-        super(message);
+    public CorruptObjectException(final ObjectId id, final String why) {
+        super("Object " + id + " is corrupt: " + why);
     }
 }

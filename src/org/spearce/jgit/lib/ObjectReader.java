@@ -8,6 +8,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.zip.InflaterInputStream;
 
 public class ObjectReader {
+    private static final int TYPESZ = 16;
+
     private final ObjectId objectId;
 
     private final String objectType;
@@ -21,7 +23,7 @@ public class ObjectReader {
         objectId = id;
         inflater = new InflaterInputStream(src);
 
-        final StringBuffer tempType = new StringBuffer(16);
+        final StringBuffer tempType = new StringBuffer(TYPESZ);
         int tempSize = 0;
         int c;
 
@@ -30,13 +32,8 @@ public class ObjectReader {
             if (' ' == c) {
                 break;
             }
-            if (c < 'a' || c > 'z') {
-                throw new CorruptObjectException("Corrupt header in "
-                        + objectId);
-            }
-            if (tempType.length() >= 16) {
-                throw new CorruptObjectException("Type header exceed limit in "
-                        + objectId);
+            if (c < 'a' || c > 'z' || tempType.length() >= 16) {
+                throw new CorruptObjectException(id, "bad type in header");
             }
             tempType.append((char) c);
         }
@@ -48,8 +45,7 @@ public class ObjectReader {
                 break;
             }
             if (c < '0' || c > '9') {
-                throw new CorruptObjectException("Corrupt header in "
-                        + objectId);
+                throw new CorruptObjectException(id, "bad length in header");
             }
             tempSize *= 10;
             tempSize += c - '0';
@@ -69,17 +65,23 @@ public class ObjectReader {
         return objectSize;
     }
 
-    public BufferedReader getBufferedReader()
-            throws UnsupportedEncodingException {
-        return new BufferedReader(new InputStreamReader(inflater, "UTF-8"));
-    }
-
     public InputStream getInputStream() {
+        if (inflater == null) {
+            throw new IllegalStateException("Already closed.");
+        }
         return inflater;
     }
 
+    public BufferedReader getBufferedReader()
+            throws UnsupportedEncodingException {
+        return new BufferedReader(new InputStreamReader(getInputStream(),
+                "UTF-8"));
+    }
+
     public void close() throws IOException {
-        inflater.close();
-        inflater = null;
+        if (inflater != null) {
+            inflater.close();
+            inflater = null;
+        }
     }
 }

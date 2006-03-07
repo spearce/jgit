@@ -1,14 +1,12 @@
 package org.spearce.jgit.lib;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
 public class FileTreeEntry extends TreeEntry {
     private boolean executable;
 
     public FileTreeEntry(final Tree parent, final ObjectId id,
-            final byte[] nameUTF8, final boolean execute)
-            throws UnsupportedEncodingException {
+            final byte[] nameUTF8, final boolean execute) {
         super(parent, id, nameUTF8);
         executable = execute;
     }
