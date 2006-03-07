@@ -1,6 +1,16 @@
 package org.spearce.jgit.lib;
 
 public class ObjectId {
+    private static final ObjectId ZEROID;
+
+    private static final String ZEROID_STR;
+
+    static {
+        byte[] x = new byte[20];
+        ZEROID = new ObjectId(x);
+        ZEROID_STR = ZEROID.toString();
+    }
+
     public static final boolean isId(final String id) {
         if (id.length() != 40) {
             return false;
@@ -16,6 +26,10 @@ public class ObjectId {
             }
         }
         return true;
+    }
+
+    public static String toString(final ObjectId i) {
+        return i != null ? i.toString() : ZEROID_STR;
     }
 
     private final byte[] id;

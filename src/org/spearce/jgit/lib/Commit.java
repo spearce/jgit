@@ -89,11 +89,15 @@ public class Commit implements Treeish {
         return treeId;
     }
 
-    public List getTreeEntries() throws IOException {
+    public Tree getTree() throws IOException {
         if (treeObj == null) {
-            treeObj = objdb.openTree(getTreeId());
+            treeObj = objdb.mapTree(getTreeId());
         }
-        return treeObj.getTreeEntries();
+        return treeObj;
+    }
+
+    public List getTreeEntries() throws IOException {
+        return getTree().getTreeEntries();
     }
 
     public String getAuthor() {

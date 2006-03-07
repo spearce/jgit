@@ -51,7 +51,26 @@ public class ObjectDatabase {
         }
     }
 
-    public Commit openCommit(final ObjectId id) throws IOException {
+    public ObjectReader openTree(final ObjectId id) throws IOException {
+        final InputStream fis = openObjectStream(id);
+        if (fis == null) {
+            return null;
+        }
+
+        try {
+            final ObjectReader or = new ObjectReader(id, fis);
+            if ("tree".equals(or.getType())) {
+                return or;
+            } else {
+                throw new CorruptObjectException("Not a tree " + id);
+            }
+        } catch (IOException ioe) {
+            fis.close();
+            throw ioe;
+        }
+    }
+
+    public Commit mapCommit(final ObjectId id) throws IOException {
         final InputStream fis = openObjectStream(id);
         if (fis == null) {
             return null;
@@ -74,7 +93,7 @@ public class ObjectDatabase {
         }
     }
 
-    public Tree openTree(final ObjectId id) throws IOException {
+    public Tree mapTree(final ObjectId id) throws IOException {
         final InputStream fis = openObjectStream(id);
         if (fis == null) {
             return null;
@@ -84,7 +103,7 @@ public class ObjectDatabase {
             final ObjectReader or = new ObjectReader(id, fis);
             try {
                 if ("commit".equals(or.getType())) {
-                    return openTree(new Commit(this, id, or.getBufferedReader())
+                    return mapTree(new Commit(this, id, or.getBufferedReader())
                             .getTreeId());
                 } else if ("tree".equals(or.getType())) {
                     return new Tree(this, id, or.getInputStream());

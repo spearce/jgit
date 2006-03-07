@@ -6,24 +6,65 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Tree implements Treeish {
+public class Tree extends TreeEntry implements Treeish {
     private final ObjectDatabase objdb;
 
-    private final ObjectId treeId;
+    private List entries;
 
-    private final List entries;
+    public Tree(final ObjectDatabase db, final ObjectId myId,
+            final InputStream is) throws IOException {
+        this(db, null, myId, null);
+        readTree(is);
+    }
 
-    public Tree(final ObjectDatabase db, final ObjectId id, final InputStream is)
-            throws IOException {
+    public Tree(final ObjectDatabase db, final Tree parent,
+            final ObjectId myId, final String name) {
+        super(parent, myId, name);
         objdb = db;
-        treeId = id;
+    }
 
+    public boolean isRoot() {
+        return getParent() == null;
+    }
+
+    public ObjectDatabase getDatabase() {
+        return objdb;
+    }
+
+    public ObjectId getTreeId() {
+        return getId();
+    }
+
+    public List getTreeEntries() throws IOException {
+        if (entries == null) {
+            final ObjectReader or = objdb.openTree(getId());
+            try {
+                readTree(or.getInputStream());
+            } finally {
+                or.close();
+            }
+        }
+        return entries;
+    }
+
+    public String toString() {
+        final StringBuffer r = new StringBuffer();
+        r.append(ObjectId.toString(getId()));
+        r.append(" T ");
+        r.append(getFullName());
+        return r.toString();
+    }
+
+    private void readTree(final InputStream is) throws IOException {
         final ArrayList tempEnts = new ArrayList();
         for (;;) {
             int c;
             int mode;
             final ByteArrayOutputStream nameBuf;
             final byte[] entId;
+            final ObjectId id;
+            final String name;
+            final TreeEntry ent;
             int entIdLen;
 
             c = is.read();
@@ -31,7 +72,8 @@ public class Tree implements Treeish {
                 break;
             }
             if (c < '0' || c > '7') {
-                throw new CorruptObjectException("Invalid tree entry in " + id);
+                throw new CorruptObjectException("Invalid tree entry in "
+                        + getId());
             }
             mode = c - '0';
             for (;;) {
@@ -41,7 +83,7 @@ public class Tree implements Treeish {
                 }
                 if (c < '0' || c > '7') {
                     throw new CorruptObjectException("Invalid tree entry in "
-                            + id);
+                            + getId());
                 }
                 mode *= 8;
                 mode += c - '0';
@@ -52,7 +94,7 @@ public class Tree implements Treeish {
                 c = is.read();
                 if (c == -1) {
                     throw new CorruptObjectException("Invalid tree entry in "
-                            + id);
+                            + getId());
                 }
                 if (0 == c) {
                     break;
@@ -66,96 +108,22 @@ public class Tree implements Treeish {
                 entIdLen += c;
             }
             if (entIdLen != entId.length) {
-                throw new CorruptObjectException("Invalid tree entry in " + id);
+                throw new CorruptObjectException("Invalid tree entry in "
+                        + getId());
             }
 
-            tempEnts.add(new Entry(mode, new String(nameBuf.toByteArray(),
-                    "UTF-8"), new ObjectId(entId)));
+            id = new ObjectId(entId);
+            name = new String(nameBuf.toByteArray(), "UTF-8");
+            if ((mode & 040000) != 0) {
+                ent = new Tree(objdb, this, id, name);
+            } else if ((mode & 020000) != 0) {
+                ent = new SymlinkTreeEntry(this, id, name);
+            } else {
+                ent = new FileTreeEntry(this, id, name, (mode & 0100) != 0);
+            }
+            tempEnts.add(ent);
         }
 
         entries = tempEnts;
-    }
-
-    public ObjectId getTreeId() {
-        return treeId;
-    }
-
-    public List getTreeEntries() {
-        return entries;
-    }
-
-    public class Entry {
-        private final int mode;
-
-        private final String name;
-
-        private final ObjectId id;
-
-        private Tree treeObj;
-
-        private Entry(final int mode, final String name, final ObjectId id) {
-            this.mode = mode;
-            this.name = name;
-            this.id = id;
-        }
-
-        public boolean isTree() {
-            return (getMode() & 040000) != 0;
-        }
-
-        public boolean isSymlink() {
-            return (getMode() & 020000) != 0;
-        }
-
-        public boolean isExecutable() {
-            return (getMode() & 0100) != 0;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public int getMode() {
-            return mode;
-        }
-
-        public ObjectId getId() {
-            return id;
-        }
-
-        public Tree getTree() throws IOException {
-            if (treeObj == null) {
-                treeObj = objdb.openTree(getId());
-            }
-            return treeObj;
-        }
-
-        public ObjectReader openBlob() throws IOException {
-            return objdb.openBlob(getId());
-        }
-
-        public String toString() {
-            final StringBuffer r = new StringBuffer();
-            final String modeStr = Integer.toString(getMode(), 8);
-            r.append(getId());
-            r.append(' ');
-            if (isTree()) {
-                r.append('D');
-            } else if (isSymlink()) {
-                r.append('S');
-            } else if (isExecutable()) {
-                r.append('X');
-            } else {
-                r.append('F');
-            }
-            r.append(' ');
-            if (modeStr.length() == 5) {
-                r.append('0');
-            }
-            r.append(modeStr);
-            r.append(' ');
-            r.append(getName());
-            return r.toString();
-        }
     }
 }
