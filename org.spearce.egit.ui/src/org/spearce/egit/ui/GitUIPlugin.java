@@ -1,6 +1,7 @@
 package org.spearce.egit.ui;
 
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
@@ -17,24 +18,36 @@ public class GitUIPlugin extends AbstractUIPlugin {
     }
 
     public static void log(final String message) {
-        System.out.println("log:" + message);
         getDefault().getLog().log(
                 new Status(IStatus.INFO, getPluginId(), IStatus.OK, message,
                         null));
     }
 
     public static void log(final String message, final int severity) {
-        System.out.println("log:" + message);
         getDefault().getLog().log(
                 new Status(severity, getPluginId(), IStatus.OK, message, null));
     }
 
     public static void log(final String message, final Throwable thr) {
-        System.out.println("log:" + message);
-        thr.printStackTrace();
         getDefault().getLog().log(
                 new Status(IStatus.ERROR, getPluginId(), IStatus.OK, message,
                         thr));
+    }
+
+    public static boolean isTracing(final String optionId) {
+        final String option = getPluginId() + "/trace/" + optionId;
+        final String value = Platform.getDebugOption(option);
+        return value != null && value.equals("true");
+    }
+
+    public static void trace(final String optionId, final String what) {
+        if (isTracing(optionId)) {
+            System.out.println(what);
+        }
+    }
+
+    public static void traceVerbose(final String what) {
+        trace("verbose", what);
     }
 
     public GitUIPlugin() {

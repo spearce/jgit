@@ -46,10 +46,8 @@ public class GitCorePlugin extends Plugin {
         }
     }
 
-    public static void traceException(final String optionId, Exception e) {
-        if (isTracing(optionId)) {
-            e.printStackTrace();
-        }
+    public static void traceVerbose(final String what) {
+        trace("verbose", what);
     }
 
     public GitCorePlugin() {
