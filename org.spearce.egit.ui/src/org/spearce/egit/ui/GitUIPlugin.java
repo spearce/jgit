@@ -19,19 +19,12 @@ public class GitUIPlugin extends AbstractUIPlugin {
 
     public static void log(final String message) {
         getDefault().getLog().log(
-                new Status(IStatus.INFO, getPluginId(), IStatus.OK, message,
-                        null));
-    }
-
-    public static void log(final String message, final int severity) {
-        getDefault().getLog().log(
-                new Status(severity, getPluginId(), IStatus.OK, message, null));
+                new Status(IStatus.INFO, getPluginId(), 1, message, null));
     }
 
     public static void log(final String message, final Throwable thr) {
         getDefault().getLog().log(
-                new Status(IStatus.ERROR, getPluginId(), IStatus.OK, message,
-                        thr));
+                new Status(IStatus.ERROR, getPluginId(), 1, message, thr));
     }
 
     public static boolean isTracing(final String optionId) {
