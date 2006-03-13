@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+   <extension point="org.eclipse.team.ui.configurationWizards">
+      <wizard name="%SharingWizard_name"
+            icon="icons/sharing.gif"
+            class="org.spearce.egit.ui.internal.sharing.SharingWizard"
+            id="org.spearce.egit.ui.internal.sharing.SharingWizard">
+      </wizard>
+   </extension>
+
+   <extension point="org.eclipse.ui.popupMenus">
+      <objectContribution id="org.spearce.egit.ui.projectContributions"
+            objectClass="org.eclipse.core.resources.IProject"
+            adaptable="true">
+         <filter name="projectPersistentProperty"
+               value="org.eclipse.team.core.repository=org.spearce.egit.core.GitProvider">
+         </filter>
+         <action
+               label="%DisconnectAction_label"
+               tooltip="%DisconnectAction_tooltip"
+               class="org.spearce.egit.ui.internal.actions.Disconnect"
+               menubarPath="team.main/projectGroup"
+               id="org.spearce.egit.ui.internal.actions.Disconnect">
+         </action>
+ 	 </objectContribution>
+   </extension>
+
+   <extension point="org.eclipse.ui.preferencePages">
+      <page name="%PreferencePage_name"
+            category="org.eclipse.team.ui.TeamPreferences"
+            class="org.spearce.egit.ui.internal.preferences.GitPreferencePage"
+            id="org.spearce.egit.ui.internal.preferences.GitPreferencePage" />
+   </extension>
+</plugin>
