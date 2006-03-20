@@ -15,9 +15,9 @@ public class Commit implements Treeish {
 
     private final List parentIds;
 
-    private final String author;
+    private final PersonIdent author;
 
-    private final String committer;
+    private final PersonIdent committer;
 
     private final String message;
 
@@ -57,13 +57,13 @@ public class Commit implements Treeish {
         if (n == null || !n.startsWith("author ")) {
             throw new CorruptObjectException(commitId, "no author");
         }
-        author = n.substring("author ".length());
+        author = new PersonIdent(n.substring("author ".length()));
 
         n = br.readLine();
         if (n == null || !n.startsWith("committer ")) {
             throw new CorruptObjectException(commitId, "no committer");
         }
-        committer = n.substring("committer ".length());
+        committer = new PersonIdent(n.substring("committer ".length()));
 
         n = br.readLine();
         if (n == null || !n.equals("")) {
@@ -96,11 +96,11 @@ public class Commit implements Treeish {
         return treeObj;
     }
 
-    public String getAuthor() {
+    public PersonIdent getAuthor() {
         return author;
     }
 
-    public String getCommitter() {
+    public PersonIdent getCommitter() {
         return committer;
     }
 
