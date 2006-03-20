@@ -1,13 +1,16 @@
 package org.spearce.jgit.lib;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Iterator;
 import java.util.zip.DeflaterOutputStream;
 
 public class ObjectWriter {
@@ -55,6 +58,45 @@ public class ObjectWriter {
     public ObjectId writeTree(final int len, final InputStream is)
             throws IOException {
         return writeObject("tree", len, is);
+    }
+
+    public ObjectId writeCommit(final Commit c) throws IOException {
+        final ByteArrayOutputStream os = new ByteArrayOutputStream();
+        final OutputStreamWriter w = new OutputStreamWriter(os, "UTF-8");
+
+        w.write("tree ");
+        w.write(c.getTreeId().toString());
+        w.write('\n');
+
+        final Iterator i = c.getParentIds().iterator();
+        while (i.hasNext()) {
+            w.write("parent ");
+            w.write(i.next().toString());
+            w.write('\n');
+        }
+
+        w.write("author ");
+        w.write(c.getAuthor().toString());
+        w.write('\n');
+
+        w.write("committer ");
+        w.write(c.getCommitter().toString());
+        w.write('\n');
+
+        w.write('\n');
+        w.write(c.getMessage());
+        w.close();
+
+        return writeCommit(os.toByteArray());
+    }
+
+    public ObjectId writeCommit(final byte[] b) throws IOException {
+        return writeCommit(b.length, new ByteArrayInputStream(b));
+    }
+
+    public ObjectId writeCommit(final int len, final InputStream is)
+            throws IOException {
+        return writeObject("commit", len, is);
     }
 
     public ObjectId writeObject(final String type, int len, final InputStream is)
