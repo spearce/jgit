@@ -4,7 +4,6 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -14,7 +13,6 @@ import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.team.ui.IConfigurationWizard;
 import org.eclipse.ui.IWorkbench;
-import org.spearce.egit.core.CoreText;
 import org.spearce.egit.core.op.ConnectProviderOperation;
 import org.spearce.egit.ui.GitUIPlugin;
 import org.spearce.egit.ui.UIText;
@@ -22,38 +20,47 @@ import org.spearce.egit.ui.UIText;
 public class SharingWizard extends Wizard implements IConfigurationWizard {
     private IProject project;
 
-    private File gitdir;
-
     private boolean create;
+
+    private File newGitDir;
 
     public SharingWizard() {
         setWindowTitle(UIText.SharingWizard_windowTitle);
+        setNeedsProgressMonitor(true);
     }
 
     public void init(final IWorkbench workbench, final IProject p) {
         project = p;
-        gitdir = new File(new File(project.getLocation().toOSString()), ".git");
+        newGitDir = new File(project.getLocation().toFile(), ".git");
     }
 
     public void addPages() {
-        if (gitdir.isDirectory()) {
-            create = false;
-            addPage(new ExistingRepositoryPage());
-        } else {
+        addPage(new ExistingOrNewPage(this));
+    }
+
+    boolean canCreateNew() {
+        return !newGitDir.exists();
+    }
+
+    void setCreateNew() {
+        if (canCreateNew()) {
             create = true;
-            addPage(new CreateRepositoryPage());
         }
     }
 
+    void setUseExisting() {
+        create = false;
+    }
+
     public boolean performFinish() {
-        final ConnectProviderOperation op;
-        op = new ConnectProviderOperation(project, gitdir, create);
+        final ConnectProviderOperation op = new ConnectProviderOperation(
+                project, create, newGitDir);
         try {
-            getContainer().run(false, false, new IRunnableWithProgress() {
+            getContainer().run(true, false, new IRunnableWithProgress() {
                 public void run(final IProgressMonitor monitor)
                         throws InvocationTargetException {
                     try {
-                        ResourcesPlugin.getWorkspace().run(op, monitor);
+                        op.run(monitor);
                     } catch (CoreException ce) {
                         throw new InvocationTargetException(ce);
                     }
@@ -70,12 +77,11 @@ public class SharingWizard extends Wizard implements IConfigurationWizard {
                 e = status.getException();
             } else {
                 status = new Status(IStatus.ERROR, GitUIPlugin.getPluginId(),
-                        1, CoreText.ConnectProviderOperation_failed, e);
+                        1, UIText.SharingWizard_failed, e);
             }
-            GitUIPlugin.log(CoreText.ConnectProviderOperation_failed, e);
+            GitUIPlugin.log(UIText.SharingWizard_failed, e);
             ErrorDialog.openError(getContainer().getShell(), getWindowTitle(),
-                    CoreText.ConnectProviderOperation_failed, status, status
-                            .getSeverity());
+                    UIText.SharingWizard_failed, status, status.getSeverity());
             return false;
         }
     }

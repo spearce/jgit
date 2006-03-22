@@ -58,6 +58,10 @@ public class Repository {
         }
     }
 
+    public File getDirectory() {
+        return gitDir;
+    }
+
     public File getObjectsDirectory() {
         return objectsDir;
     }
