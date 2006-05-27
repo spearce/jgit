@@ -4,7 +4,7 @@ import java.io.File;
 
 import junit.framework.TestCase;
 
-import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.FullRepository;
 
 public abstract class RepositoryTestCase extends TestCase {
     protected static final File trash = new File("trash");
@@ -29,12 +29,12 @@ public abstract class RepositoryTestCase extends TestCase {
         }
     }
 
-    protected Repository r;
+    protected FullRepository r;
 
     public void setUp() throws Exception {
         super.setUp();
         recursiveDelete(trash);
-        r = new Repository(trash_git);
-        r.initialize();
+        r = new FullRepository(trash_git);
+        r.create();
     }
 }

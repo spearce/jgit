@@ -111,4 +111,8 @@ public class Commit implements Treeish {
     public String getMessage() {
         return message;
     }
+
+    public String toString() {
+        return "Commit[" + getCommitId() + " " + getAuthor() + "]";
+    }
 }

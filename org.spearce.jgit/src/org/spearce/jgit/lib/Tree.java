@@ -70,8 +70,7 @@ public class Tree extends TreeEntry implements Treeish {
     public Tree addTree(final String name, final ObjectId id)
             throws IOException, MissingObjectException {
         ensureLoaded();
-        final Tree n;
-        n = new Tree(r, this, id, name.getBytes("UTF-8"));
+        final Tree n = new Tree(r, this, id, name.getBytes("UTF-8"));
         entriesByName.put(n.getName(), n);
         setModified();
         return n;
@@ -82,11 +81,35 @@ public class Tree extends TreeEntry implements Treeish {
         return allEntries.iterator();
     }
 
+    public TreeEntry findMember(String s) throws IOException,
+            MissingObjectException {
+        ensureLoaded();
+        final int slash = s.indexOf('/');
+        final String remainder;
+        if (slash != -1) {
+            remainder = s.substring(slash + 1);
+            s = s.substring(0, slash);
+        } else {
+            remainder = null;
+        }
+
+        final TreeEntry e = (TreeEntry) entriesByName.get(s);
+        if (e != null && remainder != null) {
+            if (e instanceof Tree) {
+                return ((Tree) e).findMember(remainder);
+            } else {
+                return null;
+            }
+        } else {
+            return e;
+        }
+    }
+
     private void ensureLoaded() throws IOException, MissingObjectException {
         if (!isLoaded()) {
             final ObjectReader or = r.openTree(getId());
             if (or == null) {
-                throw new MissingObjectException("tree", getId());
+                throw new MissingObjectException(Constants.TYPE_TREE, getId());
             }
             try {
                 readTree(or.getInputStream());
@@ -94,14 +117,6 @@ public class Tree extends TreeEntry implements Treeish {
                 or.close();
             }
         }
-    }
-
-    public String toString() {
-        final StringBuffer r = new StringBuffer();
-        r.append(ObjectId.toString(getId()));
-        r.append(" T ");
-        r.append(getFullName());
-        return r.toString();
     }
 
     private void readTree(final InputStream is) throws IOException {
@@ -148,7 +163,7 @@ public class Tree extends TreeEntry implements Treeish {
                 nameBuf.write(c);
             }
 
-            entId = new byte[20];
+            entId = new byte[Constants.OBJECT_ID_LENGTH];
             entIdLen = 0;
             while ((c = is.read(entId, entIdLen, entId.length - entIdLen)) > 0) {
                 entIdLen += c;
@@ -171,5 +186,13 @@ public class Tree extends TreeEntry implements Treeish {
 
         entriesByName = tempEnts;
         allEntries = Collections.unmodifiableCollection(entriesByName.values());
+    }
+
+    public String toString() {
+        final StringBuffer r = new StringBuffer();
+        r.append(ObjectId.toString(getId()));
+        r.append(" T ");
+        r.append(getFullName());
+        return r.toString();
     }
 }

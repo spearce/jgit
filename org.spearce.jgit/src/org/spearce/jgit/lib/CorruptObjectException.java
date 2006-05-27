@@ -8,4 +8,8 @@ public class CorruptObjectException extends IOException {
     public CorruptObjectException(final ObjectId id, final String why) {
         super("Object " + id + " is corrupt: " + why);
     }
+
+    public CorruptObjectException(final String why) {
+        super(why);
+    }
 }

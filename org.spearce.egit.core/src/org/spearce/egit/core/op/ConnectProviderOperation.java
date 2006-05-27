@@ -20,7 +20,7 @@ import org.spearce.egit.core.GitCorePlugin;
 import org.spearce.egit.core.GitProjectData;
 import org.spearce.egit.core.GitProvider;
 import org.spearce.egit.core.RepositoryFinder;
-import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.FullRepository;
 
 public class ConnectProviderOperation implements IWorkspaceRunnable {
     private static final int OP_CREATE_REFRESH_UNITS = 10;
@@ -60,14 +60,14 @@ public class ConnectProviderOperation implements IWorkspaceRunnable {
 
             if (createRepository) {
                 try {
-                    final Repository db;
+                    final FullRepository db;
 
                     m.subTask(CoreText.ConnectProviderOperation_creating);
                     GitCorePlugin.traceVerbose("Creating new GIT repository: "
                             + newGitDir);
 
-                    db = new Repository(newGitDir);
-                    db.initialize();
+                    db = new FullRepository(newGitDir);
+                    db.create();
 
                     // If we don't refresh the project directory right now we
                     // won't later know that a .git directory exists within it

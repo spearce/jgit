@@ -1,21 +1,20 @@
 package org.spearce.jgit.lib;
 
-public class ObjectId {
+public class ObjectId implements Comparable {
     private static final ObjectId ZEROID;
 
     private static final String ZEROID_STR;
 
     static {
-        byte[] x = new byte[20];
-        ZEROID = new ObjectId(x);
+        ZEROID = new ObjectId(new byte[Constants.OBJECT_ID_LENGTH]);
         ZEROID_STR = ZEROID.toString();
     }
 
     public static final boolean isId(final String id) {
-        if (id.length() != 40) {
+        if (id.length() != 2 * Constants.OBJECT_ID_LENGTH) {
             return false;
         }
-        for (int k = 0; k < 40; k++) {
+        for (int k = 0; k < 2 * Constants.OBJECT_ID_LENGTH; k++) {
             final char c = id.charAt(k);
             if ('0' <= c && c <= '9') {
                 continue;
@@ -32,11 +31,31 @@ public class ObjectId {
         return i != null ? i.toString() : ZEROID_STR;
     }
 
+    public static int compare(final byte[] a, final byte[] b) {
+        for (int k = 0; k < a.length && k < b.length; k++) {
+            final int ak = a[k] & 0xff;
+            final int bk = b[k] & 0xff;
+            if (ak < bk) {
+                return -1;
+            } else if (ak > bk) {
+                return 1;
+            }
+        }
+
+        if (a.length < b.length) {
+            return -1;
+        } else if (a.length == b.length) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+
     private final byte[] id;
 
     public ObjectId(final String i) {
-        id = new byte[20];
-        for (int j = 0, k = 0; k < 20; k++) {
+        id = new byte[Constants.OBJECT_ID_LENGTH];
+        for (int j = 0, k = 0; k < Constants.OBJECT_ID_LENGTH; k++) {
             final char c1 = i.charAt(j++);
             final char c2 = i.charAt(j++);
             int b;
@@ -64,9 +83,16 @@ public class ObjectId {
         return id;
     }
 
+    public int compareTo(final Object o) {
+        if (o instanceof byte[]) {
+            return compare(id, (byte[]) o);
+        }
+        return compare(id, ((ObjectId) o).id);
+    }
+
     public int hashCode() {
         int r = 0;
-        for (int k = 0; k < 20; k++) {
+        for (int k = 0; k < id.length; k++) {
             r *= 31;
             r += id[k];
         }
@@ -76,7 +102,10 @@ public class ObjectId {
     public boolean equals(final Object o) {
         if (o instanceof ObjectId) {
             final byte[] o_id = ((ObjectId) o).id;
-            for (int k = 0; k < 20; k++) {
+            if (o_id.length != id.length) {
+                return false;
+            }
+            for (int k = 0; k < id.length; k++) {
                 if (id[k] != o_id[k]) {
                     return false;
                 }
@@ -87,8 +116,8 @@ public class ObjectId {
     }
 
     public String toString() {
-        final StringBuffer r = new StringBuffer(40);
-        for (int k = 0; k < 20; k++) {
+        final StringBuffer r = new StringBuffer(2 * id.length);
+        for (int k = 0; k < id.length; k++) {
             final int b = id[k];
             final int b1 = (b >> 4) & 0xf;
             final int b2 = b & 0xf;

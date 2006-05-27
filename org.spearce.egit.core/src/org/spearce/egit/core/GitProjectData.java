@@ -10,6 +10,8 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -28,6 +30,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Status;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.FullRepository;
 
 public class GitProjectData implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -66,11 +69,11 @@ public class GitProjectData implements Serializable {
         }
     }
 
-    public synchronized static void deleteDataFor(final IProject p) {
+    public static void deleteDataFor(final IProject p) {
         final File dat = fileFor(p);
-        uncacheDataFor(p);
         dat.delete();
         GitCorePlugin.traceVerbose("GitProjectData: deleted " + dat);
+        uncacheDataFor(p);
     }
 
     public static GitProjectData loadDataFor(final IProject p)
@@ -105,10 +108,10 @@ public class GitProjectData implements Serializable {
         }
 
         final Reference r = (Reference) repositoryCache.get(gitDir);
-        Repository d = r != null ? (Repository) r.get() : null;
+        Repository d = r != null ? (FullRepository) r.get() : null;
 
         if (d == null) {
-            d = new Repository(gitDir);
+            d = new FullRepository(gitDir);
             repositoryCache.put(gitDir, new WeakReference(d));
         }
         return d;
@@ -125,7 +128,7 @@ public class GitProjectData implements Serializable {
 
     private transient Set protectedResources;
 
-    private transient Map readRepoMappings;
+    private transient Collection readRepoMappings;
 
     public GitProjectData() {
         liveRepoMappings = new HashMap();
@@ -136,14 +139,13 @@ public class GitProjectData implements Serializable {
         project = p;
 
         if (readRepoMappings != null) {
-            final Iterator i = readRepoMappings.entrySet().iterator();
+            final Iterator i = readRepoMappings.iterator();
             while (i.hasNext()) {
-                final Map.Entry e = (Map.Entry) i.next();
-                final IPath cp = Path.fromPortableString((String) e.getKey());
+                final PersistedMapping e = (PersistedMapping) i.next();
+                final IPath cp = e.getContainerPath();
                 final IResource m = getProject().findMember(cp);
-                final File gitDir;
+                final File gitDir = e.getGitDir();
 
-                gitDir = new File((String) e.getValue()).getCanonicalFile();
                 if (m instanceof IContainer) {
                     registerRepository((IContainer) m, gitDir);
                 } else {
@@ -235,10 +237,9 @@ public class GitProjectData implements Serializable {
 
     private void registerRepository(final IContainer c, final File gitDir)
             throws IOException {
-        final Repository r;
-        final IResource dotGit;
+        final Repository r = getRepository(gitDir.getCanonicalFile());
+        final IResource dotGit = c.findMember(".git");
 
-        r = getRepository(gitDir.getCanonicalFile());
         liveRepoMappings.put(c, r);
         GitCorePlugin.traceVerbose("GitProjectData: mapped: " + c + " -> "
                 + r.getDirectory());
@@ -248,12 +249,10 @@ public class GitProjectData implements Serializable {
         // even if it is a linked resource. We don't want our mapped containers
         // disappearing on us.
         //
-        dotGit = c.findMember(".git");
-        if (dotGit != null) {
-            if (r.getDirectory().equals(
-                    dotGit.getLocation().toFile().getCanonicalFile())) {
-                protect(dotGit);
-            }
+        if (dotGit != null
+                && dotGit.getLocation().toFile().getCanonicalFile().equals(
+                        r.getDirectory())) {
+            protect(dotGit);
         }
     }
 
@@ -272,12 +271,10 @@ public class GitProjectData implements Serializable {
         liveRepoMappings = new HashMap();
         protectedResources = new HashSet();
 
-        readRepoMappings = new HashMap();
         int mappingsLeft = in.readInt();
+        readRepoMappings = new ArrayList(mappingsLeft);
         while (mappingsLeft-- > 0) {
-            final String containerPath = in.readUTF();
-            final String repoPath = in.readUTF();
-            readRepoMappings.put(containerPath, repoPath);
+            readRepoMappings.add(in.readObject());
         }
     }
 
@@ -288,10 +285,30 @@ public class GitProjectData implements Serializable {
         final Iterator i = liveRepoMappings.entrySet().iterator();
         while (i.hasNext()) {
             final Map.Entry e = (Map.Entry) i.next();
-            final IContainer c = (IContainer) e.getKey();
-            final Repository r = (Repository) e.getValue();
-            out.writeUTF(c.getProjectRelativePath().toPortableString());
-            out.writeUTF(r.getDirectory().getCanonicalPath());
+            out.writeObject(new PersistedMapping((IContainer) e.getKey(),
+                    (Repository) e.getValue()));
+        }
+    }
+
+    private static class PersistedMapping implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        String containerPath;
+
+        String gitDir;
+
+        PersistedMapping(final IContainer c, final Repository r)
+                throws IOException {
+            containerPath = c.getProjectRelativePath().toPortableString();
+            gitDir = r.getDirectory().getCanonicalPath();
+        }
+
+        IPath getContainerPath() {
+            return Path.fromPortableString(containerPath);
+        }
+
+        File getGitDir() throws IOException {
+            return new File(gitDir).getCanonicalFile();
         }
     }
 }

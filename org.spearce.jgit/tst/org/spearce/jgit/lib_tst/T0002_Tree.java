@@ -25,6 +25,7 @@ public class T0002_Tree extends RepositoryTestCase {
         assertTrue("no id", t.getId() == null);
         assertTrue("tree is self", t.getTree() == t);
         assertTrue("database is r", t.getDatabase() == r);
+        assertTrue("no foo child", t.findMember("foo") == null);
     }
 
     public void test002_addFile() throws IOException {
@@ -33,15 +34,17 @@ public class T0002_Tree extends RepositoryTestCase {
         assertTrue("has id", t.getId() != null);
         assertFalse("not modified", t.isModified());
 
-        final FileTreeEntry f = t.addFile("bob", null);
+        final String n = "bob";
+        final FileTreeEntry f = t.addFile(n, null);
         assertNotNull("have file", f);
-        assertEquals("name matches", "bob", f.getName());
+        assertEquals("name matches", n, f.getName());
         assertEquals("name matches", f.getName(), new String(f.getNameUTF8(),
                 "UTF-8"));
-        assertEquals("full name matches", "bob", f.getFullName());
+        assertEquals("full name matches", n, f.getFullName());
         assertTrue("no id", f.getId() == null);
         assertTrue("is modified", t.isModified());
         assertTrue("has no id", t.getId() == null);
+        assertTrue("found bob", t.findMember(f.getName()) == f);
 
         final Iterator i = t.entryIterator();
         assertTrue("iterator is not empty", i.hasNext());
@@ -63,12 +66,13 @@ public class T0002_Tree extends RepositoryTestCase {
         assertTrue("has id", t.getId() != null);
         assertFalse("not modified", t.isModified());
 
-        final Tree f = t.addTree("bob", null);
+        final String n = "bob";
+        final Tree f = t.addTree(n, null);
         assertNotNull("have tree", f);
-        assertEquals("name matches", "bob", f.getName());
+        assertEquals("name matches", n, f.getName());
         assertEquals("name matches", f.getName(), new String(f.getNameUTF8(),
                 "UTF-8"));
-        assertEquals("full name matches", "bob", f.getFullName());
+        assertEquals("full name matches", n, f.getFullName());
         assertTrue("no id", f.getId() == null);
         assertTrue("parent matches", f.getParent() == t);
         assertTrue("repository matches", f.getDatabase() == r);
@@ -78,6 +82,7 @@ public class T0002_Tree extends RepositoryTestCase {
         assertTrue("tree is self", f.getTree() == f);
         assertTrue("parent is modified", t.isModified());
         assertTrue("parent has no id", t.getId() == null);
+        assertTrue("found bob child", t.findMember(f.getName()) == f);
 
         final Iterator i = t.entryIterator();
         assertTrue("iterator is not empty", i.hasNext());
@@ -122,10 +127,14 @@ public class T0002_Tree extends RepositoryTestCase {
         assertTrue("t not modified.", !t.isModified());
 
         assertEquals("full path of h ok", "f/g/h", h.getFullName());
+        assertTrue("Can find h", t.findMember(h.getFullName()) == h);
+        assertTrue("Can't find f/z", t.findMember("f/z") == null);
+        assertTrue("Can't find y/z", t.findMember("y/z") == null);
 
         final FileTreeEntry i = h.addFile("i", null);
         assertNotNull(i);
         assertEquals("full path of i ok", "f/g/h/i", i.getFullName());
+        assertTrue("Can find i", t.findMember(i.getFullName()) == i);
         assertTrue("h modified", h.isModified());
         assertTrue("g modified", g.isModified());
         assertTrue("f modified", f.isModified());
