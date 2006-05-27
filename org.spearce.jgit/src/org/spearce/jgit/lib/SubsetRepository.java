@@ -25,6 +25,10 @@ public class SubsetRepository implements Repository {
         return parent.toFile(id);
     }
 
+    public ObjectReader openObject(final ObjectId id) throws IOException {
+        return parent.openObject(id);
+    }
+
     public boolean hasObject(final ObjectId id) {
         return parent.hasObject(id);
     }

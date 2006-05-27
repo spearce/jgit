@@ -56,13 +56,13 @@ public class PackReader {
         }
     }
 
-    public PackReader(final Repository parentRepo, final File pack)
+    public PackReader(final Repository parentRepo, final File packFile)
             throws IOException {
-        final String name = pack.getName();
+        final String name = packFile.getName();
         final int dot = name.lastIndexOf('.');
 
         repo = parentRepo;
-        packStream = new XInputStream(new FileInputStream(pack));
+        packStream = new XInputStream(new FileInputStream(packFile));
         try {
             readPackHeader();
         } catch (IOException err) {
@@ -71,8 +71,15 @@ public class PackReader {
         }
 
         try {
-            idxStream = new XInputStream(new FileInputStream(new File(pack
-                    .getParentFile(), name.substring(0, dot) + ".idx")));
+            final File idxFile = new File(packFile.getParentFile(), name
+                    .substring(0, dot)
+                    + ".idx");
+            if (idxFile.length() != (IDX_HDR_LEN + (24 * objectCnt) + (2 * Constants.OBJECT_ID_LENGTH))) {
+                throw new CorruptObjectException("Pack index "
+                        + idxFile.getName() + " has incorrect file size.");
+            }
+
+            idxStream = new XInputStream(new FileInputStream(idxFile));
             idxHeader = new long[256];
             for (int k = 0; k < idxHeader.length; k++) {
                 idxHeader[k] = idxStream.xuint32();
@@ -147,28 +154,24 @@ public class PackReader {
         };
     }
 
-    public synchronized ObjectReader resolveBase(final ObjectId objId)
+    public synchronized ObjectReader resolveBase(final ObjectId id)
             throws IOException {
-        ObjectReader or = get(objId);
-        if (or != null) {
-            return or;
-        }
-        return null;
+        return repo.openObject(id);
     }
 
-    public synchronized PackedObjectReader get(final ObjectId objId)
+    public synchronized PackedObjectReader get(final ObjectId id)
             throws IOException {
         final long offset;
         final PackedObjectReader objReader;
 
-        offset = findOffset(objId);
+        offset = findOffset(id);
         if (offset == -1) {
             return null;
         }
 
         packStream.position(offset);
         objReader = reader();
-        objReader.setId(objId);
+        objReader.setId(id);
         return objReader;
     }
 

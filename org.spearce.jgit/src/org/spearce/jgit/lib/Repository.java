@@ -12,6 +12,8 @@ public interface Repository {
 
     public boolean hasObject(final ObjectId id);
 
+    public ObjectReader openObject(final ObjectId id) throws IOException;
+
     public ObjectReader openBlob(final ObjectId id) throws IOException;
 
     public ObjectReader openTree(final ObjectId id) throws IOException;

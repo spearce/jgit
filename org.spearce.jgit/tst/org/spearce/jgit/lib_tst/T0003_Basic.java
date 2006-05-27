@@ -32,6 +32,12 @@ public class T0003_Basic extends RepositoryTestCase {
     }
 
     public void test002_WriteEmptyTree() throws IOException {
+        // One of our test packs contains the empty tree object. If the pack is
+        // open when we create it we won't write the object file out as a loose
+        // object (as it already exists in the pack).
+        //
+        r.closePacks();
+
         final Tree t = new Tree(r);
         new WriteTree(r, trash).visit(t);
         assertEquals("4b825dc642cb6eb9a060e54bf8d69288fbee4904", t.getId()
@@ -40,6 +46,19 @@ public class T0003_Basic extends RepositoryTestCase {
                 "825dc642cb6eb9a060e54bf8d69288fbee4904");
         assertTrue("Exists " + o, o.isFile());
         assertTrue("Read-only " + o, !o.canWrite());
+        assertEquals(15, o.length());
+    }
+
+    public void test002_WriteEmptyTree2() throws IOException {
+        // File shouldn't exist as it is in a test pack.
+        //
+        final Tree t = new Tree(r);
+        new WriteTree(r, trash).visit(t);
+        assertEquals("4b825dc642cb6eb9a060e54bf8d69288fbee4904", t.getId()
+                .toString());
+        final File o = new File(new File(new File(trash_git, "objects"), "4b"),
+                "825dc642cb6eb9a060e54bf8d69288fbee4904");
+        assertFalse("Exists " + o, o.isFile());
     }
 
     public void test003_WriteShouldBeEmptyTree() throws IOException {
