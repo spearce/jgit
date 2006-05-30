@@ -18,7 +18,7 @@ public class CoreText extends NLS {
     public static String MoveDeleteHook_cannotModifyFolder;
 
     static {
-        NLS.initializeMessages(CoreText.class.getPackage().getName()
-                + ".coretext", CoreText.class);
+        initializeMessages(CoreText.class.getPackage().getName() + ".coretext",
+                CoreText.class);
     }
 }

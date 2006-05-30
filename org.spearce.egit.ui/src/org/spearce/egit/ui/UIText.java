@@ -27,7 +27,7 @@ public class UIText extends NLS {
     }
 
     static {
-        NLS.initializeMessages(UIText.class.getPackage().getName() + ".uitext",
+        initializeMessages(UIText.class.getPackage().getName() + ".uitext",
                 UIText.class);
     }
 }

@@ -23,18 +23,6 @@ import org.spearce.egit.core.RepositoryFinder;
 import org.spearce.jgit.lib.FullRepository;
 
 public class ConnectProviderOperation implements IWorkspaceRunnable {
-    private static final int OP_CREATE_REFRESH_UNITS = 10;
-
-    private static final int OP_CREATE_REST_UNITS = 10;
-
-    private static final int OP_CREATE_UNITS = OP_CREATE_REFRESH_UNITS
-            + OP_CREATE_REST_UNITS;
-
-    private static final int OP_REFRESH_UNITS = 75;
-
-    private static final int OP_TOTAL_UNITS = OP_CREATE_UNITS
-            + OP_REFRESH_UNITS + 5;
-
     private final IProject project;
 
     private final File newGitDir;
@@ -53,8 +41,7 @@ public class ConnectProviderOperation implements IWorkspaceRunnable {
             m = new NullProgressMonitor();
         }
 
-        m.beginTask(CoreText.ConnectProviderOperation_connecting,
-                OP_TOTAL_UNITS);
+        m.beginTask(CoreText.ConnectProviderOperation_connecting, 100);
         try {
             final Map repos;
 
@@ -68,6 +55,7 @@ public class ConnectProviderOperation implements IWorkspaceRunnable {
 
                     db = new FullRepository(newGitDir);
                     db.create();
+                    db.close();
 
                     // If we don't refresh the project directory right now we
                     // won't later know that a .git directory exists within it
@@ -76,12 +64,12 @@ public class ConnectProviderOperation implements IWorkspaceRunnable {
                     // the .git directory without us stopping them.
                     //
                     project.refreshLocal(IResource.DEPTH_ONE,
-                            new SubProgressMonitor(m, OP_CREATE_REFRESH_UNITS));
+                            new SubProgressMonitor(m, 10));
 
                     repos = new HashMap();
                     repos.put(project, newGitDir);
 
-                    m.worked(OP_CREATE_REST_UNITS);
+                    m.worked(10);
                 } catch (Throwable err) {
                     throw new CoreException(new Status(IStatus.ERROR,
                             GitCorePlugin.getPluginId(), 1, err.getMessage(),
@@ -89,7 +77,7 @@ public class ConnectProviderOperation implements IWorkspaceRunnable {
                 }
             } else {
                 repos = new RepositoryFinder(project)
-                        .find(new SubProgressMonitor(m, OP_CREATE_UNITS));
+                        .find(new SubProgressMonitor(m, 20));
             }
 
             m.subTask(CoreText.ConnectProviderOperation_recordingMapping);
@@ -106,7 +94,7 @@ public class ConnectProviderOperation implements IWorkspaceRunnable {
             projectData.markTeamPrivateResources();
 
             project.refreshLocal(IResource.DEPTH_INFINITE,
-                    new SubProgressMonitor(m, OP_REFRESH_UNITS));
+                    new SubProgressMonitor(m, 75));
 
             RepositoryProvider.map(project, GitProvider.class.getName());
         } finally {

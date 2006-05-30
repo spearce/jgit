@@ -97,13 +97,8 @@ public class PackedObjectReader extends ObjectReader {
 
         private long offset = getDataOffset();
 
-        private byte[] singleByteBuffer;
-
         public int read() throws IOException {
-            if (singleByteBuffer == null) {
-                singleByteBuffer = new byte[1];
-            }
-
+            final byte[] singleByteBuffer = new byte[1];
             if (read(singleByteBuffer, 0, 1) == 1) {
                 return singleByteBuffer[0];
             } else {
@@ -141,7 +136,6 @@ public class PackedObjectReader extends ObjectReader {
                 inf.end();
                 inf = null;
                 in = null;
-                singleByteBuffer = null;
             }
         }
     }

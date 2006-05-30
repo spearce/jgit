@@ -210,13 +210,13 @@ public class GitProjectData implements Serializable {
 
     public void save() throws IOException {
         final File dat = fileFor(getProject());
-        final File tmp = File.createTempFile("gpd_", ".ser", dat
-                .getParentFile());
+        final File tmp;
+        boolean ok = false;
+        final ObjectOutputStream oos;
         GitCorePlugin.traceVerbose("GitProjectData: saving " + dat);
 
-        final ObjectOutputStream oos = new ObjectOutputStream(
-                new FileOutputStream(tmp));
-        boolean ok = false;
+        tmp = File.createTempFile("gpd_", ".ser", dat.getParentFile());
+        oos = new ObjectOutputStream(new FileOutputStream(tmp));
         try {
             oos.writeObject(this);
             ok = true;

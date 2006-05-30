@@ -7,9 +7,8 @@ import java.io.InputStream;
  * Recreate a stream from a base stream and a GIT pack delta.
  * <p>
  * This entire class is heavily cribbed from <code>patch-delta.c</code> in the
- * GIT project. That code was written and copyrighted by Nicolas Pitre
- * &lt;nico@cam.org&gt; in 2005. Nico licensed his code under the GNU General
- * Public License version 2. This is pretty much a derivative work.
+ * GIT project. The original delta patching code was written by Nicolas Pitre
+ * (&lt;nico@cam.org&gt;).
  * </p>
  */
 public class PatchDeltaStream extends InputStream {
@@ -39,7 +38,7 @@ public class PatchDeltaStream extends InputStream {
         shift = 0;
         do {
             c = readDelta();
-            baseLen |= (c & 0x80) << shift;
+            baseLen |= (c & 0x7f) << shift;
             shift += 7;
         } while ((c & 0x80) != 0);
 
@@ -48,7 +47,7 @@ public class PatchDeltaStream extends InputStream {
         shift = 0;
         do {
             c = readDelta();
-            resLen |= (c & 0x80) << shift;
+            resLen |= (c & 0x7f) << shift;
             shift += 7;
         } while ((c & 0x80) != 0);
 
@@ -63,7 +62,7 @@ public class PatchDeltaStream extends InputStream {
                     throw new CorruptObjectException("Base length from delta ("
                             + baseLen
                             + ") does not equal actual length from base ("
-                            + expBaseLen + ".");
+                            + expBaseLen + ").");
                 }
 
                 shift = 0;
@@ -71,8 +70,8 @@ public class PatchDeltaStream extends InputStream {
                 while (expBaseLen > 0) {
                     final int n = i.read(base, shift, expBaseLen);
                     if (n < 0) {
-                        throw new CorruptObjectException(
-                                "Can't completely load base.");
+                        throw new CorruptObjectException("Can't completely"
+                                + " load delta base for patching.");
                     }
                     shift += n;
                     expBaseLen += n;

@@ -10,7 +10,6 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
 
 public class GitPreferencePage extends PreferencePage implements
         IWorkbenchPreferencePage {
-
     protected Control createContents(final Composite parent) {
         final Label b = new Label(parent, SWT.NONE);
         b.setText("Hi.  I'm an empty preference page.");

@@ -3,32 +3,35 @@ package org.spearce.jgit.lib;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class Commit implements Treeish {
     private final Repository objdb;
 
-    private final ObjectId commitId;
+    private ObjectId commitId;
 
-    private final ObjectId treeId;
+    private ObjectId treeId;
 
     private final List parentIds;
 
-    private final PersonIdent author;
+    private PersonIdent author;
 
-    private final PersonIdent committer;
+    private PersonIdent committer;
 
-    private final String message;
+    private String message;
 
     private Tree treeObj;
+
+    public Commit(final Repository db) {
+        objdb = db;
+        parentIds = new ArrayList(2);
+    }
 
     public Commit(final Repository db, final ObjectId id,
             final BufferedReader br) throws IOException {
         objdb = db;
         commitId = id;
 
-        final ArrayList tempParents;
         final StringBuffer tempMessage;
         final char[] readBuf;
         int readLen;
@@ -40,19 +43,18 @@ public class Commit implements Treeish {
         }
         treeId = new ObjectId(n.substring("tree ".length()));
 
-        tempParents = new ArrayList(2);
+        parentIds = new ArrayList(2);
         for (;;) {
             n = br.readLine();
             if (n == null) {
                 throw new CorruptObjectException(commitId, "early eof");
             }
             if (n.startsWith("parent ")) {
-                tempParents.add(new ObjectId(n.substring("parent ".length())));
+                parentIds.add(new ObjectId(n.substring("parent ".length())));
             } else {
                 break;
             }
         }
-        parentIds = Collections.unmodifiableList(tempParents);
 
         if (n == null || !n.startsWith("author ")) {
             throw new CorruptObjectException(commitId, "no author");
@@ -82,8 +84,19 @@ public class Commit implements Treeish {
         return commitId;
     }
 
+    public void setCommitId(final ObjectId id) {
+        commitId = id;
+    }
+
     public ObjectId getTreeId() {
         return treeId;
+    }
+
+    public void setTreeId(final ObjectId id) {
+        if (!treeId.equals(id)) {
+            treeObj = null;
+        }
+        treeId = id;
     }
 
     public Tree getTree() throws IOException {
@@ -96,12 +109,25 @@ public class Commit implements Treeish {
         return treeObj;
     }
 
+    public void setTree(final Tree t) {
+        treeId = null;
+        treeObj = t;
+    }
+
     public PersonIdent getAuthor() {
         return author;
     }
 
+    public void setAuthor(final PersonIdent a) {
+        author = a;
+    }
+
     public PersonIdent getCommitter() {
         return committer;
+    }
+
+    public void setCommitter(final PersonIdent c) {
+        committer = c;
     }
 
     public List getParentIds() {
@@ -110,6 +136,10 @@ public class Commit implements Treeish {
 
     public String getMessage() {
         return message;
+    }
+
+    public void setMessage(final String m) {
+        message = m;
     }
 
     public String toString() {

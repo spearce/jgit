@@ -20,30 +20,29 @@ import org.spearce.egit.ui.GitUIPlugin;
 import org.spearce.egit.ui.UIText;
 
 public abstract class AbstractOperationAction implements IObjectActionDelegate {
-    private ISelection selection;
-
     private IWorkbenchPart wp;
 
+    private IWorkspaceRunnable op;
+
     public void selectionChanged(final IAction act, final ISelection sel) {
-        selection = sel;
+        final List selection;
+        if (sel instanceof IStructuredSelection && !sel.isEmpty()) {
+            selection = ((IStructuredSelection) sel).toList();
+        } else {
+            selection = Collections.EMPTY_LIST;
+        }
+        op = createOperation(act, selection);
+        act.setEnabled(op != null && wp != null);
     }
 
     public void setActivePart(final IAction act, final IWorkbenchPart part) {
         wp = part;
     }
 
-    protected List getSelection() {
-        if (selection instanceof IStructuredSelection && !selection.isEmpty()) {
-            return ((IStructuredSelection) selection).toList();
-        } else {
-            return Collections.EMPTY_LIST;
-        }
-    }
-
-    protected abstract IWorkspaceRunnable createOperation();
+    protected abstract IWorkspaceRunnable createOperation(final IAction act,
+            final List selection);
 
     public void run(final IAction act) {
-        final IWorkspaceRunnable op = createOperation();
         if (op != null) {
             try {
                 wp.getSite().getWorkbenchWindow().run(true, false,

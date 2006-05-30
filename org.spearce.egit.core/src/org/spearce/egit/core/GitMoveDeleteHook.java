@@ -60,7 +60,7 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
     public boolean moveFolder(final IResourceTree tree, final IFolder source,
             final IFolder destination, final int updateFlags,
             final IProgressMonitor monitor) {
-        // Deleting a GIT repository which is in use is rather complicated. So
+        // Moving a GIT repository which is in use is rather complicated. So
         // we just disallow it. Instead disconnect the team provider before
         // attempting to move the repository.
         //
