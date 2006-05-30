@@ -85,7 +85,7 @@ public class T0004_PackReader extends RepositoryTestCase {
         assertEquals(base, ((PackedObjectReader) or).getDeltaBaseId());
         assertEquals(id, or.getId());
         assertEquals(Constants.TYPE_BLOB, or.getType());
-        assertEquals(16512, or.getSize());
+        assertEquals(18009, or.getSize());
         assertEquals(537, ((PackedObjectReader) or).getDataOffset());
         or.close();
     }

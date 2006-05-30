@@ -11,7 +11,7 @@ public class XInputStream extends BufferedInputStream {
         return ((i >> 4) & 0xf) << 4 | (i & 0xf);
     }
 
-    private final byte[] uintbuf = new byte[8];
+    private final byte[] intbuf = new byte[8];
 
     private FileChannel fc;
 
@@ -50,7 +50,18 @@ public class XInputStream extends BufferedInputStream {
     }
 
     public synchronized long skip(final long n) throws IOException {
-        final long r = super.skip(n);
+        // BufferedInputStream doesn't skip until its buffer is empty so we
+        // might need to invoke skip more than once until all underlying
+        // InputStreams have advanced by the amount requested.
+        //
+        long r = 0;
+        while (r < n) {
+            final long i = super.skip(n - r);
+            if (i <= 0) {
+                break;
+            }
+            r += i;
+        }
         offset += r;
         return r;
     }
@@ -60,14 +71,38 @@ public class XInputStream extends BufferedInputStream {
     }
 
     public synchronized void position(final long p) throws IOException {
-        if (p != offset) {
-            if (fc == null) {
-                throw new IOException("Stream is not seekable.");
+        if (p < offset) {
+            final long d = offset - p;
+            if (d < pos) {
+                // Rewind target is within the buffer. We can simply reset to
+                // it by altering pos.
+                //
+                offset = p;
+                pos -= d;
+            } else {
+                // Rewind target isn't in the buffer; we need to rewind the
+                // stream and clear the buffer. We can only do this if it has
+                // a FileChannel as otherwise we have no way to position it.
+                //
+                if (fc == null) {
+                    throw new IOException("Stream is not reverse seekable.");
+                }
+                count = 0;
+                offset = p;
+                fc.position(p);
             }
-
-            count = 0;
-            offset = p;
-            fc.position(p);
+        } else if (p > offset) {
+            // Fast-foward is simply a skip and most streams are skippable even
+            // if skipping would require consuming all data to actually perform
+            // the skip. Verify the skip took place because if it didn't then
+            // things didn't work as we had planned (the stream isn't seekable
+            // or we are trying to position past the end in an effor to create a
+            // hole, which we don't really support doing here).
+            //
+            skip(p - offset);
+            if (offset != p) {
+                throw new IOException("Stream is not forward seekable.");
+            }
         }
     }
 
@@ -98,9 +133,9 @@ public class XInputStream extends BufferedInputStream {
     }
 
     public long xuint32() throws IOException {
-        xread(uintbuf, 0, 4);
-        return uint8(uintbuf[0]) << 24 | uint8(uintbuf[1]) << 16
-                | uint8(uintbuf[2]) << 8 | uint8(uintbuf[3]);
+        xread(intbuf, 0, 4);
+        return uint8(intbuf[0]) << 24 | uint8(intbuf[1]) << 16
+                | uint8(intbuf[2]) << 8 | uint8(intbuf[3]);
     }
 
     public synchronized void close() throws IOException {
