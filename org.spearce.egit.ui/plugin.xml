@@ -32,4 +32,22 @@
             class="org.spearce.egit.ui.internal.preferences.GitPreferencePage"
             id="org.spearce.egit.ui.internal.preferences.GitPreferencePage" />
    </extension>
+
+   <extension point="org.eclipse.ui.decorators">
+      <decorator
+            lightweight="true"
+            adaptable="true"
+            label="%Decorator_name"
+            class="org.spearce.egit.ui.internal.decorators.GitResourceDecorator"
+            state="true"
+            location="BOTTOM_RIGHT"
+            id="org.spearce.egit.ui.internal.decorators.GitResourceDecorator">
+            <enablement>
+              <objectClass name="org.eclipse.core.resources.IResource"/>
+            </enablement>
+         <description>
+            %Decorator_description
+         </description>
+      </decorator>
+   </extension>
 </plugin>

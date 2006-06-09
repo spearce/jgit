@@ -89,12 +89,26 @@ public class ConnectProviderOperation implements IWorkspaceRunnable
             projectData.setRepositoryMappings(repos);
             projectData.store();
             projectData.markTeamPrivateResources();
+            projectData.cache();
 
             project.refreshLocal(
                 IResource.DEPTH_INFINITE,
                 new SubProgressMonitor(m, 75));
 
-            RepositoryProvider.map(project, GitProvider.class.getName());
+            try
+            {
+                RepositoryProvider.map(project, GitProvider.class.getName());
+            }
+            catch (CoreException ce)
+            {
+                GitProjectData.deleteDataFor(project);
+                throw ce;
+            }
+            catch (RuntimeException ce)
+            {
+                GitProjectData.deleteDataFor(project);
+                throw ce;
+            }
         }
         finally
         {

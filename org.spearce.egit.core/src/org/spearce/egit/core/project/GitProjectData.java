@@ -23,8 +23,10 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
+import org.spearce.egit.core.GitProvider;
 import org.spearce.jgit.lib.FullRepository;
 import org.spearce.jgit.lib.Repository;
 
@@ -52,19 +54,34 @@ public class GitProjectData
     }
 
     public synchronized static GitProjectData getDataFor(final IProject p)
-        throws IOException
     {
-        GitProjectData d = (GitProjectData) projectDataCache.get(p);
-        if (d == null)
+        try
         {
-            d = loadDataFor(p);
-            final int evt = IResourceChangeEvent.PRE_CLOSE
-                | IResourceChangeEvent.PRE_DELETE;
-            p.getWorkspace().addResourceChangeListener(uncacher, evt);
-            projectDataCache.put(p, d);
-            trace("getDataFor(" + p.getName() + ")");
+            GitProjectData d = (GitProjectData) projectDataCache.get(p);
+            if (d == null
+                && RepositoryProvider.getProvider(p) instanceof GitProvider)
+            {
+                d = loadDataFor(p);
+                final int evt = IResourceChangeEvent.PRE_CLOSE
+                    | IResourceChangeEvent.PRE_DELETE;
+                p.getWorkspace().addResourceChangeListener(uncacher, evt);
+                cacheDataFor(p, d);
+                trace("getDataFor(" + p.getName() + ")");
+            }
+            return d;
         }
-        return d;
+        catch (IOException err)
+        {
+            Activator.logError(CoreText.GitProjectData_missing, err);
+            return null;
+        }
+    }
+
+    private synchronized static void cacheDataFor(
+        final IProject p,
+        final GitProjectData d)
+    {
+        projectDataCache.put(p, d);
     }
 
     private synchronized static void uncacheDataFor(final IProject p)
@@ -181,6 +198,16 @@ public class GitProjectData
     public boolean isProtected(final IFolder f)
     {
         return protectedResources.contains(f);
+    }
+
+    public Repository getOwnRepository(final IResource r)
+    {
+        return (Repository) c2db.get(r);
+    }
+
+    public void cache()
+    {
+        cacheDataFor(getProject(), this);
     }
 
     public void store() throws CoreException

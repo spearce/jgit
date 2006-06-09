@@ -1,7 +1,5 @@
 package org.spearce.egit.core;
 
-import java.io.IOException;
-
 import org.eclipse.core.resources.team.IMoveDeleteHook;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.team.core.RepositoryProvider;
@@ -20,14 +18,7 @@ public class GitProvider extends RepositoryProvider
 
     public void configureProject() throws CoreException
     {
-        try
-        {
-            getData();
-        }
-        catch (IOException ioe)
-        {
-            throw Activator.error(CoreText.GitProjectData_missing, ioe);
-        }
+        getData();
     }
 
     public void deconfigure() throws CoreException
@@ -44,19 +35,12 @@ public class GitProvider extends RepositoryProvider
     {
         if (hook == null)
         {
-            try
-            {
-                hook = new GitMoveDeleteHook(getData());
-            }
-            catch (IOException err)
-            {
-                Activator.logError(CoreText.GitProjectData_missing, err);
-            }
+            hook = new GitMoveDeleteHook(getData());
         }
         return hook;
     }
 
-    private synchronized GitProjectData getData() throws IOException
+    private synchronized GitProjectData getData()
     {
         if (data == null)
         {
