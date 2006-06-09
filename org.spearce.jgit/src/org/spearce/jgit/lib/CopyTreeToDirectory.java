@@ -5,20 +5,26 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class CopyTreeToDirectory extends TreeVisitor {
+public class CopyTreeToDirectory extends TreeVisitor
+{
     private final byte[] copyBuffer = new byte[8192];
 
     private File dest;
 
-    public CopyTreeToDirectory(final File x) {
+    public CopyTreeToDirectory(final File x)
+    {
         dest = x;
     }
 
-    protected void visitTree(final Tree t) throws IOException {
-        if (t.isRoot()) {
+    protected void visitTree(final Tree t) throws IOException
+    {
+        if (t.isRoot())
+        {
             dest.mkdirs();
             super.visitTree(t);
-        } else {
+        }
+        else
+        {
             final File d = new File(dest, t.getName());
             final File o = dest;
             d.mkdir();
@@ -28,25 +34,34 @@ public class CopyTreeToDirectory extends TreeVisitor {
         }
     }
 
-    protected void visitFile(final FileTreeEntry f) throws IOException {
+    protected void visitFile(final FileTreeEntry f) throws IOException
+    {
         final File d = new File(dest, f.getName());
         final ObjectReader or = f.openBlob();
         final InputStream is;
-        if (or == null) {
+        if (or == null)
+        {
             throw new MissingObjectException(Constants.TYPE_BLOB, f.getId());
         }
         is = or.getInputStream();
-        try {
+        try
+        {
             final FileOutputStream fos = new FileOutputStream(d);
-            try {
+            try
+            {
                 int r;
-                while ((r = is.read(copyBuffer)) > 0) {
+                while ((r = is.read(copyBuffer)) > 0)
+                {
                     fos.write(copyBuffer, 0, r);
                 }
-            } finally {
+            }
+            finally
+            {
                 fos.close();
             }
-        } finally {
+        }
+        finally
+        {
             or.close();
         }
         super.visitFile(f);

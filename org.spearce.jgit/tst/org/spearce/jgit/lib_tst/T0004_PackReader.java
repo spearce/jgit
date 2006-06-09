@@ -11,24 +11,31 @@ import org.spearce.jgit.lib.ObjectReader;
 import org.spearce.jgit.lib.PackReader;
 import org.spearce.jgit.lib.PackedObjectReader;
 
-public class T0004_PackReader extends RepositoryTestCase {
-    private static final File TEST_PACK = new File(new File("tst"),
-            "pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.pack");
+public class T0004_PackReader extends RepositoryTestCase
+{
+    private static final File TEST_PACK = new File(
+        new File("tst"),
+        "pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.pack");
 
-    public void test001_scanPack() throws IOException {
+    public void test001_scanPack() throws IOException
+    {
         final PackReader pr;
         final Iterator itr;
 
         pr = new PackReader(r, new FileInputStream(TEST_PACK));
         itr = pr.iterator();
-        while (itr.hasNext()) {
+        while (itr.hasNext())
+        {
             final PackedObjectReader r = (PackedObjectReader) itr.next();
-            if (r.getDeltaBaseId() != null) {
+            if (r.getDeltaBaseId() != null)
+            {
                 // A deltified object can't get to its base in an unseekable
                 // stream so we can't get its Id or Type.
                 //
                 System.out.println("DELTA base: " + r.getDeltaBaseId());
-            } else {
+            }
+            else
+            {
                 // Asking for the Id of a packed object will read the object
                 // once, properly absorbing its data from the input stream.
                 //
@@ -38,23 +45,28 @@ public class T0004_PackReader extends RepositoryTestCase {
         pr.close();
     }
 
-    public void test002_cannotSeek() throws IOException {
+    public void test002_cannotSeek() throws IOException
+    {
         final PackReader pr;
         final ObjectId id;
         boolean pass = false;
 
         id = new ObjectId("902d5476fa249b7abc9d84c611577a81381f0327");
         pr = new PackReader(r, new FileInputStream(TEST_PACK));
-        try {
+        try
+        {
             pr.get(id);
-        } catch (IOException ioe) {
+        }
+        catch (IOException ioe)
+        {
             pass = true;
         }
         assertTrue("get on unseekable stream throws exception.", pass);
         pr.close();
     }
 
-    public void test003_lookupCompressedObject() throws IOException {
+    public void test003_lookupCompressedObject() throws IOException
+    {
         final PackReader pr;
         final ObjectId id;
         final PackedObjectReader or;
@@ -72,7 +84,8 @@ public class T0004_PackReader extends RepositoryTestCase {
         pr.close();
     }
 
-    public void test004_lookupDeltifiedObject() throws IOException {
+    public void test004_lookupDeltifiedObject() throws IOException
+    {
         final ObjectId id;
         final ObjectId base;
         final ObjectReader or;

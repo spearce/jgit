@@ -6,7 +6,8 @@ import java.io.InputStream;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-public class PackedObjectReader extends ObjectReader {
+public class PackedObjectReader extends ObjectReader
+{
     private final PackReader pack;
 
     private final long dataOffset;
@@ -17,32 +18,45 @@ public class PackedObjectReader extends ObjectReader {
 
     private long objectSize;
 
-    PackedObjectReader(final PackReader pr, final String type, final long size,
-            final long offset, final ObjectId base) {
+    PackedObjectReader(
+        final PackReader pr,
+        final String type,
+        final long size,
+        final long offset,
+        final ObjectId base)
+    {
         pack = pr;
         dataOffset = offset;
         deltaBase = base;
-        if (base != null) {
+        if (base != null)
+        {
             objectSize = -1;
-        } else {
+        }
+        else
+        {
             objectSize = size;
             objectType = type;
         }
     }
 
-    public void setId(final ObjectId id) {
+    public void setId(final ObjectId id)
+    {
         super.setId(id);
     }
 
-    public String getType() throws IOException {
-        if (objectType == null && deltaBase != null) {
+    public String getType() throws IOException
+    {
+        if (objectType == null && deltaBase != null)
+        {
             objectType = baseReader().getType();
         }
         return objectType;
     }
 
-    public long getSize() throws IOException {
-        if (objectSize == -1 && deltaBase != null) {
+    public long getSize() throws IOException
+    {
+        if (objectSize == -1 && deltaBase != null)
+        {
             final PatchDeltaStream p;
             p = new PatchDeltaStream(packStream(), null);
             objectSize = p.getResultLength();
@@ -51,22 +65,28 @@ public class PackedObjectReader extends ObjectReader {
         return objectSize;
     }
 
-    public ObjectId getDeltaBaseId() {
+    public ObjectId getDeltaBaseId()
+    {
         return deltaBase;
     }
 
-    public long getDataOffset() {
+    public long getDataOffset()
+    {
         return dataOffset;
     }
 
-    public InputStream getInputStream() throws IOException {
-        if (deltaBase != null) {
+    public InputStream getInputStream() throws IOException
+    {
+        if (deltaBase != null)
+        {
             final ObjectReader b = baseReader();
             final PatchDeltaStream p = new PatchDeltaStream(packStream(), b);
-            if (objectSize == -1) {
+            if (objectSize == -1)
+            {
                 objectSize = p.getResultLength();
             }
-            if (objectType == null) {
+            if (objectType == null)
+            {
                 objectType = b.getType();
             }
             return p;
@@ -74,65 +94,84 @@ public class PackedObjectReader extends ObjectReader {
         return packStream();
     }
 
-    public void close() throws IOException {
+    public void close() throws IOException
+    {
     }
 
-    private ObjectReader baseReader() throws IOException {
+    private ObjectReader baseReader() throws IOException
+    {
         final ObjectReader or = pack.resolveBase(getDeltaBaseId());
-        if (or == null) {
-            throw new CorruptObjectException(deltaBase,
-                    "is a delta base for another object but is missing.");
+        if (or == null)
+        {
+            throw new CorruptObjectException(
+                deltaBase,
+                "is a delta base for another object but is missing.");
         }
         return or;
     }
 
-    private BufferedInputStream packStream() {
+    private BufferedInputStream packStream()
+    {
         return new BufferedInputStream(new PackStream());
     }
 
-    private class PackStream extends InputStream {
+    private class PackStream extends InputStream
+    {
         private Inflater inf = new Inflater();
 
         private byte[] in = new byte[2048];
 
         private long offset = getDataOffset();
 
-        public int read() throws IOException {
+        public int read() throws IOException
+        {
             final byte[] singleByteBuffer = new byte[1];
-            if (read(singleByteBuffer, 0, 1) == 1) {
+            if (read(singleByteBuffer, 0, 1) == 1)
+            {
                 return singleByteBuffer[0];
-            } else {
+            }
+            else
+            {
                 return -1;
             }
         }
 
         public int read(final byte[] b, final int off, final int len)
-                throws IOException {
-            if (inf.finished()) {
+            throws IOException
+        {
+            if (inf.finished())
+            {
                 return -1;
             }
 
-            if (inf.needsInput()) {
+            if (inf.needsInput())
+            {
                 final int n = pack.read(offset, in, 0, in.length);
                 inf.setInput(in, 0, n);
                 offset += n;
             }
 
-            try {
+            try
+            {
                 final int n = inf.inflate(b, off, len);
-                if (inf.finished()) {
+                if (inf.finished())
+                {
                     pack.unread(inf.getRemaining());
                 }
                 return n;
-            } catch (DataFormatException dfe) {
+            }
+            catch (DataFormatException dfe)
+            {
                 final IOException e = new IOException("Corrupt ZIP stream.");
                 e.initCause(dfe);
                 throw e;
             }
         }
 
-        public void close() {
-            if (inf != null) {
+        public void close()
+        {
+            if (inf != null)
+            {
                 inf.end();
                 inf = null;
                 in = null;

@@ -10,17 +10,20 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Group;
 import org.spearce.egit.ui.UIText;
 
-class ExistingOrNewPage extends WizardPage {
+class ExistingOrNewPage extends WizardPage
+{
     final SharingWizard myWizard;
 
-    ExistingOrNewPage(final SharingWizard w) {
+    ExistingOrNewPage(final SharingWizard w)
+    {
         super(ExistingOrNewPage.class.getName());
         setTitle(UIText.ExistingOrNewPage_title);
         setDescription(UIText.ExistingOrNewPage_description);
         myWizard = w;
     }
 
-    public void createControl(final Composite parent) {
+    public void createControl(final Composite parent)
+    {
         final Group g;
         final Button useExisting;
         final Button createNew;
@@ -31,12 +34,15 @@ class ExistingOrNewPage extends WizardPage {
 
         useExisting = new Button(g, SWT.RADIO);
         useExisting.setText(UIText.ExistingOrNewPage_useExisting);
-        useExisting.addSelectionListener(new SelectionListener() {
-            public void widgetDefaultSelected(final SelectionEvent e) {
+        useExisting.addSelectionListener(new SelectionListener()
+        {
+            public void widgetDefaultSelected(final SelectionEvent e)
+            {
                 widgetSelected(e);
             }
 
-            public void widgetSelected(final SelectionEvent e) {
+            public void widgetSelected(final SelectionEvent e)
+            {
                 myWizard.setUseExisting();
             }
         });
@@ -45,12 +51,15 @@ class ExistingOrNewPage extends WizardPage {
         createNew = new Button(g, SWT.RADIO);
         createNew.setEnabled(myWizard.canCreateNew());
         createNew.setText(UIText.ExistingOrNewPage_createNew);
-        createNew.addSelectionListener(new SelectionListener() {
-            public void widgetDefaultSelected(final SelectionEvent e) {
+        createNew.addSelectionListener(new SelectionListener()
+        {
+            public void widgetDefaultSelected(final SelectionEvent e)
+            {
                 widgetSelected(e);
             }
 
-            public void widgetSelected(final SelectionEvent e) {
+            public void widgetSelected(final SelectionEvent e)
+            {
                 myWizard.setCreateNew();
             }
         });

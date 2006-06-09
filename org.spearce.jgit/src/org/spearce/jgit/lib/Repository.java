@@ -3,10 +3,17 @@ package org.spearce.jgit.lib;
 import java.io.File;
 import java.io.IOException;
 
-public interface Repository {
+public interface Repository
+{
     public File getDirectory();
 
+    public String getSubsetPath();
+
     public File getObjectsDirectory();
+
+    public RepositoryConfig getConfig();
+
+    public Repository subset(final String path);
 
     public File toFile(final ObjectId id);
 
@@ -22,5 +29,5 @@ public interface Repository {
 
     public Tree mapTree(final ObjectId id) throws IOException;
 
-    public ObjectId resolveRevision(final String revStr) throws IOException;
+    public ObjectId resolve(final String revStr) throws IOException;
 }

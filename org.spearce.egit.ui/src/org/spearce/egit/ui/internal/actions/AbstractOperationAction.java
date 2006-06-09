@@ -16,64 +16,98 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IObjectActionDelegate;
 import org.eclipse.ui.IWorkbenchPart;
-import org.spearce.egit.ui.GitUIPlugin;
+import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
 
-public abstract class AbstractOperationAction implements IObjectActionDelegate {
+public abstract class AbstractOperationAction implements IObjectActionDelegate
+{
     private IWorkbenchPart wp;
 
     private IWorkspaceRunnable op;
 
-    public void selectionChanged(final IAction act, final ISelection sel) {
+    public void selectionChanged(final IAction act, final ISelection sel)
+    {
         final List selection;
-        if (sel instanceof IStructuredSelection && !sel.isEmpty()) {
+        if (sel instanceof IStructuredSelection && !sel.isEmpty())
+        {
             selection = ((IStructuredSelection) sel).toList();
-        } else {
+        }
+        else
+        {
             selection = Collections.EMPTY_LIST;
         }
         op = createOperation(act, selection);
         act.setEnabled(op != null && wp != null);
     }
 
-    public void setActivePart(final IAction act, final IWorkbenchPart part) {
+    public void setActivePart(final IAction act, final IWorkbenchPart part)
+    {
         wp = part;
     }
 
-    protected abstract IWorkspaceRunnable createOperation(final IAction act,
-            final List selection);
+    protected abstract IWorkspaceRunnable createOperation(
+        final IAction act,
+        final List selection);
 
-    public void run(final IAction act) {
-        if (op != null) {
-            try {
-                wp.getSite().getWorkbenchWindow().run(true, false,
-                        new IRunnableWithProgress() {
-                            public void run(final IProgressMonitor monitor)
-                                    throws InvocationTargetException {
-                                try {
-                                    op.run(monitor);
-                                } catch (CoreException ce) {
-                                    throw new InvocationTargetException(ce);
-                                }
+    public void run(final IAction act)
+    {
+        if (op != null)
+        {
+            try
+            {
+                wp.getSite().getWorkbenchWindow().run(
+                    true,
+                    false,
+                    new IRunnableWithProgress()
+                    {
+                        public void run(final IProgressMonitor monitor)
+                            throws InvocationTargetException
+                        {
+                            try
+                            {
+                                op.run(monitor);
                             }
-                        });
-            } catch (Throwable e) {
-                if (e instanceof InvocationTargetException) {
+                            catch (CoreException ce)
+                            {
+                                throw new InvocationTargetException(ce);
+                            }
+                        }
+                    });
+            }
+            catch (Throwable e)
+            {
+                final String msg = UIText.bind(
+                    UIText.GenericOperationFailed,
+                    act.getText());
+                final IStatus status;
+
+                if (e instanceof InvocationTargetException)
+                {
                     e = e.getCause();
                 }
-                final IStatus status;
-                if (e instanceof CoreException) {
+
+                if (e instanceof CoreException)
+                {
                     status = ((CoreException) e).getStatus();
                     e = status.getException();
-                } else {
-                    status = new Status(IStatus.ERROR, GitUIPlugin
-                            .getPluginId(), 1, UIText
-                            .format_GenericOperationFailed(act.getText()), e);
                 }
-                GitUIPlugin.log(UIText.format_GenericOperationFailed(act
-                        .getText()), e);
-                ErrorDialog.openError(wp.getSite().getShell(), act.getText(),
-                        UIText.format_GenericOperationFailed(act.getText()),
-                        status, status.getSeverity());
+                else
+                {
+                    status = new Status(
+                        IStatus.ERROR,
+                        Activator.getPluginId(),
+                        1,
+                        msg,
+                        e);
+                }
+
+                Activator.logError(msg, e);
+                ErrorDialog.openError(
+                    wp.getSite().getShell(),
+                    act.getText(),
+                    msg,
+                    status,
+                    status.getSeverity());
             }
         }
     }

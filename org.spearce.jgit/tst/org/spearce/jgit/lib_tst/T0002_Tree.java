@@ -7,11 +7,13 @@ import org.spearce.jgit.lib.FileTreeEntry;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Tree;
 
-public class T0002_Tree extends RepositoryTestCase {
+public class T0002_Tree extends RepositoryTestCase
+{
     private static final ObjectId SOME_FAKE_ID = new ObjectId(
-            "0123456789abcdef0123456789abcdef012345678");
+        "0123456789abcdef0123456789abcdef012345678");
 
-    public void test001_createEmpty() throws IOException {
+    public void test001_createEmpty() throws IOException
+    {
         final Tree t = new Tree(r);
         assertTrue("isLoaded", t.isLoaded());
         assertTrue("isModified", t.isModified());
@@ -28,7 +30,8 @@ public class T0002_Tree extends RepositoryTestCase {
         assertTrue("no foo child", t.findMember("foo") == null);
     }
 
-    public void test002_addFile() throws IOException {
+    public void test002_addFile() throws IOException
+    {
         final Tree t = new Tree(r);
         t.setId(SOME_FAKE_ID);
         assertTrue("has id", t.getId() != null);
@@ -38,8 +41,9 @@ public class T0002_Tree extends RepositoryTestCase {
         final FileTreeEntry f = t.addFile(n, null);
         assertNotNull("have file", f);
         assertEquals("name matches", n, f.getName());
-        assertEquals("name matches", f.getName(), new String(f.getNameUTF8(),
-                "UTF-8"));
+        assertEquals("name matches", f.getName(), new String(
+            f.getNameUTF8(),
+            "UTF-8"));
         assertEquals("full name matches", n, f.getFullName());
         assertTrue("no id", f.getId() == null);
         assertTrue("is modified", t.isModified());
@@ -52,7 +56,8 @@ public class T0002_Tree extends RepositoryTestCase {
         assertFalse("iterator is empty", i.hasNext());
     }
 
-    public void test003_addFile() throws IOException {
+    public void test003_addFile() throws IOException
+    {
         final Tree t = new Tree(r);
 
         final FileTreeEntry f = t.addFile("bob", SOME_FAKE_ID);
@@ -60,7 +65,8 @@ public class T0002_Tree extends RepositoryTestCase {
         assertTrue("id was saved", f.getId() == SOME_FAKE_ID);
     }
 
-    public void test004_addTree() throws IOException {
+    public void test004_addTree() throws IOException
+    {
         final Tree t = new Tree(r);
         t.setId(SOME_FAKE_ID);
         assertTrue("has id", t.getId() != null);
@@ -70,8 +76,9 @@ public class T0002_Tree extends RepositoryTestCase {
         final Tree f = t.addTree(n, null);
         assertNotNull("have tree", f);
         assertEquals("name matches", n, f.getName());
-        assertEquals("name matches", f.getName(), new String(f.getNameUTF8(),
-                "UTF-8"));
+        assertEquals("name matches", f.getName(), new String(
+            f.getNameUTF8(),
+            "UTF-8"));
         assertEquals("full name matches", n, f.getFullName());
         assertTrue("no id", f.getId() == null);
         assertTrue("parent matches", f.getParent() == t);
@@ -90,7 +97,8 @@ public class T0002_Tree extends RepositoryTestCase {
         assertFalse("iterator is empty", i.hasNext());
     }
 
-    public void test005_addTree() throws IOException {
+    public void test005_addTree() throws IOException
+    {
         final Tree t = new Tree(r);
 
         final Tree f = t.addTree("bob", SOME_FAKE_ID);
@@ -99,7 +107,8 @@ public class T0002_Tree extends RepositoryTestCase {
         assertFalse("isLoaded", f.isLoaded());
     }
 
-    public void test006_addDeepTree() throws IOException {
+    public void test006_addDeepTree() throws IOException
+    {
         final Tree t = new Tree(r);
 
         final Tree e = t.addTree("e", null);

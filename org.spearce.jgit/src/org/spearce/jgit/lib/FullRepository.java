@@ -13,9 +13,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class FullRepository implements Repository {
-    private static final String[] refSearchPaths = { "", "refs/", "refs/tags/",
-            "refs/heads/", };
+public class FullRepository implements Repository
+{
+    private static final String[] refSearchPaths = {
+        "",
+        "refs/",
+        "refs/tags/",
+        "refs/heads/",};
 
     private final File gitDir;
 
@@ -25,22 +29,28 @@ public class FullRepository implements Repository {
 
     private final List packs;
 
-    public FullRepository(final File d) {
+    private final RepositoryConfig config;
+
+    public FullRepository(final File d) throws IOException
+    {
         gitDir = d.getAbsoluteFile();
         objectsDir = new File(gitDir, "objects");
         refsDir = new File(gitDir, "refs");
         packs = new ArrayList();
-        if (objectsDir.exists()) {
+        config = new RepositoryConfig(this);
+        if (objectsDir.exists())
+        {
+            getConfig().load();
             scanForPacks();
         }
     }
 
-    public void create() throws IOException {
-        final FileWriter cfg;
-
-        if (gitDir.exists()) {
+    public void create() throws IOException
+    {
+        if (gitDir.exists())
+        {
             throw new IllegalStateException("Repository already exists: "
-                    + gitDir);
+                + gitDir);
         }
 
         gitDir.mkdirs();
@@ -57,45 +67,67 @@ public class FullRepository implements Repository {
         new File(gitDir, "remotes").mkdir();
         writeSymref("HEAD", "refs/heads/master");
 
-        // TODO: Implement a real config file reader/writer
-        cfg = new FileWriter(new File(gitDir, "config"));
-        try {
-            cfg.write("[core]\n");
-            cfg.write("\trepositoryformatversion = 0\n");
-            cfg.write("\tfilemode = true\n");
-        } finally {
-            cfg.close();
-        }
+        getConfig().create();
+        getConfig().save();
     }
 
-    public File getDirectory() {
+    public File getDirectory()
+    {
         return gitDir;
     }
 
-    public File getObjectsDirectory() {
+    public File getObjectsDirectory()
+    {
         return objectsDir;
     }
 
-    public File toFile(final ObjectId objectId) {
+    public RepositoryConfig getConfig()
+    {
+        return config;
+    }
+
+    public String getSubsetPath()
+    {
+        return null;
+    }
+
+    public Repository subset(final String path)
+    {
+        if (path == null || "".equals(path))
+        {
+            return this;
+        }
+        return new SubsetRepository(this, path);
+    }
+
+    public File toFile(final ObjectId objectId)
+    {
         final String n = objectId.toString();
         return new File(new File(objectsDir, n.substring(0, 2)), n.substring(2));
     }
 
-    public boolean hasObject(final ObjectId objectId) {
-        if (toFile(objectId).isFile()) {
+    public boolean hasObject(final ObjectId objectId)
+    {
+        if (toFile(objectId).isFile())
+        {
             return true;
         }
 
         final Iterator i = packs.iterator();
-        while (i.hasNext()) {
+        while (i.hasNext())
+        {
             final PackReader p = (PackReader) i.next();
-            try {
+            try
+            {
                 final ObjectReader o = p.get(objectId);
-                if (o != null) {
+                if (o != null)
+                {
                     o.close();
                     return true;
                 }
-            } catch (IOException ioe) {
+            }
+            catch (IOException ioe)
+            {
                 // This shouldn't happen unless the pack was corrupted after we
                 // opened it. We'll ignore the error as though the object does
                 // not exist in this pack.
@@ -105,80 +137,118 @@ public class FullRepository implements Repository {
         return false;
     }
 
-    public ObjectReader openObject(final ObjectId id) throws IOException {
+    public ObjectReader openObject(final ObjectId id) throws IOException
+    {
         final InputStream fis = openObjectStream(id);
-        if (fis != null) {
-            try {
+        if (fis != null)
+        {
+            try
+            {
                 return new UnpackedObjectReader(id, fis);
-            } catch (IOException ioe) {
+            }
+            catch (IOException ioe)
+            {
                 fis.close();
                 throw ioe;
             }
-        } else {
+        }
+        else
+        {
             return objectInPack(id);
         }
     }
 
-    public ObjectReader openBlob(final ObjectId id) throws IOException {
+    public ObjectReader openBlob(final ObjectId id) throws IOException
+    {
         final ObjectReader or = openObject(id);
-        if (or == null) {
+        if (or == null)
+        {
             return null;
-        } else if (Constants.TYPE_BLOB.equals(or.getType())) {
+        }
+        else if (Constants.TYPE_BLOB.equals(or.getType()))
+        {
             return or;
-        } else {
+        }
+        else
+        {
             or.close();
             throw new CorruptObjectException(id, "not a blob");
         }
     }
 
-    public ObjectReader openTree(final ObjectId id) throws IOException {
+    public ObjectReader openTree(final ObjectId id) throws IOException
+    {
         final ObjectReader or = openObject(id);
-        if (or == null) {
+        if (or == null)
+        {
             return null;
-        } else if (Constants.TYPE_TREE.equals(or.getType())) {
+        }
+        else if (Constants.TYPE_TREE.equals(or.getType()))
+        {
             return or;
-        } else {
+        }
+        else
+        {
             or.close();
             throw new CorruptObjectException(id, "not a tree");
         }
     }
 
-    public Commit mapCommit(final ObjectId id) throws IOException {
+    public Commit mapCommit(final ObjectId id) throws IOException
+    {
         final ObjectReader or = openObject(id);
-        if (or == null) {
+        if (or == null)
+        {
             return null;
-        } else if (Constants.TYPE_COMMIT.equals(or.getType())) {
+        }
+        else if (Constants.TYPE_COMMIT.equals(or.getType()))
+        {
             return new Commit(this, id, or.getBufferedReader());
-        } else {
+        }
+        else
+        {
             or.close();
             throw new CorruptObjectException(id, "not a commit");
         }
     }
 
-    public Tree mapTree(final ObjectId id) throws IOException {
+    public Tree mapTree(final ObjectId id) throws IOException
+    {
         final ObjectReader or = openObject(id);
-        if (or == null) {
+        if (or == null)
+        {
             return null;
-        } else if (Constants.TYPE_TREE.equals(or.getType())) {
+        }
+        else if (Constants.TYPE_TREE.equals(or.getType()))
+        {
             return new Tree(this, id, or.getInputStream());
-        } else if (Constants.TYPE_COMMIT.equals(or.getType())) {
+        }
+        else if (Constants.TYPE_COMMIT.equals(or.getType()))
+        {
             return new Commit(this, id, or.getBufferedReader()).getTree();
-        } else {
+        }
+        else
+        {
             or.close();
             throw new CorruptObjectException(id, "not a tree-ish");
         }
     }
 
-    public ObjectId resolveRevision(final String r) throws IOException {
+    public ObjectId resolve(final String revstr) throws IOException
+    {
         ObjectId id = null;
 
-        if (ObjectId.isId(r)) {
-            id = new ObjectId(r);
+        if (ObjectId.isId(revstr))
+        {
+            id = new ObjectId(revstr);
         }
-        if (id == null) {
-            for (int k = 0; k < refSearchPaths.length; k++) {
-                id = readRef(refSearchPaths[k] + r);
-                if (id != null) {
+        if (id == null)
+        {
+            for (int k = 0; k < refSearchPaths.length; k++)
+            {
+                id = readRef(refSearchPaths[k] + revstr);
+                if (id != null)
+                {
                     break;
                 }
             }
@@ -186,37 +256,50 @@ public class FullRepository implements Repository {
         return id;
     }
 
-    public void close() throws IOException {
+    public void close() throws IOException
+    {
         closePacks();
     }
 
-    public void closePacks() throws IOException {
+    public void closePacks() throws IOException
+    {
         final Iterator i = packs.iterator();
-        while (i.hasNext()) {
+        while (i.hasNext())
+        {
             final PackReader pr = (PackReader) i.next();
             pr.close();
         }
         packs.clear();
     }
 
-    public void scanForPacks() {
+    public void scanForPacks()
+    {
         final File packDir = new File(objectsDir, "pack");
-        final File[] list = packDir.listFiles(new FileFilter() {
-            public boolean accept(final File f) {
+        final File[] list = packDir.listFiles(new FileFilter()
+        {
+            public boolean accept(final File f)
+            {
                 final String n = f.getName();
-                if (!n.endsWith(".pack")) {
+                if (!n.endsWith(".pack"))
+                {
                     return false;
                 }
                 final String nBase = n.substring(0, n.lastIndexOf('.'));
                 final File idx = new File(packDir, nBase + ".idx");
-                return f.isFile() && f.canRead() && idx.isFile()
-                        && idx.canRead();
+                return f.isFile()
+                    && f.canRead()
+                    && idx.isFile()
+                    && idx.canRead();
             }
         });
-        for (int k = 0; k < list.length; k++) {
-            try {
+        for (int k = 0; k < list.length; k++)
+        {
+            try
+            {
                 packs.add(new PackReader(this, list[k]));
-            } catch (IOException ioe) {
+            }
+            catch (IOException ioe)
+            {
                 // Whoops. That's not a pack!
                 //
             }
@@ -224,24 +307,34 @@ public class FullRepository implements Repository {
     }
 
     private InputStream openObjectStream(final ObjectId objectId)
-            throws IOException {
-        try {
+        throws IOException
+    {
+        try
+        {
             return new FileInputStream(toFile(objectId));
-        } catch (FileNotFoundException fnfe) {
+        }
+        catch (FileNotFoundException fnfe)
+        {
             return null;
         }
     }
 
-    private ObjectReader objectInPack(final ObjectId objectId) {
+    private ObjectReader objectInPack(final ObjectId objectId)
+    {
         final Iterator i = packs.iterator();
-        while (i.hasNext()) {
+        while (i.hasNext())
+        {
             final PackReader p = (PackReader) i.next();
-            try {
+            try
+            {
                 final ObjectReader o = p.get(objectId);
-                if (o != null) {
+                if (o != null)
+                {
                     return o;
                 }
-            } catch (IOException ioe) {
+            }
+            catch (IOException ioe)
+            {
                 // This shouldn't happen unless the pack was corrupted after we
                 // opened it. We'll ignore the error as though the object does
                 // not exist in this pack.
@@ -252,57 +345,75 @@ public class FullRepository implements Repository {
     }
 
     private void writeSymref(final String name, final String target)
-            throws IOException {
+        throws IOException
+    {
         final File s = new File(gitDir, name);
         final File t = File.createTempFile("srf", null, gitDir);
         FileWriter w = new FileWriter(t);
-        try {
+        try
+        {
             w.write("ref: ");
             w.write(target);
             w.write('\n');
             w.close();
             w = null;
-            if (!t.renameTo(s)) {
+            if (!t.renameTo(s))
+            {
                 s.getParentFile().mkdirs();
-                if (!t.renameTo(s)) {
+                if (!t.renameTo(s))
+                {
                     t.delete();
                     throw new WritingNotSupportedException("Unable to"
-                            + " write symref " + name + " to point to "
-                            + target);
+                        + " write symref "
+                        + name
+                        + " to point to "
+                        + target);
                 }
             }
-        } finally {
-            if (w != null) {
+        }
+        finally
+        {
+            if (w != null)
+            {
                 w.close();
                 t.delete();
             }
         }
     }
 
-    private ObjectId readRef(final String name) throws IOException {
+    private ObjectId readRef(final String name) throws IOException
+    {
         final File f = new File(gitDir, name);
-        if (!f.isFile()) {
+        if (!f.isFile())
+        {
             return null;
         }
         final BufferedReader fr = new BufferedReader(new FileReader(f));
-        try {
+        try
+        {
             final String line = fr.readLine();
-            if (line == null || line.length() == 0) {
+            if (line == null || line.length() == 0)
+            {
                 return null;
             }
-            if (line.startsWith("ref: ")) {
+            if (line.startsWith("ref: "))
+            {
                 return readRef(line.substring("ref: ".length()));
             }
-            if (ObjectId.isId(line)) {
+            if (ObjectId.isId(line))
+            {
                 return new ObjectId(line);
             }
             throw new IOException("Not a ref: " + name + ": " + line);
-        } finally {
+        }
+        finally
+        {
             fr.close();
         }
     }
 
-    public String toString() {
+    public String toString()
+    {
         return "FullRepository[" + getDirectory() + "]";
     }
 }

@@ -11,7 +11,8 @@ import java.io.InputStream;
  * (&lt;nico@cam.org&gt;).
  * </p>
  */
-public class PatchDeltaStream extends InputStream {
+public class PatchDeltaStream extends InputStream
+{
     private final InputStream deltaStream;
 
     private byte[] base;
@@ -24,8 +25,10 @@ public class PatchDeltaStream extends InputStream {
 
     private int copySize;
 
-    public PatchDeltaStream(final InputStream delta,
-            final ObjectReader baseReader) throws IOException {
+    public PatchDeltaStream(
+        final InputStream delta,
+        final ObjectReader baseReader) throws IOException
+    {
         long baseLen = 0;
         int shift;
         int c;
@@ -36,84 +39,107 @@ public class PatchDeltaStream extends InputStream {
         // Length of the base object (a variable length int).
         //
         shift = 0;
-        do {
+        do
+        {
             c = readDelta();
             baseLen |= (c & 0x7f) << shift;
             shift += 7;
-        } while ((c & 0x80) != 0);
+        }
+        while ((c & 0x80) != 0);
 
         // Length of the resulting object (a variable length int).
         //
         shift = 0;
-        do {
+        do
+        {
             c = readDelta();
             resLen |= (c & 0x7f) << shift;
             shift += 7;
-        } while ((c & 0x80) != 0);
+        }
+        while ((c & 0x80) != 0);
 
         // We need to address parts of the base at random so pull the
         // entire base into a byte array to permit random accessing.
         //
-        if (baseReader != null) {
+        if (baseReader != null)
+        {
             final InputStream i = baseReader.getInputStream();
-            try {
+            try
+            {
                 int expBaseLen = (int) baseReader.getSize();
-                if (baseLen != expBaseLen) {
+                if (baseLen != expBaseLen)
+                {
                     throw new CorruptObjectException("Base length from delta ("
-                            + baseLen
-                            + ") does not equal actual length from base ("
-                            + expBaseLen + ").");
+                        + baseLen
+                        + ") does not equal actual length from base ("
+                        + expBaseLen
+                        + ").");
                 }
 
                 shift = 0;
                 base = new byte[expBaseLen];
-                while (expBaseLen > 0) {
+                while (expBaseLen > 0)
+                {
                     final int n = i.read(base, shift, expBaseLen);
-                    if (n < 0) {
+                    if (n < 0)
+                    {
                         throw new CorruptObjectException("Can't completely"
-                                + " load delta base for patching.");
+                            + " load delta base for patching.");
                     }
                     shift += n;
                     expBaseLen += n;
                 }
-            } finally {
+            }
+            finally
+            {
                 i.close();
                 baseReader.close();
             }
         }
     }
 
-    public long getResultLength() {
+    public long getResultLength()
+    {
         return resLen;
     }
 
-    public int read() throws IOException {
+    public int read() throws IOException
+    {
         final byte[] b = new byte[1];
-        if (read(b, 0, 1) == 1) {
+        if (read(b, 0, 1) == 1)
+        {
             return b[0];
-        } else {
+        }
+        else
+        {
             return -1;
         }
     }
 
-    public int read(final byte[] b, int off, int len) throws IOException {
-        if (base == null) {
+    public int read(final byte[] b, int off, int len) throws IOException
+    {
+        if (base == null)
+        {
             return -1;
         }
 
         int r = 0;
-        while (len > 0) {
-            if (cmd == -1) {
+        while (len > 0)
+        {
+            if (cmd == -1)
+            {
                 // We don't have a valid command ready so read the next
                 // one from the delta stream.
                 //
                 cmd = deltaStream.read();
-                if (cmd < 0) {
+                if (cmd < 0)
+                {
                     base = null;
                     return r;
                 }
 
-                if ((cmd & 0x80) != 0) {
+                if ((cmd & 0x80) != 0)
+                {
                     // Determine the segment of the base which should
                     // be copied into the output. The segment is given
                     // as an offset and a length.
@@ -121,37 +147,49 @@ public class PatchDeltaStream extends InputStream {
                     copyOffset = 0;
                     copySize = 0;
 
-                    if ((cmd & 0x01) != 0) {
+                    if ((cmd & 0x01) != 0)
+                    {
                         copyOffset = readDelta();
                     }
-                    if ((cmd & 0x02) != 0) {
+                    if ((cmd & 0x02) != 0)
+                    {
                         copyOffset |= readDelta() << 8;
                     }
-                    if ((cmd & 0x04) != 0) {
+                    if ((cmd & 0x04) != 0)
+                    {
                         copyOffset |= readDelta() << 16;
                     }
-                    if ((cmd & 0x08) != 0) {
+                    if ((cmd & 0x08) != 0)
+                    {
                         copyOffset |= readDelta() << 24;
                     }
 
-                    if ((cmd & 0x10) != 0) {
+                    if ((cmd & 0x10) != 0)
+                    {
                         copySize = readDelta();
                     }
-                    if ((cmd & 0x20) != 0) {
+                    if ((cmd & 0x20) != 0)
+                    {
                         copySize |= readDelta() << 8;
                     }
-                    if ((cmd & 0x40) != 0) {
+                    if ((cmd & 0x40) != 0)
+                    {
                         copySize |= readDelta() << 16;
                     }
-                    if (copySize == 0) {
+                    if (copySize == 0)
+                    {
                         copySize = 0x10000;
                     }
-                } else if (cmd != 0) {
+                }
+                else if (cmd != 0)
+                {
                     // Anything else the data is literal within the delta
                     // itself.
                     //
                     copySize = cmd;
-                } else {
+                }
+                else
+                {
                     // cmd == 0 has been reserved for future encoding but
                     // for now its not acceptable.
                     //
@@ -159,7 +197,8 @@ public class PatchDeltaStream extends InputStream {
                 }
             }
 
-            if ((cmd & 0x80) != 0) {
+            if ((cmd & 0x80) != 0)
+            {
                 // Copy the segment copyOffset through copyOffset+copySize
                 // from the base to the output.
                 //
@@ -169,12 +208,17 @@ public class PatchDeltaStream extends InputStream {
                 off += n;
                 len -= n;
                 copySize -= n;
-                if (copySize == 0) {
+                if (copySize == 0)
+                {
                     cmd = -1;
-                } else {
+                }
+                else
+                {
                     copyOffset += n;
                 }
-            } else if (cmd != 0) {
+            }
+            else if (cmd != 0)
+            {
                 // Literally copy from the delta to the output.
                 //
                 final int n = Math.min(len, copySize);
@@ -183,7 +227,8 @@ public class PatchDeltaStream extends InputStream {
                 off += n;
                 len -= n;
                 copySize -= n;
-                if (copySize == 0) {
+                if (copySize == 0)
+                {
                     cmd = -1;
                 }
             }
@@ -192,27 +237,33 @@ public class PatchDeltaStream extends InputStream {
         return r;
     }
 
-    private int readDelta() throws IOException {
+    private int readDelta() throws IOException
+    {
         final int r = deltaStream.read();
-        if (r < 0) {
+        if (r < 0)
+        {
             throw new CorruptObjectException("Delta is corrupt.");
         }
         return r;
     }
 
     private void xreadDelta(final byte[] buf, int o, int len)
-            throws IOException {
+        throws IOException
+    {
         int r;
-        while ((r = read(buf, o, len)) > 0) {
+        while ((r = read(buf, o, len)) > 0)
+        {
             o += r;
             len -= r;
         }
-        if (len > 0) {
+        if (len > 0)
+        {
             throw new IOException("Unexpected end of stream.");
         }
     }
 
-    public void close() throws IOException {
+    public void close() throws IOException
+    {
         deltaStream.close();
         base = null;
     }

@@ -14,74 +14,104 @@ import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.team.ui.IConfigurationWizard;
 import org.eclipse.ui.IWorkbench;
 import org.spearce.egit.core.op.ConnectProviderOperation;
-import org.spearce.egit.ui.GitUIPlugin;
+import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
 
-public class SharingWizard extends Wizard implements IConfigurationWizard {
+public class SharingWizard extends Wizard implements IConfigurationWizard
+{
     private IProject project;
 
     private boolean create;
 
     private File newGitDir;
 
-    public SharingWizard() {
+    public SharingWizard()
+    {
         setWindowTitle(UIText.SharingWizard_windowTitle);
         setNeedsProgressMonitor(true);
     }
 
-    public void init(final IWorkbench workbench, final IProject p) {
+    public void init(final IWorkbench workbench, final IProject p)
+    {
         project = p;
         newGitDir = new File(project.getLocation().toFile(), ".git");
     }
 
-    public void addPages() {
+    public void addPages()
+    {
         addPage(new ExistingOrNewPage(this));
     }
 
-    boolean canCreateNew() {
+    boolean canCreateNew()
+    {
         return !newGitDir.exists();
     }
 
-    void setCreateNew() {
-        if (canCreateNew()) {
+    void setCreateNew()
+    {
+        if (canCreateNew())
+        {
             create = true;
         }
     }
 
-    void setUseExisting() {
+    void setUseExisting()
+    {
         create = false;
     }
 
-    public boolean performFinish() {
+    public boolean performFinish()
+    {
         final ConnectProviderOperation op = new ConnectProviderOperation(
-                project, create, newGitDir);
-        try {
-            getContainer().run(true, false, new IRunnableWithProgress() {
+            project,
+            create ? newGitDir : null);
+        try
+        {
+            getContainer().run(true, false, new IRunnableWithProgress()
+            {
                 public void run(final IProgressMonitor monitor)
-                        throws InvocationTargetException {
-                    try {
+                    throws InvocationTargetException
+                {
+                    try
+                    {
                         op.run(monitor);
-                    } catch (CoreException ce) {
+                    }
+                    catch (CoreException ce)
+                    {
                         throw new InvocationTargetException(ce);
                     }
                 }
             });
             return true;
-        } catch (Throwable e) {
-            if (e instanceof InvocationTargetException) {
+        }
+        catch (Throwable e)
+        {
+            if (e instanceof InvocationTargetException)
+            {
                 e = e.getCause();
             }
             final IStatus status;
-            if (e instanceof CoreException) {
+            if (e instanceof CoreException)
+            {
                 status = ((CoreException) e).getStatus();
                 e = status.getException();
-            } else {
-                status = new Status(IStatus.ERROR, GitUIPlugin.getPluginId(),
-                        1, UIText.SharingWizard_failed, e);
             }
-            GitUIPlugin.log(UIText.SharingWizard_failed, e);
-            ErrorDialog.openError(getContainer().getShell(), getWindowTitle(),
-                    UIText.SharingWizard_failed, status, status.getSeverity());
+            else
+            {
+                status = new Status(
+                    IStatus.ERROR,
+                    Activator.getPluginId(),
+                    1,
+                    UIText.SharingWizard_failed,
+                    e);
+            }
+            Activator.logError(UIText.SharingWizard_failed, e);
+            ErrorDialog.openError(
+                getContainer().getShell(),
+                getWindowTitle(),
+                UIText.SharingWizard_failed,
+                status,
+                status.getSeverity());
             return false;
         }
     }
