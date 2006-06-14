@@ -176,6 +176,7 @@ public class GitProjectData
     public void setRepositoryMappings(final Collection newMappings)
     {
         mappings.clear();
+        mappings.addAll(newMappings);
         remapAll();
     }
 
@@ -379,7 +380,7 @@ public class GitProjectData
         if (!tmp.renameTo(dat))
         {
             tmp.delete();
-            Activator.error(CoreText.bind(
+            throw Activator.error(CoreText.bind(
                 CoreText.GitProjectData_saveFailed,
                 dat), null);
         }

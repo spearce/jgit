@@ -9,9 +9,9 @@ public abstract class TreeEntry
 
     public static final int LOADED_ONLY = 1 << 1;
 
-    private Tree parent;
-
     private final byte[] nameUTF8;
+
+    private Tree parent;
 
     private ObjectId id;
 
@@ -20,9 +20,9 @@ public abstract class TreeEntry
         final ObjectId myId,
         final byte[] myNameUTF8)
     {
+        nameUTF8 = myNameUTF8;
         parent = myParent;
         id = myId;
-        nameUTF8 = myNameUTF8;
     }
 
     public Tree getParent()
@@ -35,9 +35,9 @@ public abstract class TreeEntry
         parent = null;
     }
 
-    public Repository getDatabase()
+    public Repository getRepository()
     {
-        return getParent().getDatabase();
+        return getParent().getRepository();
     }
 
     public byte[] getNameUTF8()

@@ -28,7 +28,7 @@ public class T0002_Tree extends RepositoryTestCase
         assertEquals("full name is empty", "", t.getFullName());
         assertTrue("no id", t.getId() == null);
         assertTrue("tree is self", t.getTree() == t);
-        assertTrue("database is r", t.getDatabase() == db);
+        assertTrue("database is r", t.getRepository() == db);
         assertTrue("no foo child", t.findMember("foo") == null);
     }
 
@@ -75,7 +75,7 @@ public class T0002_Tree extends RepositoryTestCase
         assertEquals("full name matches", n, f.getFullName());
         assertTrue("no id", f.getId() == null);
         assertTrue("parent matches", f.getParent() == t);
-        assertTrue("repository matches", f.getDatabase() == db);
+        assertTrue("repository matches", f.getRepository() == db);
         assertTrue("isLoaded", f.isLoaded());
         assertFalse("has items", f.entries().length > 0);
         assertFalse("is root", f.isRoot());

@@ -6,14 +6,14 @@ import java.io.InputStream;
 
 public class Tree extends TreeEntry implements Treeish
 {
-    private static final TreeEntry[] EMPTY_CONTENTS = {};
+    public static final TreeEntry[] EMPTY_TREE = {};
 
-    private static final int nameCompare(final byte[] a, final byte[] b)
+    public static final int compareNames(final byte[] a, final byte[] b)
     {
-        return nameCompare(a, b, 0, b.length);
+        return compareNames(a, b, 0, b.length);
     }
 
-    private static final int nameCompare(
+    public static final int compareNames(
         final byte[] a,
         final byte[] nameUTF8,
         final int nameStart,
@@ -51,7 +51,7 @@ public class Tree extends TreeEntry implements Treeish
         do
         {
             final int mid = (low + high) / 2;
-            final int cmp = nameCompare(
+            final int cmp = compareNames(
                 entries[mid].getNameUTF8(),
                 nameUTF8,
                 nameStart,
@@ -81,7 +81,7 @@ public class Tree extends TreeEntry implements Treeish
     {
         super(null, null, null);
         db = repo;
-        contents = EMPTY_CONTENTS;
+        contents = EMPTY_TREE;
     }
 
     public Tree(final Repository repo, final ObjectId myId, final InputStream is)
@@ -95,8 +95,8 @@ public class Tree extends TreeEntry implements Treeish
     private Tree(final Tree parent, final byte[] nameUTF8)
     {
         super(parent, null, nameUTF8);
-        db = parent.getDatabase();
-        contents = EMPTY_CONTENTS;
+        db = parent.getRepository();
+        contents = EMPTY_TREE;
     }
 
     public Tree(final Repository r, final ObjectId id, final byte[] nameUTF8)
@@ -108,7 +108,7 @@ public class Tree extends TreeEntry implements Treeish
     public Tree(final Tree parent, final ObjectId id, final byte[] nameUTF8)
     {
         super(parent, id, nameUTF8);
-        db = parent.getDatabase();
+        db = parent.getRepository();
     }
 
     public FileMode getMode()
@@ -121,7 +121,7 @@ public class Tree extends TreeEntry implements Treeish
         return getParent() == null;
     }
 
-    public Repository getDatabase()
+    public Repository getRepository()
     {
         return db;
     }
@@ -219,18 +219,7 @@ public class Tree extends TreeEntry implements Treeish
     public TreeEntry[] entries() throws IOException, MissingObjectException
     {
         ensureLoaded();
-        final TreeEntry[] c = contents;
-        final int len = c.length;
-        if (len == 0)
-        {
-            return c;
-        }
-        final TreeEntry[] n = new TreeEntry[len];
-        for (int k = len - 1; k >= 0; k--)
-        {
-            n[k] = c[k];
-        }
-        return n;
+        return contents;
     }
 
     public void setEntries(final TreeEntry[] c)
@@ -425,7 +414,7 @@ public class Tree extends TreeEntry implements Treeish
             // it should never be wrong.
             // 
             if (nextIndex > 0
-                && nameCompare(temp[nextIndex - 1].getNameUTF8(), name) >= 0)
+                && compareNames(temp[nextIndex - 1].getNameUTF8(), name) >= 0)
             {
                 throw new CorruptObjectException(
                     getId(),

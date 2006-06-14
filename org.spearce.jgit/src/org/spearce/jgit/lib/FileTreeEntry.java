@@ -33,7 +33,7 @@ public class FileTreeEntry extends TreeEntry
 
     public ObjectReader openReader() throws IOException
     {
-        return getDatabase().openBlob(getId());
+        return getRepository().openBlob(getId());
     }
 
     public void accept(final TreeVisitor tv, final int flags)

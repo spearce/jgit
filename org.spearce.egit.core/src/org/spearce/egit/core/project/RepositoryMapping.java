@@ -6,6 +6,7 @@ import java.util.Properties;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
+import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 
@@ -22,6 +23,10 @@ public class RepositoryMapping
 
     private final String subset;
 
+    private final String cacheref;
+
+    private ObjectId savedCache;
+
     private Repository db;
 
     private Tree cache;
@@ -29,10 +34,13 @@ public class RepositoryMapping
     public RepositoryMapping(final Properties p, final String initialKey)
     {
         final int dot = initialKey.lastIndexOf('.');
+        String s;
+
         containerPath = initialKey.substring(0, dot);
         gitdirPath = p.getProperty(initialKey);
-        final String s = p.getProperty(containerPath + ".subset");
+        s = p.getProperty(containerPath + ".subset");
         subset = "".equals(s) ? null : s;
+        cacheref = p.getProperty(containerPath + ".cacheref");
     }
 
     public RepositoryMapping(
@@ -45,6 +53,8 @@ public class RepositoryMapping
         final IPath gLoc = Path.fromOSString(gitDir.getAbsolutePath())
             .removeTrailingSeparator();
         final IPath gLocParent = gLoc.removeLastSegments(1);
+        String p;
+        int cnt;
 
         containerPath = mappedContainer.getProjectRelativePath()
             .toPortableString();
@@ -56,9 +66,8 @@ public class RepositoryMapping
         }
         else if (gLocParent.isPrefixOf(cLoc))
         {
-            int cnt = cLoc.segmentCount()
-                - cLoc.matchingFirstSegments(gLocParent);
-            String p = "";
+            cnt = cLoc.segmentCount() - cLoc.matchingFirstSegments(gLocParent);
+            p = "";
             while (cnt-- > 0)
             {
                 p += "../";
@@ -72,6 +81,19 @@ public class RepositoryMapping
         }
 
         subset = "".equals(subsetRoot) ? null : subsetRoot;
+
+        p = "refs/eclipse-workspaces/"
+            + mappedContainer.getWorkspace().getRoot().getLocation()
+                .lastSegment()
+            + "/";
+        IPath r = mappedContainer.getFullPath();
+        for (int j = 0; j < r.segmentCount(); j++)
+        {
+            if (j > 0)
+                p += "-";
+            p += r.segment(j);
+        }
+        cacheref = p;
     }
 
     public IPath getContainerPath()
@@ -112,12 +134,21 @@ public class RepositoryMapping
 
     public void setCacheTree(final Tree t)
     {
+        if (t != null && t.getRepository() != getRepository())
+        {
+            throw new IllegalArgumentException("Repository must match.");
+        }
         cache = t;
+        if (t.getId() != null)
+        {
+            savedCache = t.getId();
+        }
     }
 
     public void store(final Properties p)
     {
         p.setProperty(containerPath + ".gitdir", gitdirPath);
+        p.setProperty(containerPath + ".cacheref", cacheref);
         if (subset != null && !"".equals(subset))
         {
             p.setProperty(containerPath + ".subset", subset);
@@ -126,6 +157,12 @@ public class RepositoryMapping
 
     public String toString()
     {
-        return "RepositoryMapping[" + containerPath + " -> " + gitdirPath + "]";
+        return "RepositoryMapping["
+            + containerPath
+            + " -> "
+            + gitdirPath
+            + ", "
+            + cacheref
+            + "]";
     }
 }
