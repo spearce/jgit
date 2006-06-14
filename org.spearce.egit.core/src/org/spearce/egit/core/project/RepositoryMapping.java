@@ -7,41 +7,51 @@ import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.Tree;
 
 public class RepositoryMapping
 {
-    public static boolean isKey(final String key)
+    public static boolean isInitialKey(final String key)
     {
         return key.endsWith(".gitdir");
     }
 
-    private String containerPath;
+    private final String containerPath;
 
-    private String gitdirPath;
+    private final String gitdirPath;
 
-    private String subset;
+    private final String subset;
 
-    public RepositoryMapping(final Properties p, final String key)
+    private String cacheName;
+
+    private Repository db;
+
+    private Tree cache;
+
+    public RepositoryMapping(final Properties p, final String initialKey)
     {
-        final int dot = key.lastIndexOf('.');
-        containerPath = key.substring(0, dot);
-        gitdirPath = p.getProperty(key);
-        subset = p.getProperty(containerPath + ".subset");
+        final int dot = initialKey.lastIndexOf('.');
+        containerPath = initialKey.substring(0, dot);
+        gitdirPath = p.getProperty(initialKey);
+        final String s = p.getProperty(containerPath + ".subset");
+        subset = "".equals(s) ? null : s;
+        cacheName = p.getProperty(containerPath + ".cache");
     }
 
-    public RepositoryMapping(final IContainer c, final Repository r)
+    public RepositoryMapping(
+        final IContainer mappedContainer,
+        final File gitDir,
+        final String subsetRoot)
     {
-        this(c, r.getDirectory(), r.getSubsetPath());
-    }
-
-    public RepositoryMapping(final IContainer c, final File g, final String s)
-    {
-        final IPath cLoc = c.getLocation().removeTrailingSeparator();
-        final IPath gLoc = Path.fromOSString(g.getAbsolutePath())
+        final IPath cLoc = mappedContainer.getLocation()
+            .removeTrailingSeparator();
+        final IPath gLoc = Path.fromOSString(gitDir.getAbsolutePath())
             .removeTrailingSeparator();
         final IPath gLocParent = gLoc.removeLastSegments(1);
 
-        containerPath = c.getProjectRelativePath().toPortableString();
+        containerPath = mappedContainer.getProjectRelativePath()
+            .toPortableString();
+
         if (cLoc.isPrefixOf(gLoc))
         {
             gitdirPath = gLoc.removeFirstSegments(
@@ -51,18 +61,20 @@ public class RepositoryMapping
         {
             int cnt = cLoc.segmentCount()
                 - cLoc.matchingFirstSegments(gLocParent);
-            gitdirPath = "";
+            String p = "";
             while (cnt-- > 0)
             {
-                gitdirPath += "../";
+                p += "../";
             }
-            gitdirPath += gLoc.segment(gLoc.segmentCount() - 1);
+            p += gLoc.segment(gLoc.segmentCount() - 1);
+            gitdirPath = p;
         }
         else
         {
             gitdirPath = gLoc.toPortableString();
         }
-        subset = "".equals(s) ? null : s;
+
+        subset = "".equals(subsetRoot) ? null : subsetRoot;
     }
 
     public IPath getContainerPath()
@@ -80,12 +92,54 @@ public class RepositoryMapping
         return subset;
     }
 
+    public String getCacheName()
+    {
+        return cacheName;
+    }
+
+    public void setCacheName(final String n)
+    {
+        cacheName = n;
+    }
+
+    public void clear()
+    {
+        db = null;
+        cache = null;
+    }
+
+    public Repository getRepository()
+    {
+        return db;
+    }
+
+    public void setRepository(final Repository r)
+    {
+        db = r;
+    }
+
+    public Tree getCacheTree()
+    {
+        return cache;
+    }
+
+    public void setCacheTree(final Tree t)
+    {
+        cache = t;
+    }
+
     public void store(final Properties p)
     {
         p.setProperty(containerPath + ".gitdir", gitdirPath);
+        p.setProperty(containerPath + ".cache", cacheName);
         if (subset != null && !"".equals(subset))
         {
             p.setProperty(containerPath + ".subset", subset);
         }
+    }
+
+    public String toString()
+    {
+        return "RepositoryMapping[" + containerPath + " -> " + gitdirPath + "]";
     }
 }

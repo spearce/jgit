@@ -21,8 +21,10 @@ public abstract class ObjectReader
             {
                 final byte[] buf = new byte[2048];
                 int r;
-                md.update((getType() + " " + getSize() + "\0")
-                    .getBytes("UTF-8"));
+                md.update(Constants.encodeASCII(getType()));
+                md.update((byte) ' ');
+                md.update(Constants.encodeASCII(getSize()));
+                md.update((byte) 0);
                 while ((r = is.read(buf)) > 0)
                 {
                     md.update(buf, 0, r);
@@ -52,7 +54,7 @@ public abstract class ObjectReader
     {
         return new BufferedReader(new InputStreamReader(
             getInputStream(),
-            "UTF-8"));
+            Constants.CHARACTER_ENCODING));
     }
 
     public abstract String getType() throws IOException;

@@ -95,7 +95,7 @@ public class PackReader
             idxHeader = new long[256];
             for (int k = 0; k < idxHeader.length; k++)
             {
-                idxHeader[k] = idxStream.xuint32();
+                idxHeader[k] = idxStream.readUInt32();
             }
         }
         catch (IOException ioe)
@@ -158,7 +158,7 @@ public class PackReader
                                 }
                                 inf.inflate(output);
                             }
-                            unread(inf.getRemaining());
+                            unread(-1, inf.getRemaining());
                         }
                         catch (DataFormatException dfe)
                         {
@@ -221,8 +221,11 @@ public class PackReader
         }
     }
 
-    int read(final long offset, final byte[] b, final int off, final int len)
-        throws IOException
+    synchronized int read(
+        final long offset,
+        final byte[] b,
+        final int off,
+        final int len) throws IOException
     {
         packStream.position(offset);
         packStream.mark(len);
@@ -230,10 +233,13 @@ public class PackReader
         return lastRead;
     }
 
-    void unread(final int len) throws IOException
+    synchronized void unread(final long pos, final int len) throws IOException
     {
-        packStream.reset();
-        packStream.skip(lastRead - len);
+        if (pos == -1 || pos == packStream.position())
+        {
+            packStream.reset();
+            packStream.skip(lastRead - len);
+        }
     }
 
     private void readPackHeader() throws IOException
@@ -241,19 +247,22 @@ public class PackReader
         final byte[] sig;
         final long vers;
 
-        sig = packStream.xread(SIGNATURE.length);
-        if (ObjectId.compare(sig, SIGNATURE) != 0)
+        sig = packStream.readFully(SIGNATURE.length);
+        for (int k = 0; k < SIGNATURE.length; k++)
         {
-            throw new IOException("Not a PACK file.");
+            if (sig[k] != SIGNATURE[k])
+            {
+                throw new IOException("Not a PACK file.");
+            }
         }
 
-        vers = packStream.xuint32();
+        vers = packStream.readUInt32();
         if (vers != 2 && vers != 3)
         {
             throw new IOException("Unsupported pack version " + vers + ".");
         }
 
-        objectCnt = packStream.xuint32();
+        objectCnt = packStream.readUInt32();
     }
 
     private PackedObjectReader reader() throws IOException
@@ -266,13 +275,15 @@ public class PackReader
         long size;
         int shift;
 
-        c = packStream.xuint8();
+        // TODO: I think I have mistranslated this code and thus am reading a
+        // pack wrong.
+        c = packStream.readUInt8();
         typeCode = (c >> 4) & 7;
         size = c & 15;
         shift = 4;
         while ((c & 0x80) != 0)
         {
-            c = packStream.xuint8();
+            c = packStream.readUInt8();
             size += (c & 0x7f) << shift;
             shift += 7;
         }
@@ -307,7 +318,7 @@ public class PackReader
         if (typeCode == OBJ_DELTA)
         {
             deltaBase = new ObjectId(packStream
-                .xread(Constants.OBJECT_ID_LENGTH));
+                .readFully(Constants.OBJECT_ID_LENGTH));
         }
         offset = packStream.position();
         return new PackedObjectReader(this, typeStr, size, offset, deltaBase);
@@ -315,32 +326,31 @@ public class PackReader
 
     private long findOffset(final ObjectId objId) throws IOException
     {
-        int fi;
-        long hi;
-        long lo;
+        final int levelOne = objId.getBytes()[0] & 0xff;
+        long high;
+        long low;
 
         if (idxHeader == null)
         {
             throw new IOException("Stream is not seekable.");
         }
 
-        fi = objId.getBytes()[0];
-        fi = ((fi >> 4) & 0xf) << 4 | (fi & 0xf);
-        hi = idxHeader[fi];
-        lo = fi == 0 ? 0 : idxHeader[fi - 1];
+        high = idxHeader[levelOne];
+        low = levelOne == 0 ? 0 : idxHeader[levelOne - 1];
         do
         {
-            final long mi = (lo + hi) / 2;
+            final long mid = (low + high) / 2;
             final long offset;
             final int cmp;
 
             idxStream.position(IDX_HDR_LEN
-                + ((4 + Constants.OBJECT_ID_LENGTH) * mi));
-            offset = idxStream.xuint32();
-            cmp = objId.compareTo(idxStream.xread(Constants.OBJECT_ID_LENGTH));
+                + ((4 + Constants.OBJECT_ID_LENGTH) * mid));
+            offset = idxStream.readUInt32();
+            cmp = objId.compareTo(idxStream
+                .readFully(Constants.OBJECT_ID_LENGTH));
             if (cmp < 0)
             {
-                lo = mi + 1;
+                high = mid;
             }
             else if (cmp == 0)
             {
@@ -348,10 +358,10 @@ public class PackReader
             }
             else
             {
-                hi = mi;
+                low = mid + 1;
             }
         }
-        while (lo < hi);
+        while (low < high);
         return -1;
     }
 }

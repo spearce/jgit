@@ -9,6 +9,7 @@ import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.RepositoryConfig;
 import org.spearce.jgit.lib.Tree;
+import org.spearce.jgit.lib.TreeEntry;
 import org.spearce.jgit.lib.WriteTree;
 
 public class T0003_Basic extends RepositoryTestCase
@@ -42,10 +43,10 @@ public class T0003_Basic extends RepositoryTestCase
         // open when we create it we won't write the object file out as a loose
         // object (as it already exists in the pack).
         //
-        r.closePacks();
+        db.closePacks();
 
-        final Tree t = new Tree(r);
-        new WriteTree(r, trash).visit(t);
+        final Tree t = new Tree(db);
+        t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
         assertEquals("4b825dc642cb6eb9a060e54bf8d69288fbee4904", t.getId()
             .toString());
         final File o = new File(
@@ -60,8 +61,8 @@ public class T0003_Basic extends RepositoryTestCase
     {
         // File shouldn't exist as it is in a test pack.
         //
-        final Tree t = new Tree(r);
-        new WriteTree(r, trash).visit(t);
+        final Tree t = new Tree(db);
+        t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
         assertEquals("4b825dc642cb6eb9a060e54bf8d69288fbee4904", t.getId()
             .toString());
         final File o = new File(
@@ -72,10 +73,10 @@ public class T0003_Basic extends RepositoryTestCase
 
     public void test003_WriteShouldBeEmptyTree() throws IOException
     {
-        final Tree t = new Tree(r);
-        final ObjectId emptyId = new ObjectWriter(r).writeBlob(new byte[0]);
-        t.addFile("should-be-empty", emptyId);
-        new WriteTree(r, trash).visit(t);
+        final Tree t = new Tree(db);
+        final ObjectId emptyId = new ObjectWriter(db).writeBlob(new byte[0]);
+        t.addFile("should-be-empty").setId(emptyId);
+        t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
         assertEquals("7bb943559a305bdd6bdee2cef6e5df2413c3d30a", t.getId()
             .toString());
 
@@ -95,7 +96,7 @@ public class T0003_Basic extends RepositoryTestCase
 
     public void test004_CheckNewConfig() throws IOException
     {
-        final RepositoryConfig c = r.getConfig();
+        final RepositoryConfig c = db.getConfig();
         assertNotNull(c);
         assertEquals("0", c.getString("core", "repositoryformatversion"));
         assertEquals("0", c.getString("CoRe", "REPOSITORYFoRmAtVeRsIoN"));
@@ -107,7 +108,7 @@ public class T0003_Basic extends RepositoryTestCase
 
     public void test005_ReadSimpleConfig() throws IOException
     {
-        final RepositoryConfig c = r.getConfig();
+        final RepositoryConfig c = db.getConfig();
         assertNotNull(c);
         c.load();
         assertEquals("0", c.getString("core", "repositoryformatversion"));
@@ -119,8 +120,8 @@ public class T0003_Basic extends RepositoryTestCase
 
     public void test006_ReadUglyConfig() throws IOException
     {
-        final RepositoryConfig c = r.getConfig();
-        final File cfg = new File(r.getDirectory(), "config");
+        final RepositoryConfig c = db.getConfig();
+        final File cfg = new File(db.getDirectory(), "config");
         final FileWriter pw = new FileWriter(cfg);
         final String configStr = "  [core];comment\n\tfilemode = yes\n"
             + "[user]\n"

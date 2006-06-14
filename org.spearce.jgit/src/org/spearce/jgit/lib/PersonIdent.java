@@ -13,9 +13,27 @@ public class PersonIdent
 
     private final int tzOffset;
 
+    public PersonIdent(final PersonIdent pi)
+    {
+        this(pi.getName(), pi.getEmailAddress());
+    }
+
     public PersonIdent(final String aName, final String aEmailAddress)
     {
         this(aName, aEmailAddress, new Date(), TimeZone.getDefault());
+    }
+
+    public PersonIdent(final PersonIdent pi, final Date when, final TimeZone tz)
+    {
+        this(pi.getName(), pi.getEmailAddress(), when, tz);
+    }
+
+    public PersonIdent(final PersonIdent pi, final Date aWhen)
+    {
+        name = pi.getName();
+        emailAddress = pi.getEmailAddress();
+        when = aWhen.getTime();
+        tzOffset = pi.tzOffset;
     }
 
     public PersonIdent(

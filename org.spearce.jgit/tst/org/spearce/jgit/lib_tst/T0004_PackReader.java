@@ -10,6 +10,7 @@ import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectReader;
 import org.spearce.jgit.lib.PackReader;
 import org.spearce.jgit.lib.PackedObjectReader;
+import org.spearce.jgit.lib.Tree;
 
 public class T0004_PackReader extends RepositoryTestCase
 {
@@ -22,7 +23,7 @@ public class T0004_PackReader extends RepositoryTestCase
         final PackReader pr;
         final Iterator itr;
 
-        pr = new PackReader(r, new FileInputStream(TEST_PACK));
+        pr = new PackReader(db, new FileInputStream(TEST_PACK));
         itr = pr.iterator();
         while (itr.hasNext())
         {
@@ -52,7 +53,7 @@ public class T0004_PackReader extends RepositoryTestCase
         boolean pass = false;
 
         id = new ObjectId("902d5476fa249b7abc9d84c611577a81381f0327");
-        pr = new PackReader(r, new FileInputStream(TEST_PACK));
+        pr = new PackReader(db, new FileInputStream(TEST_PACK));
         try
         {
             pr.get(id);
@@ -72,7 +73,7 @@ public class T0004_PackReader extends RepositoryTestCase
         final PackedObjectReader or;
 
         id = new ObjectId("902d5476fa249b7abc9d84c611577a81381f0327");
-        pr = new PackReader(r, TEST_PACK);
+        pr = new PackReader(db, TEST_PACK);
         or = pr.get(id);
         assertNotNull(or);
         assertEquals(id, or.getId());
@@ -92,7 +93,7 @@ public class T0004_PackReader extends RepositoryTestCase
 
         id = new ObjectId("5b6e7c66c276e7610d4a73c70ec1a1f7c1003259");
         base = new ObjectId("6ff87c4664981e4397625791c8ea3bbb5f2279a3");
-        or = r.openObject(id);
+        or = db.openObject(id);
         assertNotNull(or);
         assertTrue(or instanceof PackedObjectReader);
         assertEquals(base, ((PackedObjectReader) or).getDeltaBaseId());
@@ -101,5 +102,36 @@ public class T0004_PackReader extends RepositoryTestCase
         assertEquals(18009, or.getSize());
         assertEquals(537, ((PackedObjectReader) or).getDataOffset());
         or.close();
+    }
+
+    public void test005_todopack() throws IOException
+    {
+        final File todopack = new File(new File("tst"), "todopack");
+        if (!todopack.isDirectory())
+        {
+            System.err.println("Skipping " + getName() + ": no " + todopack);
+            return;
+        }
+
+        final File packDir = new File(db.getObjectsDirectory(), "pack");
+        final String packname = "pack-2e71952edc41f3ce7921c5e5dd1b64f48204cf35";
+        copyFile(new File(todopack, packname + ".pack"), new File(
+            packDir,
+            packname + ".pack"));
+        copyFile(new File(todopack, packname + ".idx"), new File(
+            packDir,
+            packname + ".idx"));
+        db.scanForPacks();
+        Tree t;
+
+        t = db
+            .mapTree(new ObjectId("aac9df07f653dd18b935298deb813e02c32d2e6f"));
+        assertNotNull(t);
+        t.entryCount();
+
+        t = db
+            .mapTree(new ObjectId("6b9ffbebe7b83ac6a61c9477ab941d999f5d0c96"));
+        assertNotNull(t);
+        t.entryCount();
     }
 }

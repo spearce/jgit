@@ -7,7 +7,7 @@ import java.io.IOException;
 
 import junit.framework.TestCase;
 
-import org.spearce.jgit.lib.FullRepository;
+import org.spearce.jgit.lib.Repository;
 
 public abstract class RepositoryTestCase extends TestCase
 {
@@ -55,18 +55,18 @@ public abstract class RepositoryTestCase extends TestCase
         fos.close();
     }
 
-    protected FullRepository r;
+    protected Repository db;
 
     public void setUp() throws Exception
     {
         super.setUp();
         recursiveDelete(trash);
-        r = new FullRepository(trash_git);
-        r.create();
+        db = new Repository(trash_git);
+        db.create();
 
         final String[] packs = {"pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f"};
         final File tst = new File("tst");
-        final File packDir = new File(r.getObjectsDirectory(), "pack");
+        final File packDir = new File(db.getObjectsDirectory(), "pack");
         for (int k = 0; k < packs.length; k++)
         {
             copyFile(new File(tst, packs[k] + ".pack"), new File(
@@ -77,12 +77,12 @@ public abstract class RepositoryTestCase extends TestCase
                 packs[k] + ".idx"));
         }
 
-        r.scanForPacks();
+        db.scanForPacks();
     }
 
     protected void tearDown() throws Exception
     {
-        r.close();
+        db.close();
         super.tearDown();
     }
 }

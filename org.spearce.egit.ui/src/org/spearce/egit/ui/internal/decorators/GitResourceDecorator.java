@@ -6,8 +6,8 @@ import org.eclipse.jface.viewers.IDecoration;
 import org.eclipse.jface.viewers.ILightweightLabelDecorator;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.spearce.egit.core.project.GitProjectData;
+import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.UIIcons;
-import org.spearce.jgit.lib.Repository;
 
 public class GitResourceDecorator extends LabelProvider
     implements
@@ -44,8 +44,8 @@ public class GitResourceDecorator extends LabelProvider
             return;
         }
 
-        final Repository ownRepo = d.getOwnRepository(rsrc);
-        if (ownRepo != null)
+        final RepositoryMapping mapped = d.getRepositoryMapping(rsrc, false);
+        if (mapped != null)
         {
             decoration.addSuffix(" [GIT]");
             decoration.addOverlay(UIIcons.OVR_SHARED);

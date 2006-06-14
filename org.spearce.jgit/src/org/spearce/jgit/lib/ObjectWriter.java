@@ -8,41 +8,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 
 public class ObjectWriter
 {
-    private static final TreeNameComparator TNC = new TreeNameComparator();
-
-    private static final byte[] TREE_MODE;
-
-    private static final byte[] SYMLINK_MODE;
-
-    private static final byte[] PLAIN_FILE_MODE;
-
-    private static final byte[] EXECUTABLE_FILE_MODE;
-
-    static
-    {
-        try
-        {
-            TREE_MODE = "40000".getBytes("UTF-8");
-            SYMLINK_MODE = "120000".getBytes("UTF-8");
-            PLAIN_FILE_MODE = "100644".getBytes("UTF-8");
-            EXECUTABLE_FILE_MODE = "100755".getBytes("UTF-8");
-        }
-        catch (UnsupportedEncodingException uue)
-        {
-            throw new ExceptionInInitializerError(uue);
-        }
-    }
-
     private final Repository r;
 
     private final byte[] buf;
@@ -83,50 +55,27 @@ public class ObjectWriter
     public ObjectId writeTree(final Tree t) throws IOException
     {
         final ByteArrayOutputStream o = new ByteArrayOutputStream();
-        final ArrayList r = new ArrayList();
-        Iterator i;
-
-        i = t.entryIterator();
-        while (i.hasNext())
+        final TreeEntry[] items = t.entries();
+        for (int k = 0; k < items.length; k++)
         {
-            r.add(i.next());
-        }
-        Collections.sort(r, TNC);
+            final TreeEntry e = items[k];
+            final ObjectId id = e.getId();
 
-        i = r.iterator();
-        while (i.hasNext())
-        {
-            final TreeEntry e = (TreeEntry) i.next();
-            final byte[] mode;
-
-            if (e instanceof Tree)
+            if (id == null)
             {
-                mode = TREE_MODE;
-            }
-            else if (e instanceof SymlinkTreeEntry)
-            {
-                mode = SYMLINK_MODE;
-            }
-            else if (e instanceof FileTreeEntry)
-            {
-                mode = ((FileTreeEntry) e).isExecutable()
-                    ? EXECUTABLE_FILE_MODE
-                    : PLAIN_FILE_MODE;
-            }
-            else
-            {
-                throw new WritingNotSupportedException("Object type not"
-                    + " supported as member of Tree:"
-                    + e);
+                throw new WritingNotSupportedException("Object at path \""
+                    + e.getFullName()
+                    + "\" does not have an id assigned."
+                    + "  All object ids must be assigned prior"
+                    + " to writing a tree.");
             }
 
-            o.write(mode);
+            e.getMode().copyTo(o);
             o.write(' ');
             o.write(e.getNameUTF8());
             o.write(0);
-            o.write(e.getId().getBytes());
+            o.write(id.getBytes());
         }
-
         return writeTree(o.toByteArray());
     }
 
@@ -144,17 +93,19 @@ public class ObjectWriter
     public ObjectId writeCommit(final Commit c) throws IOException
     {
         final ByteArrayOutputStream os = new ByteArrayOutputStream();
-        final OutputStreamWriter w = new OutputStreamWriter(os, "UTF-8");
+        final OutputStreamWriter w = new OutputStreamWriter(
+            os,
+            Constants.CHARACTER_ENCODING);
 
         w.write("tree ");
-        w.write(c.getTreeId().toString());
+        c.getTreeId().copyTo(w);
         w.write('\n');
 
         final Iterator i = c.getParentIds().iterator();
         while (i.hasNext())
         {
             w.write("parent ");
-            w.write(i.next().toString());
+            ((ObjectId) i.next()).copyTo(w);
             w.write('\n');
         }
 
@@ -197,11 +148,22 @@ public class ObjectWriter
             Deflater.BEST_COMPRESSION));
         try
         {
-            final byte[] header = (type + ' ' + len + '\0').getBytes("UTF-8");
+            byte[] header;
             int r;
 
+            header = Constants.encodeASCII(type);
             md.update(header);
             ts.write(header);
+
+            md.update((byte) ' ');
+            ts.write((byte) ' ');
+
+            header = Constants.encodeASCII(len);
+            md.update(header);
+            ts.write(header);
+
+            md.update((byte) 0);
+            ts.write((byte) 0);
 
             while (len > 0
                 && (r = is.read(buf, 0, (int) Math.min(len, buf.length))) > 0)
@@ -210,6 +172,7 @@ public class ObjectWriter
                 ts.write(buf, 0, r);
                 len -= r;
             }
+
             if (len != 0)
             {
                 throw new IOException("Input did not match supplied length. "
@@ -249,8 +212,8 @@ public class ObjectWriter
             if (!t.renameTo(o))
             {
                 // Maybe the directory doesn't exist yet as the object
-                // directories are always lazilly created. Note that we try the
-                // rename first as the directory likely does exist.
+                // directories are always lazilly created. Note that we
+                // try the rename first as the directory likely does exist.
                 //
                 o.getParentFile().mkdir();
                 if (!t.renameTo(o))

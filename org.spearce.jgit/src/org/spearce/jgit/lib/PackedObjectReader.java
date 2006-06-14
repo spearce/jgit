@@ -117,7 +117,7 @@ public class PackedObjectReader extends ObjectReader
 
     private class PackStream extends InputStream
     {
-        private Inflater inf = new Inflater();
+        private Inflater inf = new Inflater(false);
 
         private byte[] in = new byte[2048];
 
@@ -125,15 +125,8 @@ public class PackedObjectReader extends ObjectReader
 
         public int read() throws IOException
         {
-            final byte[] singleByteBuffer = new byte[1];
-            if (read(singleByteBuffer, 0, 1) == 1)
-            {
-                return singleByteBuffer[0];
-            }
-            else
-            {
-                return -1;
-            }
+            final byte[] sbb = new byte[1];
+            return read(sbb, 0, 1) == 1 ? sbb[0] & 0xff : -1;
         }
 
         public int read(final byte[] b, final int off, final int len)
@@ -156,7 +149,7 @@ public class PackedObjectReader extends ObjectReader
                 final int n = inf.inflate(b, off, len);
                 if (inf.finished())
                 {
-                    pack.unread(inf.getRemaining());
+                    pack.unread(offset, inf.getRemaining());
                 }
                 return n;
             }

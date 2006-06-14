@@ -1,6 +1,7 @@
 package org.spearce.jgit.lib;
 
 import java.io.BufferedInputStream;
+import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,11 +9,6 @@ import java.nio.channels.FileChannel;
 
 public class XInputStream extends BufferedInputStream
 {
-    private static final long uint8(final int i)
-    {
-        return ((i >> 4) & 0xf) << 4 | (i & 0xf);
-    }
-
     private final byte[] intbuf = new byte[8];
 
     private FileChannel fc;
@@ -55,7 +51,7 @@ public class XInputStream extends BufferedInputStream
     {
         final int p = pos;
         super.reset();
-        offset -= pos - p;
+        offset += pos - p;
     }
 
     public synchronized long skip(final long n) throws IOException
@@ -128,45 +124,45 @@ public class XInputStream extends BufferedInputStream
         }
     }
 
-    public synchronized byte[] xread(final int len) throws IOException
+    public synchronized byte[] readFully(final int len) throws IOException
     {
         final byte[] buf = new byte[len];
-        xread(buf, 0, len);
+        readFully(buf, 0, len);
         return buf;
     }
 
-    public synchronized void xread(final byte[] buf, int o, int len)
+    public synchronized void readFully(final byte[] buf, int o, int len)
         throws IOException
     {
         int r;
-        while ((r = read(buf, o, len)) > 0)
+        while (len > 0 && (r = read(buf, o, len)) > 0)
         {
             o += r;
             len -= r;
         }
         if (len > 0)
         {
-            throw new IOException("Unexpected end of stream.");
+            throw new EOFException();
         }
     }
 
-    public int xuint8() throws IOException
+    public int readUInt8() throws IOException
     {
         final int r = read();
         if (r < 0)
         {
-            throw new IOException("Unexpected end of stream.");
+            throw new EOFException();
         }
         return r;
     }
 
-    public long xuint32() throws IOException
+    public long readUInt32() throws IOException
     {
-        xread(intbuf, 0, 4);
-        return uint8(intbuf[0]) << 24
-            | uint8(intbuf[1]) << 16
-            | uint8(intbuf[2]) << 8
-            | uint8(intbuf[3]);
+        readFully(intbuf, 0, 4);
+        return (intbuf[0] & 0xff) << 24
+            | (intbuf[1] & 0xff) << 16
+            | (intbuf[2] & 0xff) << 8
+            | (intbuf[3] & 0xff);
     }
 
     public synchronized void close() throws IOException

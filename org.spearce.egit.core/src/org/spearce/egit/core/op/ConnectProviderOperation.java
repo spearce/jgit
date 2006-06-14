@@ -18,7 +18,7 @@ import org.spearce.egit.core.GitProvider;
 import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryFinder;
 import org.spearce.egit.core.project.RepositoryMapping;
-import org.spearce.jgit.lib.FullRepository;
+import org.spearce.jgit.lib.Repository;
 
 public class ConnectProviderOperation implements IWorkspaceRunnable
 {
@@ -48,14 +48,17 @@ public class ConnectProviderOperation implements IWorkspaceRunnable
             {
                 try
                 {
-                    final FullRepository db;
+                    final Repository db;
 
                     m.subTask(CoreText.ConnectProviderOperation_creating);
                     Activator.trace("Creating repository " + newGitDir);
 
-                    db = new FullRepository(newGitDir);
+                    db = new Repository(newGitDir);
                     db.create();
-                    repos.add(new RepositoryMapping(project, db));
+                    repos.add(new RepositoryMapping(
+                        project,
+                        db.getDirectory(),
+                        null));
                     db.close();
 
                     // If we don't refresh the project directory right now we
@@ -88,12 +91,6 @@ public class ConnectProviderOperation implements IWorkspaceRunnable
             final GitProjectData projectData = new GitProjectData(project);
             projectData.setRepositoryMappings(repos);
             projectData.store();
-            projectData.markTeamPrivateResources();
-            projectData.cache();
-
-            project.refreshLocal(
-                IResource.DEPTH_INFINITE,
-                new SubProgressMonitor(m, 75));
 
             try
             {
@@ -109,6 +106,10 @@ public class ConnectProviderOperation implements IWorkspaceRunnable
                 GitProjectData.deleteDataFor(project);
                 throw ce;
             }
+
+            project.refreshLocal(
+                IResource.DEPTH_INFINITE,
+                new SubProgressMonitor(m, 75));
         }
         finally
         {

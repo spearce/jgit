@@ -14,6 +14,8 @@ public class CoreText extends NLS
 
     public static String GitProjectData_mappedResourceGone;
 
+    public static String GitProjectData_cannotReadHEAD;
+
     public static String GitProjectData_missing;
 
     public static String GitProjectData_saveFailed;

@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class RepositoryConfig
 {
-    private final FullRepository repo;
+    private final Repository repo;
 
     private final File configFile;
 
@@ -29,7 +29,7 @@ public class RepositoryConfig
 
     private Map lastInGroup;
 
-    protected RepositoryConfig(final FullRepository r)
+    protected RepositoryConfig(final Repository r)
     {
         repo = r;
         configFile = new File(repo.getDirectory(), "config");
@@ -83,7 +83,9 @@ public class RepositoryConfig
             .getName()
             + ".lock");
         final PrintWriter r = new PrintWriter(new BufferedWriter(
-            new OutputStreamWriter(new FileOutputStream(tmp), "UTF-8")));
+            new OutputStreamWriter(
+                new FileOutputStream(tmp),
+                Constants.CHARACTER_ENCODING)));
         boolean ok = false;
         try
         {
@@ -148,7 +150,7 @@ public class RepositoryConfig
         clear();
         final BufferedReader r = new BufferedReader(new InputStreamReader(
             new FileInputStream(configFile),
-            "UTF-8"));
+            Constants.CHARACTER_ENCODING));
         try
         {
             Entry last = null;

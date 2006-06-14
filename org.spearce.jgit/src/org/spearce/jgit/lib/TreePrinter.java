@@ -3,7 +3,7 @@ package org.spearce.jgit.lib;
 import java.io.IOException;
 import java.io.PrintStream;
 
-public class TreePrinter extends TreeVisitor
+public class TreePrinter implements TreeVisitor
 {
     private final PrintStream dest;
 
@@ -12,21 +12,22 @@ public class TreePrinter extends TreeVisitor
         dest = x;
     }
 
-    protected void visitFile(final FileTreeEntry f) throws IOException
+    public void visitFile(final FileTreeEntry f) throws IOException
     {
         dest.println(f);
-        super.visitFile(f);
     }
 
-    protected void visitSymlink(final SymlinkTreeEntry s) throws IOException
+    public void visitSymlink(final SymlinkTreeEntry s) throws IOException
     {
         dest.println(s);
-        super.visitSymlink(s);
     }
 
-    protected void visitTree(final Tree t) throws IOException
+    public void startVisitTree(final Tree t) throws IOException
     {
         dest.println(t);
-        super.visitTree(t);
+    }
+
+    public void endVisitTree(final Tree t) throws IOException
+    {
     }
 }

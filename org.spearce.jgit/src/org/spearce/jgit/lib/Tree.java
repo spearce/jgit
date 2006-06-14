@@ -3,46 +3,117 @@ package org.spearce.jgit.lib;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class Tree extends TreeEntry implements Treeish
 {
-    private final Repository r;
+    private static final TreeEntry[] EMPTY_CONTENTS = {};
 
-    private Collection allEntries;
-
-    private Map entriesByName;
-
-    public Tree(final Repository db)
+    private static final int nameCompare(final byte[] a, final byte[] b)
     {
-        this(db, null, null, null);
+        return nameCompare(a, b, 0, b.length);
     }
 
-    public Tree(final Repository db, final ObjectId myId, final InputStream is)
+    private static final int nameCompare(
+        final byte[] a,
+        final byte[] nameUTF8,
+        final int nameStart,
+        final int nameEnd)
+    {
+        for (int j = 0, k = nameStart; j < a.length && k < nameEnd; j++, k++)
+        {
+            final int aj = a[j] & 0xff;
+            final int bk = nameUTF8[k] & 0xff;
+            if (aj < bk)
+                return -1;
+            else if (aj > bk)
+                return 1;
+        }
+
+        final int namelength = nameEnd - nameStart;
+        if (a.length == namelength)
+            return 0;
+        else if (a.length < namelength)
+            return -1;
+        else
+            return 1;
+    }
+
+    private static final int binarySearch(
+        final TreeEntry[] entries,
+        final byte[] nameUTF8,
+        final int nameStart,
+        final int nameEnd)
+    {
+        if (entries.length == 0)
+            return -1;
+        int high = entries.length;
+        int low = 0;
+        do
+        {
+            final int mid = (low + high) / 2;
+            final int cmp = nameCompare(
+                entries[mid].getNameUTF8(),
+                nameUTF8,
+                nameStart,
+                nameEnd);
+            if (cmp < 0)
+            {
+                low = mid + 1;
+            }
+            else if (cmp == 0)
+            {
+                return mid;
+            }
+            else
+            {
+                high = mid;
+            }
+        }
+        while (low < high);
+        return -(low + 1);
+    }
+
+    private final Repository db;
+
+    private TreeEntry[] contents;
+
+    public Tree(final Repository repo)
+    {
+        super(null, null, null);
+        db = repo;
+        contents = EMPTY_CONTENTS;
+    }
+
+    public Tree(final Repository repo, final ObjectId myId, final InputStream is)
         throws IOException
     {
-        this(db, null, myId, null);
+        super(null, myId, null);
+        db = repo;
         readTree(is);
     }
 
-    public Tree(
-        final Repository db,
-        final Tree parent,
-        final ObjectId myId,
-        final byte[] nameUTF8)
+    private Tree(final Tree parent, final byte[] nameUTF8)
     {
-        super(parent, myId, nameUTF8);
-        r = db;
-        if (myId == null)
-        {
-            entriesByName = new TreeMap();
-            allEntries = Collections.unmodifiableCollection(entriesByName
-                .values());
-        }
+        super(parent, null, nameUTF8);
+        db = parent.getDatabase();
+        contents = EMPTY_CONTENTS;
+    }
+
+    public Tree(final Repository r, final ObjectId id, final byte[] nameUTF8)
+    {
+        super(null, id, nameUTF8);
+        db = r;
+    }
+
+    public Tree(final Tree parent, final ObjectId id, final byte[] nameUTF8)
+    {
+        super(parent, id, nameUTF8);
+        db = parent.getDatabase();
+    }
+
+    public FileMode getMode()
+    {
+        return FileMode.TREE;
     }
 
     public boolean isRoot()
@@ -52,7 +123,7 @@ public class Tree extends TreeEntry implements Treeish
 
     public Repository getDatabase()
     {
-        return r;
+        return db;
     }
 
     public final ObjectId getTreeId()
@@ -67,78 +138,170 @@ public class Tree extends TreeEntry implements Treeish
 
     public boolean isLoaded()
     {
-        return entriesByName != null;
+        return contents != null;
     }
 
-    public FileTreeEntry addFile(final String name, final ObjectId id)
+    public void unload()
+    {
+        if (isModified())
+        {
+            throw new IllegalStateException("Cannot unload a modified tree.");
+        }
+        contents = null;
+    }
+
+    public FileTreeEntry addFile(final String name)
         throws IOException,
             MissingObjectException
     {
-        ensureLoaded();
         final FileTreeEntry n;
-        n = new FileTreeEntry(this, id, name.getBytes("UTF-8"), false);
-        entriesByName.put(n.getName(), n);
-        setModified();
+        ensureLoaded();
+        n = new FileTreeEntry(this, null, name
+            .getBytes(Constants.CHARACTER_ENCODING), false);
+        addEntry(n);
         return n;
     }
 
-    public Tree addTree(final String name, final ObjectId id)
+    public Tree addTree(final String name)
         throws IOException,
             MissingObjectException
     {
+        final Tree n;
         ensureLoaded();
-        final Tree n = new Tree(r, this, id, name.getBytes("UTF-8"));
-        entriesByName.put(n.getName(), n);
-        setModified();
+        n = new Tree(this, name.getBytes(Constants.CHARACTER_ENCODING));
+        addEntry(n);
         return n;
     }
 
-    public Iterator entryIterator() throws IOException, MissingObjectException
-    {
-        ensureLoaded();
-        return allEntries.iterator();
-    }
-
-    public TreeEntry findMember(String s)
+    public Tree linkTree(final String name, final ObjectId id)
         throws IOException,
             MissingObjectException
     {
+        final Tree n;
         ensureLoaded();
-        final int slash = s.indexOf('/');
-        final String remainder;
-        if (slash != -1)
+        n = new Tree(this, id, name.getBytes(Constants.CHARACTER_ENCODING));
+        addEntry(n);
+        return n;
+    }
+
+    private void addEntry(final TreeEntry e)
+    {
+        final TreeEntry[] c = contents;
+        int p = binarySearch(c, e.getNameUTF8(), 0, e.getNameUTF8().length);
+        if (p >= 0)
         {
-            remainder = s.substring(slash + 1);
-            s = s.substring(0, slash);
+            c[p] = e;
         }
         else
         {
-            remainder = null;
+            final TreeEntry[] n = new TreeEntry[c.length + 1];
+            p = -(p + 1);
+            for (int k = c.length - 1; k >= p; k--)
+            {
+                n[k + 1] = c[k];
+            }
+            n[p] = e;
+            for (int k = p - 1; k >= 0; k--)
+            {
+                n[k] = c[k];
+            }
+            contents = n;
+        }
+        setModified();
+    }
+
+    public int entryCount() throws IOException, MissingObjectException
+    {
+        ensureLoaded();
+        return contents.length;
+    }
+
+    public TreeEntry[] entries() throws IOException, MissingObjectException
+    {
+        ensureLoaded();
+        final TreeEntry[] c = contents;
+        final int len = c.length;
+        if (len == 0)
+        {
+            return c;
+        }
+        final TreeEntry[] n = new TreeEntry[len];
+        for (int k = len - 1; k >= 0; k--)
+        {
+            n[k] = c[k];
+        }
+        return n;
+    }
+
+    public void setEntries(final TreeEntry[] c)
+    {
+        contents = c;
+    }
+
+    public TreeEntry findMember(final String s)
+        throws IOException,
+            MissingObjectException
+    {
+        return findMember(s.getBytes(Constants.CHARACTER_ENCODING), 0);
+    }
+
+    public TreeEntry findMember(final byte[] s, final int offset)
+        throws IOException,
+            MissingObjectException
+    {
+        int slash;
+        int p;
+        final TreeEntry r;
+
+        ensureLoaded();
+        for (slash = offset; slash < s.length && s[slash] != '/'; slash++)
+            /* search for path component terminator */;
+        p = binarySearch(contents, s, offset, slash);
+        if (p < 0)
+        {
+            return null;
         }
 
-        final TreeEntry e = (TreeEntry) entriesByName.get(s);
-        if (e != null && remainder != null)
+        r = contents[p];
+        if (slash < s.length)
         {
-            if (e instanceof Tree)
-            {
-                return ((Tree) e).findMember(remainder);
-            }
-            else
-            {
-                return null;
-            }
+            return r instanceof Tree
+                ? ((Tree) r).findMember(s, slash + 1)
+                : null;
         }
-        else
+        return r;
+    }
+
+    public void accept(final TreeVisitor tv, final int flags)
+        throws IOException
+    {
+        if ((MODIFIED_ONLY & flags) == MODIFIED_ONLY && !isModified())
         {
-            return e;
+            return;
         }
+
+        if ((LOADED_ONLY & flags) == LOADED_ONLY && !isLoaded())
+        {
+            tv.startVisitTree(this);
+            tv.endVisitTree(this);
+            return;
+        }
+
+        ensureLoaded();
+        tv.startVisitTree(this);
+        final TreeEntry[] c = contents;
+        for (int k = 0; k < c.length; k++)
+        {
+            c[k].accept(tv, flags);
+        }
+        tv.endVisitTree(this);
     }
 
     private void ensureLoaded() throws IOException, MissingObjectException
     {
         if (!isLoaded())
         {
-            final ObjectReader or = r.openTree(getId());
+            final ObjectReader or = db.openTree(getId());
             if (or == null)
             {
                 throw new MissingObjectException(Constants.TYPE_TREE, getId());
@@ -156,7 +319,9 @@ public class Tree extends TreeEntry implements Treeish
 
     private void readTree(final InputStream is) throws IOException
     {
-        final Map tempEnts = new TreeMap();
+        TreeEntry[] temp = new TreeEntry[64];
+        int nextIndex = 0;
+
         for (;;)
         {
             int c;
@@ -221,23 +386,68 @@ public class Tree extends TreeEntry implements Treeish
 
             id = new ObjectId(entId);
             name = nameBuf.toByteArray();
-            if ((mode & 040000) != 0)
+
+            if (FileMode.REGULAR_FILE.equals(mode))
             {
-                ent = new Tree(r, this, id, name);
+                ent = new FileTreeEntry(this, id, name, false);
             }
-            else if ((mode & 020000) != 0)
+            else if (FileMode.EXECUTABLE_FILE.equals(mode))
+            {
+                ent = new FileTreeEntry(this, id, name, true);
+            }
+            else if (FileMode.TREE.equals(mode))
+            {
+                ent = new Tree(this, id, name);
+            }
+            else if (FileMode.SYMLINK.equals(mode))
             {
                 ent = new SymlinkTreeEntry(this, id, name);
             }
             else
             {
-                ent = new FileTreeEntry(this, id, name, (mode & 0100) != 0);
+                throw new CorruptObjectException(getId(), "Invalid mode: "
+                    + Integer.toOctalString(mode));
             }
-            tempEnts.put(ent.getName(), ent);
+
+            if (nextIndex == temp.length)
+            {
+                final TreeEntry[] n = new TreeEntry[temp.length << 1];
+                for (int k = nextIndex - 1; k >= 0; k--)
+                {
+                    n[k] = temp[k];
+                }
+                temp = n;
+            }
+
+            // Make damn sure the tree object is formatted properly as we really
+            // depend on it later on when we edit the tree contents. This should
+            // be pretty quick to validate on the fly as we read the tree in and
+            // it should never be wrong.
+            // 
+            if (nextIndex > 0
+                && nameCompare(temp[nextIndex - 1].getNameUTF8(), name) >= 0)
+            {
+                throw new CorruptObjectException(
+                    getId(),
+                    "Tree is not sorted according to object names.");
+            }
+
+            temp[nextIndex++] = ent;
         }
 
-        entriesByName = tempEnts;
-        allEntries = Collections.unmodifiableCollection(entriesByName.values());
+        if (nextIndex == temp.length)
+        {
+            contents = temp;
+        }
+        else
+        {
+            final TreeEntry[] n = new TreeEntry[nextIndex];
+            for (int k = nextIndex - 1; k >= 0; k--)
+            {
+                n[k] = temp[k];
+            }
+            contents = n;
+        }
     }
 
     public String toString()

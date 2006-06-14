@@ -17,7 +17,6 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.eclipse.core.resources.IContainer;
-import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
@@ -27,8 +26,12 @@ import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
 import org.spearce.egit.core.GitProvider;
-import org.spearce.jgit.lib.FullRepository;
+import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.MissingObjectException;
+import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.Tree;
+import org.spearce.jgit.lib.TreeEntry;
 
 public class GitProjectData
 {
@@ -94,9 +97,20 @@ public class GitProjectData
 
     public static void deleteDataFor(final IProject p)
     {
-        final File dat = fileFor(p);
-        final boolean success = dat.delete();
-        trace("deleteDataFor(" + p.getName() + ")=" + success);
+        final File dir = fileFor(p).getParentFile();
+        final File[] todel = dir.listFiles();
+        if (todel != null)
+        {
+            for (int k = 0; k < todel.length; k++)
+            {
+                if (todel[k].isFile())
+                {
+                    todel[k].delete();
+                }
+            }
+        }
+        dir.delete();
+        trace("deleteDataFor(" + p.getName() + ")");
         uncacheDataFor(p);
     }
 
@@ -125,7 +139,7 @@ public class GitProjectData
         Repository d = r != null ? (Repository) r.get() : null;
         if (d == null)
         {
-            d = new FullRepository(gitDir);
+            d = new Repository(gitDir);
             repositoryCache.put(gitDir, new WeakReference(d));
         }
         return d;
@@ -142,7 +156,7 @@ public class GitProjectData
 
     private final Collection mappings;
 
-    private final Map c2db;
+    private final Map c2mapping;
 
     private final Set protectedResources;
 
@@ -150,7 +164,7 @@ public class GitProjectData
     {
         project = p;
         mappings = new ArrayList();
-        c2db = new HashMap();
+        c2mapping = new HashMap();
         protectedResources = new HashSet();
     }
 
@@ -159,16 +173,40 @@ public class GitProjectData
         return project;
     }
 
-    public void setRepositoryMappings(final Collection m)
+    public void setRepositoryMappings(final Collection newMappings)
     {
         mappings.clear();
-        mappings.addAll(m);
+
+        final Iterator i = newMappings.iterator();
+        final HashSet usedNames = new HashSet();
+        while (i.hasNext())
+        {
+            final RepositoryMapping m = (RepositoryMapping) i.next();
+            String n = m.getContainerPath().lastSegment();
+            if (n == null)
+            {
+                n = project.getName();
+            }
+            if (usedNames.contains(n))
+            {
+                int x = 2;
+                while (usedNames.contains(n + x))
+                {
+                    x++;
+                }
+                n += x;
+            }
+            usedNames.add(n);
+            m.setCacheName(n + ".cache");
+            mappings.add(m);
+        }
+
         remapAll();
     }
 
     public void markTeamPrivateResources() throws CoreException
     {
-        final Iterator i = c2db.entrySet().iterator();
+        final Iterator i = c2mapping.entrySet().iterator();
         while (i.hasNext())
         {
             final Map.Entry e = (Map.Entry) i.next();
@@ -178,7 +216,8 @@ public class GitProjectData
             {
                 try
                 {
-                    final Repository r = (Repository) e.getValue();
+                    final Repository r = ((RepositoryMapping) e.getValue())
+                        .getRepository();
                     final File dotGitDir = dotGit.getLocation().toFile()
                         .getCanonicalFile();
                     if (dotGitDir.equals(r.getDirectory()))
@@ -195,19 +234,132 @@ public class GitProjectData
         }
     }
 
-    public boolean isProtected(final IFolder f)
+    public void rebuildCache() throws CoreException
+    {
+        final Iterator i = mappings.iterator();
+        while (i.hasNext())
+        {
+            rebuildCache((RepositoryMapping) i.next());
+        }
+    }
+
+    private void rebuildCache(final RepositoryMapping m) throws CoreException
+    {
+        if (m.getRepository() != null)
+        {
+            try
+            {
+                final ObjectId head = m.getRepository().resolve("HEAD");
+                Tree t;
+
+                if (head != null)
+                {
+                    trace("rebuildCache("
+                        + m.getContainerPath()
+                        + ") mapTree "
+                        + head);
+
+                    t = m.getRepository().mapTree(head);
+                    if (t == null)
+                    {
+                        throw new MissingObjectException(Constants.TYPE_TREE
+                            + ", "
+                            + Constants.TYPE_COMMIT
+                            + " or "
+                            + Constants.TYPE_TAG, head);
+                    }
+                    if (m.getSubset() != null)
+                    {
+                        final TreeEntry e = t.findMember(m.getSubset());
+                        if (!(e instanceof Tree))
+                        {
+                            throw new IOException("No such tree: "
+                                + m.getSubset());
+                        }
+                        t = (Tree) e;
+                    }
+                }
+                else
+                {
+                    t = new Tree(m.getRepository());
+                }
+
+                trace("rebuildCache("
+                    + m.getContainerPath()
+                    + ") "
+                    + t.getId()
+                    + " "
+                    + t.getFullName());
+                t.detachParent();
+                m.setCacheTree(t);
+            }
+            catch (IOException ioe)
+            {
+                throw Activator.error(
+                    CoreText.GitProjectData_cannotReadHEAD,
+                    ioe);
+            }
+        }
+    }
+
+    public boolean isProtected(final IResource f)
     {
         return protectedResources.contains(f);
     }
 
-    public Repository getOwnRepository(final IResource r)
+    public RepositoryMapping getRepositoryMapping(
+        IResource r,
+        final boolean walk)
     {
-        return (Repository) c2db.get(r);
+        while (r != null)
+        {
+            final RepositoryMapping m = (RepositoryMapping) c2mapping.get(r);
+            if (m != null)
+            {
+                return m;
+            }
+
+            if (!walk)
+            {
+                return null;
+            }
+
+            r = r.getParent();
+        }
+        return null;
     }
 
-    public void cache()
+    public TreeEntry getTreeEntry(IResource r) throws IOException
     {
-        cacheDataFor(getProject(), this);
+        String s = null;
+        Tree t = null;
+
+        while (r != null)
+        {
+            // t = (Tree) c2tree.get(r);
+            if (t != null)
+            {
+                break;
+            }
+
+            if (s != null)
+            {
+                s = r.getName() + "/" + s;
+            }
+            else
+            {
+                s = r.getName();
+            }
+
+            r = r.getParent();
+        }
+
+        if (s != null && t != null)
+        {
+            return t.findMember(s);
+        }
+
+        return t;
     }
 
     public void store() throws CoreException
@@ -219,7 +371,7 @@ public class GitProjectData
         try
         {
             trace("save " + dat);
-            tmp = File.createTempFile("gpd_", ".ser", dat.getParentFile());
+            tmp = File.createTempFile("gpd_", ".prop", dat.getParentFile());
             final FileOutputStream o = new FileOutputStream(tmp);
             try
             {
@@ -274,7 +426,7 @@ public class GitProjectData
             while (keyItr.hasNext())
             {
                 final String key = keyItr.next().toString();
-                if (RepositoryMapping.isKey(key))
+                if (RepositoryMapping.isInitialKey(key))
                 {
                     mappings.add(new RepositoryMapping(p, key));
                 }
@@ -290,7 +442,6 @@ public class GitProjectData
     private void remapAll()
     {
         protectedResources.clear();
-        c2db.clear();
         final Iterator i = mappings.iterator();
         while (i.hasNext())
         {
@@ -300,7 +451,12 @@ public class GitProjectData
 
     private void map(final RepositoryMapping m)
     {
-        final IResource c = getProject().findMember(m.getContainerPath());
+        final IResource c;
+        final File git;
+        final IResource dotGit;
+
+        m.clear();
+        c = getProject().findMember(m.getContainerPath());
         if (c == null || !(c instanceof IContainer))
         {
             Activator.logError(
@@ -309,7 +465,7 @@ public class GitProjectData
             return;
         }
 
-        final File git = c.getLocation().append(m.getGitDirPath()).toFile();
+        git = c.getLocation().append(m.getGitDirPath()).toFile();
         if (!git.isDirectory() || !new File(git, "config").isFile())
         {
             Activator.logError(
@@ -320,8 +476,8 @@ public class GitProjectData
 
         try
         {
-            c2db.put(c, getRepository(git).subset(m.getSubset()));
-            trace("map " + c + " -> " + c2db.get(c));
+            m.setRepository(getRepository(git));
+            trace("map " + c + " -> " + m.getRepository());
         }
         catch (IOException ioe)
         {
@@ -332,7 +488,7 @@ public class GitProjectData
 
         }
 
-        final IResource dotGit = ((IContainer) c).findMember(".git");
+        dotGit = ((IContainer) c).findMember(".git");
         if (dotGit != null && dotGit.getLocation().toFile().equals(git))
         {
             protect(dotGit);

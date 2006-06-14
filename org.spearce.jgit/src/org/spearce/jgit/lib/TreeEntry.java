@@ -1,16 +1,19 @@
 package org.spearce.jgit.lib;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 public abstract class TreeEntry
 {
-    private final Tree parent;
+    public static final int MODIFIED_ONLY = 1 << 0;
 
-    private ObjectId id;
+    public static final int LOADED_ONLY = 1 << 1;
+
+    private Tree parent;
 
     private final byte[] nameUTF8;
 
-    private final String name;
+    private ObjectId id;
 
     protected TreeEntry(
         final Tree myParent,
@@ -20,20 +23,21 @@ public abstract class TreeEntry
         parent = myParent;
         id = myId;
         nameUTF8 = myNameUTF8;
-        try
-        {
-            name = nameUTF8 != null ? new String(nameUTF8, "UTF-8") : null;
-        }
-        catch (UnsupportedEncodingException uee)
-        {
-            throw new RuntimeException("This JVM doesn't support UTF-8 even"
-                + " though it should.", uee);
-        }
     }
 
     public Tree getParent()
     {
         return parent;
+    }
+
+    public void detachParent()
+    {
+        parent = null;
+    }
+
+    public Repository getDatabase()
+    {
+        return getParent().getDatabase();
     }
 
     public byte[] getNameUTF8()
@@ -43,7 +47,17 @@ public abstract class TreeEntry
 
     public String getName()
     {
-        return name;
+        try
+        {
+            return nameUTF8 != null ? new String(
+                nameUTF8,
+                Constants.CHARACTER_ENCODING) : null;
+        }
+        catch (UnsupportedEncodingException uee)
+        {
+            throw new RuntimeException("JVM doesn't support "
+                + Constants.CHARACTER_ENCODING, uee);
+        }
     }
 
     public boolean isModified()
@@ -86,6 +100,15 @@ public abstract class TreeEntry
         appendFullName(r);
         return r.toString();
     }
+
+    public void accept(final TreeVisitor tv) throws IOException
+    {
+        accept(tv, 0);
+    }
+
+    public abstract void accept(TreeVisitor tv, int flags) throws IOException;
+
+    public abstract FileMode getMode();
 
     private void appendFullName(final StringBuffer r)
     {

@@ -3,69 +3,35 @@ package org.spearce.jgit.lib;
 import java.io.File;
 import java.io.IOException;
 
-public class WriteTree extends TreeVisitor
+public class WriteTree extends TreeVisitorWithCurrentDirectory
 {
-    private final Repository r;
-
     private final ObjectWriter ow;
 
-    private boolean writeAll;
-
-    private File src;
-
-    public WriteTree(final Repository db, final File sourceDir)
+    public WriteTree(final File sourceDirectory, final Repository db)
     {
-        r = db;
-        ow = new ObjectWriter(r);
-        writeAll = false;
-        src = sourceDir;
+        super(sourceDirectory);
+        ow = new ObjectWriter(db);
     }
 
-    public void setWriteAll(final boolean t)
+    public void visitFile(final FileTreeEntry f) throws IOException
     {
-        writeAll = t;
+        f.setId(ow.writeBlob(new File(getCurrentDirectory(), f.getName())));
     }
 
-    protected void visitFile(final FileTreeEntry f) throws IOException
+    public void visitSymlink(final SymlinkTreeEntry s) throws IOException
     {
-        super.visitFile(f);
-        if (f.isModified())
+        if (s.isModified())
         {
-            f.setId(ow.writeBlob(new File(src, f.getName())));
+            throw new WritingNotSupportedException("Symlink \""
+                + s.getFullName()
+                + "\" cannot be written as the link target"
+                + " cannot be read from within Java.");
         }
     }
 
-    protected void visitSymlink(final SymlinkTreeEntry s) throws IOException
+    public void endVisitTree(final Tree t) throws IOException
     {
-        super.visitSymlink(s);
-        if (!r.hasObject(s.getId()))
-        {
-            throw new MissingObjectException("blob", s.getId());
-        }
-    }
-
-    protected void visitTree(final Tree t) throws IOException
-    {
-        // Only visit a tree if it has been modified. If any child of a tree has
-        // been modified then the tree itself will also appear modified;
-        // consequently we will recurse into it.
-        //
-        if (writeAll || t.isModified())
-        {
-            if (t.isRoot())
-            {
-                super.visitTree(t);
-            }
-            else
-            {
-                final File d = new File(src, t.getName());
-                final File o = src;
-                src = d;
-                super.visitTree(t);
-                src = o;
-            }
-
-            t.setId(ow.writeTree(t));
-        }
+        super.endVisitTree(t);
+        t.setId(ow.writeTree(t));
     }
 }
