@@ -1,14 +1,17 @@
 package org.spearce.egit.core.project;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Properties;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
-import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.MergedTree;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
+import org.spearce.jgit.lib.TreeEntry;
 
 public class RepositoryMapping
 {
@@ -25,11 +28,11 @@ public class RepositoryMapping
 
     private final String cacheref;
 
-    private ObjectId savedCache;
-
     private Repository db;
 
-    private Tree cache;
+    private Tree cacheTree;
+
+    private MergedTree activeDiff;
 
     public RepositoryMapping(final Properties p, final String initialKey)
     {
@@ -114,7 +117,7 @@ public class RepositoryMapping
     public void clear()
     {
         db = null;
-        cache = null;
+        cacheTree = null;
     }
 
     public Repository getRepository()
@@ -125,24 +128,47 @@ public class RepositoryMapping
     public void setRepository(final Repository r)
     {
         db = r;
+        cacheTree = null;
+        activeDiff = null;
     }
 
     public Tree getCacheTree()
     {
-        return cache;
+        return cacheTree;
     }
 
-    public void setCacheTree(final Tree t)
+    public MergedTree getActiveDiff()
     {
-        if (t != null && t.getRepository() != getRepository())
+        return activeDiff;
+    }
+
+    public void recomputeMerge() throws IOException
+    {
+        Tree head = getRepository().mapTree(Constants.HEAD);
+        if (head != null)
         {
-            throw new IllegalArgumentException("Repository must match.");
+            if (getSubset() != null)
+            {
+                final TreeEntry e = head.findMember(getSubset());
+                e.detachParent();
+                head = e instanceof Tree ? (Tree) e : null;
+            }
         }
-        cache = t;
-        if (t.getId() != null)
+        if (head == null)
         {
-            savedCache = t.getId();
+            head = new Tree(getRepository());
         }
+
+        if (cacheTree == null)
+        {
+            cacheTree = getRepository().mapTree(cacheref);
+        }
+        if (cacheTree == null)
+        {
+            cacheTree = new Tree(getRepository());
+        }
+
+        activeDiff = new MergedTree(new Tree[] {head, cacheTree});
     }
 
     public void store(final Properties p)

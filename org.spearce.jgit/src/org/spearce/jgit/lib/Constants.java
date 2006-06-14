@@ -9,6 +9,8 @@ public final class Constants
 
     public static final int OBJECT_ID_LENGTH;
 
+    public static final String HEAD = "HEAD";
+
     public static final String TYPE_COMMIT = "commit";
 
     public static final String TYPE_BLOB = "blob";

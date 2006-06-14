@@ -22,15 +22,12 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
 import org.spearce.egit.core.GitProvider;
-import org.spearce.jgit.lib.Constants;
-import org.spearce.jgit.lib.MissingObjectException;
-import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
-import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 
 public class GitProjectData
@@ -210,110 +207,25 @@ public class GitProjectData
         }
     }
 
-    public void rebuildCache() throws CoreException
-    {
-        final Iterator i = mappings.iterator();
-        while (i.hasNext())
-        {
-            rebuildCache((RepositoryMapping) i.next());
-        }
-    }
-
-    private void rebuildCache(final RepositoryMapping m) throws CoreException
-    {
-        if (m.getRepository() != null)
-        {
-            try
-            {
-                final ObjectId head = m.getRepository().resolve("HEAD");
-                Tree t;
-
-                if (head != null)
-                {
-                    trace("rebuildCache("
-                        + m.getContainerPath()
-                        + ") mapTree "
-                        + head);
-
-                    t = m.getRepository().mapTree(head);
-                    if (t == null)
-                    {
-                        throw new MissingObjectException(Constants.TYPE_TREE
-                            + ", "
-                            + Constants.TYPE_COMMIT
-                            + " or "
-                            + Constants.TYPE_TAG, head);
-                    }
-                    if (m.getSubset() != null)
-                    {
-                        final TreeEntry e = t.findMember(m.getSubset());
-                        if (!(e instanceof Tree))
-                        {
-                            throw new IOException("No such tree: "
-                                + m.getSubset());
-                        }
-                        t = (Tree) e;
-                    }
-                }
-                else
-                {
-                    t = new Tree(m.getRepository());
-                }
-
-                trace("rebuildCache("
-                    + m.getContainerPath()
-                    + ") "
-                    + t.getId()
-                    + " "
-                    + t.getFullName());
-                t.detachParent();
-                m.setCacheTree(t);
-            }
-            catch (IOException ioe)
-            {
-                throw Activator.error(
-                    CoreText.GitProjectData_cannotReadHEAD,
-                    ioe);
-            }
-        }
-    }
-
     public boolean isProtected(final IResource f)
     {
         return protectedResources.contains(f);
     }
 
-    public RepositoryMapping getRepositoryMapping(
-        IResource r,
-        final boolean walk)
+    public RepositoryMapping getRepositoryMapping(final IResource r)
     {
-        while (r != null)
-        {
-            final RepositoryMapping m = (RepositoryMapping) c2mapping.get(r);
-            if (m != null)
-            {
-                return m;
-            }
-
-            if (!walk)
-            {
-                return null;
-            }
-
-            r = r.getParent();
-        }
-        return null;
+        return (RepositoryMapping) c2mapping.get(r);
     }
 
     public TreeEntry getTreeEntry(IResource r) throws IOException
     {
         String s = null;
-        Tree t = null;
+        RepositoryMapping m = null;
 
         while (r != null)
         {
-            // t = (Tree) c2tree.get(r);
-            if (t != null)
+            m = getRepositoryMapping(r);
+            if (m != null)
             {
                 break;
             }
@@ -330,12 +242,45 @@ public class GitProjectData
             r = r.getParent();
         }
 
-        if (s != null && t != null)
+        if (s != null && m != null && m.getCacheTree() != null)
         {
-            return t.findMember(s);
+            return m.getCacheTree().findMember(s);
         }
 
-        return t;
+        return null;
+    }
+
+    public TreeEntry[] getActiveDiffTreeEntries(IResource r) throws IOException
+    {
+        String s = null;
+        RepositoryMapping m = null;
+
+        while (r != null)
+        {
+            m = getRepositoryMapping(r);
+            if (m != null)
+            {
+                break;
+            }
+
+            if (s != null)
+            {
+                s = r.getName() + "/" + s;
+            }
+            else
+            {
+                s = r.getName();
+            }
+
+            r = r.getParent();
+        }
+
+        if (s != null && m != null && m.getActiveDiff() != null)
+        {
+            return m.getActiveDiff().findMember(s);
+        }
+
+        return null;
     }
 
     public void store() throws CoreException
@@ -427,13 +372,22 @@ public class GitProjectData
 
     private void map(final RepositoryMapping m)
     {
-        final IResource c;
+        final IResource r;
         final File git;
         final IResource dotGit;
+        IContainer c = null;
 
         m.clear();
-        c = getProject().findMember(m.getContainerPath());
-        if (c == null || !(c instanceof IContainer))
+        r = getProject().findMember(m.getContainerPath());
+        if (r instanceof IContainer)
+        {
+            c = (IContainer) r;
+        }
+        else if (r instanceof IAdaptable)
+        {
+            c = (IContainer) ((IAdaptable) r).getAdapter(IContainer.class);
+        }
+        if (c == null)
         {
             Activator.logError(
                 CoreText.GitProjectData_mappedResourceGone,
@@ -453,16 +407,29 @@ public class GitProjectData
         try
         {
             m.setRepository(getRepository(git));
-            trace("map " + c + " -> " + m.getRepository());
         }
         catch (IOException ioe)
         {
             Activator.logError(
                 CoreText.GitProjectData_mappedResourceGone,
                 new FileNotFoundException(m.getContainerPath().toString()));
+            m.setRepository(null);
             return;
-
         }
+
+        try
+        {
+            m.recomputeMerge();
+        }
+        catch (IOException ioe)
+        {
+            Activator.logError(CoreText.GitProjectData_cannotReadHEAD, ioe);
+            m.setRepository(null);
+            return;
+        }
+
+        trace("map " + c + " -> " + m.getRepository());
+        c2mapping.put(c, m);
 
         dotGit = ((IContainer) c).findMember(".git");
         if (dotGit != null && dotGit.getLocation().toFile().equals(git))

@@ -19,7 +19,6 @@ public class GitProvider extends RepositoryProvider
     public void configureProject() throws CoreException
     {
         getData().markTeamPrivateResources();
-        getData().rebuildCache();
     }
 
     public void deconfigure() throws CoreException

@@ -123,12 +123,12 @@ public class ObjectId implements Comparable
 
     public int compareTo(final byte[] b)
     {
-        return compare(id, b);
+        return b != null ? compare(id, b) : 1;
     }
 
     public int compareTo(final ObjectId b)
     {
-        return compare(id, b.id);
+        return b != null ? compare(id, b.id) : 1;
     }
 
     public int compareTo(final Object o)
@@ -141,7 +141,7 @@ public class ObjectId implements Comparable
         {
             return compare(id, (byte[]) o);
         }
-        return -1;
+        return 1;
     }
 
     public int hashCode()

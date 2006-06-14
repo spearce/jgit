@@ -20,6 +20,8 @@ public class UIText extends NLS
 
     public static String ExistingOrNewPage_createNew;
 
+    public static String Decorator_failedLazyLoading;
+    
     static
     {
         initializeMessages(

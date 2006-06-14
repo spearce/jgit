@@ -180,6 +180,12 @@ public class Repository
         }
     }
 
+    public Commit mapCommit(final String revstr) throws IOException
+    {
+        final ObjectId id = resolve(revstr);
+        return id != null ? mapCommit(id) : null;
+    }
+
     public Commit mapCommit(final ObjectId id) throws IOException
     {
         final ObjectReader or = openObject(id);
@@ -196,6 +202,12 @@ public class Repository
             or.close();
             throw new CorruptObjectException(id, "not a commit");
         }
+    }
+
+    public Tree mapTree(final String revstr) throws IOException
+    {
+        final ObjectId id = resolve(revstr);
+        return id != null ? mapTree(id) : null;
     }
 
     public Tree mapTree(final ObjectId id) throws IOException

@@ -4,6 +4,57 @@ import java.io.IOException;
 
 public class MergedTree
 {
+    public static final boolean isAdded(final TreeEntry[] ents)
+    {
+        if (ents.length == 2)
+        {
+            if (ents[0] == null && ents[1] != null)
+            {
+                return true;
+            }
+            if (ents[0] != null
+                && ents[1] != null
+                && ents[0].getClass() != ents[1].getClass())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static final boolean isRemoved(final TreeEntry[] ents)
+    {
+        if (ents.length == 2)
+        {
+            if (ents[0] != null && ents[1] == null)
+            {
+                return true;
+            }
+            if (ents[0] != null
+                && ents[1] != null
+                && ents[0].getClass() != ents[1].getClass())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static final boolean isModified(final TreeEntry[] ents)
+    {
+        if (ents.length == 2)
+        {
+            if (ents[0] != null
+                && ents[1] != null
+                && ents[0].getClass() == ents[1].getClass()
+                && !ents[0].getId().equals(ents[1].getId()))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static final int binarySearch(
         final TreeEntry[] entries,
         final int width,
@@ -23,7 +74,7 @@ public class MergedTree
             while (entries[ix] == null)
                 ix++;
             cmp = Tree.compareNames(
-                entries[mid].getNameUTF8(),
+                entries[ix].getNameUTF8(),
                 nameUTF8,
                 nameStart,
                 nameEnd);
@@ -52,8 +103,13 @@ public class MergedTree
 
     public MergedTree(final Tree[] src) throws IOException
     {
+        if (src.length < 2)
+        {
+            throw new IllegalArgumentException("At least two trees are"
+                + " required to compute a merge.");
+        }
         sources = src;
-        remerge();
+        computeMerge();
     }
 
     public TreeEntry[] findMember(final String s)
@@ -67,46 +123,37 @@ public class MergedTree
         throws IOException,
             MissingObjectException
     {
+        final int srcCnt = sources.length;
         int slash;
-        int p;
+        final int p;
         final TreeEntry[] r;
 
         for (slash = offset; slash < s.length && s[slash] != '/'; slash++)
             /* search for path component terminator */;
-        p = binarySearch(merged, sources.length, s, offset, slash);
+        p = binarySearch(merged, srcCnt, s, offset, slash);
         if (p < 0)
         {
             return null;
         }
 
-        p *= sources.length;
-        r = new TreeEntry[sources.length];
-        for (int j = 0; j < sources.length; j++, p++)
+        r = new TreeEntry[srcCnt];
+        for (int j = 0, k = p * srcCnt; j < srcCnt; j++, k++)
         {
-            r[j] = merged[p];
+            r[j] = merged[k];
         }
 
         if (slash < s.length)
         {
-            boolean gotATree = false;
-            for (int j = 0; j < sources.length; j++)
+            if (subtrees != null && p < subtrees.length && subtrees[p] != null)
             {
-                if (r[j] instanceof Tree)
-                {
-                    r[j] = ((Tree) r[j]).findMember(s, slash + 1);
-                    gotATree = true;
-                }
-                else if (r[j] != null)
-                {
-                    r[j] = null;
-                }
+                return subtrees[p].findMember(s, slash + 1);
             }
-            return gotATree ? r : null;
+            return null;
         }
         return r;
     }
 
-    private void remerge() throws IOException
+    private void computeMerge() throws IOException
     {
         final int srcCnt = sources.length;
         final int[] treeIndexes = new int[srcCnt];
@@ -117,7 +164,7 @@ public class MergedTree
         TreeEntry[] newMerged;
         MergedTree[] newSubtrees = null;
 
-        for (int srcId = srcCnt; srcId >= 0; srcId--)
+        for (int srcId = srcCnt - 1; srcId >= 0; srcId--)
         {
             if (sources[srcId] != null)
             {
@@ -163,6 +210,11 @@ public class MergedTree
             {
                 final int ti = treeIndexes[srcId];
                 final TreeEntry[] ents = entries[srcId];
+                if (ti == ents.length)
+                {
+                    continue;
+                }
+
                 final TreeEntry thisEntry = ents[ti];
                 final int cmp = minName == null ? -1 : Tree.compareNames(
                     thisEntry.getNameUTF8(),
@@ -267,7 +319,7 @@ public class MergedTree
         else
         {
             subtrees = new MergedTree[treeId];
-            for (int j = treeId - 1; j >= 0; j--)
+            for (int j = Math.min(newSubtrees.length, treeId) - 1; j >= 0; j--)
             {
                 subtrees[j] = newSubtrees[j];
             }
