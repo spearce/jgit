@@ -104,7 +104,7 @@ public class PersonIdent
         return new Date(when);
     }
 
-    public String toString()
+    public String toExternalString()
     {
         final StringBuffer r = new StringBuffer();
         int offset = tzOffset;
@@ -142,6 +142,26 @@ public class PersonIdent
             r.append('0');
         }
         r.append(offsetMins);
+
+        return r.toString();
+    }
+
+    public String toString()
+    {
+        final StringBuffer r = new StringBuffer();
+        int minutes;
+
+        minutes = tzOffset < 0 ? -tzOffset : tzOffset;
+        minutes = (minutes / 100) * 60 + (minutes % 100);
+        minutes = tzOffset < 0 ? -minutes : minutes;
+
+        r.append("PersonIdent[");
+        r.append(getName());
+        r.append(", ");
+        r.append(getEmailAddress());
+        r.append(", ");
+        r.append(new Date(when + minutes * 60));
+        r.append("]");
 
         return r.toString();
     }

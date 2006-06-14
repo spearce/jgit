@@ -110,11 +110,11 @@ public class ObjectWriter
         }
 
         w.write("author ");
-        w.write(c.getAuthor().toString());
+        w.write(c.getAuthor().toExternalString());
         w.write('\n');
 
         w.write("committer ");
-        w.write(c.getCommitter().toString());
+        w.write(c.getCommitter().toExternalString());
         w.write('\n');
 
         w.write('\n');

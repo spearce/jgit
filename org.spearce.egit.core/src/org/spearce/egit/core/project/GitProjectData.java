@@ -176,31 +176,6 @@ public class GitProjectData
     public void setRepositoryMappings(final Collection newMappings)
     {
         mappings.clear();
-
-        final Iterator i = newMappings.iterator();
-        final HashSet usedNames = new HashSet();
-        while (i.hasNext())
-        {
-            final RepositoryMapping m = (RepositoryMapping) i.next();
-            String n = m.getContainerPath().lastSegment();
-            if (n == null)
-            {
-                n = project.getName();
-            }
-            if (usedNames.contains(n))
-            {
-                int x = 2;
-                while (usedNames.contains(n + x))
-                {
-                    x++;
-                }
-                n += x;
-            }
-            usedNames.add(n);
-            m.setCacheName(n + ".cache");
-            mappings.add(m);
-        }
-
         remapAll();
     }
 

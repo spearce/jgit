@@ -22,8 +22,6 @@ public class RepositoryMapping
 
     private final String subset;
 
-    private String cacheName;
-
     private Repository db;
 
     private Tree cache;
@@ -35,7 +33,6 @@ public class RepositoryMapping
         gitdirPath = p.getProperty(initialKey);
         final String s = p.getProperty(containerPath + ".subset");
         subset = "".equals(s) ? null : s;
-        cacheName = p.getProperty(containerPath + ".cache");
     }
 
     public RepositoryMapping(
@@ -92,16 +89,6 @@ public class RepositoryMapping
         return subset;
     }
 
-    public String getCacheName()
-    {
-        return cacheName;
-    }
-
-    public void setCacheName(final String n)
-    {
-        cacheName = n;
-    }
-
     public void clear()
     {
         db = null;
@@ -131,7 +118,6 @@ public class RepositoryMapping
     public void store(final Properties p)
     {
         p.setProperty(containerPath + ".gitdir", gitdirPath);
-        p.setProperty(containerPath + ".cache", cacheName);
         if (subset != null && !"".equals(subset))
         {
             p.setProperty(containerPath + ".subset", subset);

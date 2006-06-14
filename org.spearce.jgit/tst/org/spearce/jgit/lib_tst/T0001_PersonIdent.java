@@ -20,14 +20,14 @@ public class T0001_PersonIdent extends TestCase
         assertEquals("author@example.com", p.getEmailAddress());
         assertEquals(1142878501000L, p.getWhen().getTime());
         assertEquals("A U Thor <author@example.com> 1142878501 -0500", p
-            .toString());
+            .toExternalString());
     }
 
     public void test002_ParseIdent()
     {
         final String i = "A U Thor <author@example.com> 1142878501 -0500";
         final PersonIdent p = new PersonIdent(i);
-        assertEquals(i, p.toString());
+        assertEquals(i, p.toExternalString());
         assertEquals("A U Thor", p.getName());
         assertEquals("author@example.com", p.getEmailAddress());
         assertEquals(1142878501000L, p.getWhen().getTime());
@@ -37,7 +37,7 @@ public class T0001_PersonIdent extends TestCase
     {
         final String i = "A U Thor <author@example.com> 1142878501 +0230";
         final PersonIdent p = new PersonIdent(i);
-        assertEquals(i, p.toString());
+        assertEquals(i, p.toExternalString());
         assertEquals("A U Thor", p.getName());
         assertEquals("author@example.com", p.getEmailAddress());
         assertEquals(1142878501000L, p.getWhen().getTime());
