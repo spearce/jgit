@@ -23,8 +23,8 @@ public class T0002_Tree extends RepositoryTestCase
         assertTrue("isRoot", t.isRoot());
         assertTrue("no name", t.getName() == null);
         assertTrue("no nameUTF8", t.getNameUTF8() == null);
-        assertTrue("has entries array", t.entries() != null);
-        assertTrue("entries is empty", t.entries().length == 0);
+        assertTrue("has entries array", t.members() != null);
+        assertTrue("entries is empty", t.members().length == 0);
         assertEquals("full name is empty", "", t.getFullName());
         assertTrue("no id", t.getId() == null);
         assertTrue("tree is self", t.getTree() == t);
@@ -52,7 +52,7 @@ public class T0002_Tree extends RepositoryTestCase
         assertTrue("has no id", t.getId() == null);
         assertTrue("found bob", t.findMember(f.getName()) == f);
 
-        final TreeEntry[] i = t.entries();
+        final TreeEntry[] i = t.members();
         assertTrue("iterator is not empty", i != null && i.length > 0);
         assertTrue("iterator returns file", i[0] == f);
         assertTrue("iterator is empty", i.length == 1);
@@ -77,27 +77,41 @@ public class T0002_Tree extends RepositoryTestCase
         assertTrue("parent matches", f.getParent() == t);
         assertTrue("repository matches", f.getRepository() == db);
         assertTrue("isLoaded", f.isLoaded());
-        assertFalse("has items", f.entries().length > 0);
+        assertFalse("has items", f.members().length > 0);
         assertFalse("is root", f.isRoot());
         assertTrue("tree is self", f.getTree() == f);
         assertTrue("parent is modified", t.isModified());
         assertTrue("parent has no id", t.getId() == null);
         assertTrue("found bob child", t.findMember(f.getName()) == f);
 
-        final TreeEntry[] i = t.entries();
+        final TreeEntry[] i = t.members();
         assertTrue("iterator is not empty", i.length > 0);
         assertTrue("iterator returns file", i[0] == f);
         assertTrue("iterator is empty", i.length == 1);
     }
 
-    public void test005_linkTree() throws IOException
+    public void test005_addRecursiveFile() throws IOException
     {
         final Tree t = new Tree(db);
+        final FileTreeEntry f = t.addFile("a/b/c");
+        assertNotNull("created f", f);
+        assertEquals("c", f.getName());
+        assertEquals("b", f.getParent().getName());
+        assertEquals("a", f.getParent().getParent().getName());
+        assertTrue("t is great-grandparent", t == f.getParent().getParent()
+            .getParent());
+    }
 
-        final Tree f = t.linkTree("bob", SOME_FAKE_ID);
-        assertNotNull("have tree", f);
-        assertTrue("id was saved", f.getId() == SOME_FAKE_ID);
-        assertFalse("isLoaded", f.isLoaded());
+    public void test005_addRecursiveTree() throws IOException
+    {
+        final Tree t = new Tree(db);
+        final Tree f = t.addTree("a/b/c");
+        assertNotNull("created f", f);
+        assertEquals("c", f.getName());
+        assertEquals("b", f.getParent().getName());
+        assertEquals("a", f.getParent().getParent().getName());
+        assertTrue("t is great-grandparent", t == f.getParent().getParent()
+            .getParent());
     }
 
     public void test006_addDeepTree() throws IOException
@@ -165,8 +179,8 @@ public class T0002_Tree extends RepositoryTestCase
                 files.add(f);
             }
         }
-        assertEquals(files.size(), t.entryCount());
-        final TreeEntry[] ents = t.entries();
+        assertEquals(files.size(), t.memberCount());
+        final TreeEntry[] ents = t.members();
         assertNotNull(ents);
         assertEquals(files.size(), ents.length);
         for (int k = 0; k < ents.length; k++)

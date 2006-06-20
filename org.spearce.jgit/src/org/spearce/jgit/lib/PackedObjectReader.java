@@ -6,6 +6,8 @@ import java.io.InputStream;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
+import org.spearce.jgit.errors.MissingObjectException;
+
 public class PackedObjectReader extends ObjectReader
 {
     private final PackReader pack;
@@ -103,9 +105,7 @@ public class PackedObjectReader extends ObjectReader
         final ObjectReader or = pack.resolveBase(getDeltaBaseId());
         if (or == null)
         {
-            throw new CorruptObjectException(
-                deltaBase,
-                "is a delta base for another object but is missing.");
+            throw new MissingObjectException(deltaBase, "delta base");
         }
         return or;
     }

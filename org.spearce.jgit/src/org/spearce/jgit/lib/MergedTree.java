@@ -2,6 +2,8 @@ package org.spearce.jgit.lib;
 
 import java.io.IOException;
 
+import org.spearce.jgit.errors.MissingObjectException;
+
 public class MergedTree
 {
     public static final boolean isAdded(final TreeEntry[] ents)
@@ -168,7 +170,7 @@ public class MergedTree
         {
             if (sources[srcId] != null)
             {
-                final TreeEntry[] ents = sources[srcId].entries();
+                final TreeEntry[] ents = sources[srcId].members();
                 entries[srcId] = ents;
                 pos = Math.max(pos, ents.length);
                 if (ents.length == 0)

@@ -3,6 +3,8 @@ package org.spearce.jgit.lib;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.spearce.jgit.errors.CorruptObjectException;
+
 /**
  * Recreate a stream from a base stream and a GIT pack delta.
  * <p>

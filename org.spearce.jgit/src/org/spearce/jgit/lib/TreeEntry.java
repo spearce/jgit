@@ -9,6 +9,8 @@ public abstract class TreeEntry
 
     public static final int LOADED_ONLY = 1 << 1;
 
+    public static final int CONCURRENT_MODIFICATION = 1 << 2;
+
     private final byte[] nameUTF8;
 
     private Tree parent;
@@ -28,6 +30,12 @@ public abstract class TreeEntry
     public Tree getParent()
     {
         return parent;
+    }
+
+    public void delete()
+    {
+        getParent().removeEntry(this);
+        detachParent();
     }
 
     public void detachParent()

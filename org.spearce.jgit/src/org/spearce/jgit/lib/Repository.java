@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.spearce.jgit.errors.IncorrectObjectTypeException;
+import org.spearce.jgit.errors.ObjectWritingException;
+
 public class Repository
 {
     private static final String[] refSearchPaths = {
@@ -158,7 +161,7 @@ public class Repository
         else
         {
             or.close();
-            throw new CorruptObjectException(id, "not a blob");
+            throw new IncorrectObjectTypeException(id, Constants.TYPE_BLOB);
         }
     }
 
@@ -176,7 +179,7 @@ public class Repository
         else
         {
             or.close();
-            throw new CorruptObjectException(id, "not a tree");
+            throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
         }
     }
 
@@ -200,7 +203,7 @@ public class Repository
         else
         {
             or.close();
-            throw new CorruptObjectException(id, "not a commit");
+            throw new IncorrectObjectTypeException(id, Constants.TYPE_COMMIT);
         }
     }
 
@@ -228,8 +231,14 @@ public class Repository
         else
         {
             or.close();
-            throw new CorruptObjectException(id, "not a tree-ish");
+            throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
         }
+    }
+
+    public RefLock lockRef(final String ref) throws IOException
+    {
+        final RefLock l = new RefLock(readRef(ref, true));
+        return l.lock() ? l : null;
     }
 
     public ObjectId resolve(final String revstr) throws IOException
@@ -240,17 +249,16 @@ public class Repository
         {
             id = new ObjectId(revstr);
         }
+
         if (id == null)
         {
-            for (int k = 0; k < refSearchPaths.length; k++)
+            final Ref r = readRef(revstr, false);
+            if (r != null)
             {
-                id = readRef(refSearchPaths[k] + revstr);
-                if (id != null)
-                {
-                    break;
-                }
+                id = r.getObjectId();
             }
         }
+
         return id;
     }
 
@@ -361,7 +369,7 @@ public class Repository
                 if (!t.renameTo(s))
                 {
                     t.delete();
-                    throw new WritingNotSupportedException("Unable to"
+                    throw new ObjectWritingException("Unable to"
                         + " write symref "
                         + name
                         + " to point to "
@@ -379,35 +387,57 @@ public class Repository
         }
     }
 
-    private ObjectId readRef(final String name) throws IOException
+    private Ref readRef(final String revstr, final boolean missingOk)
+        throws IOException
     {
-        final File f = new File(gitDir, name);
-        if (!f.isFile())
+        for (int k = 0; k < refSearchPaths.length; k++)
         {
-            return null;
+            final Ref r = readRefBasic(refSearchPaths[k] + revstr);
+            if (missingOk || r.getObjectId() != null)
+            {
+                return r;
+            }
         }
-        final BufferedReader fr = new BufferedReader(new FileReader(f));
-        try
+        return null;
+    }
+
+    private Ref readRefBasic(String name) throws IOException
+    {
+        int depth = 0;
+        REF_READING: do
         {
-            final String line = fr.readLine();
-            if (line == null || line.length() == 0)
+            final File f = new File(getDirectory(), name);
+            if (!f.isFile())
             {
-                return null;
+                return new Ref(f, null);
             }
-            if (line.startsWith("ref: "))
+
+            final BufferedReader br = new BufferedReader(new FileReader(f));
+            try
             {
-                return readRef(line.substring("ref: ".length()));
+                final String line = br.readLine();
+                if (line == null || line.length() == 0)
+                {
+                    return new Ref(f, null);
+                }
+                else if (line.startsWith("ref: "))
+                {
+                    name = line.substring("ref: ".length());
+                    continue REF_READING;
+                }
+                else if (ObjectId.isId(line))
+                {
+                    return new Ref(f, new ObjectId(line));
+                }
+                throw new IOException("Not a ref: " + name + ": " + line);
             }
-            if (ObjectId.isId(line))
+            finally
             {
-                return new ObjectId(line);
+                br.close();
             }
-            throw new IOException("Not a ref: " + name + ": " + line);
         }
-        finally
-        {
-            fr.close();
-        }
+        while (depth++ < 5);
+        throw new IOException("Exceed maximum ref depth.  Circular reference?");
     }
 
     public String toString()

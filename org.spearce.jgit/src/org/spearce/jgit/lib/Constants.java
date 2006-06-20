@@ -19,6 +19,22 @@ public final class Constants
 
     public static final String TYPE_TAG = "tag";
 
+    public static final int OBJ_EXT = 0;
+
+    public static final int OBJ_COMMIT = 1;
+
+    public static final int OBJ_TREE = 2;
+
+    public static final int OBJ_BLOB = 3;
+
+    public static final int OBJ_TAG = 4;
+
+    public static final int OBJ_TYPE_5 = 5;
+
+    public static final int OBJ_TYPE_6 = 6;
+
+    public static final int OBJ_DELTA = 7;
+
     public static final String CHARACTER_ENCODING = "UTF-8";
 
     public static MessageDigest newMessageDigest()

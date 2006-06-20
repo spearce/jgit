@@ -49,30 +49,41 @@ public abstract class AbstractOperationAction implements IObjectActionDelegate
         final IAction act,
         final List selection);
 
+    protected void postOperation()
+    {
+    }
+
     public void run(final IAction act)
     {
         if (op != null)
         {
             try
             {
-                wp.getSite().getWorkbenchWindow().run(
-                    true,
-                    false,
-                    new IRunnableWithProgress()
-                    {
-                        public void run(final IProgressMonitor monitor)
-                            throws InvocationTargetException
+                try
+                {
+                    wp.getSite().getWorkbenchWindow().run(
+                        true,
+                        false,
+                        new IRunnableWithProgress()
                         {
-                            try
+                            public void run(final IProgressMonitor monitor)
+                                throws InvocationTargetException
                             {
-                                op.run(monitor);
+                                try
+                                {
+                                    op.run(monitor);
+                                }
+                                catch (CoreException ce)
+                                {
+                                    throw new InvocationTargetException(ce);
+                                }
                             }
-                            catch (CoreException ce)
-                            {
-                                throw new InvocationTargetException(ce);
-                            }
-                        }
-                    });
+                        });
+                }
+                finally
+                {
+                    postOperation();
+                }
             }
             catch (Throwable e)
             {

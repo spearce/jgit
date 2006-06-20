@@ -127,11 +127,11 @@ public class T0004_PackReader extends RepositoryTestCase
         t = db
             .mapTree(new ObjectId("aac9df07f653dd18b935298deb813e02c32d2e6f"));
         assertNotNull(t);
-        t.entryCount();
+        t.memberCount();
 
         t = db
             .mapTree(new ObjectId("6b9ffbebe7b83ac6a61c9477ab941d999f5d0c96"));
         assertNotNull(t);
-        t.entryCount();
+        t.memberCount();
     }
 }

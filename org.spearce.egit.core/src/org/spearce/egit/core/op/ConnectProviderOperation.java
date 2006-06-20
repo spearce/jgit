@@ -88,7 +88,7 @@ public class ConnectProviderOperation implements IWorkspaceRunnable
             }
 
             m.subTask(CoreText.ConnectProviderOperation_recordingMapping);
-            final GitProjectData projectData = new GitProjectData(project);
+            GitProjectData projectData = new GitProjectData(project);
             projectData.setRepositoryMappings(repos);
             projectData.store();
 
@@ -107,9 +107,13 @@ public class ConnectProviderOperation implements IWorkspaceRunnable
                 throw ce;
             }
 
+            projectData = GitProjectData.getDataFor(project);
             project.refreshLocal(
                 IResource.DEPTH_INFINITE,
-                new SubProgressMonitor(m, 75));
+                new SubProgressMonitor(m, 50));
+
+            m.subTask(CoreText.ConnectProviderOperation_updatingCache);
+            projectData.fullUpdate();
         }
         finally
         {

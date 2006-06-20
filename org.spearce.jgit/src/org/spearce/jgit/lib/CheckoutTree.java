@@ -5,6 +5,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.spearce.jgit.errors.MissingObjectException;
+
 public class CheckoutTree extends TreeVisitorWithCurrentDirectory
 {
     private final byte[] copyBuffer;
@@ -22,7 +24,7 @@ public class CheckoutTree extends TreeVisitorWithCurrentDirectory
 
         if (or == null)
         {
-            throw new MissingObjectException(Constants.TYPE_BLOB, f.getId());
+            throw new MissingObjectException(f.getId(), Constants.TYPE_BLOB);
         }
 
         try

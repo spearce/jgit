@@ -13,6 +13,8 @@ import java.util.Iterator;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 
+import org.spearce.jgit.errors.ObjectWritingException;
+
 public class ObjectWriter
 {
     private final Repository r;
@@ -55,26 +57,40 @@ public class ObjectWriter
     public ObjectId writeTree(final Tree t) throws IOException
     {
         final ByteArrayOutputStream o = new ByteArrayOutputStream();
-        final TreeEntry[] items = t.entries();
+        final TreeEntry[] items = t.members();
+        byte[] last = null;
         for (int k = 0; k < items.length; k++)
         {
             final TreeEntry e = items[k];
+            final byte[] name = e.getNameUTF8();
             final ObjectId id = e.getId();
 
             if (id == null)
             {
-                throw new WritingNotSupportedException("Object at path \""
+                throw new ObjectWritingException("Object at path \""
                     + e.getFullName()
                     + "\" does not have an id assigned."
                     + "  All object ids must be assigned prior"
                     + " to writing a tree.");
             }
 
+            // Make damn sure the tree object is formatted properly as writing
+            // an incorrectly sorted tree would create a corrupt object that
+            // nobody could later read.
+            // 
+            if (last != null && Tree.compareNames(last, name) >= 0)
+            {
+                throw new ObjectWritingException("Tree \""
+                    + t.getFullName()
+                    + "\" is not sorted according to object names.");
+            }
+
             e.getMode().copyTo(o);
             o.write(' ');
-            o.write(e.getNameUTF8());
+            o.write(name);
             o.write(0);
             o.write(id.getBytes());
+            last = name;
         }
         return writeTree(o.toByteArray());
     }
@@ -226,7 +242,7 @@ public class ObjectWriter
                         // fail.
                         //
                         t.delete();
-                        throw new WritingNotSupportedException("Unable to"
+                        throw new ObjectWritingException("Unable to"
                             + " create new object: "
                             + o);
                     }

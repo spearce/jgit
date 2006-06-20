@@ -1,6 +1,8 @@
-package org.spearce.jgit.lib;
+package org.spearce.jgit.errors;
 
 import java.io.IOException;
+
+import org.spearce.jgit.lib.ObjectId;
 
 public class CorruptObjectException extends IOException
 {

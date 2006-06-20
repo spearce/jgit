@@ -10,7 +10,17 @@ public class CoreText extends NLS
 
     public static String ConnectProviderOperation_recordingMapping;
 
+    public static String ConnectProviderOperation_updatingCache;
+
     public static String DisconnectProviderOperation_disconnecting;
+
+    public static String AddOperation_adding;
+
+    public static String AddOperation_failed;
+
+    public static String UntrackOperation_adding;
+
+    public static String UntrackOperation_failed;
 
     public static String GitProjectData_mappedResourceGone;
 

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.InflaterInputStream;
 
+import org.spearce.jgit.errors.CorruptObjectException;
+
 public class UnpackedObjectReader extends ObjectReader
 {
     private static final int MAX_TYPE_LEN = 16;
@@ -17,35 +19,57 @@ public class UnpackedObjectReader extends ObjectReader
     public UnpackedObjectReader(final ObjectId id, final InputStream src)
         throws IOException
     {
-        final StringBuffer tempType = new StringBuffer(MAX_TYPE_LEN);
-        int tempSize = 0;
+        final StringBuffer typeBuf = new StringBuffer(MAX_TYPE_LEN);
+        final String typeStr;
+        long tempSize = 0;
 
         setId(id);
         inflater = new InflaterInputStream(src);
 
         for (;;)
         {
-            int c = inflater.read();
+            final int c = inflater.read();
             if (' ' == c)
             {
                 break;
             }
-            if (c < 'a' || c > 'z' || tempType.length() >= 16)
+            else if (c < 'a' || c > 'z' || typeBuf.length() >= MAX_TYPE_LEN)
             {
                 throw new CorruptObjectException(id, "bad type in header");
             }
-            tempType.append((char) c);
+            typeBuf.append((char) c);
         }
-        objectType = tempType.toString();
+
+        typeStr = typeBuf.toString();
+        if (Constants.TYPE_BLOB.equals(typeStr))
+        {
+            objectType = Constants.TYPE_BLOB;
+        }
+        else if (Constants.TYPE_TREE.equals(typeStr))
+        {
+            objectType = Constants.TYPE_TREE;
+        }
+        else if (Constants.TYPE_COMMIT.equals(typeStr))
+        {
+            objectType = Constants.TYPE_COMMIT;
+        }
+        else if (Constants.TYPE_TAG.equals(typeStr))
+        {
+            objectType = Constants.TYPE_TAG;
+        }
+        else
+        {
+            throw new CorruptObjectException(id, "invalid type: " + typeStr);
+        }
 
         for (;;)
         {
-            int c = inflater.read();
+            final int c = inflater.read();
             if (0 == c)
             {
                 break;
             }
-            if (c < '0' || c > '9')
+            else if (c < '0' || c > '9')
             {
                 throw new CorruptObjectException(id, "bad length in header");
             }

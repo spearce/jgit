@@ -7,11 +7,14 @@ import java.util.Properties;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
+import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.MergedTree;
+import org.spearce.jgit.lib.RefLock;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
+import org.spearce.jgit.lib.WriteTree;
 
 public class RepositoryMapping
 {
@@ -29,6 +32,8 @@ public class RepositoryMapping
     private final String cacheref;
 
     private Repository db;
+
+    private IContainer container;
 
     private Tree cacheTree;
 
@@ -59,8 +64,8 @@ public class RepositoryMapping
         String p;
         int cnt;
 
-        containerPath = mappedContainer.getProjectRelativePath()
-            .toPortableString();
+        container = mappedContainer;
+        containerPath = container.getProjectRelativePath().toPortableString();
 
         if (cLoc.isPrefixOf(gLoc))
         {
@@ -85,11 +90,10 @@ public class RepositoryMapping
 
         subset = "".equals(subsetRoot) ? null : subsetRoot;
 
-        p = "refs/eclipse-workspaces/"
-            + mappedContainer.getWorkspace().getRoot().getLocation()
-                .lastSegment()
+        p = "refs/eclipse/"
+            + container.getWorkspace().getRoot().getLocation().lastSegment()
             + "/";
-        IPath r = mappedContainer.getFullPath();
+        IPath r = container.getFullPath();
         for (int j = 0; j < r.segmentCount(); j++)
         {
             if (j > 0)
@@ -132,6 +136,11 @@ public class RepositoryMapping
         activeDiff = null;
     }
 
+    public void setContainer(final IContainer c)
+    {
+        container = c;
+    }
+
     public Tree getCacheTree()
     {
         return cacheTree;
@@ -142,7 +151,59 @@ public class RepositoryMapping
         return activeDiff;
     }
 
+    public void fullUpdate() throws IOException
+    {
+        cacheTree = mapHEADTree();
+
+        if (container.exists())
+        {
+            cacheTree.accept(
+                new UpdateTreeFromWorkspace(container),
+                Tree.CONCURRENT_MODIFICATION);
+        }
+        else
+        {
+            cacheTree.delete();
+        }
+
+        saveCache();
+    }
+
+    public void saveCache() throws IOException
+    {
+        final RefLock lock;
+
+        cacheTree.accept(new WriteTree(
+            container.getLocation().toFile(),
+            getRepository()), Tree.MODIFIED_ONLY);
+
+        lock = getRepository().lockRef(cacheref);
+        if (lock != null)
+        {
+            lock.write(cacheTree.getId());
+            lock.commit();
+        }
+
+        recomputeMerge();
+    }
+
     public void recomputeMerge() throws IOException
+    {
+        Tree head = mapHEADTree();
+
+        if (cacheTree == null)
+        {
+            cacheTree = getRepository().mapTree(cacheref);
+        }
+        if (cacheTree == null)
+        {
+            cacheTree = new Tree(getRepository());
+        }
+
+        activeDiff = new MergedTree(new Tree[] {head, cacheTree});
+    }
+
+    public Tree mapHEADTree() throws IOException, MissingObjectException
     {
         Tree head = getRepository().mapTree(Constants.HEAD);
         if (head != null)
@@ -158,17 +219,7 @@ public class RepositoryMapping
         {
             head = new Tree(getRepository());
         }
-
-        if (cacheTree == null)
-        {
-            cacheTree = getRepository().mapTree(cacheref);
-        }
-        if (cacheTree == null)
-        {
-            cacheTree = new Tree(getRepository());
-        }
-
-        activeDiff = new MergedTree(new Tree[] {head, cacheTree});
+        return head;
     }
 
     public void store(final Properties p)

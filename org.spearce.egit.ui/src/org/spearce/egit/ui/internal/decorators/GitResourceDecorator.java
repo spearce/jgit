@@ -7,9 +7,9 @@ import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.jface.viewers.IDecoration;
 import org.eclipse.jface.viewers.ILightweightLabelDecorator;
 import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.ui.PlatformUI;
 import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryMapping;
-import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.MergedTree;
@@ -19,6 +19,12 @@ public class GitResourceDecorator extends LabelProvider
     implements
         ILightweightLabelDecorator
 {
+    public static void refresh()
+    {
+        PlatformUI.getWorkbench().getDecoratorManager().update(
+            GitResourceDecorator.class.getName());
+    }
+
     private static IResource toIResource(final Object e)
     {
         if (e instanceof IResource)

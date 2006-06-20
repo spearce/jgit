@@ -8,27 +8,13 @@ import java.util.Iterator;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
+import org.spearce.jgit.errors.CorruptObjectException;
+
 public class PackReader
 {
     private static final byte[] SIGNATURE = {'P', 'A', 'C', 'K'};
 
     private static final int IDX_HDR_LEN = 256 * 4;
-
-    private static final int OBJ_EXT = 0;
-
-    private static final int OBJ_COMMIT = 1;
-
-    private static final int OBJ_TREE = 2;
-
-    private static final int OBJ_BLOB = 3;
-
-    private static final int OBJ_TAG = 4;
-
-    private static final int OBJ_TYPE_5 = 5;
-
-    private static final int OBJ_TYPE_6 = 6;
-
-    private static final int OBJ_DELTA = 7;
 
     private final Repository repo;
 
@@ -275,8 +261,6 @@ public class PackReader
         long size;
         int shift;
 
-        // TODO: I think I have mistranslated this code and thus am reading a
-        // pack wrong.
         c = packStream.readUInt8();
         typeCode = (c >> 4) & 7;
         size = c & 15;
@@ -290,32 +274,32 @@ public class PackReader
 
         switch (typeCode)
         {
-        case OBJ_EXT:
+        case Constants.OBJ_EXT:
             throw new IOException("Extended object types not supported.");
-        case OBJ_COMMIT:
+        case Constants.OBJ_COMMIT:
             typeStr = Constants.TYPE_COMMIT;
             break;
-        case OBJ_TREE:
+        case Constants.OBJ_TREE:
             typeStr = Constants.TYPE_TREE;
             break;
-        case OBJ_BLOB:
+        case Constants.OBJ_BLOB:
             typeStr = Constants.TYPE_BLOB;
             break;
-        case OBJ_TAG:
+        case Constants.OBJ_TAG:
             typeStr = Constants.TYPE_TAG;
             break;
-        case OBJ_TYPE_5:
+        case Constants.OBJ_TYPE_5:
             throw new IOException("Object type 5 not supported.");
-        case OBJ_TYPE_6:
+        case Constants.OBJ_TYPE_6:
             throw new IOException("Object type 6 not supported.");
-        case OBJ_DELTA:
+        case Constants.OBJ_DELTA:
             typeStr = null;
             break;
         default:
             throw new IOException("Unknown object type " + typeCode + ".");
         }
 
-        if (typeCode == OBJ_DELTA)
+        if (typeCode == Constants.OBJ_DELTA)
         {
             deltaBase = new ObjectId(packStream
                 .readFully(Constants.OBJECT_ID_LENGTH));

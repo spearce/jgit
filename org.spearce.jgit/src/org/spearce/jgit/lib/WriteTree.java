@@ -3,6 +3,8 @@ package org.spearce.jgit.lib;
 import java.io.File;
 import java.io.IOException;
 
+import org.spearce.jgit.errors.SymlinksNotSupportedException;
+
 public class WriteTree extends TreeVisitorWithCurrentDirectory
 {
     private final ObjectWriter ow;
@@ -22,7 +24,7 @@ public class WriteTree extends TreeVisitorWithCurrentDirectory
     {
         if (s.isModified())
         {
-            throw new WritingNotSupportedException("Symlink \""
+            throw new SymlinksNotSupportedException("Symlink \""
                 + s.getFullName()
                 + "\" cannot be written as the link target"
                 + " cannot be read from within Java.");

@@ -217,39 +217,6 @@ public class GitProjectData
         return (RepositoryMapping) c2mapping.get(r);
     }
 
-    public TreeEntry getTreeEntry(IResource r) throws IOException
-    {
-        String s = null;
-        RepositoryMapping m = null;
-
-        while (r != null)
-        {
-            m = getRepositoryMapping(r);
-            if (m != null)
-            {
-                break;
-            }
-
-            if (s != null)
-            {
-                s = r.getName() + "/" + s;
-            }
-            else
-            {
-                s = r.getName();
-            }
-
-            r = r.getParent();
-        }
-
-        if (s != null && m != null && m.getCacheTree() != null)
-        {
-            return m.getCacheTree().findMember(s);
-        }
-
-        return null;
-    }
-
     public TreeEntry[] getActiveDiffTreeEntries(IResource r) throws IOException
     {
         String s = null;
@@ -281,6 +248,23 @@ public class GitProjectData
         }
 
         return null;
+    }
+
+    public void fullUpdate() throws CoreException
+    {
+        final Iterator i = c2mapping.values().iterator();
+        while (i.hasNext())
+        {
+            try
+            {
+                ((RepositoryMapping) i.next()).fullUpdate();
+            }
+            catch (IOException ioe)
+            {
+                Activator.logError(CoreText.GitProjectData_cannotReadHEAD, ioe);
+                return;
+            }
+        }
     }
 
     public void store() throws CoreException
@@ -357,6 +341,7 @@ public class GitProjectData
         {
             o.close();
         }
+
         remapAll();
     }
 
@@ -387,6 +372,7 @@ public class GitProjectData
         {
             c = (IContainer) ((IAdaptable) r).getAdapter(IContainer.class);
         }
+
         if (c == null)
         {
             Activator.logError(
@@ -419,6 +405,7 @@ public class GitProjectData
 
         try
         {
+            m.setContainer(c);
             m.recomputeMerge();
         }
         catch (IOException ioe)

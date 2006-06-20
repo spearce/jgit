@@ -1,6 +1,7 @@
 package org.spearce.jgit.lib;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Writer;
 
 public class ObjectId implements Comparable
@@ -163,6 +164,19 @@ public class ObjectId implements Comparable
     public boolean equals(final Object o)
     {
         return compareTo(o) == 0;
+    }
+
+
+    public void copyTo(final OutputStream w) throws IOException
+    {
+        for (int k = 0; k < id.length; k++)
+        {
+            final int b = id[k];
+            final int b1 = (b >> 4) & 0xf;
+            final int b2 = b & 0xf;
+            w.write(b1 < 10 ? (char) ('0' + b1) : (char) ('a' + b1 - 10));
+            w.write(b2 < 10 ? (char) ('0' + b2) : (char) ('a' + b2 - 10));
+        }
     }
 
     public void copyTo(final Writer w) throws IOException

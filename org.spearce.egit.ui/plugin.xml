@@ -23,6 +23,29 @@
                menubarPath="team.main/projectGroup"
                id="org.spearce.egit.ui.internal.actions.Disconnect">
          </action>
+  	 </objectContribution>
+     <objectContribution
+            adaptable="true"
+            id="org.spearce.egit.ui.fileFolderContributions"
+            objectClass="org.eclipse.core.resources.IResource">
+         <visibility>
+             <or>
+                 <objectClass name="org.eclipse.core.resources.IFile"/>
+                 <objectClass name="org.eclipse.core.resources.IFolder"/>
+             </or>
+         </visibility>
+         <action
+               label="%UntrackAction_label"
+               class="org.spearce.egit.ui.internal.actions.Untrack"
+               tooltip="%UntrackAction_tooltip"
+               menubarPath="team.main/group1"
+               id="org.spearce.egit.ui.internal.actions.Untrack"/>   
+         <action
+               label="%AddAction_label"
+               class="org.spearce.egit.ui.internal.actions.Add"
+               tooltip="%AddAction_tooltip"
+               menubarPath="team.main/group1"
+               id="org.spearce.egit.ui.internal.actions.Add"/>
  	 </objectContribution>
    </extension>
 

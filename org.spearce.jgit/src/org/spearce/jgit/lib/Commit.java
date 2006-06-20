@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.spearce.jgit.errors.CorruptObjectException;
+import org.spearce.jgit.errors.MissingObjectException;
+
 public class Commit implements Treeish
 {
     private final Repository objdb;
@@ -55,7 +58,7 @@ public class Commit implements Treeish
             n = br.readLine();
             if (n == null)
             {
-                throw new CorruptObjectException(commitId, "early eof");
+                throw new CorruptObjectException(commitId, "no parent(s)");
             }
             if (n.startsWith("parent "))
             {
@@ -126,7 +129,9 @@ public class Commit implements Treeish
             treeObj = objdb.mapTree(getTreeId());
             if (treeObj == null)
             {
-                throw new MissingObjectException("tree", getTreeId());
+                throw new MissingObjectException(
+                    getTreeId(),
+                    Constants.TYPE_TREE);
             }
         }
         return treeObj;
