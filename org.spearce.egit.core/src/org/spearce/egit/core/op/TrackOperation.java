@@ -76,7 +76,7 @@ public class TrackOperation implements IWorkspaceRunnable
     private void add(final Map tomerge, final IResource toAdd)
         throws CoreException
     {
-        final GitProjectData pd = GitProjectData.getDataFor(toAdd.getProject());
+        final GitProjectData pd = GitProjectData.get(toAdd.getProject());
         IResource r = toAdd;
         String s = null;
         RepositoryMapping m = null;

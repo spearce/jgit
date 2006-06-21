@@ -74,7 +74,7 @@ public class UntrackOperation implements IWorkspaceRunnable
     private void untrack(final Map tomerge, final IResource torm)
         throws CoreException
     {
-        final GitProjectData pd = GitProjectData.getDataFor(torm.getProject());
+        final GitProjectData pd = GitProjectData.get(torm.getProject());
         IResource r = torm;
         String s = null;
         RepositoryMapping m = null;

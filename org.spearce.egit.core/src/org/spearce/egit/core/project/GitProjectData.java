@@ -21,12 +21,16 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
+import org.eclipse.core.resources.IResourceDelta;
+import org.eclipse.core.resources.IResourceDeltaVisitor;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
 import org.spearce.egit.core.GitProvider;
+import org.spearce.jgit.lib.FileTreeEntry;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.TreeEntry;
 
@@ -36,37 +40,56 @@ public class GitProjectData
 
     private static final Map repositoryCache = new HashMap();
 
-    private static final IResourceChangeListener uncacher = new IResourceChangeListener()
+    private static final IResourceChangeListener rcl = new RCL();
+
+    private static class RCL implements IResourceChangeListener
     {
         public void resourceChanged(final IResourceChangeEvent event)
         {
-            final IResource r = event.getResource();
-            if (r instanceof IProject)
+            switch (event.getType())
             {
-                uncacheDataFor((IProject) r);
+            case IResourceChangeEvent.POST_CHANGE:
+                projectsChanged(event.getDelta().getAffectedChildren(
+                    IResourceDelta.CHANGED));
+                break;
+            case IResourceChangeEvent.PRE_CLOSE:
+                uncache((IProject) event.getResource());
+                break;
+            case IResourceChangeEvent.PRE_DELETE:
+                delete((IProject) event.getResource());
+                break;
+            default:
+                break;
             }
         }
     };
 
-    private static void trace(final String m)
+    public static void attachToWorkspace(final boolean includeChange)
     {
-        Activator.trace("(GitProjectData) " + m);
+        trace("attachToWorkspace - addResourceChangeListener");
+        ResourcesPlugin.getWorkspace().addResourceChangeListener(
+            rcl,
+            (includeChange ? IResourceChangeEvent.POST_CHANGE : 0)
+                | IResourceChangeEvent.PRE_CLOSE
+                | IResourceChangeEvent.PRE_DELETE);
     }
 
-    public synchronized static GitProjectData getDataFor(final IProject p)
+    public static void detachFromWorkspace()
+    {
+        trace("detachFromWorkspace - removeResourceChangeListener");
+        ResourcesPlugin.getWorkspace().removeResourceChangeListener(rcl);
+    }
+
+    public synchronized static GitProjectData get(final IProject p)
     {
         try
         {
-            GitProjectData d = (GitProjectData) projectDataCache.get(p);
+            GitProjectData d = lookup(p);
             if (d == null
                 && RepositoryProvider.getProvider(p) instanceof GitProvider)
             {
-                d = loadDataFor(p);
-                final int evt = IResourceChangeEvent.PRE_CLOSE
-                    | IResourceChangeEvent.PRE_DELETE;
-                p.getWorkspace().addResourceChangeListener(uncacher, evt);
-                cacheDataFor(p, d);
-                trace("getDataFor(" + p.getName() + ")");
+                d = new GitProjectData(p).load();
+                cache(p, d);
             }
             return d;
         }
@@ -77,14 +100,50 @@ public class GitProjectData
         }
     }
 
-    private synchronized static void cacheDataFor(
+    public static void delete(final IProject p)
+    {
+        trace("delete(" + p.getName() + ")");
+        GitProjectData d = lookup(p);
+        if (d == null)
+        {
+            try
+            {
+                d = new GitProjectData(p).load();
+            }
+            catch (IOException ioe)
+            {
+                d = new GitProjectData(p);
+            }
+        }
+        d.delete();
+    }
+
+    private static void trace(final String m)
+    {
+        Activator.trace("(GitProjectData) " + m);
+    }
+
+    private static void projectsChanged(final IResourceDelta[] projDeltas)
+    {
+        for (int k = 0; k < projDeltas.length; k++)
+        {
+            final IResource r = projDeltas[k].getResource();
+            final GitProjectData d = get((IProject) r);
+            if (d != null)
+            {
+                d.notifyChanged(projDeltas[k]);
+            }
+        }
+    }
+
+    private synchronized static void cache(
         final IProject p,
         final GitProjectData d)
     {
         projectDataCache.put(p, d);
     }
 
-    private synchronized static void uncacheDataFor(final IProject p)
+    private synchronized static void uncache(final IProject p)
     {
         if (projectDataCache.remove(p) != null)
         {
@@ -92,34 +151,12 @@ public class GitProjectData
         }
     }
 
-    public static void deleteDataFor(final IProject p)
+    private synchronized static GitProjectData lookup(final IProject p)
     {
-        final File dir = fileFor(p).getParentFile();
-        final File[] todel = dir.listFiles();
-        if (todel != null)
-        {
-            for (int k = 0; k < todel.length; k++)
-            {
-                if (todel[k].isFile())
-                {
-                    todel[k].delete();
-                }
-            }
-        }
-        dir.delete();
-        trace("deleteDataFor(" + p.getName() + ")");
-        uncacheDataFor(p);
+        return (GitProjectData) projectDataCache.get(p);
     }
 
-    public static GitProjectData loadDataFor(final IProject p)
-        throws IOException
-    {
-        final GitProjectData d = new GitProjectData(p);
-        d.load();
-        return d;
-    }
-
-    public synchronized static Repository getRepository(final File gitDir)
+    private synchronized static Repository lookupRepository(final File gitDir)
         throws IOException
     {
         final Iterator i = repositoryCache.entrySet().iterator();
@@ -140,13 +177,6 @@ public class GitProjectData
             repositoryCache.put(gitDir, new WeakReference(d));
         }
         return d;
-    }
-
-    private static File fileFor(final IProject p)
-    {
-        return new File(
-            p.getWorkingLocation(Activator.getPluginId()).toFile(),
-            "GitProjectData.properties");
     }
 
     private final IProject project;
@@ -217,7 +247,60 @@ public class GitProjectData
         return (RepositoryMapping) c2mapping.get(r);
     }
 
-    public TreeEntry[] getActiveDiffTreeEntries(IResource r) throws IOException
+    public TreeEntry findMember(IResource r) throws CoreException
+    {
+        String s = null;
+        RepositoryMapping m = null;
+
+        while (r != null)
+        {
+            m = getRepositoryMapping(r);
+            if (m != null)
+            {
+                break;
+            }
+
+            if (s != null)
+            {
+                s = r.getName() + "/" + s;
+            }
+            else
+            {
+                s = r.getName();
+            }
+
+            r = r.getParent();
+        }
+
+        if (m == null)
+        {
+            return null;
+        }
+        else if (s == null)
+        {
+            return m.getCacheTree();
+        }
+        else if (m.getCacheTree() != null)
+        {
+            try
+            {
+                return m.getCacheTree().findMember(s);
+            }
+            catch (IOException ioe)
+            {
+                throw Activator.error(
+                    CoreText.GitProjectData_lazyResolveFailed,
+                    ioe);
+            }
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public TreeEntry[] getActiveDiffTreeEntries(IResource r)
+        throws CoreException
     {
         String s = null;
         RepositoryMapping m = null;
@@ -244,7 +327,16 @@ public class GitProjectData
 
         if (s != null && m != null && m.getActiveDiff() != null)
         {
-            return m.getActiveDiff().findMember(s);
+            try
+            {
+                return m.getActiveDiff().findMember(s);
+            }
+            catch (IOException ioe)
+            {
+                throw Activator.error(
+                    CoreText.GitProjectData_lazyResolveFailed,
+                    ioe);
+            }
         }
 
         return null;
@@ -267,9 +359,28 @@ public class GitProjectData
         }
     }
 
+    public void delete()
+    {
+        final File dir = propertyFile().getParentFile();
+        final File[] todel = dir.listFiles();
+        if (todel != null)
+        {
+            for (int k = 0; k < todel.length; k++)
+            {
+                if (todel[k].isFile())
+                {
+                    todel[k].delete();
+                }
+            }
+        }
+        dir.delete();
+        trace("deleteDataFor(" + getProject().getName() + ")");
+        uncache(getProject());
+    }
+
     public void store() throws CoreException
     {
-        final File dat = fileFor(getProject());
+        final File dat = propertyFile();
         final File tmp;
         boolean ok = false;
 
@@ -315,9 +426,59 @@ public class GitProjectData
         }
     }
 
-    private void load() throws IOException
+    private void notifyChanged(final IResourceDelta projDelta)
     {
-        final File dat = fileFor(getProject());
+        try
+        {
+            projDelta.accept(new IResourceDeltaVisitor()
+            {
+                public boolean visit(final IResourceDelta d)
+                    throws CoreException
+                {
+                    final int f = d.getFlags();
+                    final IResource r = d.getResource();
+                    if ((f & IResourceDelta.CONTENT) != 0
+                        || (f & IResourceDelta.ENCODING) != 0
+                        || r instanceof IContainer)
+                    {
+                        final TreeEntry e = findMember(r);
+                        if (e != null)
+                        {
+                            if (e instanceof FileTreeEntry)
+                            {
+                                trace("modified "
+                                    + r
+                                    + " -> "
+                                    + e.getFullName());
+                                e.setModified();
+                            }
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            });
+        }
+        catch (CoreException ce)
+        {
+            // We are in deep trouble. This should NOT have happend. Detach
+            // our listeners and forget it ever did.
+            //
+            attachToWorkspace(false);
+            Activator.logError(CoreText.GitProjectData_notifyChangedFailed, ce);
+        }
+    }
+
+    private File propertyFile()
+    {
+        return new File(
+            getProject().getWorkingLocation(Activator.getPluginId()).toFile(),
+            "GitProjectData.properties");
+    }
+
+    private GitProjectData load() throws IOException
+    {
+        final File dat = propertyFile();
         trace("load " + dat);
 
         final FileInputStream o = new FileInputStream(dat);
@@ -343,6 +504,7 @@ public class GitProjectData
         }
 
         remapAll();
+        return this;
     }
 
     private void remapAll()
@@ -392,7 +554,7 @@ public class GitProjectData
 
         try
         {
-            m.setRepository(getRepository(git));
+            m.setRepository(lookupRepository(git));
         }
         catch (IOException ioe)
         {

@@ -14,7 +14,7 @@ public class MergedTree
             {
                 return true;
             }
-            if (ents[0] != null
+            else if (ents[0] != null
                 && ents[1] != null
                 && ents[0].getClass() != ents[1].getClass())
             {
@@ -32,7 +32,7 @@ public class MergedTree
             {
                 return true;
             }
-            if (ents[0] != null
+            else if (ents[0] != null
                 && ents[1] != null
                 && ents[0].getClass() != ents[1].getClass())
             {
@@ -44,11 +44,13 @@ public class MergedTree
 
     public static final boolean isModified(final TreeEntry[] ents)
     {
-        if (ents.length == 2)
+        if (ents.length == 2 && ents[0] != null && ents[1] != null)
         {
-            if (ents[0] != null
-                && ents[1] != null
-                && ents[0].getClass() == ents[1].getClass()
+            if (ents[0].getId() == null || ents[1].getId() == null)
+            {
+                return true;
+            }
+            else if (ents[0].getClass() == ents[1].getClass()
                 && !ents[0].getId().equals(ents[1].getId()))
             {
                 return true;

@@ -23,7 +23,7 @@ public class GitProvider extends RepositoryProvider
 
     public void deconfigure() throws CoreException
     {
-        GitProjectData.deleteDataFor(getProject());
+        GitProjectData.delete(getProject());
     }
 
     public boolean canHandleLinkedResources()
@@ -44,7 +44,7 @@ public class GitProvider extends RepositoryProvider
     {
         if (data == null)
         {
-            data = GitProjectData.getDataFor(getProject());
+            data = GitProjectData.get(getProject());
         }
         return data;
     }

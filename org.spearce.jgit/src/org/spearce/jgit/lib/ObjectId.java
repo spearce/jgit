@@ -166,7 +166,6 @@ public class ObjectId implements Comparable
         return compareTo(o) == 0;
     }
 
-
     public void copyTo(final OutputStream w) throws IOException
     {
         for (int k = 0; k < id.length; k++)

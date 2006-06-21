@@ -1,8 +1,7 @@
 package org.spearce.egit.ui.internal.decorators;
 
-import java.io.IOException;
-
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.jface.viewers.IDecoration;
 import org.eclipse.jface.viewers.ILightweightLabelDecorator;
@@ -50,7 +49,7 @@ public class GitResourceDecorator extends LabelProvider
             return;
         }
 
-        final GitProjectData d = GitProjectData.getDataFor(rsrc.getProject());
+        final GitProjectData d = GitProjectData.get(rsrc.getProject());
         if (d == null)
         {
             return;
@@ -69,7 +68,7 @@ public class GitResourceDecorator extends LabelProvider
         {
             n = d.getActiveDiffTreeEntries(rsrc);
         }
-        catch (IOException ioe)
+        catch (CoreException ioe)
         {
             // If we throw an exception Eclipse will log the error and
             // unregister us thereby preventing us from dragging down the

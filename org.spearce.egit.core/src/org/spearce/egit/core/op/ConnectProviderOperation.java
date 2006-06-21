@@ -98,16 +98,16 @@ public class ConnectProviderOperation implements IWorkspaceRunnable
             }
             catch (CoreException ce)
             {
-                GitProjectData.deleteDataFor(project);
+                GitProjectData.delete(project);
                 throw ce;
             }
             catch (RuntimeException ce)
             {
-                GitProjectData.deleteDataFor(project);
+                GitProjectData.delete(project);
                 throw ce;
             }
 
-            projectData = GitProjectData.getDataFor(project);
+            projectData = GitProjectData.get(project);
             project.refreshLocal(
                 IResource.DEPTH_INFINITE,
                 new SubProgressMonitor(m, 50));

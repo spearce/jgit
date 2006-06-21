@@ -6,6 +6,7 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Plugin;
 import org.eclipse.core.runtime.Status;
 import org.osgi.framework.BundleContext;
+import org.spearce.egit.core.project.GitProjectData;
 
 public class Activator extends Plugin
 {
@@ -63,10 +64,12 @@ public class Activator extends Plugin
     {
         super.start(context);
         traceVerbose = isOptionSet("/trace/verbose");
+        GitProjectData.attachToWorkspace(true);
     }
 
     public void stop(final BundleContext context) throws Exception
     {
+        GitProjectData.detachFromWorkspace();
         super.stop(context);
         plugin = null;
     }

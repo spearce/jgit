@@ -22,6 +22,8 @@ public class CoreText extends NLS
 
     public static String UntrackOperation_failed;
 
+    public static String GitProjectData_lazyResolveFailed;
+
     public static String GitProjectData_mappedResourceGone;
 
     public static String GitProjectData_cannotReadHEAD;
@@ -29,6 +31,8 @@ public class CoreText extends NLS
     public static String GitProjectData_missing;
 
     public static String GitProjectData_saveFailed;
+
+    public static String GitProjectData_notifyChangedFailed;
 
     public static String RepositoryFinder_finding;
 
