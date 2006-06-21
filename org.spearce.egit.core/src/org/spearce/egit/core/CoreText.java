@@ -34,6 +34,8 @@ public class CoreText extends NLS
 
     public static String MoveDeleteHook_cannotModifyFolder;
 
+    public static String MoveDeleteHook_operationError;
+
     public static String Error_CanonicalFile;
 
     static

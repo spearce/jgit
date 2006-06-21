@@ -11,7 +11,7 @@ public abstract class TreeEntry
 
     public static final int CONCURRENT_MODIFICATION = 1 << 2;
 
-    private final byte[] nameUTF8;
+    private byte[] nameUTF8;
 
     private Tree parent;
 
@@ -43,6 +43,11 @@ public abstract class TreeEntry
         parent = null;
     }
 
+    void attachParent(final Tree p)
+    {
+        parent = p;
+    }
+
     public Repository getRepository()
     {
         return getParent().getRepository();
@@ -65,6 +70,25 @@ public abstract class TreeEntry
         {
             throw new RuntimeException("JVM doesn't support "
                 + Constants.CHARACTER_ENCODING, uee);
+        }
+    }
+
+    public void rename(final String n) throws IOException
+    {
+        rename(n.getBytes(Constants.CHARACTER_ENCODING));
+    }
+
+    public void rename(final byte[] n) throws IOException
+    {
+        final Tree t = getParent();
+        if (t != null)
+        {
+            delete();
+        }
+        nameUTF8 = n;
+        if (t != null)
+        {
+            t.addEntry(this);
         }
     }
 

@@ -41,11 +41,11 @@
                menubarPath="team.main/group1"
                id="org.spearce.egit.ui.internal.actions.Untrack"/>   
          <action
-               label="%AddAction_label"
-               class="org.spearce.egit.ui.internal.actions.Add"
-               tooltip="%AddAction_tooltip"
+               label="%TrackAction_label"
+               class="org.spearce.egit.ui.internal.actions.Track"
+               tooltip="%TrackAction_tooltip"
                menubarPath="team.main/group1"
-               id="org.spearce.egit.ui.internal.actions.Add"/>
+               id="org.spearce.egit.ui.internal.actions.Track"/>
  	 </objectContribution>
    </extension>
 

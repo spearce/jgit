@@ -1,9 +1,12 @@
 package org.spearce.egit.core;
 
+import java.io.IOException;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.team.IMoveDeleteHook;
 import org.eclipse.core.resources.team.IResourceTree;
 import org.eclipse.core.runtime.Assert;
@@ -11,6 +14,10 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.spearce.egit.core.project.GitProjectData;
+import org.spearce.egit.core.project.RepositoryMapping;
+import org.spearce.jgit.lib.ForceModified;
+import org.spearce.jgit.lib.Tree;
+import org.spearce.jgit.lib.TreeEntry;
 
 class GitMoveDeleteHook implements IMoveDeleteHook
 {
@@ -32,7 +39,7 @@ class GitMoveDeleteHook implements IMoveDeleteHook
         final int updateFlags,
         final IProgressMonitor monitor)
     {
-        return FINISH_FOR_ME;
+        return delete(tree, file);
     }
 
     public boolean deleteFolder(
@@ -50,7 +57,7 @@ class GitMoveDeleteHook implements IMoveDeleteHook
         }
         else
         {
-            return FINISH_FOR_ME;
+            return delete(tree, folder);
         }
     }
 
@@ -70,7 +77,7 @@ class GitMoveDeleteHook implements IMoveDeleteHook
         final int updateFlags,
         final IProgressMonitor monitor)
     {
-        return FINISH_FOR_ME;
+        return move(tree, source, destination);
     }
 
     public boolean moveFolder(
@@ -90,7 +97,7 @@ class GitMoveDeleteHook implements IMoveDeleteHook
         }
         else
         {
-            return FINISH_FOR_ME;
+            return move(tree, source, destination);
         }
     }
 
@@ -107,6 +114,214 @@ class GitMoveDeleteHook implements IMoveDeleteHook
         // the GIT team provider.
         //
         return NOT_ALLOWED;
+    }
+
+    private boolean delete(final IResourceTree tree, IResource r)
+    {
+        String s = null;
+        RepositoryMapping m = null;
+
+        while (r != null)
+        {
+            m = data.getRepositoryMapping(r);
+            if (m != null)
+            {
+                break;
+            }
+
+            if (s != null)
+            {
+                s = r.getName() + "/" + s;
+            }
+            else
+            {
+                s = r.getName();
+            }
+
+            r = r.getParent();
+        }
+
+        if (s != null && m != null && m.getCacheTree() != null)
+        {
+            try
+            {
+                final TreeEntry e = m.getCacheTree().findMember(s);
+                if (e != null)
+                {
+                    e.delete();
+                    m.recomputeMerge();
+                }
+            }
+            catch (IOException ioe)
+            {
+                tree.failed(new Status(
+                    IStatus.ERROR,
+                    Activator.getPluginId(),
+                    0,
+                    CoreText.MoveDeleteHook_operationError,
+                    ioe));
+                return NOT_ALLOWED;
+            }
+        }
+
+        return FINISH_FOR_ME;
+    }
+
+    private boolean move(final IResourceTree tree, IResource src, IResource dst)
+    {
+        final String dstName = dst.getName();
+        String srcPath = null;
+        RepositoryMapping srcMap = null;
+        String dstPath = null;
+        RepositoryMapping dstMap = null;
+        final TreeEntry srcEnt;
+        Tree dstTree;
+
+        while (src != null)
+        {
+            srcMap = data.getRepositoryMapping(src);
+            if (srcMap != null)
+            {
+                break;
+            }
+
+            if (srcPath != null)
+            {
+                srcPath = src.getName() + "/" + srcPath;
+            }
+            else
+            {
+                srcPath = src.getName();
+            }
+
+            src = src.getParent();
+        }
+
+        dst = dst.getParent();
+        while (dst != null)
+        {
+            dstMap = data.getRepositoryMapping(dst);
+            if (dstMap != null)
+            {
+                break;
+            }
+
+            if (dstPath != null)
+            {
+                dstPath = dst.getName() + "/" + dstPath;
+            }
+            else
+            {
+                dstPath = dst.getName();
+            }
+
+            dst = dst.getParent();
+        }
+
+        if (srcPath == null || srcMap == null || srcMap.getCacheTree() == null)
+        {
+            return FINISH_FOR_ME;
+        }
+
+        try
+        {
+            srcEnt = srcMap.getCacheTree().findMember(srcPath);
+            if (srcEnt == null)
+            {
+                return FINISH_FOR_ME;
+            }
+
+            // If it moved outside of our mapped area then simply delete it.
+            //
+            if (dstMap == null || dstMap.getCacheTree() == null)
+            {
+                srcEnt.delete();
+                return FINISH_FOR_ME;
+            }
+
+            // Locate the target tree.
+            //
+            if (dstPath == null)
+            {
+                dstTree = dstMap.getCacheTree();
+            }
+            else
+            {
+                final TreeEntry e = dstMap.getCacheTree().findMember(dstPath);
+                if (e == null)
+                {
+                    dstTree = dstMap.getCacheTree().addTree(dstPath);
+                }
+                else if (e instanceof Tree)
+                {
+                    dstTree = (Tree) e;
+                }
+                else
+                {
+                    // What the heck? Assume Eclipse meant for us to replace
+                    // the item into here instead.
+                    //
+                    e.delete();
+                    dstTree = dstMap.getCacheTree().addTree(dstPath);
+                }
+            }
+
+            // What? Something already exists at the destination? Assume
+            // Eclipse meant for us to replace the item.
+            //
+            final TreeEntry existing = dstTree.findMember(dstName);
+            if (existing != null)
+            {
+                existing.delete();
+            }
+
+            // Delete the entry from the source tree before we do anything.
+            //
+            final Tree srcTree = srcEnt.getParent();
+            srcEnt.delete();
+
+            // If the repository differs then we shouldn't assume the
+            // objects exist in the new repository so force everything to
+            // appear modified so we'll create any objects if necessary.
+            //
+            if (srcMap.getRepository() != dstMap.getRepository())
+            {
+                try
+                {
+                    srcEnt.accept(new ForceModified());
+                }
+                catch (IOException ioe)
+                {
+                    srcTree.addEntry(srcEnt);
+                    throw ioe;
+                }
+            }
+
+            srcEnt.rename(dstName);
+            dstTree.addEntry(srcEnt);
+
+            if (srcMap == dstMap)
+            {
+                srcMap.recomputeMerge();
+            }
+            else
+            {
+                srcMap.recomputeMerge();
+                dstMap.recomputeMerge();
+            }
+
+            return FINISH_FOR_ME;
+        }
+        catch (IOException ioe)
+        {
+            tree.failed(new Status(
+                IStatus.ERROR,
+                Activator.getPluginId(),
+                0,
+                CoreText.MoveDeleteHook_operationError,
+                ioe));
+            return NOT_ALLOWED;
+        }
     }
 
     private boolean cannotModifyRepository(final IResourceTree tree)

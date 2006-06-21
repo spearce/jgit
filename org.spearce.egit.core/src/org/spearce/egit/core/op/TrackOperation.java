@@ -20,11 +20,11 @@ import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 
-public class AddOperation implements IWorkspaceRunnable
+public class TrackOperation implements IWorkspaceRunnable
 {
     private final Collection rsrcList;
 
-    public AddOperation(final Collection rsrcs)
+    public TrackOperation(final Collection rsrcs)
     {
         rsrcList = rsrcs;
     }

@@ -130,13 +130,6 @@ public class Tree extends TreeEntry implements Treeish
         db = parent.getRepository();
     }
 
-    public void delete()
-    {
-        super.delete();
-        contents = EMPTY_TREE;
-        setModified();
-    }
-
     public FileMode getMode()
     {
         return FileMode.TREE;
@@ -255,7 +248,26 @@ public class Tree extends TreeEntry implements Treeish
         return slash == s.length ? t : t.addTree(s, slash + 1);
     }
 
-    private void insertEntry(int p, final TreeEntry e) throws IOException
+    public void addEntry(final TreeEntry e) throws IOException
+    {
+        final int p;
+
+        ensureLoaded();
+        p = binarySearch(contents, e.getNameUTF8(), 0, e.getNameUTF8().length);
+        if (p < 0)
+        {
+            e.attachParent(this);
+            insertEntry(p, e);
+        }
+        else
+        {
+            throw new EntryExistsException(new String(
+                e.getNameUTF8(),
+                Constants.CHARACTER_ENCODING));
+        }
+    }
+
+    private void insertEntry(int p, final TreeEntry e)
     {
         final TreeEntry[] c = contents;
         final TreeEntry[] n = new TreeEntry[c.length + 1];
