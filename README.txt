@@ -1,0 +1,151 @@
+            == Java GIT and Eclipse GIT plugin ==
+
+This package is licensed under the Apache 2 license.  Please refer
+to LICENSE-2.0.txt for the complete license.
+
+
+This package is actually composed of three major components:
+
+  org.spearce.jgit/
+
+    A pure Java library capable of being run standalone, with no
+    additional support libraries.  Some JUnit tests are provided
+    to exercise the library.  The library provides functions to
+    read and write a GIT formatted repository.
+
+  org.spearce.egit.core/
+
+    An Eclipse plugin providing an interface to org.spearce.jgit
+    and support routines to allow processing against the Eclipse
+    workspace and resource APIs, rather than the standard Java
+    file APIs.  It also supplies the team provider implementation.
+
+  org.spearce.egit.ui/
+
+    An Eclipse plugin providing the user interface on top of
+    org.spearce.egit.core.
+
+
+            == WARNINGS / CAVEATS              ==
+
+- The Eclipse plugin doesn't always save the workbench state when
+  projects get closed or the workbench is shutdown.  This means
+  the current state of files may be lost.
+
+- The plugin could lockup your Eclipse workbench.  I've tried to
+  make it stable and function in such a way that it can't crash
+  the workbench, but that doesn't mean it won't.  :-)
+
+- This package might eat your files.  Everything I've added to a
+  repository with it has unpacked properly both with itself and
+  with the canonical C based implementation, but that doesn't mean
+  it won't generate a corrupt object.
+
+- This package cannot read the new loose object format header
+  just added to canonical GIT in mid-July 2006 by Linus Torvalds.
+  Support for that will be coming soon.
+
+- This package won't damage an existing symlink stored within a
+  repository but it can't create a new symlink from the filesystem,
+  nor can it extract a symlink from the repository to the filesystem.
+  This is due to Java's lack of symlink support.
+
+- It may take a long time to connect the GIT team provider to an
+  existing project full of files as the cache tree needs to be
+  generated from scratch.  This can take a while as most Java SHA1
+  implementations are not exactly the fastest SHA1 implementations
+  available.
+
+
+            == Package Features                ==
+
+  org.spearce.jgit/
+
+    * Read loose and packed commits, trees, blobs, including
+      deltafied objects.
+
+    * Write loose commits, trees, blobs.
+
+    * Write blobs from local files or Java InputStreams.
+
+    * Read blobs as Java InputStreams.
+
+    * Copy trees to local directory, or local directory to a tree.
+
+    * Create an N-way structual difference between N trees
+      (minimum of 2, maximum is limited only by available memory).
+
+    * Lazily loads trees as necessary.
+
+    * Read and write .git/config files.
+
+    * Create a new repository.
+
+    * Read and write refs, including walking through symrefs.
+
+  org.spearce.egit.core/
+
+    * Supplies an Eclipse team provider.
+
+    * Connect/disconnect the provider to a project.
+
+    * Search for the repositories associated with a project by
+      autodecting the GIT repository directories.
+
+    * Store which repositories are tied to which containers in the
+      Eclipse workspace.
+
+    * Maintains a cache tree holding a snapshot of the workspace.
+      The cache tree is diff'd against the current `HEAD` to show
+      file status in the decorator.
+
+    * Runs a checkpoint job to flush the cache tree to the repository
+      on a periodic basis.
+
+    * Tracks moves/renames/deletes and reflects them in the cache
+      tree.
+
+    * Resolves through linked containers.
+
+  org.spearce.egit.ui/
+
+    * Connect team provider wizard panels.
+
+    * Connect to GIT team provider by making a new repository.
+
+    * Connect to GIT team provider by searching local filesystem
+      for existing repository directories.
+
+    * Team actions: track (add), untrack (remove), disconnect.
+
+    * Resource director shows file/directory state in the explorer
+      various views (e.g. Navigator and Package Explorer).
+
+
+            == Missing Features                ==
+
+- Commit from within the Eclipse UI.
+
+- Difference work file against historical version and display
+  the difference in the Eclipse difference viewer.
+
+- GIT network protocol to pull objects from a remote repository or
+  push objects to a remote repository.
+
+- Common base computation for a merge base.
+
+- Generate a GIT format patch.
+
+- Apply a GIT format patch.
+
+- Documentation.  :-)
+
+
+            == About GIT                       ==
+
+More information about GIT, its repository format, and the canonical
+C based implementation can be obtained from the GIT websites:
+
+  http://git.or.cz/
+  http://www.kernel.org/pub/software/scm/git/
+  http://www.kernel.org/pub/software/scm/git/docs/
