@@ -42,6 +42,18 @@ public class CoreText extends NLS
 
     public static String Error_CanonicalFile;
 
+    public static String CheckpointJob_writing;
+
+    public static String CheckpointJob_name;
+
+    public static String CheckpointJob_writingBlobs;
+
+    public static String CheckpointJob_writingTrees;
+
+    public static String CheckpointJob_writingRef;
+
+    public static String CheckpointJob_failed;
+
     static
     {
         final Class c = CoreText.class;

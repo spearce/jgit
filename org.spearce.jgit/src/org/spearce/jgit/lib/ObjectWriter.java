@@ -23,11 +23,14 @@ public class ObjectWriter
 
     private final MessageDigest md;
 
+    private final Deflater def;
+
     public ObjectWriter(final Repository d)
     {
         r = d;
         buf = new byte[8192];
         md = Constants.newMessageDigest();
+        def = new Deflater();
     }
 
     public ObjectId writeBlob(final byte[] b) throws IOException
@@ -159,9 +162,9 @@ public class ObjectWriter
         final File t;
         final DeflaterOutputStream ts;
         ObjectId id = null;
+        def.reset();
         t = File.createTempFile("noz", null, r.getObjectsDirectory());
-        ts = new DeflaterOutputStream(new FileOutputStream(t), new Deflater(
-            Deflater.BEST_COMPRESSION));
+        ts = new DeflaterOutputStream(new FileOutputStream(t), def);
         try
         {
             byte[] header;

@@ -6,6 +6,7 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Plugin;
 import org.eclipse.core.runtime.Status;
 import org.osgi.framework.BundleContext;
+import org.spearce.egit.core.project.CheckpointClockJob;
 import org.spearce.egit.core.project.GitProjectData;
 
 public class Activator extends Plugin
@@ -53,6 +54,8 @@ public class Activator extends Plugin
         }
     }
 
+    private CheckpointClockJob checkpointClock;
+
     private boolean traceVerbose;
 
     public Activator()
@@ -63,12 +66,15 @@ public class Activator extends Plugin
     public void start(final BundleContext context) throws Exception
     {
         super.start(context);
+        checkpointClock = new CheckpointClockJob();
+        checkpointClock.schedule(60 * 1000);
         traceVerbose = isOptionSet("/trace/verbose");
         GitProjectData.attachToWorkspace(true);
     }
 
     public void stop(final BundleContext context) throws Exception
     {
+        checkpointClock.cancel();
         GitProjectData.detachFromWorkspace();
         super.stop(context);
         plugin = null;

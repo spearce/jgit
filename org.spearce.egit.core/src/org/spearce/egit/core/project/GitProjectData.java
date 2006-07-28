@@ -32,6 +32,7 @@ import org.spearce.egit.core.CoreText;
 import org.spearce.egit.core.GitProvider;
 import org.spearce.jgit.lib.FileTreeEntry;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 
 public class GitProjectData
@@ -116,6 +117,15 @@ public class GitProjectData
             }
         }
         d.delete();
+    }
+
+    public static synchronized void checkpointAllProjects()
+    {
+        final Iterator i = projectDataCache.values().iterator();
+        while (i.hasNext())
+        {
+            ((GitProjectData) i.next()).checkpointIfNecessary();
+        }
     }
 
     private static void trace(final String m)
@@ -247,58 +257,6 @@ public class GitProjectData
         return (RepositoryMapping) c2mapping.get(r);
     }
 
-    public TreeEntry findMember(IResource r) throws CoreException
-    {
-        String s = null;
-        RepositoryMapping m = null;
-
-        while (r != null)
-        {
-            m = getRepositoryMapping(r);
-            if (m != null)
-            {
-                break;
-            }
-
-            if (s != null)
-            {
-                s = r.getName() + "/" + s;
-            }
-            else
-            {
-                s = r.getName();
-            }
-
-            r = r.getParent();
-        }
-
-        if (m == null)
-        {
-            return null;
-        }
-        else if (s == null)
-        {
-            return m.getCacheTree();
-        }
-        else if (m.getCacheTree() != null)
-        {
-            try
-            {
-                return m.getCacheTree().findMember(s);
-            }
-            catch (IOException ioe)
-            {
-                throw Activator.error(
-                    CoreText.GitProjectData_lazyResolveFailed,
-                    ioe);
-            }
-        }
-        else
-        {
-            return null;
-        }
-    }
-
     public TreeEntry[] getActiveDiffTreeEntries(IResource r)
         throws CoreException
     {
@@ -340,6 +298,15 @@ public class GitProjectData
         }
 
         return null;
+    }
+
+    public void checkpointIfNecessary()
+    {
+        final Iterator i = c2mapping.values().iterator();
+        while (i.hasNext())
+        {
+            ((RepositoryMapping) i.next()).checkpointIfNecessary();
+        }
     }
 
     public void fullUpdate() throws CoreException
@@ -428,6 +395,7 @@ public class GitProjectData
 
     private void notifyChanged(final IResourceDelta projDelta)
     {
+        final Set affectedMappings = new HashSet();
         try
         {
             projDelta.accept(new IResourceDeltaVisitor()
@@ -436,21 +404,68 @@ public class GitProjectData
                     throws CoreException
                 {
                     final int f = d.getFlags();
-                    final IResource r = d.getResource();
+                    IResource r = d.getResource();
                     if ((f & IResourceDelta.CONTENT) != 0
                         || (f & IResourceDelta.ENCODING) != 0
                         || r instanceof IContainer)
                     {
-                        final TreeEntry e = findMember(r);
-                        if (e != null)
+                        String s = null;
+                        RepositoryMapping m = null;
+
+                        while (r != null)
                         {
-                            if (e instanceof FileTreeEntry)
+                            m = getRepositoryMapping(r);
+                            if (m != null)
                             {
-                                trace("modified "
-                                    + r
-                                    + " -> "
-                                    + e.getFullName());
-                                e.setModified();
+                                break;
+                            }
+
+                            if (s != null)
+                            {
+                                s = r.getName() + "/" + s;
+                            }
+                            else
+                            {
+                                s = r.getName();
+                            }
+
+                            r = r.getParent();
+                        }
+
+                        if (m == null)
+                        {
+                            return false;
+                        }
+                        else if (s == null)
+                        {
+                            return true;
+                        }
+
+                        final Tree cacheTree = m.getCacheTree();
+                        if (cacheTree != null)
+                        {
+                            try
+                            {
+                                synchronized (cacheTree)
+                                {
+                                    final TreeEntry e;
+                                    e = cacheTree.findMember(s);
+                                    if (e instanceof FileTreeEntry)
+                                    {
+                                        trace("modified "
+                                            + r
+                                            + " -> "
+                                            + e.getFullName());
+                                        e.setModified();
+                                        affectedMappings.add(m);
+                                    }
+                                }
+                            }
+                            catch (IOException ioe)
+                            {
+                                throw Activator.error(
+                                    CoreText.GitProjectData_lazyResolveFailed,
+                                    ioe);
                             }
                             return true;
                         }
@@ -466,6 +481,20 @@ public class GitProjectData
             //
             attachToWorkspace(false);
             Activator.logError(CoreText.GitProjectData_notifyChangedFailed, ce);
+        }
+
+        try
+        {
+            final Iterator i = affectedMappings.iterator();
+            while (i.hasNext())
+            {
+                ((RepositoryMapping) i.next()).recomputeMerge();
+            }
+        }
+        catch (IOException ioe)
+        {
+            Activator
+                .logError(CoreText.GitProjectData_notifyChangedFailed, ioe);
         }
     }
 
@@ -540,8 +569,10 @@ public class GitProjectData
             Activator.logError(
                 CoreText.GitProjectData_mappedResourceGone,
                 new FileNotFoundException(m.getContainerPath().toString()));
+            m.clear();
             return;
         }
+        m.setContainer(c);
 
         git = c.getLocation().append(m.getGitDirPath()).toFile();
         if (!git.isDirectory() || !new File(git, "config").isFile())
@@ -549,6 +580,7 @@ public class GitProjectData
             Activator.logError(
                 CoreText.GitProjectData_mappedResourceGone,
                 new FileNotFoundException(m.getContainerPath().toString()));
+            m.clear();
             return;
         }
 
@@ -561,19 +593,18 @@ public class GitProjectData
             Activator.logError(
                 CoreText.GitProjectData_mappedResourceGone,
                 new FileNotFoundException(m.getContainerPath().toString()));
-            m.setRepository(null);
+            m.clear();
             return;
         }
 
         try
         {
-            m.setContainer(c);
             m.recomputeMerge();
         }
         catch (IOException ioe)
         {
             Activator.logError(CoreText.GitProjectData_cannotReadHEAD, ioe);
-            m.setRepository(null);
+            m.clear();
             return;
         }
 

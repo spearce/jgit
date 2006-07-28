@@ -7,6 +7,8 @@ import java.util.Properties;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.jobs.IJobChangeEvent;
+import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.MergedTree;
@@ -14,7 +16,6 @@ import org.spearce.jgit.lib.RefLock;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
-import org.spearce.jgit.lib.WriteTree;
 
 public class RepositoryMapping
 {
@@ -32,6 +33,10 @@ public class RepositoryMapping
     private final String cacheref;
 
     private Repository db;
+
+    private CheckpointJob currowj;
+
+    private boolean runningowj;
 
     private IContainer container;
 
@@ -118,40 +123,70 @@ public class RepositoryMapping
         return subset;
     }
 
-    public void clear()
+    public synchronized void clear()
     {
         db = null;
-        cacheTree = null;
-    }
-
-    public Repository getRepository()
-    {
-        return db;
-    }
-
-    public void setRepository(final Repository r)
-    {
-        db = r;
+        currowj = null;
+        container = null;
         cacheTree = null;
         activeDiff = null;
     }
 
-    public void setContainer(final IContainer c)
+    public synchronized Repository getRepository()
+    {
+        return db;
+    }
+
+    public synchronized void setRepository(final Repository r)
+    {
+        db = r;
+        cacheTree = null;
+        activeDiff = null;
+        if (db != null)
+        {
+            initJob();
+        }
+    }
+
+    public synchronized IContainer getContainer()
+    {
+        return container;
+    }
+
+    public synchronized void setContainer(final IContainer c)
     {
         container = c;
     }
 
-    public Tree getCacheTree()
+    public synchronized Tree getCacheTree()
     {
         return cacheTree;
     }
 
-    public MergedTree getActiveDiff()
+    public synchronized MergedTree getActiveDiff()
     {
         return activeDiff;
     }
 
-    public void fullUpdate() throws IOException
+    public synchronized void checkpointIfNecessary()
+    {
+        if (!runningowj)
+        {
+            currowj.scheduleIfNecessary();
+        }
+    }
+
+    public synchronized void saveCache() throws IOException
+    {
+        final RefLock lock = getRepository().lockRef(cacheref);
+        if (lock != null)
+        {
+            lock.write(cacheTree.getId());
+            lock.commit();
+        }
+    }
+
+    public synchronized void fullUpdate() throws IOException
     {
         cacheTree = mapHEADTree();
 
@@ -166,28 +201,11 @@ public class RepositoryMapping
             cacheTree.delete();
         }
 
-        saveCache();
-    }
-
-    public void saveCache() throws IOException
-    {
-        final RefLock lock;
-
-        cacheTree.accept(new WriteTree(
-            container.getLocation().toFile(),
-            getRepository()), Tree.MODIFIED_ONLY);
-
-        lock = getRepository().lockRef(cacheref);
-        if (lock != null)
-        {
-            lock.write(cacheTree.getId());
-            lock.commit();
-        }
-
         recomputeMerge();
+        currowj.scheduleIfNecessary();
     }
 
-    public void recomputeMerge() throws IOException
+    public synchronized void recomputeMerge() throws IOException
     {
         Tree head = mapHEADTree();
 
@@ -200,10 +218,16 @@ public class RepositoryMapping
             cacheTree = new Tree(getRepository());
         }
 
+        cacheTree.accept(
+            new EnqueueWriteTree(container, currowj),
+            TreeEntry.MODIFIED_ONLY);
+
         activeDiff = new MergedTree(new Tree[] {head, cacheTree});
     }
 
-    public Tree mapHEADTree() throws IOException, MissingObjectException
+    public synchronized Tree mapHEADTree()
+        throws IOException,
+            MissingObjectException
     {
         Tree head = getRepository().mapTree(Constants.HEAD);
         if (head != null)
@@ -222,7 +246,7 @@ public class RepositoryMapping
         return head;
     }
 
-    public void store(final Properties p)
+    public synchronized void store(final Properties p)
     {
         p.setProperty(containerPath + ".gitdir", gitdirPath);
         p.setProperty(containerPath + ".cacheref", cacheref);
@@ -241,5 +265,29 @@ public class RepositoryMapping
             + ", "
             + cacheref
             + "]";
+    }
+
+    private void initJob()
+    {
+        currowj = new CheckpointJob(this);
+        currowj.addJobChangeListener(new JobChangeAdapter()
+        {
+            public void running(final IJobChangeEvent event)
+            {
+                synchronized (RepositoryMapping.this)
+                {
+                    runningowj = true;
+                    initJob();
+                }
+            }
+
+            public void done(final IJobChangeEvent event)
+            {
+                synchronized (RepositoryMapping.this)
+                {
+                    runningowj = false;
+                }
+            }
+        });
     }
 }
