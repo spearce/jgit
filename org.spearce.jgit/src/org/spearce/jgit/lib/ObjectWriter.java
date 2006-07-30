@@ -40,12 +40,15 @@ public class ObjectWriter
 
     private final Deflater def;
 
+    private final boolean legacyHeaders;
+
     public ObjectWriter(final Repository d)
     {
         r = d;
         buf = new byte[8192];
         md = Constants.newMessageDigest();
-        def = new Deflater();
+        def = new Deflater(r.getConfig().getCore().getCompression());
+        legacyHeaders = r.getConfig().getCore().useLegacyHeaders();
     }
 
     public ObjectId writeBlob(final byte[] b) throws IOException
@@ -69,7 +72,7 @@ public class ObjectWriter
     public ObjectId writeBlob(final long len, final InputStream is)
         throws IOException
     {
-        return writeObject(Constants.TYPE_BLOB, len, is);
+        return writeObject(Constants.OBJ_BLOB, Constants.TYPE_BLOB, len, is);
     }
 
     public ObjectId writeTree(final Tree t) throws IOException
@@ -121,7 +124,7 @@ public class ObjectWriter
     public ObjectId writeTree(final long len, final InputStream is)
         throws IOException
     {
-        return writeObject(Constants.TYPE_TREE, len, is);
+        return writeObject(Constants.OBJ_TREE, Constants.TYPE_TREE, len, is);
     }
 
     public ObjectId writeCommit(final Commit c) throws IOException
@@ -166,20 +169,40 @@ public class ObjectWriter
     public ObjectId writeCommit(final long len, final InputStream is)
         throws IOException
     {
-        return writeObject(Constants.TYPE_COMMIT, len, is);
+        return writeObject(Constants.OBJ_COMMIT, Constants.TYPE_COMMIT, len, is);
     }
 
     public ObjectId writeObject(
+        final int typeCode,
         final String type,
         long len,
         final InputStream is) throws IOException
     {
         final File t;
-        final DeflaterOutputStream ts;
+        final DeflaterOutputStream deflateStream;
+        final FileOutputStream fileStream;
         ObjectId id = null;
-        def.reset();
+
         t = File.createTempFile("noz", null, r.getObjectsDirectory());
-        ts = new DeflaterOutputStream(new FileOutputStream(t), def);
+        fileStream = new FileOutputStream(t);
+        if (!legacyHeaders)
+        {
+            long sz = len;
+            int c = ((typeCode & 7) << 4) | (int) (sz & 0xf);
+            sz >>= 4;
+            while (sz > 0)
+            {
+                fileStream.write(c | 0x80);
+                c = (int) (sz & 0x7f);
+                sz >>= 7;
+            }
+            fileStream.write(c);
+        }
+
+        md.reset();
+        def.reset();
+        deflateStream = new DeflaterOutputStream(fileStream, def);
+
         try
         {
             byte[] header;
@@ -187,23 +210,27 @@ public class ObjectWriter
 
             header = Constants.encodeASCII(type);
             md.update(header);
-            ts.write(header);
+            if (legacyHeaders)
+                deflateStream.write(header);
 
             md.update((byte) ' ');
-            ts.write((byte) ' ');
+            if (legacyHeaders)
+                deflateStream.write((byte) ' ');
 
             header = Constants.encodeASCII(len);
             md.update(header);
-            ts.write(header);
+            if (legacyHeaders)
+                deflateStream.write(header);
 
             md.update((byte) 0);
-            ts.write((byte) 0);
+            if (legacyHeaders)
+                deflateStream.write((byte) 0);
 
             while (len > 0
                 && (r = is.read(buf, 0, (int) Math.min(len, buf.length))) > 0)
             {
                 md.update(buf, 0, r);
-                ts.write(buf, 0, r);
+                deflateStream.write(buf, 0, r);
                 len -= r;
             }
 
@@ -214,7 +241,7 @@ public class ObjectWriter
                     + " bytes are missing.");
             }
 
-            ts.close();
+            deflateStream.close();
             t.setReadOnly();
             id = new ObjectId(md.digest());
         }
@@ -222,10 +249,9 @@ public class ObjectWriter
         {
             if (id == null)
             {
-                md.reset();
                 try
                 {
-                    ts.close();
+                    deflateStream.close();
                 }
                 finally
                 {

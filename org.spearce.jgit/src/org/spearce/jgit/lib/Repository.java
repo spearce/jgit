@@ -23,7 +23,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -152,7 +151,7 @@ public class Repository
 
     public ObjectReader openObject(final ObjectId id) throws IOException
     {
-        final InputStream fis = openObjectStream(id);
+        final XInputStream fis = openObjectStream(id);
         if (fis != null)
         {
             try
@@ -336,12 +335,12 @@ public class Repository
         }
     }
 
-    private InputStream openObjectStream(final ObjectId objectId)
+    private XInputStream openObjectStream(final ObjectId objectId)
         throws IOException
     {
         try
         {
-            return new FileInputStream(toFile(objectId));
+            return new XInputStream(new FileInputStream(toFile(objectId)));
         }
         catch (FileNotFoundException fnfe)
         {

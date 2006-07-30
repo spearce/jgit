@@ -36,6 +36,8 @@ public class RepositoryConfig
 
     private final File configFile;
 
+    private CoreConfig core;
+
     private List entries;
 
     private Map byName;
@@ -49,6 +51,68 @@ public class RepositoryConfig
         repo = r;
         configFile = new File(repo.getDirectory(), "config");
         clear();
+    }
+
+    public CoreConfig getCore()
+    {
+        return core;
+    }
+
+    public int getInt(
+        final String group,
+        final String name,
+        final int defaultValue)
+    {
+        final String n = getString(group, name);
+        if (n == null)
+        {
+            return defaultValue;
+        }
+
+        try
+        {
+            return Integer.parseInt(n);
+        }
+        catch (NumberFormatException nfe)
+        {
+            throw new IllegalArgumentException("Invalid integer value: "
+                + group
+                + "."
+                + name
+                + "="
+                + n);
+        }
+    }
+
+    public boolean getBoolean(
+        final String group,
+        final String name,
+        final boolean defaultValue)
+    {
+        String n = getString(group, name);
+        if (n == null)
+        {
+            return defaultValue;
+        }
+
+        n = n.toLowerCase();
+        if ("yes".equals(n) || "true".equals(n) || "1".equals(n))
+        {
+            return true;
+        }
+        else if ("no".equals(n) || "false".equals(n) || "0".equals(n))
+        {
+            return false;
+        }
+        else
+        {
+            throw new IllegalArgumentException("Invalid boolean value: "
+                + group
+                + "."
+                + name
+                + "="
+                + n);
+        }
     }
 
     public String getString(final String group, final String name)
@@ -90,6 +154,8 @@ public class RepositoryConfig
         e.name = "filemode";
         e.value = "true";
         add(e);
+
+        core = new CoreConfig(this);
     }
 
     public void save() throws IOException
@@ -247,6 +313,8 @@ public class RepositoryConfig
         {
             r.close();
         }
+
+        core = new CoreConfig(this);
     }
 
     private void clear()
