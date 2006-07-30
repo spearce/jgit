@@ -22,6 +22,7 @@ import java.io.IOException;
 
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectWriter;
+import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.RepositoryConfig;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
@@ -160,5 +161,37 @@ public class T0003_Basic extends RepositoryTestCase
         fr.read(cbuf);
         fr.close();
         assertEquals(configStr, new String(cbuf));
+    }
+
+    public void test007_Open() throws IOException
+    {
+        final Repository db2 = new Repository(db.getDirectory());
+        assertEquals(db.getDirectory(), db2.getDirectory());
+        assertEquals(db.getObjectsDirectory(), db2.getObjectsDirectory());
+        assertNotSame(db.getConfig(), db2.getConfig());
+    }
+
+    public void test008_FailOnWrongVersion() throws IOException
+    {
+        final File cfg = new File(db.getDirectory(), "config");
+        final FileWriter pw = new FileWriter(cfg);
+        final String badvers = "ihopethisisneveraversion";
+        final String configStr = "[core]\n"
+            + "\trepositoryFormatVersion="
+            + badvers
+            + "\n";
+        pw.write(configStr);
+        pw.close();
+
+        try
+        {
+            new Repository(db.getDirectory());
+            fail("incorrectly opened a bad repository");
+        }
+        catch (IOException ioe)
+        {
+            assertTrue(ioe.getMessage().indexOf("format") > 0);
+            assertTrue(ioe.getMessage().indexOf(badvers) > 0);
+        }
     }
 }

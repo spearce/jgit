@@ -59,6 +59,15 @@ public class Repository
         if (objectsDir.exists())
         {
             getConfig().load();
+            final String repositoryFormatVersion = getConfig().getString(
+                "core",
+                "repositoryFormatVersion");
+            if (!"0".equals(repositoryFormatVersion))
+            {
+                throw new IOException("Unknown repository format \""
+                    + repositoryFormatVersion
+                    + "\"; expected \"0\".");
+            }
             scanForPacks();
         }
     }
