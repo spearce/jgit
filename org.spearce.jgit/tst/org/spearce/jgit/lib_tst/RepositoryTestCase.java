@@ -19,9 +19,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 
 import junit.framework.TestCase;
 
+import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Repository;
 
 public abstract class RepositoryTestCase extends TestCase
@@ -29,6 +32,16 @@ public abstract class RepositoryTestCase extends TestCase
     protected static final File trash = new File("trash");
 
     protected static final File trash_git = new File(trash, ".git");
+
+    protected static final PersonIdent jauthor;
+
+    protected static final PersonIdent jcommitter;
+
+    static
+    {
+        jauthor = new PersonIdent("J. Author", "jauthor@example.com");
+        jcommitter = new PersonIdent("J. Committer", "jcommitter@example.com");
+    }
 
     protected static void recursiveDelete(final File dir)
     {
@@ -68,6 +81,16 @@ public abstract class RepositoryTestCase extends TestCase
         }
         fis.close();
         fos.close();
+    }
+
+    protected static void writeTrashFile(final String name, final String data)
+        throws IOException
+    {
+        final OutputStreamWriter fw = new OutputStreamWriter(
+            new FileOutputStream(new File(trash, name)),
+            "UTF-8");
+        fw.write(data);
+        fw.close();
     }
 
     protected Repository db;

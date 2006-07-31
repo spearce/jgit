@@ -16,17 +16,22 @@
 package org.spearce.jgit.lib_tst;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import org.spearce.jgit.lib.Commit;
+import org.spearce.jgit.lib.FileTreeEntry;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectWriter;
+import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.RepositoryConfig;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 import org.spearce.jgit.lib.WriteTree;
+import org.spearce.jgit.lib.XInputStream;
 
 public class T0003_Basic extends RepositoryTestCase
 {
@@ -193,5 +198,151 @@ public class T0003_Basic extends RepositoryTestCase
             assertTrue(ioe.getMessage().indexOf("format") > 0);
             assertTrue(ioe.getMessage().indexOf(badvers) > 0);
         }
+    }
+
+    public void test009_CreateCommitOldFormat() throws IOException
+    {
+        writeTrashFile(".git/config", "[core]\n" + "legacyHeaders=1\n");
+        db.getConfig().load();
+
+        final Tree t = new Tree(db);
+        final FileTreeEntry f = t.addFile("i-am-a-file");
+        writeTrashFile(f.getName(), "and this is the data in me\n");
+        t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
+        assertEquals(
+            new ObjectId("00b1f73724f493096d1ffa0b0f1f1482dbb8c936"),
+            t.getTreeId());
+
+        final Commit c = new Commit(db);
+        c.setAuthor(new PersonIdent(jauthor, 1154236443000L, -4 * 60));
+        c.setCommitter(new PersonIdent(jcommitter, 1154236443000L, -4 * 60));
+        c.setMessage("A Commit\n");
+        c.setTree(t);
+        assertEquals(t.getTreeId(), c.getTreeId());
+        c.commit();
+        final ObjectId cmtid = new ObjectId(
+            "803aec4aba175e8ab1d666873c984c0308179099");
+        assertEquals(cmtid, c.getCommitId());
+
+        // Verify the commit we just wrote is in the correct format.
+        final XInputStream xis = new XInputStream(new FileInputStream(db
+            .toFile(cmtid)));
+        try
+        {
+            assertEquals(0x78, xis.readUInt8());
+            assertEquals(0x9c, xis.readUInt8());
+            assertTrue(0x789c % 31 == 0);
+        }
+        finally
+        {
+            xis.close();
+        }
+
+        // Verify we can read it.
+        final Commit c2 = db.mapCommit(cmtid);
+        assertNotNull(c2);
+        assertEquals(c.getMessage(), c2.getMessage());
+        assertEquals(c.getTreeId(), c2.getTreeId());
+        assertEquals(c.getAuthor(), c2.getAuthor());
+        assertEquals(c.getCommitter(), c2.getCommitter());
+    }
+
+    public void test010_CreateCommitNewFormat() throws IOException
+    {
+        writeTrashFile(".git/config", "[core]\n" + "legacyHeaders=0\n");
+        db.getConfig().load();
+
+        final Tree t = new Tree(db);
+        final FileTreeEntry f = t.addFile("i-am-a-file");
+        writeTrashFile(f.getName(), "and this is the data in me\n");
+        t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
+        assertEquals(
+            new ObjectId("00b1f73724f493096d1ffa0b0f1f1482dbb8c936"),
+            t.getTreeId());
+
+        final Commit c = new Commit(db);
+        c.setAuthor(new PersonIdent(jauthor, 1154236443000L, -4 * 60));
+        c.setCommitter(new PersonIdent(jcommitter, 1154236443000L, -4 * 60));
+        c.setMessage("A Commit\n");
+        c.setTree(t);
+        assertEquals(t.getTreeId(), c.getTreeId());
+        c.commit();
+        final ObjectId cmtid = new ObjectId(
+            "803aec4aba175e8ab1d666873c984c0308179099");
+        assertEquals(cmtid, c.getCommitId());
+
+        // Verify the commit we just wrote is in the correct format.
+        final XInputStream xis = new XInputStream(new FileInputStream(db
+            .toFile(cmtid)));
+        try
+        {
+            // 'pack style' commit header: 177 bytes
+            assertEquals(0x91, xis.readUInt8());
+            assertEquals(0x0b, xis.readUInt8());
+            // zlib stream start
+            assertEquals(0x78, xis.readUInt8());
+            assertTrue(((0x78 << 8) | xis.readUInt8()) % 31 == 0);
+        }
+        finally
+        {
+            xis.close();
+        }
+
+        // Verify we can read it.
+        final Commit c2 = db.mapCommit(cmtid);
+        assertNotNull(c2);
+        assertEquals(c.getMessage(), c2.getMessage());
+        assertEquals(c.getTreeId(), c2.getTreeId());
+        assertEquals(c.getAuthor(), c2.getAuthor());
+        assertEquals(c.getCommitter(), c2.getCommitter());
+    }
+
+    public void test011_CreateCommitNewFormatIsDefault() throws IOException
+    {
+        db.getConfig().load();
+
+        final Tree t = new Tree(db);
+        final FileTreeEntry f = t.addFile("i-am-a-file");
+        writeTrashFile(f.getName(), "and this is the data in me\n");
+        t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
+        assertEquals(
+            new ObjectId("00b1f73724f493096d1ffa0b0f1f1482dbb8c936"),
+            t.getTreeId());
+
+        final Commit c = new Commit(db);
+        c.setAuthor(new PersonIdent(jauthor, 1154236443000L, -4 * 60));
+        c.setCommitter(new PersonIdent(jcommitter, 1154236443000L, -4 * 60));
+        c.setMessage("A Commit\n");
+        c.setTree(t);
+        assertEquals(t.getTreeId(), c.getTreeId());
+        c.commit();
+        final ObjectId cmtid = new ObjectId(
+            "803aec4aba175e8ab1d666873c984c0308179099");
+        assertEquals(cmtid, c.getCommitId());
+
+        // Verify the commit we just wrote is in the correct format.
+        final XInputStream xis = new XInputStream(new FileInputStream(db
+            .toFile(cmtid)));
+        try
+        {
+            // 'pack style' commit header: 177 bytes
+            assertEquals(0x91, xis.readUInt8());
+            assertEquals(0x0b, xis.readUInt8());
+            // zlib stream start
+            assertEquals(0x78, xis.readUInt8());
+            assertTrue(((0x78 << 8) | xis.readUInt8()) % 31 == 0);
+        }
+        finally
+        {
+            xis.close();
+        }
+
+        // Verify we can read it.
+        final Commit c2 = db.mapCommit(cmtid);
+        assertNotNull(c2);
+        assertEquals(c.getMessage(), c2.getMessage());
+        assertEquals(c.getTreeId(), c2.getTreeId());
+        assertEquals(c.getAuthor(), c2.getAuthor());
+        assertEquals(c.getCommitter(), c2.getCommitter());
     }
 }
