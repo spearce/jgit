@@ -63,6 +63,26 @@ public class PersonIdent
         tzOffset = aTZ.getOffset(when) / (60 * 1000);
     }
 
+    public PersonIdent(
+        final String aName,
+        final String aEmailAddress,
+        final long aWhen,
+        final int aTZ)
+    {
+        name = aName;
+        emailAddress = aEmailAddress;
+        when = aWhen;
+        tzOffset = aTZ;
+    }
+
+    public PersonIdent(final PersonIdent pi, final long aWhen, final int aTZ)
+    {
+        name = pi.getName();
+        emailAddress = pi.getEmailAddress();
+        when = aWhen;
+        tzOffset = aTZ;
+    }
+
     public PersonIdent(final String in)
     {
         final int lt = in.indexOf('<');
@@ -117,6 +137,23 @@ public class PersonIdent
     public Date getWhen()
     {
         return new Date(when);
+    }
+
+    public int hashCode()
+    {
+        return getEmailAddress().hashCode() ^ ((int) when);
+    }
+
+    public boolean equals(final Object o)
+    {
+        if (o instanceof PersonIdent)
+        {
+            final PersonIdent p = (PersonIdent) o;
+            return getName().equals(p.getName())
+                && getEmailAddress().equals(p.getEmailAddress())
+                && when == p.when;
+        }
+        return false;
     }
 
     public String toExternalString()

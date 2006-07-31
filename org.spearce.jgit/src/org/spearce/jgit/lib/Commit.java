@@ -154,7 +154,7 @@ public class Commit implements Treeish
 
     public void setTree(final Tree t)
     {
-        treeId = null;
+        treeId = t.getTreeId();
         treeObj = t;
     }
 
@@ -191,6 +191,16 @@ public class Commit implements Treeish
     public void setMessage(final String m)
     {
         message = m;
+    }
+
+    public void commit() throws IOException
+    {
+        if (getCommitId() != null)
+        {
+            throw new IllegalStateException("Commit already made: "
+                + getCommitId());
+        }
+        setCommitId(new ObjectWriter(objdb).writeCommit(this));
     }
 
     public String toString()
