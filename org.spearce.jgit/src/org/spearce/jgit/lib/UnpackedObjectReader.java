@@ -160,6 +160,8 @@ public class UnpackedObjectReader extends ObjectReader
                     + typeCode
                     + ".");
             }
+
+            inflater = new InflaterInputStream(src);
         }
 
         objectSize = tempSize;
