@@ -1,7 +1,7 @@
             == Java GIT and Eclipse GIT plugin ==
 
-This package is licensed under the Apache 2 license.  Please refer
-to LICENSE-2.0.txt for the complete license.
+This package is licensed under the LGPL.  Please refer to COPYING.txt
+for the complete license.
 
 
 This package is actually composed of three major components:
