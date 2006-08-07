@@ -447,6 +447,7 @@ public class Tree extends TreeEntry implements Treeish
     {
         TreeEntry[] temp = new TreeEntry[64];
         int nextIndex = 0;
+        boolean resort = false;
 
         for (;;)
         {
@@ -524,6 +525,7 @@ public class Tree extends TreeEntry implements Treeish
             else if (FileMode.TREE.equals(mode))
             {
                 ent = new Tree(this, id, name);
+                resort = true;
             }
             else if (FileMode.SYMLINK.equals(mode))
             {
@@ -566,7 +568,8 @@ public class Tree extends TreeEntry implements Treeish
         // subtrees as though their names end in '/' but that's not how
         // we sort them in memory. Its all the fault of the index...
         //
-        Arrays.sort(contents);
+        if (resort)
+            Arrays.sort(contents);
     }
 
     public String toString()

@@ -81,7 +81,14 @@ public class ObjectWriter
     {
         final ByteArrayOutputStream o = new ByteArrayOutputStream();
         final TreeEntry[] items = t.members();
-        Arrays.sort(items, SubtreeSorter.INSTANCE);
+        for (int k = items.length - 1; k >= 0; k--)
+        {
+            if (items[k] instanceof Tree)
+            {
+                Arrays.sort(items, SubtreeSorter.INSTANCE);
+                break;
+            }
+        }
         for (int k = 0; k < items.length; k++)
         {
             final TreeEntry e = items[k];
