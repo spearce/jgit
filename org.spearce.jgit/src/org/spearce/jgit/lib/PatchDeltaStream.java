@@ -105,7 +105,7 @@ public class PatchDeltaStream extends InputStream
                             + " load delta base for patching.");
                     }
                     shift += n;
-                    expBaseLen += n;
+                    expBaseLen -= n;
                 }
             }
             finally
@@ -194,6 +194,7 @@ public class PatchDeltaStream extends InputStream
                     {
                         copySize |= readDelta() << 16;
                     }
+
                     if (copySize == 0)
                     {
                         copySize = 0x10000;
@@ -260,7 +261,7 @@ public class PatchDeltaStream extends InputStream
         final int r = deltaStream.read();
         if (r < 0)
         {
-            throw new CorruptObjectException("Delta is corrupt.");
+            throw new CorruptObjectException("Unexpected end of delta.");
         }
         return r;
     }
@@ -269,14 +270,14 @@ public class PatchDeltaStream extends InputStream
         throws IOException
     {
         int r;
-        while ((r = read(buf, o, len)) > 0)
+        while ((r = deltaStream.read(buf, o, len)) > 0)
         {
             o += r;
             len -= r;
         }
         if (len > 0)
         {
-            throw new IOException("Unexpected end of stream.");
+            throw new CorruptObjectException("Unexpected end of delta.");
         }
     }
 
