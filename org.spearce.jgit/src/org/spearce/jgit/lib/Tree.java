@@ -65,10 +65,7 @@ public class Tree extends TreeEntry implements Treeish
         final int nameEnd)
     {
         if (nameStart == 0 && nameStart == s.length)
-        {
             return s;
-        }
-
         final byte[] n = new byte[nameEnd - nameStart];
         System.arraycopy(s, nameStart, n, 0, n.length);
         return n;
@@ -93,17 +90,11 @@ public class Tree extends TreeEntry implements Treeish
                 nameStart,
                 nameEnd);
             if (cmp < 0)
-            {
                 low = mid + 1;
-            }
             else if (cmp == 0)
-            {
                 return mid;
-            }
             else
-            {
                 high = mid;
-            }
         }
         while (low < high);
         return -(low + 1);
@@ -180,9 +171,7 @@ public class Tree extends TreeEntry implements Treeish
     public void unload()
     {
         if (isModified())
-        {
             throw new IllegalStateException("Cannot unload a modified tree.");
-        }
         contents = null;
     }
 
@@ -203,17 +192,13 @@ public class Tree extends TreeEntry implements Treeish
         ensureLoaded();
         p = binarySearch(contents, s, offset, slash);
         if (p >= 0 && slash < s.length && contents[p] instanceof Tree)
-        {
             return ((Tree) contents[p]).addFile(s, slash + 1);
-        }
 
         final byte[] newName = substring(s, offset, slash);
         if (p >= 0)
-        {
             throw new EntryExistsException(new String(
                 newName,
                 Constants.CHARACTER_ENCODING));
-        }
         else if (slash < s.length)
         {
             final Tree t = new Tree(this, newName);
@@ -248,17 +233,13 @@ public class Tree extends TreeEntry implements Treeish
         ensureLoaded();
         p = binarySearch(contents, s, offset, slash);
         if (p >= 0 && slash < s.length && contents[p] instanceof Tree)
-        {
             return ((Tree) contents[p]).addTree(s, slash + 1);
-        }
 
         final byte[] newName = substring(s, offset, slash);
         if (p >= 0)
-        {
             throw new EntryExistsException(new String(
                 newName,
                 Constants.CHARACTER_ENCODING));
-        }
 
         final Tree t = new Tree(this, newName);
         insertEntry(p, t);
@@ -290,14 +271,10 @@ public class Tree extends TreeEntry implements Treeish
         final TreeEntry[] n = new TreeEntry[c.length + 1];
         p = -(p + 1);
         for (int k = c.length - 1; k >= p; k--)
-        {
             n[k + 1] = c[k];
-        }
         n[p] = e;
         for (int k = p - 1; k >= 0; k--)
-        {
             n[k] = c[k];
-        }
         contents = n;
         setModified();
     }
@@ -314,13 +291,9 @@ public class Tree extends TreeEntry implements Treeish
         {
             final TreeEntry[] n = new TreeEntry[c.length - 1];
             for (int k = c.length - 1; k > p; k--)
-            {
                 n[k - 1] = c[k];
-            }
             for (int k = p - 1; k >= 0; k--)
-            {
                 n[k] = c[k];
-            }
             contents = n;
             setModified();
         }
@@ -340,15 +313,11 @@ public class Tree extends TreeEntry implements Treeish
         {
             final TreeEntry[] r = new TreeEntry[c.length];
             for (int k = c.length - 1; k >= 0; k--)
-            {
                 r[k] = c[k];
-            }
             return r;
         }
         else
-        {
             return c;
-        }
     }
 
     public boolean exists(final String s) throws IOException
@@ -376,11 +345,9 @@ public class Tree extends TreeEntry implements Treeish
         {
             final TreeEntry r = contents[p];
             if (slash < s.length)
-            {
                 return r instanceof Tree
                     ? ((Tree) r).findMember(s, slash + 1)
                     : null;
-            }
             return r;
         }
         return null;
@@ -392,9 +359,7 @@ public class Tree extends TreeEntry implements Treeish
         final TreeEntry[] c;
 
         if ((MODIFIED_ONLY & flags) == MODIFIED_ONLY && !isModified())
-        {
             return;
-        }
 
         if ((LOADED_ONLY & flags) == LOADED_ONLY && !isLoaded())
         {
@@ -407,18 +372,12 @@ public class Tree extends TreeEntry implements Treeish
         tv.startVisitTree(this);
 
         if ((CONCURRENT_MODIFICATION & flags) == CONCURRENT_MODIFICATION)
-        {
             c = members();
-        }
         else
-        {
             c = contents;
-        }
 
         for (int k = 0; k < c.length; k++)
-        {
             c[k].accept(tv, flags);
-        }
 
         tv.endVisitTree(this);
     }
@@ -429,9 +388,7 @@ public class Tree extends TreeEntry implements Treeish
         {
             final ObjectReader or = db.openTree(getId());
             if (or == null)
-            {
                 throw new MissingObjectException(getId(), Constants.TYPE_TREE);
-            }
             try
             {
                 readTree(or.getInputStream());
@@ -462,25 +419,17 @@ public class Tree extends TreeEntry implements Treeish
 
             c = is.read();
             if (c == -1)
-            {
                 break;
-            }
             else if (c < '0' || c > '7')
-            {
                 throw new CorruptObjectException(getId(), "invalid entry mode");
-            }
             mode = c - '0';
             for (;;)
             {
                 c = is.read();
                 if (' ' == c)
-                {
                     break;
-                }
                 else if (c < '0' || c > '7')
-                {
                     throw new CorruptObjectException(getId(), "invalid mode");
-                }
                 mode *= 8;
                 mode += c - '0';
             }
@@ -490,60 +439,42 @@ public class Tree extends TreeEntry implements Treeish
             {
                 c = is.read();
                 if (c == -1)
-                {
                     throw new CorruptObjectException(getId(), "unexpected eof");
-                }
                 else if (0 == c)
-                {
                     break;
-                }
                 nameBuf.write(c);
             }
 
             entId = new byte[Constants.OBJECT_ID_LENGTH];
             entIdLen = 0;
             while ((c = is.read(entId, entIdLen, entId.length - entIdLen)) > 0)
-            {
                 entIdLen += c;
-            }
             if (entIdLen != entId.length)
-            {
                 throw new CorruptObjectException(getId(), "missing hash");
-            }
 
             id = new ObjectId(entId);
             name = nameBuf.toByteArray();
 
             if (FileMode.REGULAR_FILE.equals(mode))
-            {
                 ent = new FileTreeEntry(this, id, name, false);
-            }
             else if (FileMode.EXECUTABLE_FILE.equals(mode))
-            {
                 ent = new FileTreeEntry(this, id, name, true);
-            }
             else if (FileMode.TREE.equals(mode))
             {
                 ent = new Tree(this, id, name);
                 resort = true;
             }
             else if (FileMode.SYMLINK.equals(mode))
-            {
                 ent = new SymlinkTreeEntry(this, id, name);
-            }
             else
-            {
                 throw new CorruptObjectException(getId(), "Invalid mode: "
                     + Integer.toOctalString(mode));
-            }
 
             if (nextIndex == temp.length)
             {
                 final TreeEntry[] n = new TreeEntry[temp.length << 1];
                 for (int k = nextIndex - 1; k >= 0; k--)
-                {
                     n[k] = temp[k];
-                }
                 temp = n;
             }
 
@@ -551,16 +482,12 @@ public class Tree extends TreeEntry implements Treeish
         }
 
         if (nextIndex == temp.length)
-        {
             contents = temp;
-        }
         else
         {
             final TreeEntry[] n = new TreeEntry[nextIndex];
             for (int k = nextIndex - 1; k >= 0; k--)
-            {
                 n[k] = temp[k];
-            }
             contents = n;
         }
 

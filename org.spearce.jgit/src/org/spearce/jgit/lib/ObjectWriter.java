@@ -92,21 +92,18 @@ public class ObjectWriter
         for (int k = 0; k < items.length; k++)
         {
             final TreeEntry e = items[k];
-            final byte[] name = e.getNameUTF8();
             final ObjectId id = e.getId();
 
             if (id == null)
-            {
                 throw new ObjectWritingException("Object at path \""
                     + e.getFullName()
                     + "\" does not have an id assigned."
                     + "  All object ids must be assigned prior"
                     + " to writing a tree.");
-            }
 
             e.getMode().copyTo(o);
             o.write(' ');
-            o.write(name);
+            o.write(e.getNameUTF8());
             o.write(0);
             o.write(id.getBytes());
         }
@@ -232,11 +229,9 @@ public class ObjectWriter
             }
 
             if (len != 0)
-            {
                 throw new IOException("Input did not match supplied length. "
                     + len
                     + " bytes are missing.");
-            }
 
             deflateStream.close();
             t.setReadOnly();
@@ -269,7 +264,7 @@ public class ObjectWriter
             if (!t.renameTo(o))
             {
                 // Maybe the directory doesn't exist yet as the object
-                // directories are always lazilly created. Note that we
+                // directories are always lazily created. Note that we
                 // try the rename first as the directory likely does exist.
                 //
                 o.getParentFile().mkdir();
