@@ -208,4 +208,21 @@ public class T0002_Tree extends RepositoryTestCase
                 + ".", files.get(k) == ents[k]);
         }
     }
+
+    public void test008_SubtreeInternalSorting() throws IOException
+    {
+        final Tree t = new Tree(db);
+        final FileTreeEntry e0 = t.addFile("a-");
+        final FileTreeEntry e1 = t.addFile("a-b");
+        final Tree e2 = t.addTree("a");
+        final FileTreeEntry e3 = t.addFile("a=");
+        final FileTreeEntry e4 = t.addFile("a=b");
+
+        final TreeEntry[] ents = t.members();
+        assertSame(e2, ents[0]);
+        assertSame(e0, ents[1]);
+        assertSame(e1, ents[2]);
+        assertSame(e3, ents[3]);
+        assertSame(e4, ents[4]);
+    }
 }

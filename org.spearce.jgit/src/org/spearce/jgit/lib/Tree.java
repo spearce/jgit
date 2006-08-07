@@ -19,6 +19,7 @@ package org.spearce.jgit.lib;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.EntryExistsException;
@@ -445,7 +446,6 @@ public class Tree extends TreeEntry implements Treeish
     private void readTree(final InputStream is) throws IOException
     {
         TreeEntry[] temp = new TreeEntry[64];
-        byte[] last = null;
         int nextIndex = 0;
 
         for (;;)
@@ -545,20 +545,7 @@ public class Tree extends TreeEntry implements Treeish
                 temp = n;
             }
 
-            // Make damn sure the tree object is formatted properly as we really
-            // depend on it later on when we edit the tree contents. This should
-            // be pretty quick to validate on the fly as we read the tree in and
-            // it should never be wrong.
-            // 
-            if (last != null && compareNames(last, name) >= 0)
-            {
-                throw new CorruptObjectException(
-                    getId(),
-                    "Tree is not sorted according to object names.");
-            }
-
             temp[nextIndex++] = ent;
-            last = name;
         }
 
         if (nextIndex == temp.length)
@@ -574,6 +561,12 @@ public class Tree extends TreeEntry implements Treeish
             }
             contents = n;
         }
+
+        // Resort contents using our internal sorting order. GIT sorts
+        // subtrees as though their names end in '/' but that's not how
+        // we sort them in memory. Its all the fault of the index...
+        //
+        Arrays.sort(contents);
     }
 
     public String toString()

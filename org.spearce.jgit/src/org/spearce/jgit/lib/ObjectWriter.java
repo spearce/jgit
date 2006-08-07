@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
@@ -80,7 +81,7 @@ public class ObjectWriter
     {
         final ByteArrayOutputStream o = new ByteArrayOutputStream();
         final TreeEntry[] items = t.members();
-        byte[] last = null;
+        Arrays.sort(items, SubtreeSorter.INSTANCE);
         for (int k = 0; k < items.length; k++)
         {
             final TreeEntry e = items[k];
@@ -96,23 +97,11 @@ public class ObjectWriter
                     + " to writing a tree.");
             }
 
-            // Make damn sure the tree object is formatted properly as writing
-            // an incorrectly sorted tree would create a corrupt object that
-            // nobody could later read.
-            // 
-            if (last != null && Tree.compareNames(last, name) >= 0)
-            {
-                throw new ObjectWritingException("Tree \""
-                    + t.getFullName()
-                    + "\" is not sorted according to object names.");
-            }
-
             e.getMode().copyTo(o);
             o.write(' ');
             o.write(name);
             o.write(0);
             o.write(id.getBytes());
-            last = name;
         }
         return writeTree(o.toByteArray());
     }

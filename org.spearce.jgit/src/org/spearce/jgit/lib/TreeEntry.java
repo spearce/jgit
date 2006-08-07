@@ -19,7 +19,7 @@ package org.spearce.jgit.lib;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
-public abstract class TreeEntry
+public abstract class TreeEntry implements Comparable
 {
     public static final int MODIFIED_ONLY = 1 << 0;
 
@@ -147,6 +147,15 @@ public abstract class TreeEntry
         final StringBuffer r = new StringBuffer();
         appendFullName(r);
         return r.toString();
+    }
+
+    public int compareTo(final Object o)
+    {
+        if (this == o)
+            return 0;
+        if (o instanceof TreeEntry)
+            return Tree.compareNames(nameUTF8, ((TreeEntry) o).nameUTF8);
+        return -1;
     }
 
     public void accept(final TreeVisitor tv) throws IOException
