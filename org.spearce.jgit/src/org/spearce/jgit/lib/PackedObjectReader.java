@@ -22,70 +22,30 @@ import java.io.InputStream;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-import org.spearce.jgit.errors.MissingObjectException;
-
-public class PackedObjectReader extends ObjectReader
+abstract class PackedObjectReader extends ObjectReader
 {
-    private final PackReader pack;
+    protected final PackReader pack;
 
-    private final long dataOffset;
+    protected final long dataOffset;
 
-    private final ObjectId deltaBase;
+    protected String objectType;
 
-    private String objectType;
+    protected long objectSize;
 
-    private long objectSize;
-
-    PackedObjectReader(
-        final PackReader pr,
-        final String type,
-        final long size,
-        final long offset,
-        final ObjectId base)
+    protected PackedObjectReader(final PackReader pr, final long offset)
     {
         pack = pr;
         dataOffset = offset;
-        deltaBase = base;
-        if (base != null)
-        {
-            objectSize = -1;
-        }
-        else
-        {
-            objectSize = size;
-            objectType = type;
-        }
-    }
-
-    public void setId(final ObjectId id)
-    {
-        super.setId(id);
     }
 
     public String getType() throws IOException
     {
-        if (objectType == null && deltaBase != null)
-        {
-            objectType = baseReader().getType();
-        }
         return objectType;
     }
 
     public long getSize() throws IOException
     {
-        if (objectSize == -1 && deltaBase != null)
-        {
-            final PatchDeltaStream p;
-            p = new PatchDeltaStream(packStream(), null);
-            objectSize = p.getResultLength();
-            p.close();
-        }
         return objectSize;
-    }
-
-    public ObjectId getDeltaBaseId()
-    {
-        return deltaBase;
     }
 
     public long getDataOffset()
@@ -95,20 +55,6 @@ public class PackedObjectReader extends ObjectReader
 
     public InputStream getInputStream() throws IOException
     {
-        if (deltaBase != null)
-        {
-            final ObjectReader b = baseReader();
-            final PatchDeltaStream p = new PatchDeltaStream(packStream(), b);
-            if (objectSize == -1)
-            {
-                objectSize = p.getResultLength();
-            }
-            if (objectType == null)
-            {
-                objectType = b.getType();
-            }
-            return p;
-        }
         return packStream();
     }
 
@@ -116,17 +62,7 @@ public class PackedObjectReader extends ObjectReader
     {
     }
 
-    private ObjectReader baseReader() throws IOException
-    {
-        final ObjectReader or = pack.resolveBase(getDeltaBaseId());
-        if (or == null)
-        {
-            throw new MissingObjectException(deltaBase, "delta base");
-        }
-        return or;
-    }
-
-    private BufferedInputStream packStream()
+    protected BufferedInputStream packStream()
     {
         return new BufferedInputStream(new PackStream());
     }

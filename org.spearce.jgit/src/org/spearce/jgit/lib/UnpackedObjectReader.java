@@ -148,11 +148,8 @@ public class UnpackedObjectReader extends ObjectReader
                 throw new CorruptObjectException(
                     id,
                     "Object type 5 not supported.");
-            case Constants.OBJ_TYPE_6:
-                throw new CorruptObjectException(
-                    id,
-                    "Object type 6 not supported.");
-            case Constants.OBJ_DELTA:
+            case Constants.OBJ_OFS_DELTA:
+            case Constants.OBJ_REF_DELTA:
                 throw new CorruptObjectException(
                     id,
                     "Delta in loose object not supported.");

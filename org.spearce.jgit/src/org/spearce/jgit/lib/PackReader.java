@@ -190,10 +190,23 @@ public class PackReader
         };
     }
 
-    public synchronized ObjectReader resolveBase(final ObjectId id)
-        throws IOException
+    ObjectReader resolveBase(final ObjectId id) throws IOException
     {
+        // If we have an index then we should also be self contained, which
+        // means the base better be in this pack.
+        //
+        if (idxHeader != null)
+        {
+            return get(id);
+        }
+
         return repo.openObject(id);
+    }
+
+    ObjectReader resolveBase(final long ofs) throws IOException
+    {
+        packStream.position(ofs);
+        return reader();
     }
 
     public synchronized PackedObjectReader get(final ObjectId id)
@@ -269,14 +282,13 @@ public class PackReader
 
     private PackedObjectReader reader() throws IOException
     {
+        final long thisOffset;
         final int typeCode;
-        final String typeStr;
-        ObjectId deltaBase = null;
-        final long offset;
         int c;
         long size;
         int shift;
 
+        thisOffset = packStream.position();
         c = packStream.readUInt8();
         typeCode = (c >> 4) & 7;
         size = c & 15;
@@ -293,35 +305,62 @@ public class PackReader
         case Constants.OBJ_EXT:
             throw new IOException("Extended object types not supported.");
         case Constants.OBJ_COMMIT:
-            typeStr = Constants.TYPE_COMMIT;
-            break;
+            return new WholePackedObjectReader(
+                this,
+                packStream.position(),
+                Constants.TYPE_COMMIT,
+                size);
         case Constants.OBJ_TREE:
-            typeStr = Constants.TYPE_TREE;
-            break;
+            return new WholePackedObjectReader(
+                this,
+                packStream.position(),
+                Constants.TYPE_TREE,
+                size);
         case Constants.OBJ_BLOB:
-            typeStr = Constants.TYPE_BLOB;
-            break;
+            return new WholePackedObjectReader(
+                this,
+                packStream.position(),
+                Constants.TYPE_BLOB,
+                size);
         case Constants.OBJ_TAG:
-            typeStr = Constants.TYPE_TAG;
-            break;
+            return new WholePackedObjectReader(
+                this,
+                packStream.position(),
+                Constants.TYPE_TAG,
+                size);
         case Constants.OBJ_TYPE_5:
             throw new IOException("Object type 5 not supported.");
-        case Constants.OBJ_TYPE_6:
-            throw new IOException("Object type 6 not supported.");
-        case Constants.OBJ_DELTA:
-            typeStr = null;
-            break;
+        case Constants.OBJ_OFS_DELTA:
+        {
+            long ofs;
+
+            c = packStream.readUInt8();
+            ofs = c & 127;
+            while ((c & 128) != 0)
+            {
+                ofs += 1;
+                c = packStream.readUInt8();
+                ofs <<= 7;
+                ofs += (c & 127);
+            }
+
+            return new DeltaOfsPackedObjectReader(
+                this,
+                packStream.position(),
+                thisOffset - ofs);
+        }
+        case Constants.OBJ_REF_DELTA:
+        {
+            final ObjectId ref = new ObjectId(packStream
+                .readFully(Constants.OBJECT_ID_LENGTH));
+            return new DeltaRefPackedObjectReader(
+                this,
+                packStream.position(),
+                ref);
+        }
         default:
             throw new IOException("Unknown object type " + typeCode + ".");
         }
-
-        if (typeCode == Constants.OBJ_DELTA)
-        {
-            deltaBase = new ObjectId(packStream
-                .readFully(Constants.OBJECT_ID_LENGTH));
-        }
-        offset = packStream.position();
-        return new PackedObjectReader(this, typeStr, size, offset, deltaBase);
     }
 
     private long findOffset(final ObjectId objId) throws IOException

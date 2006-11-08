@@ -47,9 +47,9 @@ public final class Constants
 
     public static final int OBJ_TYPE_5 = 5;
 
-    public static final int OBJ_TYPE_6 = 6;
+    public static final int OBJ_OFS_DELTA = 6;
 
-    public static final int OBJ_DELTA = 7;
+    public static final int OBJ_REF_DELTA = 7;
 
     public static final String CHARACTER_ENCODING = "UTF-8";
 
