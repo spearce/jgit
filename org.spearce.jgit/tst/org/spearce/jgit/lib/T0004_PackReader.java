@@ -14,7 +14,7 @@
  *  License along with this library; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  */
-package org.spearce.jgit.lib_tst;
+package org.spearce.jgit.lib;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,12 +44,12 @@ public class T0004_PackReader extends RepositoryTestCase
         while (itr.hasNext())
         {
             final PackedObjectReader r = (PackedObjectReader) itr.next();
-            if (r.getDeltaBaseId() != null)
+            if (r instanceof DeltaPackedObjectReader)
             {
                 // A deltified object can't get to its base in an unseekable
                 // stream so we can't get its Id or Type.
                 //
-                System.out.println("DELTA base: " + r.getDeltaBaseId());
+                System.out.println("DELTA");
             }
             else
             {
@@ -96,7 +96,6 @@ public class T0004_PackReader extends RepositoryTestCase
         assertEquals(Constants.TYPE_TREE, or.getType());
         assertEquals(35, or.getSize());
         assertEquals(7738, or.getDataOffset());
-        assertNull(or.getDeltaBaseId());
         or.close();
         pr.close();
     }
@@ -104,15 +103,12 @@ public class T0004_PackReader extends RepositoryTestCase
     public void test004_lookupDeltifiedObject() throws IOException
     {
         final ObjectId id;
-        final ObjectId base;
         final ObjectReader or;
 
         id = new ObjectId("5b6e7c66c276e7610d4a73c70ec1a1f7c1003259");
-        base = new ObjectId("6ff87c4664981e4397625791c8ea3bbb5f2279a3");
         or = db.openObject(id);
         assertNotNull(or);
         assertTrue(or instanceof PackedObjectReader);
-        assertEquals(base, ((PackedObjectReader) or).getDeltaBaseId());
         assertEquals(id, or.getId());
         assertEquals(Constants.TYPE_BLOB, or.getType());
         assertEquals(18009, or.getSize());
