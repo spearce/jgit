@@ -24,8 +24,7 @@ import java.util.List;
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.MissingObjectException;
 
-public class Commit implements Treeish
-{
+public class Commit implements Treeish {
     private final Repository objdb;
 
     private ObjectId commitId;
@@ -42,170 +41,136 @@ public class Commit implements Treeish
 
     private Tree treeObj;
 
-    public Commit(final Repository db)
-    {
-        objdb = db;
-        parentIds = new ArrayList(2);
+    public Commit(final Repository db) {
+	objdb = db;
+	parentIds = new ArrayList(2);
     }
 
-    public Commit(
-        final Repository db,
-        final ObjectId id,
-        final BufferedReader br) throws IOException
-    {
-        objdb = db;
-        commitId = id;
+    public Commit(final Repository db, final ObjectId id,
+	    final BufferedReader br) throws IOException {
+	objdb = db;
+	commitId = id;
 
-        final StringBuffer tempMessage;
-        final char[] readBuf;
-        int readLen;
-        String n;
+	final StringBuffer tempMessage;
+	final char[] readBuf;
+	int readLen;
+	String n;
 
-        n = br.readLine();
-        if (n == null || !n.startsWith("tree "))
-        {
-            throw new CorruptObjectException(commitId, "no tree");
-        }
-        treeId = new ObjectId(n.substring("tree ".length()));
+	n = br.readLine();
+	if (n == null || !n.startsWith("tree ")) {
+	    throw new CorruptObjectException(commitId, "no tree");
+	}
+	treeId = new ObjectId(n.substring("tree ".length()));
 
-        parentIds = new ArrayList(2);
-        for (;;)
-        {
-            n = br.readLine();
-            if (n == null)
-            {
-                throw new CorruptObjectException(commitId, "no parent(s)");
-            }
-            if (n.startsWith("parent "))
-            {
-                parentIds.add(new ObjectId(n.substring("parent ".length())));
-            }
-            else
-            {
-                break;
-            }
-        }
+	parentIds = new ArrayList(2);
+	for (;;) {
+	    n = br.readLine();
+	    if (n == null) {
+		throw new CorruptObjectException(commitId, "no parent(s)");
+	    }
+	    if (n.startsWith("parent ")) {
+		parentIds.add(new ObjectId(n.substring("parent ".length())));
+	    } else {
+		break;
+	    }
+	}
 
-        if (n == null || !n.startsWith("author "))
-        {
-            throw new CorruptObjectException(commitId, "no author");
-        }
-        author = new PersonIdent(n.substring("author ".length()));
+	if (n == null || !n.startsWith("author ")) {
+	    throw new CorruptObjectException(commitId, "no author");
+	}
+	author = new PersonIdent(n.substring("author ".length()));
 
-        n = br.readLine();
-        if (n == null || !n.startsWith("committer "))
-        {
-            throw new CorruptObjectException(commitId, "no committer");
-        }
-        committer = new PersonIdent(n.substring("committer ".length()));
+	n = br.readLine();
+	if (n == null || !n.startsWith("committer ")) {
+	    throw new CorruptObjectException(commitId, "no committer");
+	}
+	committer = new PersonIdent(n.substring("committer ".length()));
 
-        n = br.readLine();
-        if (n == null || !n.equals(""))
-        {
-            throw new CorruptObjectException(commitId, "malformed header");
-        }
+	n = br.readLine();
+	if (n == null || !n.equals("")) {
+	    throw new CorruptObjectException(commitId, "malformed header");
+	}
 
-        tempMessage = new StringBuffer();
-        readBuf = new char[128];
-        while ((readLen = br.read(readBuf)) > 0)
-        {
-            tempMessage.append(readBuf, 0, readLen);
-        }
-        message = tempMessage.toString();
+	tempMessage = new StringBuffer();
+	readBuf = new char[128];
+	while ((readLen = br.read(readBuf)) > 0) {
+	    tempMessage.append(readBuf, 0, readLen);
+	}
+	message = tempMessage.toString();
     }
 
-    public ObjectId getCommitId()
-    {
-        return commitId;
+    public ObjectId getCommitId() {
+	return commitId;
     }
 
-    public void setCommitId(final ObjectId id)
-    {
-        commitId = id;
+    public void setCommitId(final ObjectId id) {
+	commitId = id;
     }
 
-    public ObjectId getTreeId()
-    {
-        return treeId;
+    public ObjectId getTreeId() {
+	return treeId;
     }
 
-    public void setTreeId(final ObjectId id)
-    {
-        if (!treeId.equals(id))
-        {
-            treeObj = null;
-        }
-        treeId = id;
+    public void setTreeId(final ObjectId id) {
+	if (!treeId.equals(id)) {
+	    treeObj = null;
+	}
+	treeId = id;
     }
 
-    public Tree getTree() throws IOException
-    {
-        if (treeObj == null)
-        {
-            treeObj = objdb.mapTree(getTreeId());
-            if (treeObj == null)
-            {
-                throw new MissingObjectException(
-                    getTreeId(),
-                    Constants.TYPE_TREE);
-            }
-        }
-        return treeObj;
+    public Tree getTree() throws IOException {
+	if (treeObj == null) {
+	    treeObj = objdb.mapTree(getTreeId());
+	    if (treeObj == null) {
+		throw new MissingObjectException(getTreeId(),
+			Constants.TYPE_TREE);
+	    }
+	}
+	return treeObj;
     }
 
-    public void setTree(final Tree t)
-    {
-        treeId = t.getTreeId();
-        treeObj = t;
+    public void setTree(final Tree t) {
+	treeId = t.getTreeId();
+	treeObj = t;
     }
 
-    public PersonIdent getAuthor()
-    {
-        return author;
+    public PersonIdent getAuthor() {
+	return author;
     }
 
-    public void setAuthor(final PersonIdent a)
-    {
-        author = a;
+    public void setAuthor(final PersonIdent a) {
+	author = a;
     }
 
-    public PersonIdent getCommitter()
-    {
-        return committer;
+    public PersonIdent getCommitter() {
+	return committer;
     }
 
-    public void setCommitter(final PersonIdent c)
-    {
-        committer = c;
+    public void setCommitter(final PersonIdent c) {
+	committer = c;
     }
 
-    public List getParentIds()
-    {
-        return parentIds;
+    public List getParentIds() {
+	return parentIds;
     }
 
-    public String getMessage()
-    {
-        return message;
+    public String getMessage() {
+	return message;
     }
 
-    public void setMessage(final String m)
-    {
-        message = m;
+    public void setMessage(final String m) {
+	message = m;
     }
 
-    public void commit() throws IOException
-    {
-        if (getCommitId() != null)
-        {
-            throw new IllegalStateException("Commit already made: "
-                + getCommitId());
-        }
-        setCommitId(new ObjectWriter(objdb).writeCommit(this));
+    public void commit() throws IOException {
+	if (getCommitId() != null) {
+	    throw new IllegalStateException("Commit already made: "
+		    + getCommitId());
+	}
+	setCommitId(new ObjectWriter(objdb).writeCommit(this));
     }
 
-    public String toString()
-    {
-        return "Commit[" + getCommitId() + " " + getAuthor() + "]";
+    public String toString() {
+	return "Commit[" + getCommitId() + " " + getAuthor() + "]";
     }
 }

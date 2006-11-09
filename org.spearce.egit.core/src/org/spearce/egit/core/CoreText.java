@@ -18,8 +18,7 @@ package org.spearce.egit.core;
 
 import org.eclipse.osgi.util.NLS;
 
-public class CoreText extends NLS
-{
+public class CoreText extends NLS {
     public static String ConnectProviderOperation_connecting;
 
     public static String ConnectProviderOperation_creating;
@@ -70,9 +69,8 @@ public class CoreText extends NLS
 
     public static String CheckpointJob_failed;
 
-    static
-    {
-        final Class c = CoreText.class;
-        initializeMessages(c.getPackage().getName() + ".coretext", c);
+    static {
+	final Class c = CoreText.class;
+	initializeMessages(c.getPackage().getName() + ".coretext", c);
     }
 }

@@ -21,47 +21,38 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.project.GitProjectData;
 
-public class GitProvider extends RepositoryProvider
-{
+public class GitProvider extends RepositoryProvider {
     private GitProjectData data;
 
     private GitMoveDeleteHook hook;
 
-    public String getID()
-    {
-        return getClass().getName();
+    public String getID() {
+	return getClass().getName();
     }
 
-    public void configureProject() throws CoreException
-    {
-        getData().markTeamPrivateResources();
+    public void configureProject() throws CoreException {
+	getData().markTeamPrivateResources();
     }
 
-    public void deconfigure() throws CoreException
-    {
-        GitProjectData.delete(getProject());
+    public void deconfigure() throws CoreException {
+	GitProjectData.delete(getProject());
     }
 
-    public boolean canHandleLinkedResources()
-    {
-        return true;
+    public boolean canHandleLinkedResources() {
+	return true;
     }
 
-    public synchronized IMoveDeleteHook getMoveDeleteHook()
-    {
-        if (hook == null)
-        {
-            hook = new GitMoveDeleteHook(getData());
-        }
-        return hook;
+    public synchronized IMoveDeleteHook getMoveDeleteHook() {
+	if (hook == null) {
+	    hook = new GitMoveDeleteHook(getData());
+	}
+	return hook;
     }
 
-    private synchronized GitProjectData getData()
-    {
-        if (data == null)
-        {
-            data = GitProjectData.get(getProject());
-        }
-        return data;
+    private synchronized GitProjectData getData() {
+	if (data == null) {
+	    data = GitProjectData.get(getProject());
+	}
+	return data;
     }
 }

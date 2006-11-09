@@ -22,8 +22,7 @@ import java.io.InputStream;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-abstract class PackedObjectReader extends ObjectReader
-{
+abstract class PackedObjectReader extends ObjectReader {
     protected final PackReader pack;
 
     protected final long dataOffset;
@@ -32,95 +31,77 @@ abstract class PackedObjectReader extends ObjectReader
 
     protected long objectSize;
 
-    protected PackedObjectReader(final PackReader pr, final long offset)
-    {
-        pack = pr;
-        dataOffset = offset;
+    protected PackedObjectReader(final PackReader pr, final long offset) {
+	pack = pr;
+	dataOffset = offset;
     }
 
-    public String getType() throws IOException
-    {
-        return objectType;
+    public String getType() throws IOException {
+	return objectType;
     }
 
-    public long getSize() throws IOException
-    {
-        return objectSize;
+    public long getSize() throws IOException {
+	return objectSize;
     }
 
-    public long getDataOffset()
-    {
-        return dataOffset;
+    public long getDataOffset() {
+	return dataOffset;
     }
 
-    public InputStream getInputStream() throws IOException
-    {
-        return packStream();
+    public InputStream getInputStream() throws IOException {
+	return packStream();
     }
 
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
     }
 
-    protected BufferedInputStream packStream()
-    {
-        return new BufferedInputStream(new PackStream());
+    protected BufferedInputStream packStream() {
+	return new BufferedInputStream(new PackStream());
     }
 
-    private class PackStream extends InputStream
-    {
-        private Inflater inf = new Inflater(false);
+    private class PackStream extends InputStream {
+	private Inflater inf = new Inflater(false);
 
-        private byte[] in = new byte[2048];
+	private byte[] in = new byte[2048];
 
-        private long offset = getDataOffset();
+	private long offset = getDataOffset();
 
-        public int read() throws IOException
-        {
-            final byte[] sbb = new byte[1];
-            return read(sbb, 0, 1) == 1 ? sbb[0] & 0xff : -1;
-        }
+	public int read() throws IOException {
+	    final byte[] sbb = new byte[1];
+	    return read(sbb, 0, 1) == 1 ? sbb[0] & 0xff : -1;
+	}
 
-        public int read(final byte[] b, final int off, final int len)
-            throws IOException
-        {
-            if (inf.finished())
-            {
-                return -1;
-            }
+	public int read(final byte[] b, final int off, final int len)
+		throws IOException {
+	    if (inf.finished()) {
+		return -1;
+	    }
 
-            if (inf.needsInput())
-            {
-                final int n = pack.read(offset, in, 0, in.length);
-                inf.setInput(in, 0, n);
-                offset += n;
-            }
+	    if (inf.needsInput()) {
+		final int n = pack.read(offset, in, 0, in.length);
+		inf.setInput(in, 0, n);
+		offset += n;
+	    }
 
-            try
-            {
-                final int n = inf.inflate(b, off, len);
-                if (inf.finished())
-                {
-                    pack.unread(offset, inf.getRemaining());
-                }
-                return n;
-            }
-            catch (DataFormatException dfe)
-            {
-                final IOException e = new IOException("Corrupt ZIP stream.");
-                e.initCause(dfe);
-                throw e;
-            }
-        }
+	    try {
+		final int n = inf.inflate(b, off, len);
+		if (inf.finished()) {
+		    pack.unread(offset, inf.getRemaining());
+		}
+		return n;
+	    } catch (DataFormatException dfe) {
+		final IOException e = new IOException("Corrupt ZIP stream.");
+		e.initCause(dfe);
+		throw e;
+	    }
+	}
 
-        public void close()
-        {
-            if (inf != null)
-            {
-                inf.end();
-                inf = null;
-                in = null;
-            }
-        }
+	public void close() {
+	    if (inf != null) {
+		inf.end();
+		inf = null;
+		in = null;
+	    }
+	}
     }
 }

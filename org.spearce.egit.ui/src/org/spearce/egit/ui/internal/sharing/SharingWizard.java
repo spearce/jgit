@@ -34,104 +34,74 @@ import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
 import org.spearce.egit.ui.internal.decorators.GitResourceDecorator;
 
-public class SharingWizard extends Wizard implements IConfigurationWizard
-{
+public class SharingWizard extends Wizard implements IConfigurationWizard {
     private IProject project;
 
     private boolean create;
 
     private File newGitDir;
 
-    public SharingWizard()
-    {
-        setWindowTitle(UIText.SharingWizard_windowTitle);
-        setNeedsProgressMonitor(true);
+    public SharingWizard() {
+	setWindowTitle(UIText.SharingWizard_windowTitle);
+	setNeedsProgressMonitor(true);
     }
 
-    public void init(final IWorkbench workbench, final IProject p)
-    {
-        project = p;
-        newGitDir = new File(project.getLocation().toFile(), ".git");
+    public void init(final IWorkbench workbench, final IProject p) {
+	project = p;
+	newGitDir = new File(project.getLocation().toFile(), ".git");
     }
 
-    public void addPages()
-    {
-        addPage(new ExistingOrNewPage(this));
+    public void addPages() {
+	addPage(new ExistingOrNewPage(this));
     }
 
-    boolean canCreateNew()
-    {
-        return !newGitDir.exists();
+    boolean canCreateNew() {
+	return !newGitDir.exists();
     }
 
-    void setCreateNew()
-    {
-        if (canCreateNew())
-        {
-            create = true;
-        }
+    void setCreateNew() {
+	if (canCreateNew()) {
+	    create = true;
+	}
     }
 
-    void setUseExisting()
-    {
-        create = false;
+    void setUseExisting() {
+	create = false;
     }
 
-    public boolean performFinish()
-    {
-        final ConnectProviderOperation op = new ConnectProviderOperation(
-            project,
-            create ? newGitDir : null);
-        try
-        {
-            getContainer().run(true, false, new IRunnableWithProgress()
-            {
-                public void run(final IProgressMonitor monitor)
-                    throws InvocationTargetException
-                {
-                    try
-                    {
-                        op.run(monitor);
-                    }
-                    catch (CoreException ce)
-                    {
-                        throw new InvocationTargetException(ce);
-                    }
-                }
-            });
+    public boolean performFinish() {
+	final ConnectProviderOperation op = new ConnectProviderOperation(
+		project, create ? newGitDir : null);
+	try {
+	    getContainer().run(true, false, new IRunnableWithProgress() {
+		public void run(final IProgressMonitor monitor)
+			throws InvocationTargetException {
+		    try {
+			op.run(monitor);
+		    } catch (CoreException ce) {
+			throw new InvocationTargetException(ce);
+		    }
+		}
+	    });
 
-            GitResourceDecorator.refresh();
-            return true;
-        }
-        catch (Throwable e)
-        {
-            if (e instanceof InvocationTargetException)
-            {
-                e = e.getCause();
-            }
-            final IStatus status;
-            if (e instanceof CoreException)
-            {
-                status = ((CoreException) e).getStatus();
-                e = status.getException();
-            }
-            else
-            {
-                status = new Status(
-                    IStatus.ERROR,
-                    Activator.getPluginId(),
-                    1,
-                    UIText.SharingWizard_failed,
-                    e);
-            }
-            Activator.logError(UIText.SharingWizard_failed, e);
-            ErrorDialog.openError(
-                getContainer().getShell(),
-                getWindowTitle(),
-                UIText.SharingWizard_failed,
-                status,
-                status.getSeverity());
-            return false;
-        }
+	    GitResourceDecorator.refresh();
+	    return true;
+	} catch (Throwable e) {
+	    if (e instanceof InvocationTargetException) {
+		e = e.getCause();
+	    }
+	    final IStatus status;
+	    if (e instanceof CoreException) {
+		status = ((CoreException) e).getStatus();
+		e = status.getException();
+	    } else {
+		status = new Status(IStatus.ERROR, Activator.getPluginId(), 1,
+			UIText.SharingWizard_failed, e);
+	    }
+	    Activator.logError(UIText.SharingWizard_failed, e);
+	    ErrorDialog.openError(getContainer().getShell(), getWindowTitle(),
+		    UIText.SharingWizard_failed, status, status.getSeverity());
+	    return false;
+	}
     }
 }

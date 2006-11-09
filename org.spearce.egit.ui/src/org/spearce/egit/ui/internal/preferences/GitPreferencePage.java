@@ -24,18 +24,14 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
-public class GitPreferencePage extends PreferencePage
-    implements
-        IWorkbenchPreferencePage
-{
-    protected Control createContents(final Composite parent)
-    {
-        final Label b = new Label(parent, SWT.NONE);
-        b.setText("Hi.  I'm an empty preference page.");
-        return b;
+public class GitPreferencePage extends PreferencePage implements
+	IWorkbenchPreferencePage {
+    protected Control createContents(final Composite parent) {
+	final Label b = new Label(parent, SWT.NONE);
+	b.setText("Hi.  I'm an empty preference page.");
+	return b;
     }
 
-    public void init(final IWorkbench workbench)
-    {
+    public void init(final IWorkbench workbench) {
     }
 }

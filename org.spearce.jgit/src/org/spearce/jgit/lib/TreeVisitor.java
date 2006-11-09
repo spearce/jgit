@@ -18,8 +18,7 @@ package org.spearce.jgit.lib;
 
 import java.io.IOException;
 
-public interface TreeVisitor
-{
+public interface TreeVisitor {
     public void startVisitTree(final Tree t) throws IOException;
 
     public void endVisitTree(final Tree t) throws IOException;

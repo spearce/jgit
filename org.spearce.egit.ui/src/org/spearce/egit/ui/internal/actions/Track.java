@@ -23,17 +23,13 @@ import org.eclipse.jface.action.IAction;
 import org.spearce.egit.core.op.TrackOperation;
 import org.spearce.egit.ui.internal.decorators.GitResourceDecorator;
 
-public class Track extends AbstractOperationAction
-{
-    protected IWorkspaceRunnable createOperation(
-        final IAction act,
-        final List sel)
-    {
-        return sel.isEmpty() ? null : new TrackOperation(sel);
+public class Track extends AbstractOperationAction {
+    protected IWorkspaceRunnable createOperation(final IAction act,
+	    final List sel) {
+	return sel.isEmpty() ? null : new TrackOperation(sel);
     }
 
-    protected void postOperation()
-    {
-        GitResourceDecorator.refresh();
+    protected void postOperation() {
+	GitResourceDecorator.refresh();
     }
 }
