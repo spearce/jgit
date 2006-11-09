@@ -67,7 +67,7 @@ public class XInputStream extends BufferedInputStream
     {
         final int p = pos;
         super.reset();
-        offset += pos - p;
+        offset -= p - pos;
     }
 
     public synchronized long skip(final long n) throws IOException
@@ -99,29 +99,17 @@ public class XInputStream extends BufferedInputStream
     {
         if (p < offset)
         {
-            final long d = offset - p;
-            if (d < pos)
+            // Rewind target isn't in the buffer; we need to rewind the
+            // stream and clear the buffer. We can only do this if it has
+            // a FileChannel as otherwise we have no way to position it.
+            //
+            if (fc == null)
             {
-                // Rewind target is within the buffer. We can simply reset to
-                // it by altering pos.
-                //
-                offset = p;
-                pos -= d;
+                throw new IOException("Stream is not reverse seekable.");
             }
-            else
-            {
-                // Rewind target isn't in the buffer; we need to rewind the
-                // stream and clear the buffer. We can only do this if it has
-                // a FileChannel as otherwise we have no way to position it.
-                //
-                if (fc == null)
-                {
-                    throw new IOException("Stream is not reverse seekable.");
-                }
-                count = 0;
-                offset = p;
-                fc.position(p);
-            }
+            count = 0;
+            offset = p;
+            fc.position(p);
         }
         else if (p > offset)
         {
