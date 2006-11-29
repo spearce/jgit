@@ -35,12 +35,10 @@ abstract class DeltaPackedObjectReader extends PackedObjectReader {
     public InputStream getInputStream() throws IOException {
 	final ObjectReader b = baseReader();
 	final PatchDeltaStream p = new PatchDeltaStream(packStream(), b);
-	if (objectSize == -1) {
+	if (objectSize == -1)
 	    objectSize = p.getResultLength();
-	}
-	if (objectType == null) {
+	if (objectType == null)
 	    objectType = b.getType();
-	}
 	return p;
     }
 

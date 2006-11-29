@@ -16,9 +16,8 @@ class DeltaRefPackedObjectReader extends DeltaPackedObjectReader {
 
     protected ObjectReader baseReader() throws IOException {
 	final ObjectReader or = pack.resolveBase(deltaBase);
-	if (or == null) {
+	if (or == null)
 	    throw new MissingObjectException(deltaBase, "delta base");
-	}
 	return or;
     }
 }

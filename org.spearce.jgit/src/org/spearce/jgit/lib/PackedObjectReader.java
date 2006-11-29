@@ -73,10 +73,8 @@ abstract class PackedObjectReader extends ObjectReader {
 
 	public int read(final byte[] b, final int off, final int len)
 		throws IOException {
-	    if (inf.finished()) {
+	    if (inf.finished())
 		return -1;
-	    }
-
 	    if (inf.needsInput()) {
 		final int n = pack.read(offset, in, 0, in.length);
 		inf.setInput(in, 0, n);
