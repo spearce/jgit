@@ -111,7 +111,7 @@ public class Repository {
 
 	final Iterator i = packs.iterator();
 	while (i.hasNext()) {
-	    final PackReader p = (PackReader) i.next();
+	    final PackFile p = (PackFile) i.next();
 	    try {
 		final ObjectReader o = p.get(objectId);
 		if (o != null) {
@@ -231,7 +231,7 @@ public class Repository {
     public void closePacks() throws IOException {
 	final Iterator i = packs.iterator();
 	while (i.hasNext()) {
-	    final PackReader pr = (PackReader) i.next();
+	    final PackFile pr = (PackFile) i.next();
 	    pr.close();
 	}
 	packs.clear();
@@ -253,7 +253,7 @@ public class Repository {
 	});
 	for (int k = 0; k < list.length; k++) {
 	    try {
-		packs.add(new PackReader(this, list[k]));
+		packs.add(new PackFile(this, list[k]));
 	    } catch (IOException ioe) {
 		// Whoops. That's not a pack!
 		//
@@ -273,7 +273,7 @@ public class Repository {
     private ObjectReader objectInPack(final ObjectId objectId) {
 	final Iterator i = packs.iterator();
 	while (i.hasNext()) {
-	    final PackReader p = (PackReader) i.next();
+	    final PackFile p = (PackFile) i.next();
 	    try {
 		final ObjectReader o = p.get(objectId);
 		if (o != null) {

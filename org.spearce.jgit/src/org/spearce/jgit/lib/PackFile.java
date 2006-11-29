@@ -26,7 +26,7 @@ import java.util.zip.Inflater;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 
-public class PackReader {
+public class PackFile {
     private static final byte[] SIGNATURE = { 'P', 'A', 'C', 'K' };
 
     private static final int IDX_HDR_LEN = 256 * 4;
@@ -43,7 +43,7 @@ public class PackReader {
 
     private int lastRead;
 
-    public PackReader(final Repository parentRepo, final InputStream ps)
+    public PackFile(final Repository parentRepo, final InputStream ps)
 	    throws IOException {
 	repo = parentRepo;
 	idxStream = null;
@@ -58,7 +58,7 @@ public class PackReader {
 	}
     }
 
-    public PackReader(final Repository parentRepo, final File packFile)
+    public PackFile(final Repository parentRepo, final File packFile)
 	    throws IOException {
 	final String name = packFile.getName();
 	final int dot = name.lastIndexOf('.');

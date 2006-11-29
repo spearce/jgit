@@ -24,7 +24,7 @@ import java.util.Iterator;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectReader;
-import org.spearce.jgit.lib.PackReader;
+import org.spearce.jgit.lib.PackFile;
 import org.spearce.jgit.lib.PackedObjectReader;
 import org.spearce.jgit.lib.Tree;
 
@@ -33,10 +33,10 @@ public class T0004_PackReader extends RepositoryTestCase {
 	    "pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.pack");
 
     public void test001_scanPack() throws IOException {
-	final PackReader pr;
+	final PackFile pr;
 	final Iterator itr;
 
-	pr = new PackReader(db, new FileInputStream(TEST_PACK));
+	pr = new PackFile(db, new FileInputStream(TEST_PACK));
 	itr = pr.iterator();
 	while (itr.hasNext()) {
 	    final PackedObjectReader r = (PackedObjectReader) itr.next();
@@ -56,12 +56,12 @@ public class T0004_PackReader extends RepositoryTestCase {
     }
 
     public void test002_cannotSeek() throws IOException {
-	final PackReader pr;
+	final PackFile pr;
 	final ObjectId id;
 	boolean pass = false;
 
 	id = new ObjectId("902d5476fa249b7abc9d84c611577a81381f0327");
-	pr = new PackReader(db, new FileInputStream(TEST_PACK));
+	pr = new PackFile(db, new FileInputStream(TEST_PACK));
 	try {
 	    pr.get(id);
 	} catch (IOException ioe) {
@@ -72,12 +72,12 @@ public class T0004_PackReader extends RepositoryTestCase {
     }
 
     public void test003_lookupCompressedObject() throws IOException {
-	final PackReader pr;
+	final PackFile pr;
 	final ObjectId id;
 	final PackedObjectReader or;
 
 	id = new ObjectId("902d5476fa249b7abc9d84c611577a81381f0327");
-	pr = new PackReader(db, TEST_PACK);
+	pr = new PackFile(db, TEST_PACK);
 	or = pr.get(id);
 	assertNotNull(or);
 	assertEquals(id, or.getId());

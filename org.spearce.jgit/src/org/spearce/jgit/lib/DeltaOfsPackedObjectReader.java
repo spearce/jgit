@@ -6,7 +6,7 @@ import java.io.IOException;
 public class DeltaOfsPackedObjectReader extends DeltaPackedObjectReader {
     private final long deltaBase;
 
-    public DeltaOfsPackedObjectReader(final PackReader pr, final long offset,
+    public DeltaOfsPackedObjectReader(final PackFile pr, final long offset,
 	    final long base) {
 	super(pr, offset);
 	deltaBase = base;

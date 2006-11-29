@@ -8,7 +8,7 @@ import org.spearce.jgit.errors.MissingObjectException;
 class DeltaRefPackedObjectReader extends DeltaPackedObjectReader {
     private final ObjectId deltaBase;
 
-    public DeltaRefPackedObjectReader(final PackReader pr, final long offset,
+    public DeltaRefPackedObjectReader(final PackFile pr, final long offset,
 	    final ObjectId base) {
 	super(pr, offset);
 	deltaBase = base;

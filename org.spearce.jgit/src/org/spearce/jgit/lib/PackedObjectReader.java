@@ -23,7 +23,7 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 abstract class PackedObjectReader extends ObjectReader {
-    protected final PackReader pack;
+    protected final PackFile pack;
 
     protected final long dataOffset;
 
@@ -31,7 +31,7 @@ abstract class PackedObjectReader extends ObjectReader {
 
     protected long objectSize;
 
-    protected PackedObjectReader(final PackReader pr, final long offset) {
+    protected PackedObjectReader(final PackFile pr, final long offset) {
 	pack = pr;
 	dataOffset = offset;
     }

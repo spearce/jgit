@@ -5,7 +5,7 @@ import java.io.InputStream;
 
 /** Reader for a deltafied object stored in a pack file. */
 abstract class DeltaPackedObjectReader extends PackedObjectReader {
-    DeltaPackedObjectReader(final PackReader pr, final long offset) {
+    DeltaPackedObjectReader(final PackFile pr, final long offset) {
 	super(pr, offset);
 	objectSize = -1;
     }
