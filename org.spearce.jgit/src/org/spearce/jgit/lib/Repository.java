@@ -45,6 +45,8 @@ public class Repository {
 
     private final RepositoryConfig config;
 
+    private WindowCache windows;
+
     public Repository(final File d) throws IOException {
 	gitDir = d.getAbsoluteFile();
 	objectsDir = new File(gitDir, "objects");
@@ -59,6 +61,7 @@ public class Repository {
 		throw new IOException("Unknown repository format \""
 			+ repositoryFormatVersion + "\"; expected \"0\".");
 	    }
+	    initializeWindowCache();
 	    scanForPacks();
 	}
     }
@@ -85,6 +88,12 @@ public class Repository {
 
 	getConfig().create();
 	getConfig().save();
+	initializeWindowCache();
+    }
+
+    private void initializeWindowCache() {
+	// FIXME these should be configurable...
+	windows = new WindowCache(512 * 1024 * 1024, 32);
     }
 
     public File getDirectory() {
@@ -97,6 +106,10 @@ public class Repository {
 
     public RepositoryConfig getConfig() {
 	return config;
+    }
+
+    public WindowCache getWindowCache() {
+	return windows;
     }
 
     public File toFile(final ObjectId objectId) {

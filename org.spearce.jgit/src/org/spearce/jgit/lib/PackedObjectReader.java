@@ -84,11 +84,7 @@ abstract class PackedObjectReader extends ObjectReader {
 	    }
 
 	    try {
-		final int n = inf.inflate(b, off, len);
-		if (inf.finished()) {
-		    pack.unread(offset, inf.getRemaining());
-		}
-		return n;
+		return inf.inflate(b, off, len);
 	    } catch (DataFormatException dfe) {
 		final IOException e = new IOException("Corrupt ZIP stream.");
 		e.initCause(dfe);

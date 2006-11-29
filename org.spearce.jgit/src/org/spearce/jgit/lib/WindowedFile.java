@@ -16,6 +16,7 @@
  */
 package org.spearce.jgit.lib;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -116,6 +117,15 @@ public class WindowedFile {
     }
 
     /**
+         * Get the total number of bytes available in this file.
+         * 
+         * @return the number of bytes contained within this file.
+         */
+    public long length() {
+	return length;
+    }
+
+    /**
          * Read the bytes into a buffer until it is full.
          * <p>
          * This routine always reads until either the requested number of bytes
@@ -181,6 +191,68 @@ public class WindowedFile {
 	    remaining -= r;
 	}
 	return cnt - remaining;
+    }
+
+    /**
+         * Read the bytes into a buffer until it is full.
+         * <p>
+         * This routine always reads until either the requested number of bytes
+         * has been copied or EOF has been reached. Consequently callers do not
+         * need to invoke it in a loop to make sure their buffer has been fully
+         * populated.
+         * </p>
+         * 
+         * @param position
+         *                the starting offset, as measured in bytes from the
+         *                beginning of this file, to copy from.
+         * @param dstbuf
+         *                buffer to copy the bytes into.
+         * @return total number of bytes read. Always <code>dstbuf.length</code>
+         *         unless the requested range to copy is over the end of the
+         *         file.
+         * @throws IOException
+         *                 a necessary window was not found in the window cache
+         *                 and trying to load it in from the operating system
+         *                 failed.
+         * @throws EOFException
+         *                 the file ended before <code>dstbuf.length</code>
+         *                 bytes could be read.
+         */
+    public void readFully(final long position, final byte[] dstbuf)
+	    throws IOException {
+	if (read(position, dstbuf, 0, dstbuf.length) != dstbuf.length)
+	    throw new EOFException();
+    }
+
+    /**
+         * Reads a 32 bit unsigned integer in network byte order.
+         * 
+         * @param position
+         *                the starting offset, as measured in bytes from the
+         *                beginning of this file, to read from. The position
+         *                does not need to be aligned.
+         * @param intbuf
+         *                a temporary buffer to read the bytes into before
+         *                byteorder conversion. If not supplied then a temporary
+         *                buffer will be allocated. Callers should try to supply
+         *                (and reuse) a buffer when possible to reduce pressure
+         *                on the garbage collector.
+         * @return the unsigned 32 bit integer value.
+         * @throws IOExceptiona
+         *                 necessary window was not found in the window cache
+         *                 and trying to load it in from the operating system
+         *                 failed.
+         * @throws EOFException
+         *                 the file has less than 4 bytes remaining at position.
+         */
+    public long readUInt32(final long position, byte[] intbuf)
+	    throws IOException {
+	if (intbuf == null)
+	    intbuf = new byte[4];
+	if (read(position, intbuf, 0, 4) != 4)
+	    throw new EOFException();
+	return (intbuf[0] & 0xff) << 24 | (intbuf[1] & 0xff) << 16
+		| (intbuf[2] & 0xff) << 8 | (intbuf[3] & 0xff);
     }
 
     /**

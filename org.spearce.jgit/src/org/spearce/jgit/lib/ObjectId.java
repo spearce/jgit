@@ -104,6 +104,10 @@ public class ObjectId implements Comparable {
 	id = i;
     }
 
+    public int getFirstByte() {
+	return id[0] & 0xff;
+    }
+
     public byte[] getBytes() {
 	return id;
     }
