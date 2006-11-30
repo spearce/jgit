@@ -17,8 +17,11 @@
 package org.spearce.jgit.lib;
 
 import java.io.IOException;
+import java.util.zip.Inflater;
 
 public class WindowCache {
+    private final Inflater[] inflaterCache;
+
     private final int maxByteCount;
 
     private final ByteWindow[] windows;
@@ -26,6 +29,8 @@ public class WindowCache {
     private int openWindowCount;
 
     private int openByteCount;
+
+    private int openInflaterCount;
 
     private int accessClock;
 
@@ -48,6 +53,23 @@ public class WindowCache {
     public WindowCache(final int maxBytes, final int maxOpen) {
 	maxByteCount = maxBytes;
 	windows = new ByteWindow[maxOpen];
+	inflaterCache = new Inflater[maxOpen];
+    }
+
+    synchronized Inflater borrowInflater() {
+	if (openInflaterCount > 0) {
+	    final Inflater r = inflaterCache[--openInflaterCount];
+	    inflaterCache[openInflaterCount] = null;
+	    return r;
+	}
+	return new Inflater(false);
+    }
+
+    synchronized void returnInflater(final Inflater i) {
+	if (openInflaterCount == inflaterCache.length)
+	    i.end();
+	else
+	    inflaterCache[openInflaterCount++] = i;
     }
 
     /**

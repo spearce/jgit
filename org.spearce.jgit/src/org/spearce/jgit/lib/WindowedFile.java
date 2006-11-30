@@ -224,11 +224,12 @@ public class WindowedFile {
 
     public void readCompressed(final long position, final byte[] dstbuf)
 	    throws IOException, DataFormatException {
-	final Inflater inf = new Inflater(false);
+	final Inflater inf = cache.borrowInflater();
 	try {
 	    readCompressed(position, dstbuf, inf);
 	} finally {
-	    inf.end();
+	    inf.reset();
+	    cache.returnInflater(inf);
 	}
     }
 
