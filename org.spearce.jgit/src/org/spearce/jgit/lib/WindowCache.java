@@ -128,7 +128,7 @@ public class WindowCache {
     private final int binarySearch(final WindowProvider sprov, final int sid) {
 	if (openWindowCount == 0)
 	    return -1;
-	final int shc = System.identityHashCode(sprov);
+	final int shc = sprov.hash;
 	int high = openWindowCount;
 	int low = 0;
 	do {
@@ -136,7 +136,7 @@ public class WindowCache {
 	    final ByteWindow mw = windows[mid];
 	    if (mw.provider == sprov && mw.id == sid)
 		return mid;
-	    final int mhc = System.identityHashCode(mw.provider);
+	    final int mhc = mw.provider.hash;
 	    if (mhc < shc || (shc == mhc && mw.id < sid))
 		low = mid + 1;
 	    else

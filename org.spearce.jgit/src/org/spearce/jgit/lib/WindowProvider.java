@@ -22,6 +22,12 @@ import java.io.IOException;
  * Loads windows on demand from their backing store (like a file).
  */
 public abstract class WindowProvider {
+    final int hash;
+
+    protected WindowProvider() {
+	hash = System.identityHashCode(this);
+    }
+
     /**
          * Load a specific window.
          * <p>
