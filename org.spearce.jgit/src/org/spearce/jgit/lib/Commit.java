@@ -16,12 +16,10 @@
  */
 package org.spearce.jgit.lib;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.MissingObjectException;
 
 public class Commit implements Treeish {
@@ -31,7 +29,7 @@ public class Commit implements Treeish {
 
     private ObjectId treeId;
 
-    private final List parentIds;
+    private List parentIds;
 
     private PersonIdent author;
 
@@ -46,57 +44,43 @@ public class Commit implements Treeish {
 	parentIds = new ArrayList(2);
     }
 
-    public Commit(final Repository db, final ObjectId id,
-	    final BufferedReader br) throws IOException {
+    public Commit(final Repository db, final ObjectId id, final byte[] raw)
+	    throws IOException {
 	objdb = db;
 	commitId = id;
-
-	final StringBuffer tempMessage;
-	final char[] readBuf;
-	int readLen;
-	String n;
-
-	n = br.readLine();
-	if (n == null || !n.startsWith("tree ")) {
-	    throw new CorruptObjectException(commitId, "no tree");
-	}
-	treeId = new ObjectId(n.substring("tree ".length()));
-
+	treeId = ObjectId.fromString(raw, 5);
 	parentIds = new ArrayList(2);
+	int rawPtr = 46;
 	for (;;) {
-	    n = br.readLine();
-	    if (n == null) {
-		throw new CorruptObjectException(commitId, "no parent(s)");
-	    }
-	    if (n.startsWith("parent ")) {
-		parentIds.add(new ObjectId(n.substring("parent ".length())));
-	    } else {
+	    if (raw[rawPtr] != 'p')
 		break;
-	    }
+	    parentIds.add(ObjectId.fromString(raw, rawPtr + 7));
+	    rawPtr += 48;
 	}
 
-	if (n == null || !n.startsWith("author ")) {
-	    throw new CorruptObjectException(commitId, "no author");
-	}
-	author = new PersonIdent(n.substring("author ".length()));
-
-	n = br.readLine();
-	if (n == null || !n.startsWith("committer ")) {
-	    throw new CorruptObjectException(commitId, "no committer");
-	}
-	committer = new PersonIdent(n.substring("committer ".length()));
-
-	n = br.readLine();
-	if (n == null || !n.equals("")) {
-	    throw new CorruptObjectException(commitId, "malformed header");
-	}
-
-	tempMessage = new StringBuffer();
-	readBuf = new char[128];
-	while ((readLen = br.read(readBuf)) > 0) {
-	    tempMessage.append(readBuf, 0, readLen);
-	}
-	message = tempMessage.toString();
+	//
+	// if (n == null || !n.startsWith("author ")) {
+	// throw new CorruptObjectException(commitId, "no author");
+	// }
+	// author = new PersonIdent(n.substring("author ".length()));
+	//
+	// n = br.readLine();
+	// if (n == null || !n.startsWith("committer ")) {
+	// throw new CorruptObjectException(commitId, "no committer");
+	// }
+	// committer = new PersonIdent(n.substring("committer ".length()));
+	//
+	// n = br.readLine();
+	// if (n == null || !n.equals("")) {
+	// throw new CorruptObjectException(commitId, "malformed header");
+	// }
+	//
+	// tempMessage = new StringBuffer();
+	// readBuf = new char[128];
+	// while ((readLen = br.read(readBuf)) > 0) {
+	// tempMessage.append(readBuf, 0, readLen);
+	// }
+	// message = tempMessage.toString();
     }
 
     public ObjectId getCommitId() {
@@ -163,10 +147,8 @@ public class Commit implements Treeish {
     }
 
     public void commit() throws IOException {
-	if (getCommitId() != null) {
-	    throw new IllegalStateException("Commit already made: "
-		    + getCommitId());
-	}
+	if (getCommitId() != null)
+	    throw new IllegalStateException("exists " + getCommitId());
 	setCommitId(new ObjectWriter(objdb).writeCommit(this));
     }
 

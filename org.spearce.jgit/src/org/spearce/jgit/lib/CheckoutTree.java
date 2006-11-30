@@ -19,44 +19,30 @@ package org.spearce.jgit.lib;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
+import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 
 public class CheckoutTree extends TreeVisitorWithCurrentDirectory {
-    private final byte[] copyBuffer;
+    private static final String TYPE_BLOB = Constants.TYPE_BLOB;
 
     public CheckoutTree(final File root) {
 	super(root);
-	copyBuffer = new byte[8192];
     }
 
-    public void visitFile(final FileTreeEntry f) throws IOException {
-	final File destFile = new File(getCurrentDirectory(), f.getName());
-	final ObjectReader or = f.openReader();
-
-	if (or == null) {
-	    throw new MissingObjectException(f.getId(), Constants.TYPE_BLOB);
-	}
-
+    public void visitFile(final FileTreeEntry fte) throws IOException {
+	final File destFile = new File(getCurrentDirectory(), fte.getName());
+	final ObjectLoader loader = fte.openReader();
+	if (loader == null)
+	    throw new MissingObjectException(fte.getId(), TYPE_BLOB);
+	final byte[] data = loader.getBytes();
+	if (!TYPE_BLOB.equals(loader.getType()))
+	    throw new IncorrectObjectTypeException(fte.getId(), TYPE_BLOB);
+	final FileOutputStream fos = new FileOutputStream(destFile);
 	try {
-	    final InputStream is = or.getInputStream();
-	    try {
-		final FileOutputStream fos = new FileOutputStream(destFile);
-		try {
-		    int r;
-		    while ((r = is.read(copyBuffer)) > 0) {
-			fos.write(copyBuffer, 0, r);
-		    }
-		} finally {
-		    fos.close();
-		}
-	    } finally {
-		or.close();
-	    }
-	} catch (IOException ioe) {
-	    destFile.delete();
-	    throw ioe;
+	    fos.write(data);
+	} finally {
+	    fos.close();
 	}
     }
 

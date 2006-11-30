@@ -16,9 +16,7 @@
  */
 package org.spearce.jgit.lib;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 
 import org.spearce.jgit.errors.CorruptObjectException;
@@ -91,22 +89,17 @@ public class Tree extends TreeEntry implements Treeish {
 	contents = EMPTY_TREE;
     }
 
-    public Tree(final Repository repo, final ObjectId myId, final InputStream is)
+    public Tree(final Repository repo, final ObjectId myId, final byte[] raw)
 	    throws IOException {
 	super(null, myId, null);
 	db = repo;
-	readTree(is);
+	readTree(raw);
     }
 
     private Tree(final Tree parent, final byte[] nameUTF8) {
 	super(parent, null, nameUTF8);
 	db = parent.getRepository();
 	contents = EMPTY_TREE;
-    }
-
-    public Tree(final Repository r, final ObjectId id, final byte[] nameUTF8) {
-	super(null, id, nameUTF8);
-	db = r;
     }
 
     public Tree(final Tree parent, final ObjectId id, final byte[] nameUTF8) {
@@ -319,68 +312,47 @@ public class Tree extends TreeEntry implements Treeish {
 
     private void ensureLoaded() throws IOException, MissingObjectException {
 	if (!isLoaded()) {
-	    final ObjectReader or = db.openTree(getId());
+	    final ObjectLoader or = db.openTree(getId());
 	    if (or == null)
 		throw new MissingObjectException(getId(), Constants.TYPE_TREE);
-	    try {
-		readTree(or.getInputStream());
-	    } finally {
-		or.close();
-	    }
+	    readTree(or.getBytes());
 	}
     }
 
-    private void readTree(final InputStream is) throws IOException {
+    private void readTree(final byte[] raw) throws IOException {
+	int rawPtr = 0;
 	TreeEntry[] temp = new TreeEntry[64];
 	int nextIndex = 0;
 	boolean resort = false;
 
-	for (;;) {
-	    int c;
-	    int mode;
-	    final ByteArrayOutputStream nameBuf;
-	    final byte[] entId;
-	    final byte[] name;
-	    final ObjectId id;
-	    final TreeEntry ent;
-	    int entIdLen;
-
-	    c = is.read();
-	    if (c == -1)
-		break;
-	    else if (c < '0' || c > '7')
+	while (rawPtr < raw.length) {
+	    int c = raw[rawPtr++] & 0xff;
+	    if (c < '0' || c > '7')
 		throw new CorruptObjectException(getId(), "invalid entry mode");
-	    mode = c - '0';
+	    int mode = c - '0';
 	    for (;;) {
-		c = is.read();
+		c = raw[rawPtr++] & 0xff;
 		if (' ' == c)
 		    break;
 		else if (c < '0' || c > '7')
 		    throw new CorruptObjectException(getId(), "invalid mode");
-		mode *= 8;
+		mode <<= 3;
 		mode += c - '0';
 	    }
 
-	    nameBuf = new ByteArrayOutputStream(128);
-	    for (;;) {
-		c = is.read();
-		if (c == -1)
-		    throw new CorruptObjectException(getId(), "unexpected eof");
-		else if (0 == c)
-		    break;
-		nameBuf.write(c);
-	    }
+	    int nameLen = 0;
+	    while ((raw[rawPtr + nameLen] & 0xff) != 0)
+		nameLen++;
+	    final byte[] name = new byte[nameLen];
+	    System.arraycopy(raw, rawPtr, name, 0, nameLen);
+	    rawPtr += nameLen + 1;
 
-	    entId = new byte[Constants.OBJECT_ID_LENGTH];
-	    entIdLen = 0;
-	    while ((c = is.read(entId, entIdLen, entId.length - entIdLen)) > 0)
-		entIdLen += c;
-	    if (entIdLen != entId.length)
-		throw new CorruptObjectException(getId(), "missing hash");
+	    final byte[] entId = new byte[Constants.OBJECT_ID_LENGTH];
+	    System.arraycopy(raw, rawPtr, entId, 0, Constants.OBJECT_ID_LENGTH);
+	    final ObjectId id = new ObjectId(entId);
+	    rawPtr += Constants.OBJECT_ID_LENGTH;
 
-	    id = new ObjectId(entId);
-	    name = nameBuf.toByteArray();
-
+	    final TreeEntry ent;
 	    if (FileMode.REGULAR_FILE.equals(mode))
 		ent = new FileTreeEntry(this, id, name, false);
 	    else if (FileMode.EXECUTABLE_FILE.equals(mode))
@@ -413,7 +385,7 @@ public class Tree extends TreeEntry implements Treeish {
 	    contents = n;
 	}
 
-	// Resort contents using our internal sorting order. GIT sorts
+	// Resort contents using our internal sorting order. Git sorts
 	// subtrees as though their names end in '/' but that's not how
 	// we sort them in memory. Its all the fault of the index...
 	//

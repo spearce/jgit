@@ -18,6 +18,8 @@ package org.spearce.jgit.lib;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.channels.FileChannel.MapMode;
+import java.util.zip.DataFormatException;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 
@@ -41,7 +43,7 @@ public class PackFile {
 	repo = parentRepo;
 	// FIXME window size and mmap type should be configurable
 	pack = new WindowedFile(repo.getWindowCache(), packFile,
-		16 * 1024 * 1024, null);
+		64 * 1024 * 1024, MapMode.READ_WRITE);
 	try {
 	    readPackHeader();
 
@@ -52,7 +54,7 @@ public class PackFile {
 		    + ".idx");
 	    // FIXME window size and mmap type should be configurable
 	    idx = new WindowedFile(repo.getWindowCache(), idxFile,
-		    16 * 1024 * 1024, null);
+		    64 * 1024 * 1024, MapMode.READ_WRITE);
 	    try {
 		idxHeader = readIndexHeader();
 	    } catch (IOException ioe) {
@@ -71,20 +73,20 @@ public class PackFile {
 	}
     }
 
-    ObjectReader resolveBase(final ObjectId id) throws IOException {
+    ObjectLoader resolveBase(final ObjectId id) throws IOException {
 	return get(id);
     }
 
-    ObjectReader resolveBase(final long ofs) throws IOException {
+    ObjectLoader resolveBase(final long ofs) throws IOException {
 	return reader(ofs);
     }
 
-    public synchronized PackedObjectReader get(final ObjectId id)
+    public synchronized PackedObjectLoader get(final ObjectId id)
 	    throws IOException {
 	final long offset = findOffset(id);
 	if (offset == -1)
 	    return null;
-	final PackedObjectReader objReader = reader(offset);
+	final PackedObjectLoader objReader = reader(offset);
 	objReader.setId(id);
 	return objReader;
     }
@@ -94,9 +96,11 @@ public class PackFile {
 	idx.close();
     }
 
-    final int read(final long pos, final byte[] dst, final int off, final int n)
-	    throws IOException {
-	return pack.read(pos, dst, off, n);
+    byte[] decompress(final long position, final int totalSize)
+	    throws DataFormatException, IOException {
+	final byte[] dstbuf = new byte[totalSize];
+	pack.readCompressed(position, dstbuf);
+	return dstbuf;
     }
 
     private void readPackHeader() throws IOException {
@@ -132,59 +136,59 @@ public class PackFile {
 	return idxHeader;
     }
 
-    private PackedObjectReader reader(final long objOffset) throws IOException {
+    private PackedObjectLoader reader(final long objOffset) throws IOException {
 	final byte[] ib = new byte[Constants.OBJECT_ID_LENGTH];
 	long pos = objOffset;
-	int c;
+	int p = 0;
 
 	pack.readFully(pos, ib);
-	c = ib[(int) (pos++ - objOffset)] & 0xff;
+	int c = ib[p++] & 0xff;
 	final int typeCode = (c >> 4) & 7;
-	long size = c & 15;
+	long dataSize = c & 15;
 	int shift = 4;
 	while ((c & 0x80) != 0) {
-	    c = ib[(int) (pos++ - objOffset)] & 0xff;
-	    size += (c & 0x7f) << shift;
+	    c = ib[p++] & 0xff;
+	    dataSize += (c & 0x7f) << shift;
 	    shift += 7;
 	}
+	pos += p;
 
 	switch (typeCode) {
-	case Constants.OBJ_EXT:
-	    throw new IOException("Extended object types not supported.");
 	case Constants.OBJ_COMMIT:
-	    return new WholePackedObjectReader(this, pos,
-		    Constants.TYPE_COMMIT, size);
+	    return whole(Constants.TYPE_COMMIT, pos, dataSize);
 	case Constants.OBJ_TREE:
-	    return new WholePackedObjectReader(this, pos, Constants.TYPE_TREE,
-		    size);
+	    return whole(Constants.TYPE_TREE, pos, dataSize);
 	case Constants.OBJ_BLOB:
-	    return new WholePackedObjectReader(this, pos, Constants.TYPE_BLOB,
-		    size);
+	    return whole(Constants.TYPE_BLOB, pos, dataSize);
 	case Constants.OBJ_TAG:
-	    return new WholePackedObjectReader(this, pos, Constants.TYPE_TAG,
-		    size);
-	case Constants.OBJ_TYPE_5:
-	    throw new IOException("Object type 5 not supported.");
+	    return whole(Constants.TYPE_TAG, pos, dataSize);
 	case Constants.OBJ_OFS_DELTA: {
 	    pack.readFully(pos, ib);
-	    c = ib[(int) (pos++ - objOffset)] & 0xff;
+	    p = 0;
+	    c = ib[p++] & 0xff;
 	    long ofs = c & 127;
 	    while ((c & 128) != 0) {
 		ofs += 1;
-		c = ib[(int) (pos++ - objOffset)] & 0xff;
+		c = ib[p++] & 0xff;
 		ofs <<= 7;
 		ofs += (c & 127);
 	    }
-	    return new DeltaOfsPackedObjectReader(this, pos, objOffset - ofs);
+	    return new DeltaOfsPackedObjectLoader(this, pos + p,
+		    (int) dataSize, objOffset - ofs);
 	}
 	case Constants.OBJ_REF_DELTA: {
 	    pack.readFully(pos, ib);
-	    pos += ib.length;
-	    return new DeltaRefPackedObjectReader(this, pos, new ObjectId(ib));
+	    return new DeltaRefPackedObjectLoader(this, pos + ib.length,
+		    (int) dataSize, new ObjectId(ib));
 	}
 	default:
 	    throw new IOException("Unknown object type " + typeCode + ".");
 	}
+    }
+
+    private final WholePackedObjectLoader whole(final String type,
+	    final long pos, final long size) {
+	return new WholePackedObjectLoader(this, pos, type, (int) size);
     }
 
     private long findOffset(final ObjectId objId) throws IOException {

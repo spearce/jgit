@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel.MapMode;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
 
 /**
  * Read-only cached file access.
@@ -221,6 +223,29 @@ public class WindowedFile {
     public void readFully(final long position, final byte[] dstbuf)
 	    throws IOException {
 	if (read(position, dstbuf, 0, dstbuf.length) != dstbuf.length)
+	    throw new EOFException();
+    }
+
+    public void readCompressed(final long position, final byte[] dstbuf)
+	    throws IOException, DataFormatException {
+	final Inflater inf = new Inflater(false);
+	try {
+	    readCompressed(position, dstbuf, inf);
+	} finally {
+	    inf.end();
+	}
+    }
+
+    public void readCompressed(long pos, final byte[] dstbuf, final Inflater inf)
+	    throws IOException, DataFormatException {
+	int dstoff = 0;
+	dstoff = cache.get(wp, (int) (pos >> szb)).inflate(((int) pos) & szm,
+		dstbuf, dstoff, inf);
+	pos >>= szb;
+	while (!inf.finished()) {
+	    dstoff = cache.get(wp, (int) ++pos).inflate(0, dstbuf, dstoff, inf);
+	}
+	if (dstoff != dstbuf.length)
 	    throw new EOFException();
     }
 

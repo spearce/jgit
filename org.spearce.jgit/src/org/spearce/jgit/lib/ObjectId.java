@@ -52,6 +52,33 @@ public class ObjectId implements Comparable {
 	return i != null ? i.toString() : ZEROID_STR;
     }
 
+    public static ObjectId fromString(final byte[] i, int offset) {
+	final byte[] id = new byte[Constants.OBJECT_ID_LENGTH];
+	for (int k = 0; k < Constants.OBJECT_ID_LENGTH; k++) {
+	    final byte c1 = i[offset++];
+	    final byte c2 = i[offset++];
+	    int b;
+
+	    if ('0' <= c1 && c1 <= '9')
+		b = c1 - '0';
+	    else if ('a' <= c1 && c1 <= 'f')
+		b = c1 - 'a' + 10;
+	    else
+		throw new IllegalArgumentException("Invalid id: " + (char) c1);
+
+	    b <<= 4;
+
+	    if ('0' <= c2 && c2 <= '9')
+		b |= c2 - '0';
+	    else if ('a' <= c2 && c2 <= 'f')
+		b |= c2 - 'a' + 10;
+	    else
+		throw new IllegalArgumentException("Invalid id: " + (char) c2);
+	    id[k] = (byte) b;
+	}
+	return new ObjectId(id);
+    }
+
     private static int compare(final byte[] a, final byte[] b) {
 	for (int k = 0; k < a.length && k < b.length; k++) {
 	    final int ak = a[k] & 0xff;

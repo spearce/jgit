@@ -5,17 +5,17 @@ import java.io.IOException;
 import org.spearce.jgit.errors.MissingObjectException;
 
 /** Reads a deltaified object which uses an {@link ObjectId} to find its base. */
-class DeltaRefPackedObjectReader extends DeltaPackedObjectReader {
+class DeltaRefPackedObjectLoader extends DeltaPackedObjectLoader {
     private final ObjectId deltaBase;
 
-    public DeltaRefPackedObjectReader(final PackFile pr, final long offset,
-	    final ObjectId base) {
-	super(pr, offset);
+    DeltaRefPackedObjectLoader(final PackFile pr, final long offset,
+	    final int deltaSz, final ObjectId base) {
+	super(pr, offset, deltaSz);
 	deltaBase = base;
     }
 
-    protected ObjectReader baseReader() throws IOException {
-	final ObjectReader or = pack.resolveBase(deltaBase);
+    protected ObjectLoader getBaseLoader() throws IOException {
+	final ObjectLoader or = pack.resolveBase(deltaBase);
 	if (or == null)
 	    throw new MissingObjectException(deltaBase, "delta base");
 	return or;

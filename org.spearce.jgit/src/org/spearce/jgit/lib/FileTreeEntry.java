@@ -39,7 +39,7 @@ public class FileTreeEntry extends TreeEntry {
 	mode = execute ? FileMode.EXECUTABLE_FILE : FileMode.REGULAR_FILE;
     }
 
-    public ObjectReader openReader() throws IOException {
+    public ObjectLoader openReader() throws IOException {
 	return getRepository().openBlob(getId());
     }
 

@@ -19,7 +19,6 @@ package org.spearce.jgit.lib;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -93,7 +92,7 @@ public class Repository {
 
     private void initializeWindowCache() {
 	// FIXME these should be configurable...
-	windows = new WindowCache(512 * 1024 * 1024, 32);
+	windows = new WindowCache(256 * 1024 * 1024, 4);
     }
 
     public File getDirectory() {
@@ -122,60 +121,35 @@ public class Repository {
 	while (i.hasNext()) {
 	    final PackFile p = (PackFile) i.next();
 	    try {
-		final ObjectReader o = p.get(objectId);
-		if (o != null) {
-		    o.close();
+		if (p.get(objectId) != null)
 		    return true;
-		}
 	    } catch (IOException ioe) {
-		// This shouldn't happen unless the pack was corrupted after we
-		// opened it. We'll ignore the error as though the object does
-		// not exist in this pack.
+		// This shouldn't happen unless the pack was corrupted
+		// after we opened it. We'll ignore the error as though
+		// the object does not exist in this pack.
 		//
 	    }
 	}
 	return toFile(objectId).isFile();
     }
 
-    public ObjectReader openObject(final ObjectId id) throws IOException {
-	final ObjectReader packed = objectInPack(id);
+    public ObjectLoader openObject(final ObjectId id) throws IOException {
+	final ObjectLoader packed = objectInPack(id);
 	if (packed != null)
 	    return packed;
-
-	final XInputStream fis = openObjectStream(id);
-	if (fis == null)
-	    return null;
-
 	try {
-	    return new UnpackedObjectReader(id, fis);
-	} catch (IOException ioe) {
-	    fis.close();
-	    throw ioe;
+	    return new UnpackedObjectLoader(this, id);
+	} catch (FileNotFoundException fnfe) {
+	    return null;
 	}
     }
 
-    public ObjectReader openBlob(final ObjectId id) throws IOException {
-	final ObjectReader or = openObject(id);
-	if (or == null) {
-	    return null;
-	} else if (Constants.TYPE_BLOB.equals(or.getType())) {
-	    return or;
-	} else {
-	    or.close();
-	    throw new IncorrectObjectTypeException(id, Constants.TYPE_BLOB);
-	}
+    public ObjectLoader openBlob(final ObjectId id) throws IOException {
+	return openObject(id);
     }
 
-    public ObjectReader openTree(final ObjectId id) throws IOException {
-	final ObjectReader or = openObject(id);
-	if (or == null) {
-	    return null;
-	} else if (Constants.TYPE_TREE.equals(or.getType())) {
-	    return or;
-	} else {
-	    or.close();
-	    throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
-	}
+    public ObjectLoader openTree(final ObjectId id) throws IOException {
+	return openObject(id);
     }
 
     public Commit mapCommit(final String revstr) throws IOException {
@@ -184,15 +158,13 @@ public class Repository {
     }
 
     public Commit mapCommit(final ObjectId id) throws IOException {
-	final ObjectReader or = openObject(id);
-	if (or == null) {
+	final ObjectLoader or = openObject(id);
+	if (or == null)
 	    return null;
-	} else if (Constants.TYPE_COMMIT.equals(or.getType())) {
-	    return new Commit(this, id, or.getBufferedReader());
-	} else {
-	    or.close();
-	    throw new IncorrectObjectTypeException(id, Constants.TYPE_COMMIT);
-	}
+	final byte[] raw = or.getBytes();
+	if (Constants.TYPE_COMMIT.equals(or.getType()))
+	    return new Commit(this, id, raw);
+	throw new IncorrectObjectTypeException(id, Constants.TYPE_COMMIT);
     }
 
     public Tree mapTree(final String revstr) throws IOException {
@@ -201,17 +173,15 @@ public class Repository {
     }
 
     public Tree mapTree(final ObjectId id) throws IOException {
-	final ObjectReader or = openObject(id);
-	if (or == null) {
+	final ObjectLoader or = openObject(id);
+	if (or == null)
 	    return null;
-	} else if (Constants.TYPE_TREE.equals(or.getType())) {
-	    return new Tree(this, id, or.getInputStream());
-	} else if (Constants.TYPE_COMMIT.equals(or.getType())) {
-	    return new Commit(this, id, or.getBufferedReader()).getTree();
-	} else {
-	    or.close();
-	    throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
-	}
+	final byte[] raw = or.getBytes();
+	if (Constants.TYPE_COMMIT.equals(or.getType()))
+	    return new Tree(this, id, raw);
+	if (Constants.TYPE_COMMIT.equals(or.getType()))
+	    return new Commit(this, id, raw).getTree();
+	throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
     }
 
     public RefLock lockRef(final String ref) throws IOException {
@@ -273,21 +243,12 @@ public class Repository {
 	}
     }
 
-    private XInputStream openObjectStream(final ObjectId objectId)
-	    throws IOException {
-	try {
-	    return new XInputStream(new FileInputStream(toFile(objectId)));
-	} catch (FileNotFoundException fnfe) {
-	    return null;
-	}
-    }
-
-    private ObjectReader objectInPack(final ObjectId objectId) {
+    private ObjectLoader objectInPack(final ObjectId objectId) {
 	final Iterator i = packs.iterator();
 	while (i.hasNext()) {
 	    final PackFile p = (PackFile) i.next();
 	    try {
-		final ObjectReader o = p.get(objectId);
+		final ObjectLoader o = p.get(objectId);
 		if (o != null) {
 		    return o;
 		}

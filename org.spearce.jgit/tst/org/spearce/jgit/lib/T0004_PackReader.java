@@ -26,7 +26,7 @@ public class T0004_PackReader extends RepositoryTestCase {
     public void test003_lookupCompressedObject() throws IOException {
 	final PackFile pr;
 	final ObjectId id;
-	final PackedObjectReader or;
+	final PackedObjectLoader or;
 
 	id = new ObjectId("902d5476fa249b7abc9d84c611577a81381f0327");
 	pr = new PackFile(db, TEST_PACK);
@@ -36,23 +36,21 @@ public class T0004_PackReader extends RepositoryTestCase {
 	assertEquals(Constants.TYPE_TREE, or.getType());
 	assertEquals(35, or.getSize());
 	assertEquals(7738, or.getDataOffset());
-	or.close();
 	pr.close();
     }
 
     public void test004_lookupDeltifiedObject() throws IOException {
 	final ObjectId id;
-	final ObjectReader or;
+	final ObjectLoader or;
 
 	id = new ObjectId("5b6e7c66c276e7610d4a73c70ec1a1f7c1003259");
 	or = db.openObject(id);
 	assertNotNull(or);
-	assertTrue(or instanceof PackedObjectReader);
+	assertTrue(or instanceof PackedObjectLoader);
 	assertEquals(id, or.getId());
 	assertEquals(Constants.TYPE_BLOB, or.getType());
 	assertEquals(18009, or.getSize());
-	assertEquals(537, ((PackedObjectReader) or).getDataOffset());
-	or.close();
+	assertEquals(537, ((PackedObjectLoader) or).getDataOffset());
     }
 
     public void test005_todopack() throws IOException {

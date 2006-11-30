@@ -16,6 +16,9 @@
  */
 package org.spearce.jgit.lib;
 
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
+
 /**
  * A window of data currently stored within a cache.
  * <p>
@@ -56,6 +59,35 @@ public abstract class ByteWindow {
          *         of bytes available.
          */
     public abstract int copy(int pos, byte[] dstbuf, int dstoff, int cnt);
+
+    /**
+         * Pump bytes into the supplied inflater as input.
+         * 
+         * @param pos
+         *                offset within the window to start supplying input
+         *                from.
+         * @param dstbuf
+         *                destination buffer the inflater should output
+         *                decompressed data to.
+         * @param dstoff
+         *                current offset within <code>dstbuf</code> to inflate
+         *                into.
+         * @param inf
+         *                the inflater to feed input to. The caller is
+         *                responsible for initializing the inflater as multiple
+         *                windows may need to supply data to the same inflater
+         *                to completely decompress something.
+         * @return updated <code>dstoff</code> based on the number of bytes
+         *         successfully copied into <code>dstbuf</code> by
+         *         <code>inf</code>. If the inflater is not yet finished then
+         *         another window's data must still be supplied as input to
+         *         finish decompression.
+         * @throws DataFormatException
+         *                 the inflater encounted an invalid chunk of data. Data
+         *                 stream corruption is likely.
+         */
+    public abstract int inflate(int pos, byte[] dstbuf, int dstoff, Inflater inf)
+	    throws DataFormatException;
 
     /**
          * Get the total size of this window.
