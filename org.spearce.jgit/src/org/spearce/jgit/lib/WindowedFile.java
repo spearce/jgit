@@ -94,27 +94,23 @@ public class WindowedFile {
          *                is not null then this value should be large (e.g.
          *                several MiBs) to ammortize the high cost of mapping
          *                the file.
-         * @param mapType
-         *                indicates the type of mmap to use for the byte
-         *                windows. Null means don't use mmap, preferring to
-         *                allocate a byte[] in Java and reading the file data
-         *                into the array. {@link MapMode#READ_ONLY} will use a
-         *                read only mmap, however this requires allocation of a
-         *                small temporary object during every read.
-         *                {@link MapMode#READ_WRITE} will arrange for the file
-         *                to opened in read/write mode, however it does not
-         *                require that we allocate a temporary object on every
-         *                read request.
+         * @param usemmap
+         *                indicates if the operating system mmap should be used
+         *                for the byte windows. False means don't use mmap,
+         *                preferring to allocate a byte[] in Java and reading
+         *                the file data into the array. True will use a read
+         *                only mmap, however this requires allocation of small
+         *                temporary objects during every read.
          * @throws IOException
          *                 the file could not be opened.
          */
     public WindowedFile(final WindowCache winCache, final File file,
-	    final int windowSz, final MapMode mapType) throws IOException {
+	    final int windowSz, final boolean usemmap) throws IOException {
 	cache = winCache;
 	sz = windowSz;
 	szb = bits(windowSz);
 	szm = (1 << szb) - 1;
-	wp = new Provider(mapType, file);
+	wp = new Provider(usemmap, file);
 	length = wp.fd.length();
     }
 
@@ -292,21 +288,20 @@ public class WindowedFile {
     }
 
     private class Provider extends WindowProvider {
-	final MapMode mapping;
+	final boolean map;
 
 	final RandomAccessFile fd;
 
-	Provider(final MapMode m, final File file) throws IOException {
-	    mapping = m;
-	    fd = new RandomAccessFile(file,
-		    m == null || m == MapMode.READ_ONLY ? "r" : "rw");
+	Provider(final boolean usemmap, final File file) throws IOException {
+	    map = usemmap;
+	    fd = new RandomAccessFile(file, "r");
 	}
 
 	public ByteWindow loadWindow(final int windowId) throws IOException {
 	    final int windowSize = getWindowSize(windowId);
-	    if (mapping != null) {
-		final MappedByteBuffer map;
-		map = fd.getChannel().map(mapping, windowId << szb, windowSize);
+	    if (map) {
+		final MappedByteBuffer map = fd.getChannel().map(
+			MapMode.READ_ONLY, windowId << szb, windowSize);
 		if (map.hasArray())
 		    return new ByteArrayWindow(this, windowId, map.array());
 		else

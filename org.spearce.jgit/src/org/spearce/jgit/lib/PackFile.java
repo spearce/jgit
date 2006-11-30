@@ -18,7 +18,6 @@ package org.spearce.jgit.lib;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.channels.FileChannel.MapMode;
 import java.util.zip.DataFormatException;
 
 import org.spearce.jgit.errors.CorruptObjectException;
@@ -43,7 +42,7 @@ public class PackFile {
 	repo = parentRepo;
 	// FIXME window size and mmap type should be configurable
 	pack = new WindowedFile(repo.getWindowCache(), packFile,
-		64 * 1024 * 1024, MapMode.READ_WRITE);
+		64 * 1024 * 1024, false);
 	try {
 	    readPackHeader();
 
@@ -54,7 +53,7 @@ public class PackFile {
 		    + ".idx");
 	    // FIXME window size and mmap type should be configurable
 	    idx = new WindowedFile(repo.getWindowCache(), idxFile,
-		    64 * 1024 * 1024, MapMode.READ_WRITE);
+		    64 * 1024 * 1024, false);
 	    try {
 		idxHeader = readIndexHeader();
 	    } catch (IOException ioe) {
