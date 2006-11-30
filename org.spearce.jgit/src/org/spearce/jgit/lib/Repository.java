@@ -118,10 +118,6 @@ public class Repository {
     }
 
     public boolean hasObject(final ObjectId objectId) {
-	if (toFile(objectId).isFile()) {
-	    return true;
-	}
-
 	final Iterator i = packs.iterator();
 	while (i.hasNext()) {
 	    final PackFile p = (PackFile) i.next();
@@ -138,20 +134,23 @@ public class Repository {
 		//
 	    }
 	}
-	return false;
+	return toFile(objectId).isFile();
     }
 
     public ObjectReader openObject(final ObjectId id) throws IOException {
+	final ObjectReader packed = objectInPack(id);
+	if (packed != null)
+	    return packed;
+
 	final XInputStream fis = openObjectStream(id);
-	if (fis != null) {
-	    try {
-		return new UnpackedObjectReader(id, fis);
-	    } catch (IOException ioe) {
-		fis.close();
-		throw ioe;
-	    }
-	} else {
-	    return objectInPack(id);
+	if (fis == null)
+	    return null;
+
+	try {
+	    return new UnpackedObjectReader(id, fis);
+	} catch (IOException ioe) {
+	    fis.close();
+	    throw ioe;
 	}
     }
 
