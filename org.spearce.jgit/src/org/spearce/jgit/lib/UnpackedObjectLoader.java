@@ -123,7 +123,7 @@ public class UnpackedObjectLoader extends ObjectLoader {
 	    bytes = new byte[objectSize];
 	    if (pos < avail)
 		System.arraycopy(hdr, pos, bytes, 0, avail - pos);
-	    decompress(inflater, pos);
+	    decompress(inflater, avail);
 	} else {
 	    int p = 0;
 	    int c = compressed[p++] & 0xff;
