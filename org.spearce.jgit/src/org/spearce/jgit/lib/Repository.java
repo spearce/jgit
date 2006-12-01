@@ -177,10 +177,10 @@ public class Repository {
 	if (or == null)
 	    return null;
 	final byte[] raw = or.getBytes();
-	if (Constants.TYPE_COMMIT.equals(or.getType()))
+	if (Constants.TYPE_TREE.equals(or.getType()))
 	    return new Tree(this, id, raw);
 	if (Constants.TYPE_COMMIT.equals(or.getType()))
-	    return new Commit(this, id, raw).getTree();
+	    return mapTree(ObjectId.fromString(raw, 5));
 	throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
     }
 
