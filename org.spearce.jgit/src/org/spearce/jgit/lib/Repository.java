@@ -24,8 +24,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.ObjectWritingException;
@@ -40,9 +38,9 @@ public class Repository {
 
     private final File refsDir;
 
-    private final List packs;
-
     private final RepositoryConfig config;
+
+    private PackFile[] packs;
 
     private WindowCache windows;
 
@@ -50,7 +48,7 @@ public class Repository {
 	gitDir = d.getAbsoluteFile();
 	objectsDir = new File(gitDir, "objects");
 	refsDir = new File(gitDir, "refs");
-	packs = new ArrayList();
+	packs = new PackFile[0];
 	config = new RepositoryConfig(this);
 	if (objectsDir.exists()) {
 	    getConfig().load();
@@ -117,11 +115,9 @@ public class Repository {
     }
 
     public boolean hasObject(final ObjectId objectId) {
-	final Iterator i = packs.iterator();
-	while (i.hasNext()) {
-	    final PackFile p = (PackFile) i.next();
+	for (int k = packs.length - 1; k >= 0; k--) {
 	    try {
-		if (p.hasObject(objectId))
+		if (packs[k].hasObject(objectId))
 		    return true;
 	    } catch (IOException ioe) {
 		// This shouldn't happen unless the pack was corrupted
@@ -134,9 +130,18 @@ public class Repository {
     }
 
     public ObjectLoader openObject(final ObjectId id) throws IOException {
-	final ObjectLoader packed = objectInPack(id);
-	if (packed != null)
-	    return packed;
+	for (int k = packs.length - 1; k >= 0; k--) {
+	    try {
+		final ObjectLoader o = packs[k].get(id);
+		if (o != null)
+		    return o;
+	    } catch (IOException ioe) {
+		// This shouldn't happen unless the pack was corrupted after we
+		// opened it. We'll ignore the error as though the object does
+		// not exist in this pack.
+		//
+	    }
+	}
 	try {
 	    return new UnpackedObjectLoader(this, id);
 	} catch (FileNotFoundException fnfe) {
@@ -211,12 +216,10 @@ public class Repository {
     }
 
     public void closePacks() throws IOException {
-	final Iterator i = packs.iterator();
-	while (i.hasNext()) {
-	    final PackFile pr = (PackFile) i.next();
-	    pr.close();
+	for (int k = packs.length - 1; k >= 0; k--) {
+	    packs[k].close();
 	}
-	packs.clear();
+	packs = new PackFile[0];
     }
 
     public void scanForPacks() {
@@ -233,33 +236,18 @@ public class Repository {
 			&& idx.canRead();
 	    }
 	});
+	final ArrayList p = new ArrayList(list.length);
 	for (int k = 0; k < list.length; k++) {
 	    try {
-		packs.add(new PackFile(this, list[k]));
+		p.add(new PackFile(this, list[k]));
 	    } catch (IOException ioe) {
 		// Whoops. That's not a pack!
 		//
 	    }
 	}
-    }
-
-    private ObjectLoader objectInPack(final ObjectId objectId) {
-	final Iterator i = packs.iterator();
-	while (i.hasNext()) {
-	    final PackFile p = (PackFile) i.next();
-	    try {
-		final ObjectLoader o = p.get(objectId);
-		if (o != null) {
-		    return o;
-		}
-	    } catch (IOException ioe) {
-		// This shouldn't happen unless the pack was corrupted after we
-		// opened it. We'll ignore the error as though the object does
-		// not exist in this pack.
-		//
-	    }
-	}
-	return null;
+	final PackFile[] arr = new PackFile[p.size()];
+	p.toArray(arr);
+	packs = arr;
     }
 
     private void writeSymref(final String name, final String target)
