@@ -255,10 +255,10 @@ public class WindowedFile {
          *                does not need to be aligned.
          * @param intbuf
          *                a temporary buffer to read the bytes into before
-         *                byteorder conversion. If not supplied then a temporary
-         *                buffer will be allocated. Callers should try to supply
-         *                (and reuse) a buffer when possible to reduce pressure
-         *                on the garbage collector.
+         *                byteorder conversion. Must be supplied by the caller
+         *                and must have room for at least 4 bytes, but may be
+         *                longer if the caller has a larger buffer they wish to
+         *                loan.
          * @return the unsigned 32 bit integer value.
          * @throws IOExceptiona
          *                 necessary window was not found in the window cache
@@ -269,8 +269,6 @@ public class WindowedFile {
          */
     public long readUInt32(final long position, byte[] intbuf)
 	    throws IOException {
-	if (intbuf == null)
-	    intbuf = new byte[4];
 	if (read(position, intbuf, 0, 4) != 4)
 	    throw new EOFException();
 	return (intbuf[0] & 0xff) << 24 | (intbuf[1] & 0xff) << 16
