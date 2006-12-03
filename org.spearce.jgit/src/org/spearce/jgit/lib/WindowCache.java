@@ -98,6 +98,7 @@ public class WindowCache {
 	    return w;
 	}
 
+	idx = -(idx + 1);
 	final int wSz = wp.getWindowSize(id);
 	while (openWindowCount == windows.length
 		|| (openWindowCount > 0 && openByteCount + wSz > maxByteCount)) {
@@ -112,9 +113,10 @@ public class WindowCache {
 	    if (toMove > 0)
 		System.arraycopy(windows, oldest + 1, windows, oldest, toMove);
 	    windows[--openWindowCount] = null;
+	    if (oldest < idx)
+		idx--;
 	}
 
-	idx = -(idx + 1);
 	final int toMove = openWindowCount - idx;
 	if (toMove > 0)
 	    System.arraycopy(windows, idx, windows, idx + 1, toMove);
