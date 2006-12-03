@@ -19,12 +19,15 @@ package org.spearce.egit.core;
 import org.eclipse.core.resources.team.IMoveDeleteHook;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.team.core.RepositoryProvider;
+import org.eclipse.team.core.history.IFileHistoryProvider;
+import org.spearce.egit.core.internal.mapping.GitFileHistoryProvider;
 import org.spearce.egit.core.project.GitProjectData;
 
 public class GitProvider extends RepositoryProvider {
     private GitProjectData data;
 
     private GitMoveDeleteHook hook;
+    private GitFileHistoryProvider historyProvider;
 
     public String getID() {
 	return getClass().getName();
@@ -49,10 +52,17 @@ public class GitProvider extends RepositoryProvider {
 	return hook;
     }
 
-    private synchronized GitProjectData getData() {
+    public synchronized GitProjectData getData() {
 	if (data == null) {
 	    data = GitProjectData.get(getProject());
 	}
 	return data;
+    }
+    
+    public synchronized IFileHistoryProvider getFileHistoryProvider() {
+	if (historyProvider == null) {
+	    historyProvider = new GitFileHistoryProvider();
+	}
+	return historyProvider;
     }
 }
