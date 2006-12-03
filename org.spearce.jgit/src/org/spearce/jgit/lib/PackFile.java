@@ -72,23 +72,70 @@ public class PackFile {
 	}
     }
 
-    ObjectLoader resolveBase(final ObjectId id) throws IOException {
-	return get(id);
-    }
-
     ObjectLoader resolveBase(final long ofs) throws IOException {
-	return reader(ofs);
+	return reader(ofs, new byte[Constants.OBJECT_ID_LENGTH]);
     }
 
-    public boolean hasObject(final ObjectId id) throws IOException {
-	return findOffset(id) != -1;
+    /**
+         * Determine if an object is contained within the pack file.
+         * <p>
+         * For performance reasons only the index file is searched; the main
+         * pack content is ignored entirely.
+         * </p>
+         * 
+         * @param id
+         *                the object to look for. Must not be null.
+         * @param tmp
+         *                a temporary buffer loaned to this pack for use during
+         *                the search. This buffer must be at least
+         *                {@link Constants#OBJECT_ID_LENGTH} bytes in size. The
+         *                buffer will be overwritten during the search, but is
+         *                unused upon return.
+         * @return true if the object is in this pack; false otherwise.
+         * @throws IOException
+         *                 there was an error reading data from the pack's index
+         *                 file.
+         */
+    public boolean hasObject(final ObjectId id, final byte[] tmp)
+	    throws IOException {
+	return findOffset(id, tmp) != -1;
     }
 
-    public PackedObjectLoader get(final ObjectId id) throws IOException {
-	final long offset = findOffset(id);
+    /**
+         * Get an object from this pack.
+         * <p>
+         * For performance reasons the caller is responsible for supplying a
+         * temporary buffer of at least {@link Constants#OBJECT_ID_LENGTH} bytes
+         * for use during searching. If an object loader is returned this
+         * temporary buffer becomes the property of the object loader and must
+         * not be overwritten by the caller. If no object loader is returned
+         * then the temporary buffer remains the property of the caller and may
+         * be given to a different pack file to continue searching for the
+         * needed object.
+         * </p>
+         * 
+         * @param id
+         *                the object to obtain from the pack. Must not be null.
+         * @param tmp
+         *                a temporary buffer loaned to this pack for use during
+         *                the search, and given to the returned loader if the
+         *                object is found. This buffer must be at least
+         *                {@link Constants#OBJECT_ID_LENGTH} bytes in size. The
+         *                buffer will be overwritten during the search. The
+         *                buffer will be given to the loader if a loader is
+         *                returned. If null is returned the caller may reuse the
+         *                buffer.
+         * @return the object loader for the requested object if it is contained
+         *         in this pack; null if the object was not found.
+         * @throws IOException
+         *                 the pack file or the index could not be read.
+         */
+    public PackedObjectLoader get(final ObjectId id, final byte[] tmp)
+	    throws IOException {
+	final long offset = findOffset(id, tmp);
 	if (offset == -1)
 	    return null;
-	final PackedObjectLoader objReader = reader(offset);
+	final PackedObjectLoader objReader = reader(offset, tmp);
 	objReader.setId(id);
 	return objReader;
     }
@@ -138,8 +185,8 @@ public class PackFile {
 	return idxHeader;
     }
 
-    private PackedObjectLoader reader(final long objOffset) throws IOException {
-	final byte[] ib = new byte[Constants.OBJECT_ID_LENGTH];
+    private PackedObjectLoader reader(final long objOffset, final byte[] ib)
+	    throws IOException {
 	long pos = objOffset;
 	int p = 0;
 
@@ -193,9 +240,9 @@ public class PackFile {
 	return new WholePackedObjectLoader(this, pos, type, (int) size);
     }
 
-    private long findOffset(final ObjectId objId) throws IOException {
+    private long findOffset(final ObjectId objId, final byte[] tmpid)
+	    throws IOException {
 	final int levelOne = objId.getFirstByte();
-	final byte[] tmpid = new byte[Constants.OBJECT_ID_LENGTH];
 	long high = idxHeader[levelOne];
 	long low = levelOne == 0 ? 0 : idxHeader[levelOne - 1];
 

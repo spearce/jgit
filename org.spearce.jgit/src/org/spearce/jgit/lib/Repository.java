@@ -115,32 +115,40 @@ public class Repository {
     }
 
     public boolean hasObject(final ObjectId objectId) {
-	for (int k = packs.length - 1; k >= 0; k--) {
-	    try {
-		if (packs[k].hasObject(objectId))
-		    return true;
-	    } catch (IOException ioe) {
-		// This shouldn't happen unless the pack was corrupted
-		// after we opened it. We'll ignore the error as though
-		// the object does not exist in this pack.
-		//
-	    }
+	int k = packs.length;
+	if (k > 0) {
+	    final byte[] tmp = new byte[Constants.OBJECT_ID_LENGTH];
+	    do {
+		try {
+		    if (packs[--k].hasObject(objectId, tmp))
+			return true;
+		} catch (IOException ioe) {
+		    // This shouldn't happen unless the pack was corrupted
+		    // after we opened it. We'll ignore the error as though
+		    // the object does not exist in this pack.
+		    //
+		}
+	    } while (k > 0);
 	}
 	return toFile(objectId).isFile();
     }
 
     public ObjectLoader openObject(final ObjectId id) throws IOException {
-	for (int k = packs.length - 1; k >= 0; k--) {
-	    try {
-		final ObjectLoader o = packs[k].get(id);
-		if (o != null)
-		    return o;
-	    } catch (IOException ioe) {
-		// This shouldn't happen unless the pack was corrupted after we
-		// opened it. We'll ignore the error as though the object does
-		// not exist in this pack.
-		//
-	    }
+	int k = packs.length;
+	if (k > 0) {
+	    final byte[] tmp = new byte[Constants.OBJECT_ID_LENGTH];
+	    do {
+		try {
+		    final ObjectLoader ol = packs[--k].get(id, tmp);
+		    if (ol != null)
+			return ol;
+		} catch (IOException ioe) {
+		    // This shouldn't happen unless the pack was corrupted
+		    // after we opened it. We'll ignore the error as though
+		    // the object does not exist in this pack.
+		    //
+		}
+	    } while (k > 0);
 	}
 	try {
 	    return new UnpackedObjectLoader(this, id);
