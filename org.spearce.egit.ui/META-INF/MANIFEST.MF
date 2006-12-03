@@ -12,5 +12,7 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.team.core,
  org.eclipse.team.ui,
  org.spearce.jgit,
- org.spearce.egit.core
+ org.spearce.egit.core,
+ org.eclipse.compare,
+ org.eclipse.core.filesystem
 Eclipse-LazyStart: true

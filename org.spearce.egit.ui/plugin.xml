@@ -47,8 +47,59 @@
                menubarPath="team.main/group1"
                id="org.spearce.egit.ui.internal.actions.Track"/>
  	 </objectContribution>
+      <objectContribution
+            objectClass="org.eclipse.core.resources.IFile"
+            adaptable="true"
+            id="org.spearce.egit.ui.IFileContributions">
+<!--
+         <filter
+               name="projectPersistentProperty"
+               value="org.eclipse.team.core.repository=org.spearce.egit.core.cvsnature">
+         </filter>
+-->
+         <action
+               class="org.spearce.egit.ui.internal.actions.CompareWithRevisionAction"
+               definitionId="org.spearce.egit.ui.compareWithRevision"
+               helpContextId="org.spearce.egit.ui.compare_with_revision_action_context"
+               id="org.spearce.egit.ui.compareWithRevision"
+               label="%CompareWithRevisionAction_label"
+               menubarPath="compareWithMenu/compareWithGroup"
+               overrideActionId="org.eclipse.team.ui.compareLocalHistory"
+               tooltip="%CompareWithRevisionAction_tooltip">
+         </action>
+<!--
+         <action
+               class="org.spearce.egit.ui.internal.actions.ReplaceWithRevisionAction"
+               definitionId="org.spearce.egit.ui.replaceWithRevision"
+               helpContextId="org.spearce.egit.ui.replace_with_revision_action_context"
+               id="org.spearce.egit.ui.replaceWithRevision"
+               label="%ReplaceWithRevisionAction_label"
+               menubarPath="replaceWithMenu/replaceWithGroup"
+               overrideActionId="org.eclipse.team.ui.replaceLocalHistory"
+               tooltip="%ReplaceWithRevisionAction_tooltip">
+         </action>
+-->
+      </objectContribution>
    </extension>
 
+   <extension
+         point="org.eclipse.core.runtime.adapters">
+         <factory
+               adaptableType="org.spearce.egit.core.internal.mapping.GitFileHistoryProvider"
+               class="org.spearce.egit.ui.internal.factories.GitAdapterFactory">
+            <adapter
+                  type="org.eclipse.team.ui.history.IHistoryPageSource">
+            </adapter>
+         </factory>
+         <factory
+               adaptableType="org.eclipse.core.internal.resources.Resource"
+               class="org.spearce.egit.ui.internal.factories.GitAdapterFactory">
+            <adapter
+                  type="org.eclipse.team.ui.history.IHistoryPageSource">
+            </adapter>
+         </factory>
+   </extension>
+   
    <extension point="org.eclipse.ui.preferencePages">
       <page name="%PreferencePage_name"
             category="org.eclipse.team.ui.TeamPreferences"
