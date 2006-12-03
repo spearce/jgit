@@ -192,7 +192,6 @@ public class PackFile {
 
     private long findOffset(final ObjectId objId) throws IOException {
 	final int levelOne = objId.getFirstByte();
-	final byte[] intbuf = new byte[4];
 	final byte[] tmpid = new byte[Constants.OBJECT_ID_LENGTH];
 	long high = idxHeader[levelOne];
 	long low = levelOne == 0 ? 0 : idxHeader[levelOne - 1];
@@ -206,7 +205,7 @@ public class PackFile {
 	    if (cmp < 0)
 		high = mid;
 	    else if (cmp == 0)
-		return idx.readUInt32(pos - 4, intbuf);
+		return idx.readUInt32(pos - 4, tmpid);
 	    else
 		low = mid + 1;
 	} while (low < high);
