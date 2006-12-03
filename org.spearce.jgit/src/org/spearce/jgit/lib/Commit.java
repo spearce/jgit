@@ -20,9 +20,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.spearce.jgit.errors.CorruptObjectException;
@@ -132,35 +130,37 @@ public class Commit implements Treeish {
     }
 
     private void decode() {
-	if (raw!=null) {
+	if (raw != null) {
 	    try {
-		BufferedReader br=new BufferedReader(new InputStreamReader(new ByteArrayInputStream(raw)));
-		String n=br.readLine();
-                if (n == null || !n.startsWith("tree ")) {
-                    throw new CorruptObjectException(commitId, "no tree");
-                }
-                while ((n = br.readLine())!=null && n.startsWith("parent "))
-		;
-                if (n == null || !n.startsWith("author ")) {
-                    throw new CorruptObjectException(commitId, "no author");
-                }
-                author = new PersonIdent(n.substring("author ".length()));
-                n = br.readLine();
-                if (n == null || !n.startsWith("committer ")) {
-                    throw new CorruptObjectException(commitId, "no committer");
-                }
-                committer = new PersonIdent(n.substring("committer ".length()));
-                n = br.readLine();
-                if (n == null || !n.equals("")) {
-                    throw new CorruptObjectException(commitId, "malformed header");
-                }
-                StringBuffer tempMessage = new StringBuffer();
-                char[] readBuf = new char[2048];
-                int readLen;
+		BufferedReader br = new BufferedReader(new InputStreamReader(
+			new ByteArrayInputStream(raw)));
+		String n = br.readLine();
+		if (n == null || !n.startsWith("tree ")) {
+		    throw new CorruptObjectException(commitId, "no tree");
+		}
+		while ((n = br.readLine()) != null && n.startsWith("parent "))
+		    ;
+		if (n == null || !n.startsWith("author ")) {
+		    throw new CorruptObjectException(commitId, "no author");
+		}
+		author = new PersonIdent(n.substring("author ".length()));
+		n = br.readLine();
+		if (n == null || !n.startsWith("committer ")) {
+		    throw new CorruptObjectException(commitId, "no committer");
+		}
+		committer = new PersonIdent(n.substring("committer ".length()));
+		n = br.readLine();
+		if (n == null || !n.equals("")) {
+		    throw new CorruptObjectException(commitId,
+			    "malformed header");
+		}
+		StringBuffer tempMessage = new StringBuffer();
+		char[] readBuf = new char[2048];
+		int readLen;
 		while ((readLen = br.read(readBuf)) > 0) {
-                    tempMessage.append(readBuf, 0, readLen);
-                }
-                message = tempMessage.toString();
+		    tempMessage.append(readBuf, 0, readLen);
+		}
+		message = tempMessage.toString();
 	    } catch (IOException e) {
 		e.printStackTrace();
 	    } finally {
