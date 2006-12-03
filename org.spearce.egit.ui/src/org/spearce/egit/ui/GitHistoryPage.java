@@ -30,10 +30,11 @@ import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.viewers.ColumnWeightData;
-import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.ILazyTreeContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
@@ -45,9 +46,12 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
+import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.team.core.RepositoryProvider;
 import org.eclipse.team.core.history.IFileHistory;
 import org.eclipse.team.core.history.IFileHistoryProvider;
@@ -65,6 +69,8 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
     private Composite localComposite;
 
     private TreeViewer viewer;
+
+    private Tree tree;
 
     private IFileRevision[] fileRevisions;
 
@@ -97,24 +103,30 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	final CompareRevisionAction compareAction = new CompareRevisionAction(
 		"Compare");
-	viewer.getTree().addSelectionListener(new SelectionAdapter() {
+	tree.addSelectionListener(new SelectionAdapter() {
 	    public void widgetSelected(SelectionEvent e) {
 		// update the current
+		TreeItem[] selection = tree.getSelection();
+		IFileRevision[] selection2 = new IFileRevision[selection.length];
+		for (int i = 0; i < selection.length; ++i) {
+		    selection2[i] = (IFileRevision) selection[i].getData();
+		}
+
 		compareAction.setCurrentFileRevision(fileRevisions[0]);
-		compareAction.selectionChanged((IStructuredSelection) viewer
-			.getSelection());
+		compareAction.selectionChanged(new StructuredSelection(
+			selection2));
 	    }
 	});
 	compareAction.setPage(this);
 	MenuManager menuMgr = new MenuManager();
-	Menu menu = menuMgr.createContextMenu(viewer.getTree());
+	Menu menu = menuMgr.createContextMenu(tree);
 	menuMgr.addMenuListener(new IMenuListener() {
 	    public void menuAboutToShow(IMenuManager menuMgr) {
 		menuMgr.add(compareAction);
 	    }
 	});
 	menuMgr.setRemoveAllWhenShown(true);
-	viewer.getTree().setMenu(menu);
+	tree.setMenu(menu);
 
 	GitHistoryResourceListener resourceListener = new GitHistoryResourceListener();
 	ResourcesPlugin.getWorkspace().addResourceChangeListener(
@@ -172,28 +184,52 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
     }
 
     private void createTree(Composite composite) {
-	Tree tree = new Tree(composite, SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI
-		| SWT.FULL_SELECTION);
+	tree = new Tree(composite, SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI
+		| SWT.FULL_SELECTION | SWT.VIRTUAL);
 	tree.setHeaderVisible(true);
 	tree.setLinesVisible(true);
 
 	GridData data = new GridData(GridData.FILL_BOTH);
 	tree.setLayoutData(data);
-
+	tree.setData("HEAD");
+	tree.addListener(SWT.SetData, new Listener() {
+	    public void handleEvent(Event event) {
+		TreeItem item = (TreeItem) event.item;
+		Tree parent = item.getParent();
+		if (parent == null) {
+		    item.setText(new String[] { "hej", "san" });
+		    item.setData("");
+		} else {
+		    ITableLabelProvider p = (ITableLabelProvider) viewer
+			    .getLabelProvider();
+		    for (int i = 0; i < 5; ++i) {
+			String text = p.getColumnText(fileRevisions[event.index], i);
+			if (text!=null)
+			    item.setText(i, text);
+			else
+			    item.setText("");
+		    }
+		    item.setData(fileRevisions[event.index]);
+		}
+	    }
+	});
 	TableLayout layout = new TableLayout();
 	tree.setLayout(layout);
 
-	viewer = new TreeViewer(tree);
+	viewer = new TreeViewer(tree, SWT.VIRTUAL | SWT.FULL_SELECTION);
 
 	createColumns(viewer, tree, layout);
 
 	viewer.setLabelProvider(new GitHistoryLabelProvider());
 
 	viewer.setContentProvider(new GitHistoryContentProvider());
+
 	viewer.setInput(getInput());
     }
 
-    class GitHistoryContentProvider implements ITreeContentProvider {
+    class GitHistoryContentProvider implements ITreeContentProvider,
+	    ILazyTreeContentProvider {
+
 	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 	    System.out.println("inputChanged(" + viewer + "," + oldInput + ","
 		    + newInput);
@@ -205,11 +241,13 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		    .getFileHistoryFor((IResource) getInput(),
 			    IFileHistoryProvider.SINGLE_LINE_OF_DESCENT, null/* monitor */);
 	    fileRevisions = fileHistoryFor.getFileRevisions();
+	    tree.setData(fileRevisions);
+	    tree.setItemCount(fileRevisions.length);
+	    viewer.refresh();
 	}
 
 	public void dispose() {
 	    // TODO Auto-generated method stub
-
 	}
 
 	public Object[] getElements(Object inputElement) {
@@ -218,22 +256,30 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 	}
 
 	public boolean hasChildren(Object element) {
-	    // System.out.println("hasChildren(" + element.getClass() + ")");
+	    // System.out.println("hasChildren(" + element.getClass() +
+                // ")");
 	    // TODO Auto-generated method stub
 	    return false;
 	}
 
 	public Object getParent(Object element) {
-	    //		System.out.println("getParent(" + element + ")");
+	    // System.out.println("getParent(" + element + ")");
 	    return null;
 	}
 
 	public Object[] getChildren(Object parentElement) {
-	    //		System.out.println("getElements(" + parentElement + ")");
-	    return new Object[] { "XXXX", "YYY" };
+	    // System.out.println("getElements(" + parentElement + ")");
+	    return fileRevisions;
 	}
 
-    }
+	public void updateChildCount(Object element, int currentChildCount) {
+	    viewer.setChildCount(element, fileRevisions.length);
+	}
+
+	public void updateElement(Object parent, int index) {
+	    viewer.replace(parent, index, fileRevisions[index]);
+	}
+    };
 
     private void createColumns(TreeViewer viewer, Tree tree, TableLayout layout) {
 	// X SelectionListener headerListener = getColumnListener(viewer);

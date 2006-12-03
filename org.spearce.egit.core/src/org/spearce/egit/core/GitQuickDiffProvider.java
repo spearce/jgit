@@ -38,7 +38,7 @@ import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.texteditor.quickdiff.IQuickDiffReferenceProvider;
 
 public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
-
+    
     private String id;
 
     private Document document;
@@ -68,7 +68,7 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 			.getFileHistoryFor(file,
 				IFileHistoryProvider.SINGLE_REVISION, null);
 		IFileRevision[] revisions = fileHistoryFor.getFileRevisions();
-		if (revisions.length > 0) {
+		if (revisions != null && revisions.length > 0) {
 		    IFileRevision revision = revisions[0];
 		    System.out.println("Comparing with "
 			    + revision.getContentIdentifier());
