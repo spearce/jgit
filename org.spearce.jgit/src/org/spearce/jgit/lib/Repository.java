@@ -121,7 +121,7 @@ public class Repository {
 	while (i.hasNext()) {
 	    final PackFile p = (PackFile) i.next();
 	    try {
-		if (p.get(objectId) != null)
+		if (p.hasObject(objectId))
 		    return true;
 	    } catch (IOException ioe) {
 		// This shouldn't happen unless the pack was corrupted

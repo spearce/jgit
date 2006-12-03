@@ -80,8 +80,11 @@ public class PackFile {
 	return reader(ofs);
     }
 
-    public synchronized PackedObjectLoader get(final ObjectId id)
-	    throws IOException {
+    public boolean hasObject(final ObjectId id) throws IOException {
+	return findOffset(id) != -1;
+    }
+
+    public PackedObjectLoader get(final ObjectId id) throws IOException {
 	final long offset = findOffset(id);
 	if (offset == -1)
 	    return null;
