@@ -7,4 +7,14 @@
 		id="org.spearce.egit.core.GitProvider">
 	</repository>
   </extension>
+<!-- ********** QuickDiff text editor support ************** -->
+   <extension
+         point="org.eclipse.ui.workbench.texteditor.quickDiffReferenceProvider">
+      <referenceprovider
+            label="%GitRemoteQuickDiffProvider_label"
+            class="org.spearce.egit.core.GitQuickDiffProvider"
+            id="org.eclipse.quickdiff.providers.GitReferenceProvider">
+      </referenceprovider>
+   </extension>
+   
 </plugin>
