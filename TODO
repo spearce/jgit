@@ -1,0 +1,121 @@
+= Eclipse Plugin Wishlist =
+
+Now that we have some basic features in the Eclipse plugin, we need
+to focus on making it usable by average users doing daily tasks.
+
+== Commit ==
+
+Commit all (or selected) files to current branch.
+
+This feature is trivial if the repository is fully mounted within
+Eclipse, as Eclipse has the entire working tree available, making
+it easy to write out the blobs and tree objects needed to form the
+root tree for the new commit.
+
+Its less easy when the repository is not fully mounted within
+Eclipse.  (See for example the egit repository itself; the
+repository has 3 projects in it so Eclipse doesn't see the top
+level directory.)  In this case egit needs to preseve the files
+that are currently either in HEAD or in the index for the parts
+of the tree it cannot see, while using the files it has in memory
+for the parts of the tree that it can see.  In this latter case I'm
+thinking that preserving HEAD rather than the index is the right way
+to go here, as jgit does not play nicely with core Git's index file.
+Consequently users should be discouraged from trying to create a
+commit based on the results of both tools.
+
+== Create Branch ==
+
+Create a new branch from any revision specification.
+
+== Delete Branch ==
+
+Delete a branch.
+
+== Switch Branch ==
+
+Switch to an existing branch, updating the working directory to match.
+
+Note that updating the working directory may require a 3 way merge
+if the working directory is dirty (git checkout -m).
+
+My usual git working style is to not switch branches with a dirty
+working directory; I always commit to the current branch before
+switching to a new one. I mention that because I assume it'll be
+easier to implement that workflow first; once you have commit
+capability, you can do that style of branch switching (either
+preventing the switch or doing an implicit commit when the working
+directory is dirty) without having to worry about merging. ''--
+Steven Grimm''
+
+== Fetch ==
+
+Fetching changes from a remote repository into a tracking branch.
+Aka "git fetch".
+
+I'd like to keep egit/jgit 100% pure Java, to make it easier to
+install the plugin on a wide varity of systems.  This means we
+need to implement a good amount of code for the network protocol
+and the --objects-edge feature of rev-list.  Although a lot to code
+its probably only slightly more effort than forking out to run git
+fetch and deal with its error conditions.
+
+Fetching over SSH should be possible through the jsch library
+included in Eclipse; this is what CVS uses for its SSH2 connections.
+Fetching from a local directory should just be a matter of creating a
+Repository object on that directory path (no need to fork a process
+like core Git does).
+
+Initially I'd like to stay away from the commit walkers (e.g. HTTP).
+Actually supporting them is likely a really good argument for at
+least making it possible for the user to configure jgit to invoke
+"git fetch" in an external process.
+
+== Merge ==
+
+Merging changes from one local branch to another.
+
+Again, like fetch I'd like to keep egit/jgit 100% pure Java and
+implement merge-recursive in Java.  We may need to invoke RCS
+merge if Eclipse doesn't have its own 3 way file merge algorithm
+available, or do what core Git just did and implement a 3 way in
+memory merge algorithm.  git-merge-recursive is only 1336 lines of C
+so it should not be too difficult to port the algorithm to pure Java.
+
+== Push ==
+
+Pushing changes to a remote repository.
+
+A lot like fetch, we should be able to support the native Git
+protocol for SSH based push, and for local directory access we just
+need to mount the other repository as a new Repository object and
+copy the object data from one to the other.  Probably easier than
+it is for core Git.
+
+As far as packing data over the network goes I don't want to
+implement the binary delta algorithm in pure Java right now.  So this
+means we would send packs containing only whole objects (no deltas).
+This shouldn't really be an issue for the receiving end, except
+that we will have a slightly higher network transfer cost coming
+from egit than if core Git was used to push the same set of objects.
+
+== Graphical History Viewer ==
+
+A graphical history viewer similar to gitk or qgit, but in SWT/JFace
+so it can run within the Eclipse workbench.
+
+== SVN Integration ==
+
+It would be swell -- but put it at the bottom of your priority list
+-- to have git-svn interoperability; sadly most of my git usage at
+the moment is in cloned svn repositories and it would be great if
+egit could do the right thing when the current git repo is cloned
+from svn. What "the right thing" is, exactly, is debatable, but I
+suppose some kind of integration with the Subclipse plugin is one
+possibility (and if nothing else, that plugin probably has code
+that can be reused.) I'd like to be able to update from and commit
+to the parent svn repository. ''-- Steven Grimm''
+
+I'm considering this to be out of scope for the time being, but if
+someone takes it on and submits reasonable patches we'll include
+them. ''-- Shawn Pearce''
