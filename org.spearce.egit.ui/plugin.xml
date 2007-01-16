@@ -79,6 +79,13 @@
                tooltip="%ReplaceWithRevisionAction_tooltip">
          </action>
 -->
+         <action
+               class="org.spearce.egit.ui.internal.actions.ShowResourceInHistoryAction"
+               enablesFor="1"
+               id="org.spearce.egit.ui.internal.actions.ShowResourceInHistoryAction"
+               label="%ShowResourceInHistoryAction_label"
+               menubarPath="team.main/group1"
+               tooltip="%ShowResourceInHistoryAction_tooltip"/>
       </objectContribution>
    </extension>
 
