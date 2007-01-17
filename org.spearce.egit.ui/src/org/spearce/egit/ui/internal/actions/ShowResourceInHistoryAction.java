@@ -16,10 +16,6 @@
  */
 package org.spearce.egit.ui.internal.actions;
 
-import java.util.Arrays;
-import java.util.Hashtable;
-
-import org.eclipse.core.resources.IResource;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.team.core.TeamException;
@@ -30,16 +26,7 @@ import org.eclipse.team.ui.history.HistoryPageSaveablePart;
 public class ShowResourceInHistoryAction extends TeamAction {
 
     public void run(IAction action) {
-	super.run(action);
-	System.out.println("Run:" + action);
-	System.out.println("Selection resources:"
-		+ Arrays.asList(getSelectedResources()));
-	IResource[] r = getSelectedResources();
-	Hashtable providerMapping = this.getProviderMapping(r);
-	System.out.println("Mapping:" + providerMapping);
-	TeamUI.getHistoryView().showHistoryFor(
-		getSelectedResources()[0]);
-
+	TeamUI.getHistoryView().showHistoryFor(getSelectedResources()[0]);
     }
 
     protected void showCompareInDialog(Shell shell, Object object) {
@@ -49,5 +36,4 @@ public class ShowResourceInHistoryAction extends TeamAction {
     protected boolean isEnabled() throws TeamException {
 	return !getSelection().isEmpty();
     }
-
 }
