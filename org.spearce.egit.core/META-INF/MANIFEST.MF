@@ -17,6 +17,8 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui.ide,
  org.eclipse.ui.workbench,
  org.eclipse.ui.workbench.texteditor
-Export-Package: org.spearce.egit.core.op,
+Export-Package: org.spearce.egit.core,
+ org.spearce.egit.core.internal.mapping;x-internal:=true,
+ org.spearce.egit.core.op,
  org.spearce.egit.core.project
 Eclipse-LazyStart: true

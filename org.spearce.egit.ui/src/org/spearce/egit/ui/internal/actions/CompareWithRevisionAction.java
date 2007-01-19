@@ -22,12 +22,10 @@ import java.util.Hashtable;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.team.core.TeamException;
-import org.eclipse.team.internal.ui.actions.TeamAction;
 import org.eclipse.team.ui.TeamUI;
 import org.eclipse.team.ui.history.HistoryPageSaveablePart;
 
-public class CompareWithRevisionAction extends TeamAction {
+public class CompareWithRevisionAction extends GitAction {
 
     public void run(IAction action) {
 	super.run(action);
@@ -45,9 +43,4 @@ public class CompareWithRevisionAction extends TeamAction {
     protected void showCompareInDialog(Shell shell, Object object) {
 	HistoryPageSaveablePart.showHistoryInDialog(shell, object);
     }
-
-    protected boolean isEnabled() throws TeamException {
-	return !getSelection().isEmpty();
-    }
-
 }

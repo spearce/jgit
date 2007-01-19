@@ -20,8 +20,12 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.team.core.TeamException;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
+import org.spearce.egit.core.GitProvider;
 
 public class Activator extends AbstractUIPlugin {
     private static Activator plugin;
@@ -34,6 +38,28 @@ public class Activator extends AbstractUIPlugin {
 	return getDefault().getBundle().getSymbolicName();
     }
 
+    /**
+     * This is the provider ID of the plugin as defined in the plugin.xml
+     * FIXME Inspired/Copied from FileSystem example. Specialize to EGit
+     */
+    public static String getPluginProviderId() {
+	return GitProvider.class.getName();
+    }
+
+    /**
+     * Convenience method to get the currently active workbench page. Note that
+     * the active page may not be the one that the usr perceives as active in
+     * some situations so this method of obtaining the activae page should only
+     * be used if no other method is available.
+     *
+     * @return the active workbench page
+     */
+    public static IWorkbenchPage getActivePage() {
+	IWorkbenchWindow window = getDefault().getWorkbench().getActiveWorkbenchWindow();
+	if (window == null) return null;
+	return window.getActivePage();
+    }
+
     public static CoreException error(final String message, final Throwable thr) {
 	return new CoreException(new Status(IStatus.ERROR, getPluginId(), 0,
 		message, thr));
@@ -43,6 +69,10 @@ public class Activator extends AbstractUIPlugin {
 	getDefault().getLog().log(
 		new Status(IStatus.ERROR, getPluginId(), 0, message, thr));
     }
+
+	public static void log(TeamException e) {
+		getDefault().getLog().log(new Status(e.getStatus().getSeverity(), getPluginId(), 0, "simpleInternal", e)); //$NON-NLS-1$
+	}
 
     private static boolean isOptionSet(final String optionId) {
 	final String option = getPluginId() + optionId;

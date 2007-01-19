@@ -17,7 +17,6 @@
 package org.spearce.egit.ui.internal.actions;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.resources.IWorkspaceRunnable;
@@ -28,28 +27,14 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
-import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.ui.IObjectActionDelegate;
 import org.eclipse.ui.IWorkbenchPart;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
 
-public abstract class AbstractOperationAction implements IObjectActionDelegate {
+public abstract class AbstractOperationAction extends GitAction {
     private IWorkbenchPart wp;
 
     private IWorkspaceRunnable op;
-
-    public void selectionChanged(final IAction act, final ISelection sel) {
-	final List selection;
-	if (sel instanceof IStructuredSelection && !sel.isEmpty()) {
-	    selection = ((IStructuredSelection) sel).toList();
-	} else {
-	    selection = Collections.EMPTY_LIST;
-	}
-	op = createOperation(act, selection);
-	act.setEnabled(op != null && wp != null);
-    }
 
     public void setActivePart(final IAction act, final IWorkbenchPart part) {
 	wp = part;
@@ -62,6 +47,7 @@ public abstract class AbstractOperationAction implements IObjectActionDelegate {
     }
 
     public void run(final IAction act) {
+	op = createOperation(act, getSelection().toList());
 	if (op != null) {
 	    try {
 		try {
