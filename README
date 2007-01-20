@@ -1,7 +1,9 @@
             == Java GIT and Eclipse GIT plugin ==
 
-This package is licensed under the LGPL.  Please refer to COPYING.txt
-for the complete license.
+Parts of this package are licensed under the LGPL and others are
+licensed under the EPL.  Please refer to COPYING and LICENSE for
+the complete licenses.  Please refer to the individual source file
+header to determine which license covers it.
 
 
 This package is actually composed of three major components:
@@ -13,6 +15,9 @@ This package is actually composed of three major components:
     to exercise the library.  The library provides functions to
     read and write a GIT formatted repository.
 
+    All portions of jgit are covered by the LGPL.  Absolute no EPL
+    contributions are accepted within this package.
+
   org.spearce.egit.core/
 
     An Eclipse plugin providing an interface to org.spearce.jgit
@@ -20,10 +25,16 @@ This package is actually composed of three major components:
     workspace and resource APIs, rather than the standard Java
     file APIs.  It also supplies the team provider implementation.
 
+    Portions of this package are covered under the LGPL and others
+    under the EPL.  Refer to individual file headers for details.
+
   org.spearce.egit.ui/
 
     An Eclipse plugin providing the user interface on top of
     org.spearce.egit.core.
+
+    Portions of this package are covered under the LGPL and others
+    under the EPL.  Refer to individual file headers for details.
 
 
             == WARNINGS / CAVEATS              ==
