@@ -38,10 +38,6 @@ public class Activator extends AbstractUIPlugin {
 	return getDefault().getBundle().getSymbolicName();
     }
 
-    /**
-         * This is the provider ID of the plugin as defined in the plugin.xml
-         * FIXME Inspired/Copied from FileSystem example. Specialize to EGit
-         */
     public static String getPluginProviderId() {
 	return GitProvider.class.getName();
     }
