@@ -68,14 +68,11 @@ public class ConnectProviderOperation implements IWorkspaceRunnable {
 			    null));
 		    db.close();
 
-		    // If we don't refresh the project directory right now
-                        // we
-		    // won't later know that a .git directory exists within
-                        // it
-		    // and we won't mark the .git directory as a
-                        // team-private
-		    // member. Failure to do so might allow someone to
-                        // delete
+		    // If we don't refresh the project directory right
+		    // now we won't later know that a .git directory
+		    // exists within it and we won't mark the .git
+		    // directory as a team-private member. Failure
+		    // to do so might allow someone to delete
 		    // the .git directory without us stopping them.
 		    //
 		    project.refreshLocal(IResource.DEPTH_ONE,

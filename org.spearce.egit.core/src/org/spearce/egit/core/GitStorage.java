@@ -43,8 +43,10 @@ public class GitStorage implements IStorage {
 
     public GitStorage(ObjectId treeId, IResource resource) {
 	this.resource = resource;
-	GitProvider provider = (GitProvider)RepositoryProvider.getProvider(resource.getProject());
-	RepositoryMapping repositoryMapping = provider.getData().getRepositoryMapping(resource.getProject());
+	GitProvider provider = (GitProvider) RepositoryProvider
+		.getProvider(resource.getProject());
+	RepositoryMapping repositoryMapping = provider.getData()
+		.getRepositoryMapping(resource.getProject());
 	Tree tree;
 	try {
 	    tree = repositoryMapping.getRepository().mapTree(treeId);
@@ -53,8 +55,8 @@ public class GitStorage implements IStorage {
 		prefix = prefix + "/";
 	    else
 		prefix = "";
-            String name = prefix + resource.getProjectRelativePath().toString();
-            entry = tree.findMember(name);
+	    String name = prefix + resource.getProjectRelativePath().toString();
+	    entry = tree.findMember(name);
 	} catch (IOException e) {
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();

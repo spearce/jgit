@@ -328,53 +328,53 @@ public class Repository {
     public String toString() {
 	return "Repository[" + getDirectory() + "]";
     }
-    
+
     public Collection getBranches() {
-	return listFilesRecursively(new File(refsDir,"heads"), null);
-	
+	return listFilesRecursively(new File(refsDir, "heads"), null);
     }
 
     public Collection getTags() {
-	return listFilesRecursively(new File(refsDir,"tags"), null);
-	
+	return listFilesRecursively(new File(refsDir, "tags"), null);
     }
 
-    /** 
-     * @return true if HEAD points to a StGit patch.
-     */
+    /**
+         * @return true if HEAD points to a StGit patch.
+         */
     public boolean isStGitMode() {
 	try {
-            File file = new File(getDirectory(), "HEAD");
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            String string = reader.readLine();
-            if (!string.startsWith("ref: refs/heads/"))
-        	return false;
-            String branch = string.substring("ref: refs/heads/".length());
-            File currentPatch = new File(new File(new File(getDirectory(), "patches"), branch), "current");
-            if (!currentPatch.exists())
-        	return false;
-            if (currentPatch.length() == 0)
-        	return false;
-            return true;
+	    File file = new File(getDirectory(), "HEAD");
+	    BufferedReader reader = new BufferedReader(new FileReader(file));
+	    String string = reader.readLine();
+	    if (!string.startsWith("ref: refs/heads/"))
+		return false;
+	    String branch = string.substring("ref: refs/heads/".length());
+	    File currentPatch = new File(new File(new File(getDirectory(),
+		    "patches"), branch), "current");
+	    if (!currentPatch.exists())
+		return false;
+	    if (currentPatch.length() == 0)
+		return false;
+	    return true;
 
-    	} catch (IOException e) {
-    	    e.printStackTrace();
-    	    return false;
-    	}
+	} catch (IOException e) {
+	    e.printStackTrace();
+	    return false;
+	}
     }
-    
-    private Collection listFilesRecursively(File root,File start) {
-	if (start==null)
+
+    private Collection listFilesRecursively(File root, File start) {
+	if (start == null)
 	    start = root;
-	Collection ret=new ArrayList();
+	Collection ret = new ArrayList();
 	File[] files = start.listFiles();
-	for (int i=0; i<files.length; ++i) {
+	for (int i = 0; i < files.length; ++i) {
 	    if (files[i].isDirectory())
-		ret.addAll(listFilesRecursively(root,files[i]));
-	    else if (files[i].length()==41) {
-		String name = files[i].toString().substring(root.toString().length()+1);
+		ret.addAll(listFilesRecursively(root, files[i]));
+	    else if (files[i].length() == 41) {
+		String name = files[i].toString().substring(
+			root.toString().length() + 1);
 		ret.add(name);
-	    } // else;
+	    }
 	}
 	return ret;
     }

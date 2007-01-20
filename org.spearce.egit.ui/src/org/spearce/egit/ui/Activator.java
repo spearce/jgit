@@ -39,24 +39,26 @@ public class Activator extends AbstractUIPlugin {
     }
 
     /**
-     * This is the provider ID of the plugin as defined in the plugin.xml
-     * FIXME Inspired/Copied from FileSystem example. Specialize to EGit
-     */
+         * This is the provider ID of the plugin as defined in the plugin.xml
+         * FIXME Inspired/Copied from FileSystem example. Specialize to EGit
+         */
     public static String getPluginProviderId() {
 	return GitProvider.class.getName();
     }
 
     /**
-     * Convenience method to get the currently active workbench page. Note that
-     * the active page may not be the one that the usr perceives as active in
-     * some situations so this method of obtaining the activae page should only
-     * be used if no other method is available.
-     *
-     * @return the active workbench page
-     */
+         * Convenience method to get the currently active workbench page. Note
+         * that the active page may not be the one that the usr perceives as
+         * active in some situations so this method of obtaining the activae
+         * page should only be used if no other method is available.
+         * 
+         * @return the active workbench page
+         */
     public static IWorkbenchPage getActivePage() {
-	IWorkbenchWindow window = getDefault().getWorkbench().getActiveWorkbenchWindow();
-	if (window == null) return null;
+	IWorkbenchWindow window = getDefault().getWorkbench()
+		.getActiveWorkbenchWindow();
+	if (window == null)
+	    return null;
 	return window.getActivePage();
     }
 
@@ -70,9 +72,11 @@ public class Activator extends AbstractUIPlugin {
 		new Status(IStatus.ERROR, getPluginId(), 0, message, thr));
     }
 
-	public static void log(TeamException e) {
-		getDefault().getLog().log(new Status(e.getStatus().getSeverity(), getPluginId(), 0, "simpleInternal", e)); //$NON-NLS-1$
-	}
+    public static void log(TeamException e) {
+	getDefault().getLog().log(
+		new Status(e.getStatus().getSeverity(), getPluginId(), 0,
+			"simpleInternal", e)); //$NON-NLS-1$
+    }
 
     private static boolean isOptionSet(final String optionId) {
 	final String option = getPluginId() + optionId;

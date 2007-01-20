@@ -203,8 +203,9 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		    ITableLabelProvider p = (ITableLabelProvider) viewer
 			    .getLabelProvider();
 		    for (int i = 0; i < 5; ++i) {
-			String text = p.getColumnText(fileRevisions[event.index], i);
-			if (text!=null)
+			String text = p.getColumnText(
+				fileRevisions[event.index], i);
+			if (text != null)
 			    item.setText(i, text);
 			else
 			    item.setText("");
@@ -256,8 +257,6 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 	}
 
 	public boolean hasChildren(Object element) {
-	    // System.out.println("hasChildren(" + element.getClass() +
-                // ")");
 	    // TODO Auto-generated method stub
 	    return false;
 	}

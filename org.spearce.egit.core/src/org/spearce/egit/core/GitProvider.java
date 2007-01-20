@@ -27,6 +27,7 @@ public class GitProvider extends RepositoryProvider {
     private GitProjectData data;
 
     private GitMoveDeleteHook hook;
+
     private GitFileHistoryProvider historyProvider;
 
     public String getID() {
@@ -58,7 +59,7 @@ public class GitProvider extends RepositoryProvider {
 	}
 	return data;
     }
-    
+
     public synchronized IFileHistoryProvider getFileHistoryProvider() {
 	if (historyProvider == null) {
 	    historyProvider = new GitFileHistoryProvider();

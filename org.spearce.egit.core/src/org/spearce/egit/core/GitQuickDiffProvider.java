@@ -38,7 +38,7 @@ import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.texteditor.quickdiff.IQuickDiffReferenceProvider;
 
 public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
-    
+
     private String id;
 
     private Document document;

@@ -54,7 +54,8 @@ public class GitFileHistory extends FileHistory {
 	    prefix = prefix + "/";
 	else
 	    prefix = "";
-	relativeResourceName = prefix + resource.getProjectRelativePath().toString();
+	relativeResourceName = prefix
+		+ resource.getProjectRelativePath().toString();
     }
 
     public IFileRevision[] getContributors(IFileRevision revision) {
@@ -64,9 +65,9 @@ public class GitFileHistory extends FileHistory {
 	Repository repository = getRepository();
 	for (int i = 0; i < parents.size(); ++i) {
 	    try {
-		ret[i] = new GitFileRevision(
-				repository.mapCommit((ObjectId) parents.get(i)),
-				grevision.getResource());
+		ret[i] = new GitFileRevision(repository
+			.mapCommit((ObjectId) parents.get(i)), grevision
+			.getResource());
 	    } catch (IOException e) {
 		e.printStackTrace();
 		return null;
@@ -94,7 +95,8 @@ public class GitFileHistory extends FileHistory {
     }
 
     private RepositoryMapping getRepositoryMapping() {
-	GitProvider provider = (GitProvider) RepositoryProvider.getProvider(resource.getProject());
+	GitProvider provider = (GitProvider) RepositoryProvider
+		.getProvider(resource.getProject());
 	return provider.getData().getRepositoryMapping(resource.getProject());
     }
 
@@ -102,15 +104,17 @@ public class GitFileHistory extends FileHistory {
 	Repository repository = getRepository();
 	try {
 	    ObjectId id = repository.resolve("HEAD");
-            Commit commit = repository.mapCommit(id);
-            return collectHistory(new ObjectId(ObjectId.toString(null)), repository, commit);
+	    Commit commit = repository.mapCommit(id);
+	    return collectHistory(new ObjectId(ObjectId.toString(null)),
+		    repository, commit);
 	} catch (IOException e) {
 	    e.printStackTrace();
 	    return Collections.EMPTY_LIST;
 	}
     }
 
-    private Collection collectHistory(ObjectId lastResourceHash, Repository repository, Commit top) {
+    private Collection collectHistory(ObjectId lastResourceHash,
+	    Repository repository, Commit top) {
 	if (top == null)
 	    return Collections.EMPTY_LIST;
 	Collection ret = new ArrayList(10000);
@@ -119,7 +123,8 @@ public class GitFileHistory extends FileHistory {
 	do {
 	    TreeEntry currentEntry;
 	    try {
-		currentEntry = current.getTree().findMember(relativeResourceName);
+		currentEntry = current.getTree().findMember(
+			relativeResourceName);
 	    } catch (IOException e1) {
 		e1.printStackTrace();
 		return ret;
@@ -137,7 +142,7 @@ public class GitFileHistory extends FileHistory {
 	    previous = current;
 
 	    // TODO: we may need to list more revisions when traversing
-            // branches
+	    // branches
 	    List parents = current.getParentIds();
 	    if ((flags & IFileHistoryProvider.SINGLE_LINE_OF_DESCENT) == 0) {
 		for (int i = 1; i < parents.size(); ++i) {
@@ -145,8 +150,10 @@ public class GitFileHistory extends FileHistory {
 		    Commit mergeParent;
 		    try {
 			mergeParent = repository.mapCommit(mergeParentId);
-			ret.addAll(collectHistory(lastResourceHash, repository, mergeParent));
-			// TODO: this gets us a lot of duplicates that we need to filter out
+			ret.addAll(collectHistory(lastResourceHash, repository,
+				mergeParent));
+			// TODO: this gets us a lot of duplicates that we need
+                        // to filter out
 			// Leave that til we get a GUI.
 		    } catch (IOException e) {
 			e.printStackTrace();
@@ -179,13 +186,14 @@ public class GitFileHistory extends FileHistory {
 	return revisions;
     }
 
-    /** Get a single file revision suitable for quickdiff.
-     * 
-     * We have two modes. For a branch set up for Stacked Git that
-     * has a patch return the revision prior to the topmost patch, be it
-     * another patch or a normal Git Commit. This is the revision in HEAD^.
-     * Otherwise we return the revision in HEAD. 
-     */
+    /**
+         * Get a single file revision suitable for quickdiff.
+         * 
+         * We have two modes. For a branch set up for Stacked Git that has a
+         * patch return the revision prior to the topmost patch, be it another
+         * patch or a normal Git Commit. This is the revision in HEAD^.
+         * Otherwise we return the revision in HEAD.
+         */
     private void findSingleRevision() {
 	try {
 	    Repository repository = getRepository();
@@ -193,27 +201,30 @@ public class GitFileHistory extends FileHistory {
 	    Commit current = repository.mapCommit(id);
 	    if (repository.isStGitMode()) {
 		List parentIds = current.getParentIds();
-		if (parentIds!= null && parentIds.size() > 0)
-		    current = repository.mapCommit((ObjectId)parentIds.get(0));
+		if (parentIds != null && parentIds.size() > 0)
+		    current = repository.mapCommit((ObjectId) parentIds.get(0));
 		else {
 		    revisions = new IFileRevision[0];
 		    return;
 		}
 	    }
-	    TreeEntry currentEntry = current.getTree().findMember(relativeResourceName);
+	    TreeEntry currentEntry = current.getTree().findMember(
+		    relativeResourceName);
 	    if (currentEntry != null)
-		revisions = new IFileRevision[] { new GitFileRevision(current, resource) };
+		revisions = new IFileRevision[] { new GitFileRevision(current,
+			resource) };
 	    else
 		revisions = new IFileRevision[0];
 
 	} catch (IOException e) {
-            e.printStackTrace();
-            revisions = new IFileRevision[0];
+	    e.printStackTrace();
+	    revisions = new IFileRevision[0];
 	}
     }
 
     private void findRevisions() {
-	RepositoryProvider provider = RepositoryProvider.getProvider(resource.getProject());
+	RepositoryProvider provider = RepositoryProvider.getProvider(resource
+		.getProject());
 	if (provider instanceof GitProvider) {
 
 	    List ret = new ArrayList();
@@ -226,7 +237,8 @@ public class GitFileHistory extends FileHistory {
 	    System.out.println("got file history in " + (time1 - time0)
 		    / 1000.0 + "s");
 
-	    revisions = (IFileRevision[]) ret.toArray(new IFileRevision[ret.size()]);
+	    revisions = (IFileRevision[]) ret.toArray(new IFileRevision[ret
+		    .size()]);
 
 	} else {
 	    revisions = new IFileRevision[0];

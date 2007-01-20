@@ -16,20 +16,21 @@ import org.spearce.egit.ui.Activator;
  */
 public abstract class GitAction extends TeamAction {
 
-	/**
-	 * @see TeamAction#isEnabled()
-	 */
-	protected boolean isEnabled() {
-		return getSelectedMappings().length > 0;
-	}
+    /**
+         * @see TeamAction#isEnabled()
+         */
+    protected boolean isEnabled() {
+	return getSelectedMappings().length > 0;
+    }
 
-	/**
-	 * Return the selected resource mappings that are associated with the
-	 * file system provider.
-	 * @return the selected resource mappings that are associated with the
-	 * file system provider.
-	 */
-	protected ResourceMapping[] getSelectedMappings() {
-		return getSelectedResourceMappings(Activator.getPluginProviderId());
-	}
+    /**
+         * Return the selected resource mappings that are associated with the
+         * file system provider.
+         * 
+         * @return the selected resource mappings that are associated with the
+         *         file system provider.
+         */
+    protected ResourceMapping[] getSelectedMappings() {
+	return getSelectedResourceMappings(Activator.getPluginProviderId());
+    }
 }

@@ -30,9 +30,4 @@ public class ShowResourceInHistoryAction extends GitAction {
     protected void showCompareInDialog(Shell shell, Object object) {
 	HistoryPageSaveablePart.showHistoryInDialog(shell, object);
     }
-/*
-    protected boolean isEnabled() throws TeamException {
-	return !getSelection().isEmpty();
-    }
-    */
 }

@@ -16,7 +16,6 @@
  */
 package org.spearce.jgit.lib;
 
-
 /**
  * Recreate a stream from a base stream and a GIT pack delta.
  * <p>

@@ -35,8 +35,7 @@ public class CompareWithRevisionAction extends GitAction {
 	IResource[] r = getSelectedResources();
 	Hashtable providerMapping = this.getProviderMapping(r);
 	System.out.println("Mapping:" + providerMapping);
-	TeamUI.getHistoryView().showHistoryFor(
-		getSelectedResources()[0]);
+	TeamUI.getHistoryView().showHistoryFor(getSelectedResources()[0]);
 
     }
 

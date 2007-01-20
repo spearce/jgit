@@ -218,8 +218,8 @@ public class ObjectWriter {
 	}
 
 	if (r.hasObject(id)) {
-	    // Object is already in the repository so remove the temporary
-                // file.
+	    // Object is already in the repository so remove
+	    // the temporary file.
 	    //
 	    t.delete();
 	} else {
