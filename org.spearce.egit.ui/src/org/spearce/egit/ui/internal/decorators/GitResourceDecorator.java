@@ -62,7 +62,10 @@ public class GitResourceDecorator extends LabelProvider implements
 
 	RepositoryMapping mapped = d.getRepositoryMapping(rsrc);
 	if (mapped != null) {
-	    decoration.addSuffix(" [GIT]");
+	    if (mapped.getRepository().isStGitMode())
+		decoration.addSuffix(" [StGit]");
+	    else
+		decoration.addSuffix(" [Git]");
 	    decoration.addOverlay(UIIcons.OVR_SHARED);
 	    return;
 	}
