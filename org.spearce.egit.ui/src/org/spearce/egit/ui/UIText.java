@@ -37,6 +37,8 @@ public class UIText extends NLS {
 
     public static String Decorator_failedLazyLoading;
 
+    public static String QuickDiff_failedLoading;
+
     static {
 	initializeMessages(UIText.class.getPackage().getName() + ".uitext",
 		UIText.class);

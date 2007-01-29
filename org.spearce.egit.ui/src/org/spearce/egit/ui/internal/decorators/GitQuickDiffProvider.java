@@ -36,6 +36,8 @@ import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.ide.ResourceUtil;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.texteditor.quickdiff.IQuickDiffReferenceProvider;
+import org.spearce.egit.ui.Activator;
+import org.spearce.egit.ui.UIText;
 
 public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 
@@ -55,9 +57,8 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 
     public IDocument getReference(IProgressMonitor monitor)
 	    throws CoreException {
-	System.out.println("GitQuickDiffProvider.getReference()=" + document);
 	document = new Document();
-	System.out.println("GitQuickDiffProvider.getReference() file=" + file);
+	Activator.trace("(GitQuickDiffProvider) file: " + file);
 
 	RepositoryProvider provider = RepositoryProvider
 		.getProvider(file.getProject());
@@ -71,7 +72,7 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 		IFileRevision[] revisions = fileHistoryFor.getFileRevisions();
 		if (revisions != null && revisions.length > 0) {
 		    IFileRevision revision = revisions[0];
-		    System.out.println("Comparing with "
+		    Activator.trace("(GitQuickDiffProvider) compareTo: "
 			    + revision.getContentIdentifier());
 		    IStorage storage = revision.getStorage(null);
 		    InputStream contents = storage.getContents();
@@ -87,24 +88,18 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 			n = in.read(readBuffer);
 		    }
 		    String s = caw.toString();
-		    System.out.println("GitQuickDiffProvider: got data:" + s);
 		    document.set(s);
 		} else {
+		    Activator.trace("(GitQuickDiffProvider) no revision.");
 		    document.set("");
-		    System.out
-			    .println("GitQuickDiffProvider: got no data (new file?):");
 		}
 	    } catch (CoreException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
+		Activator.error(UIText.QuickDiff_failedLoading, e);
 	    } catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
+		Activator.error(UIText.QuickDiff_failedLoading, e);
 	    }
 	    return document;
 	} else {
-	    System.out.println("GitQuickDiffProvider: no provider found for "
-		    + file);
 	    return null;
 	}
     }
@@ -114,7 +109,6 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
     }
 
     public void setActiveEditor(ITextEditor editor) {
-	System.out.println("GitQuickDiffProvider.setActiveEdtor()");
 	IEditorInput editorInput = editor.getEditorInput();
 	file = ResourceUtil.getFile(editorInput);
     }
@@ -122,5 +116,4 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
     public void setId(String id) {
 	this.id = id;
     }
-
 }
