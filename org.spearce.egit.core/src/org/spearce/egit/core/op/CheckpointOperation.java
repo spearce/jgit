@@ -45,7 +45,7 @@ public class CheckpointOperation implements IWorkspaceRunnable {
 	for (Iterator i = projects.iterator(); i.hasNext();) {
 	    IProject project = (IProject) i.next();
 	    GitProjectData projectData = GitProjectData.get(project);
-	    projectData.fullUpdate();
+	    projectData.checkpointIfNecessary();
 	}
     }
 }
