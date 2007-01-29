@@ -44,10 +44,10 @@ public abstract class WindowProvider {
          * lock on itself. Consequently it shouldn't take too long, otherwise
          * the method might prevent other threads from accessing the cache.
          * </p>
-         * 
+         *
          * @param id
          *                the id number of this window. See
-         *                {@link WindowCache#get(org.spearce.jgit.lib.WindowCache.WindowProvider, int)}
+         *                {@link WindowCache#get(org.spearce.jgit.lib.WindowProvider, int)}
          *                for details.
          * @return a byte buffer for this window's data. Never null. The
          *         returned byffer may be smaller than the estimate supplied by
@@ -65,10 +65,10 @@ public abstract class WindowProvider {
          * window will push the cache over its maximum limit, forcing it to
          * unload one or more windows.
          * </p>
-         * 
-         * @param idthe
+         *
+         * @param id
          *                id number of the window to estimate. See
-         *                {@link WindowCache#get(org.spearce.jgit.lib.WindowCache.WindowProvider, int)}
+         *                {@link WindowCache#get(org.spearce.jgit.lib.WindowProvider, int)}
          *                for details.
          * @return total number of bytes in the requested window.
          */

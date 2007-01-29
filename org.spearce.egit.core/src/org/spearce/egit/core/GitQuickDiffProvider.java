@@ -46,6 +46,7 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
     private IFile file;
 
     public void dispose() {
+	// No resources to free
     }
 
     public String getId() {
@@ -58,7 +59,7 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 	document = new Document();
 	System.out.println("GitQuickDiffProvider.getReference() file=" + file);
 
-	RepositoryProvider provider = GitProvider
+	RepositoryProvider provider = RepositoryProvider
 		.getProvider(file.getProject());
 	if (provider != null) {
 	    try {

@@ -146,8 +146,9 @@ public class Tree extends TreeEntry implements Treeish {
 	int slash;
 	int p;
 
-	for (slash = offset; slash < s.length && s[slash] != '/'; slash++)
-	    /* search for path component terminator */;
+	for (slash = offset; slash < s.length && s[slash] != '/'; slash++) {
+	    // search for path component terminator
+	}
 
 	ensureLoaded();
 	p = binarySearch(contents, s, offset, slash);
@@ -178,8 +179,9 @@ public class Tree extends TreeEntry implements Treeish {
 	int slash;
 	int p;
 
-	for (slash = offset; slash < s.length && s[slash] != '/'; slash++)
-	    /* search for path component terminator */;
+	for (slash = offset; slash < s.length && s[slash] != '/'; slash++) {
+	    // search for path component terminator
+	}
 
 	ensureLoaded();
 	p = binarySearch(contents, s, offset, slash);
@@ -268,8 +270,9 @@ public class Tree extends TreeEntry implements Treeish {
 	int slash;
 	int p;
 
-	for (slash = offset; slash < s.length && s[slash] != '/'; slash++)
-	    /* search for path component terminator */;
+	for (slash = offset; slash < s.length && s[slash] != '/'; slash++) {
+	    // search for path component terminator
+	}
 
 	ensureLoaded();
 	p = binarySearch(contents, s, offset, slash);

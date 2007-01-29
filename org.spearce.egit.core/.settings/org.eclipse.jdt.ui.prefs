@@ -1,4 +1,6 @@
-#Thu Nov 09 17:13:03 EST 2006
+#Tue Jan 30 00:33:31 CET 2007
 eclipse.preferences.version=1
-formatter_profile=org.eclipse.jdt.ui.default.sun_profile
+formatter_profile=_Eclipse [with tab\=8]
 formatter_settings_version=10
+internal.default.compliance=user
+org.eclipse.jdt.ui.text.custom_code_templates=<?xml version\="1.0" encoding\="UTF-8"?><templates/>

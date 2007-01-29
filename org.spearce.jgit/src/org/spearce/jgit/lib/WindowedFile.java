@@ -205,7 +205,7 @@ public class WindowedFile {
          *                beginning of this file, to copy from.
          * @param dstbuf
          *                buffer to copy the bytes into.
-         * @return total number of bytes read. Always <code>dstbuf.length</code>
+         * @returns total number of bytes read. Always <code>dstbuf.length</code>
          *         unless the requested range to copy is over the end of the
          *         file.
          * @throws IOException
@@ -260,7 +260,7 @@ public class WindowedFile {
          *                longer if the caller has a larger buffer they wish to
          *                loan.
          * @return the unsigned 32 bit integer value.
-         * @throws IOExceptiona
+         * @throws IOException
          *                 necessary window was not found in the window cache
          *                 and trying to load it in from the operating system
          *                 failed.

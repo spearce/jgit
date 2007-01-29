@@ -82,5 +82,6 @@ public final class Constants {
     }
 
     private Constants() {
+	// Hide the default constructor
     }
 }

@@ -60,6 +60,7 @@ public class PackFile {
 		try {
 		    idx.close();
 		} catch (IOException err2) {
+		    // ignore
 		}
 		throw ioe;
 	    }
@@ -67,6 +68,7 @@ public class PackFile {
 	    try {
 		pack.close();
 	    } catch (IOException err2) {
+		// Ignore this
 	    }
 	    throw ioe;
 	}

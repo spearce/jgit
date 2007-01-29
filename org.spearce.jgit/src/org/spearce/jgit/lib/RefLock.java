@@ -83,7 +83,8 @@ public class RefLock {
 	}
     }
 
-    public boolean commit() throws IOException {
+    public boolean commit() {
+	// FIXME: use exceptions here?
 	if (lck.renameTo(ref)) {
 	    return true;
 	} else {
@@ -92,11 +93,12 @@ public class RefLock {
 	}
     }
 
-    public void unlock() throws IOException {
+    public void unlock() {
 	if (os != null) {
 	    try {
 		os.close();
 	    } catch (IOException ioe) {
+		// Ignore this
 	    }
 	    os = null;
 	}

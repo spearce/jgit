@@ -163,7 +163,7 @@ public class GitFileHistory extends FileHistory {
 	    if (parents.size() > 0) {
 		ObjectId parentId = (ObjectId) parents.get(0);
 		try {
-		    current = (Commit) repository.mapCommit(parentId);
+		    current = repository.mapCommit(parentId);
 		} catch (IOException e) {
 		    e.printStackTrace();
 		    current = null;

@@ -35,7 +35,7 @@ import org.spearce.jgit.lib.WriteTree;
 import org.spearce.jgit.lib.XInputStream;
 
 public class T0003_Basic extends RepositoryTestCase {
-    public void test001_Initalize() throws IOException {
+    public void test001_Initalize() {
 	final File gitdir = new File(trash, ".git");
 	final File objects = new File(gitdir, "objects");
 	final File objects_pack = new File(objects, "pack");

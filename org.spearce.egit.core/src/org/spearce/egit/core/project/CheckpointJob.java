@@ -33,6 +33,7 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.ISchedulingRule;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.jobs.MultiRule;
+import org.eclipse.osgi.util.NLS;
 import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
 import org.spearce.jgit.lib.FileTreeEntry;
@@ -60,7 +61,7 @@ public class CheckpointJob extends Job {
     private int objectCnt;
 
     public CheckpointJob(final RepositoryMapping m) {
-	super(CoreText.bind(CoreText.CheckpointJob_name, m.getContainer()
+	super(NLS.bind(CoreText.CheckpointJob_name, m.getContainer()
 		.getFullPath()));
 	setPriority(Job.LONG);
 

@@ -110,8 +110,9 @@ public class MergedTree {
 	final int p;
 	final TreeEntry[] r;
 
-	for (slash = offset; slash < s.length && s[slash] != '/'; slash++)
-	    /* search for path component terminator */;
+	for (slash = offset; slash < s.length && s[slash] != '/'; slash++) {
+	    // search for path component terminator
+	}
 	p = binarySearch(merged, srcCnt, s, offset, slash);
 	if (p < 0) {
 	    return null;

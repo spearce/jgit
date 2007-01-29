@@ -41,7 +41,7 @@ import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IAdaptable;
+import org.eclipse.osgi.util.NLS;
 import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
@@ -75,7 +75,7 @@ public class GitProjectData {
 		break;
 	    }
 	}
-    };
+    }
 
     public static void attachToWorkspace(final boolean includeChange) {
 	trace("attachToWorkspace - addResourceChangeListener");
@@ -269,7 +269,7 @@ public class GitProjectData {
 	}
     }
 
-    public void fullUpdate() throws CoreException {
+    public void fullUpdate() {
 	final Iterator i = c2mapping.values().iterator();
 	while (i.hasNext()) {
 	    try {
@@ -320,14 +320,14 @@ public class GitProjectData {
 		}
 	    }
 	} catch (IOException ioe) {
-	    throw Activator.error(CoreText.bind(
+	    throw Activator.error(NLS.bind(
 		    CoreText.GitProjectData_saveFailed, dat), ioe);
 	}
 
 	dat.delete();
 	if (!tmp.renameTo(dat)) {
 	    tmp.delete();
-	    throw Activator.error(CoreText.bind(
+	    throw Activator.error(NLS.bind(
 		    CoreText.GitProjectData_saveFailed, dat), null);
 	}
     }
@@ -460,8 +460,8 @@ public class GitProjectData {
 	r = getProject().findMember(m.getContainerPath());
 	if (r instanceof IContainer) {
 	    c = (IContainer) r;
-	} else if (r instanceof IAdaptable) {
-	    c = (IContainer) ((IAdaptable) r).getAdapter(IContainer.class);
+	} else {
+	    c = (IContainer)r.getAdapter(IContainer.class);
 	}
 
 	if (c == null) {
@@ -500,7 +500,7 @@ public class GitProjectData {
 	trace("map " + c + " -> " + m.getRepository());
 	c2mapping.put(c, m);
 
-	dotGit = ((IContainer) c).findMember(".git");
+	dotGit = c.findMember(".git");
 	if (dotGit != null && dotGit.getLocation().toFile().equals(git)) {
 	    protect(dotGit);
 	}

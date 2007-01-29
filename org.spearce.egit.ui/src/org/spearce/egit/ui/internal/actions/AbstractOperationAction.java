@@ -30,6 +30,7 @@ import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.osgi.util.NLS;
 import org.eclipse.ui.IObjectActionDelegate;
 import org.eclipse.ui.IWorkbenchPart;
 import org.spearce.egit.ui.Activator;
@@ -80,7 +81,7 @@ public abstract class AbstractOperationAction implements IObjectActionDelegate {
 		    postOperation();
 		}
 	    } catch (Throwable e) {
-		final String msg = UIText.bind(UIText.GenericOperationFailed,
+		final String msg = NLS.bind(UIText.GenericOperationFailed,
 			act.getText());
 		final IStatus status;
 

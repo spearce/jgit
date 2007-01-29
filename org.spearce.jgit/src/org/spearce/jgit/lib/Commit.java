@@ -50,8 +50,7 @@ public class Commit implements Treeish {
 	parentIds = new ArrayList(2);
     }
 
-    public Commit(final Repository db, final ObjectId id, final byte[] raw)
-	    throws IOException {
+    public Commit(final Repository db, final ObjectId id, final byte[] raw) {
 	objdb = db;
 	commitId = id;
 	treeId = ObjectId.fromString(raw, 5);
@@ -130,6 +129,7 @@ public class Commit implements Treeish {
     }
 
     private void decode() {
+	// FIXME: handle I/O errors
 	if (raw != null) {
 	    try {
 		BufferedReader br = new BufferedReader(new InputStreamReader(
@@ -138,8 +138,9 @@ public class Commit implements Treeish {
 		if (n == null || !n.startsWith("tree ")) {
 		    throw new CorruptObjectException(commitId, "no tree");
 		}
-		while ((n = br.readLine()) != null && n.startsWith("parent "))
-		    ;
+		while ((n = br.readLine()) != null && n.startsWith("parent ")) {
+		    // empty body
+		}
 		if (n == null || !n.startsWith("author ")) {
 		    throw new CorruptObjectException(commitId, "no author");
 		}

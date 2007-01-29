@@ -179,7 +179,7 @@ public class RepositoryMapping {
 
 	if (container.exists()) {
 	    cacheTree.accept(new UpdateTreeFromWorkspace(container),
-		    Tree.CONCURRENT_MODIFICATION);
+		    TreeEntry.CONCURRENT_MODIFICATION);
 	} else {
 	    cacheTree.delete();
 	}

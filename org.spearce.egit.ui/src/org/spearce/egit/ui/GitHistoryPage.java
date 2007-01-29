@@ -219,7 +219,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	viewer = new TreeViewer(tree, SWT.VIRTUAL | SWT.FULL_SELECTION);
 
-	createColumns(viewer, tree, layout);
+	createColumns();
 
 	viewer.setLabelProvider(new GitHistoryLabelProvider());
 
@@ -278,43 +278,43 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 	public void updateElement(Object parent, int index) {
 	    viewer.replace(parent, index, fileRevisions[index]);
 	}
-    };
+    }
 
-    private void createColumns(TreeViewer viewer, Tree tree, TableLayout layout) {
+    private void createColumns() {
 	// X SelectionListener headerListener = getColumnListener(viewer);
 	// revision
 	TreeColumn col = new TreeColumn(tree, SWT.NONE);
 	col.setResizable(true);
 	col.setText(TeamUIMessages.GenericHistoryTableProvider_Revision);
 	// X col.addSelectionListener(headerListener);
-	layout.addColumnData(new ColumnWeightData(20, true));
+	((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(20, true));
 
 	// tags
 	col = new TreeColumn(tree, SWT.NONE);
 	col.setResizable(true);
 	// X col.setText(CVSUIMessages.HistoryView_tags);
 	// X col.addSelectionListener(headerListener);
-	layout.addColumnData(new ColumnWeightData(20, true));
+	((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(20, true));
 	// creation date
 	col = new TreeColumn(tree, SWT.NONE);
 	col.setResizable(true);
 	col.setText(TeamUIMessages.GenericHistoryTableProvider_RevisionTime);
 	// X col.addSelectionListener(headerListener);
-	layout.addColumnData(new ColumnWeightData(20, true));
+	((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(20, true));
 
 	// author
 	col = new TreeColumn(tree, SWT.NONE);
 	col.setResizable(true);
 	col.setText(TeamUIMessages.GenericHistoryTableProvider_Author);
 	// X col.addSelectionListener(headerListener);
-	layout.addColumnData(new ColumnWeightData(20, true));
+	((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(20, true));
 
 	// comment
 	col = new TreeColumn(tree, SWT.NONE);
 	col.setResizable(true);
 	col.setText(TeamUIMessages.GenericHistoryTableProvider_Comment);
 	// X col.addSelectionListener(headerListener);
-	layout.addColumnData(new ColumnWeightData(50, true));
+	((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(50, true));
     }
 
     public Control getControl() {

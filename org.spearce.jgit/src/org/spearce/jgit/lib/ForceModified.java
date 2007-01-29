@@ -31,5 +31,7 @@ public class ForceModified implements TreeVisitor {
     }
 
     public void visitSymlink(final SymlinkTreeEntry s) throws IOException {
+	// TODO: handle symlinks. Only problem is that JGit is indepent of Eclipse
+	// and Pure Java does not know what to do about symbolic links.
     }
 }
