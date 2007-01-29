@@ -28,12 +28,9 @@
             adaptable="true"
             id="org.spearce.egit.ui.fileFolderContributions"
             objectClass="org.eclipse.core.resources.IResource">
-         <visibility>
-             <or>
-                 <objectClass name="org.eclipse.core.resources.IFile"/>
-                 <objectClass name="org.eclipse.core.resources.IFolder"/>
-             </or>
-         </visibility>
+         <filter name="projectPersistentProperty"
+               value="org.eclipse.team.core.repository=org.spearce.egit.core.GitProvider">
+         </filter>
          <action
                label="%UntrackAction_label"
                class="org.spearce.egit.ui.internal.actions.Untrack"
@@ -51,12 +48,9 @@
             objectClass="org.eclipse.core.resources.IFile"
             adaptable="true"
             id="org.spearce.egit.ui.IFileContributions">
-<!--
-         <filter
-               name="projectPersistentProperty"
-               value="org.eclipse.team.core.repository=org.spearce.egit.core.cvsnature">
+         <filter name="projectPersistentProperty"
+               value="org.eclipse.team.core.repository=org.spearce.egit.core.GitProvider">
          </filter>
--->
          <action
                class="org.spearce.egit.ui.internal.actions.CompareWithRevisionAction"
                definitionId="org.spearce.egit.ui.compareWithRevision"
@@ -67,18 +61,6 @@
                overrideActionId="org.eclipse.team.ui.compareLocalHistory"
                tooltip="%CompareWithRevisionAction_tooltip">
          </action>
-<!--
-         <action
-               class="org.spearce.egit.ui.internal.actions.ReplaceWithRevisionAction"
-               definitionId="org.spearce.egit.ui.replaceWithRevision"
-               helpContextId="org.spearce.egit.ui.replace_with_revision_action_context"
-               id="org.spearce.egit.ui.replaceWithRevision"
-               label="%ReplaceWithRevisionAction_label"
-               menubarPath="replaceWithMenu/replaceWithGroup"
-               overrideActionId="org.eclipse.team.ui.replaceLocalHistory"
-               tooltip="%ReplaceWithRevisionAction_tooltip">
-         </action>
--->
          <action
                class="org.spearce.egit.ui.internal.actions.ShowResourceInHistoryAction"
                enablesFor="1"
