@@ -120,4 +120,14 @@
          </description>
       </decorator>
    </extension>
+
+<!-- ********** QuickDiff text editor support ************** -->
+   <extension
+         point="org.eclipse.ui.workbench.texteditor.quickDiffReferenceProvider">
+      <referenceprovider
+            label="%GitRemoteQuickDiffProvider_label"
+            class="org.spearce.egit.ui.internal.decorators.GitQuickDiffProvider"
+            id="org.spearce.egit.ui.internal.decorators.GitQuickDiffProvider">
+      </referenceprovider>
+   </extension>
 </plugin>

@@ -10,13 +10,7 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.team.core,
  org.eclipse.core.resources,
  org.spearce.jgit,
- org.eclipse.core.filesystem,
- org.eclipse.jface.text,
- org.eclipse.ui,
- org.eclipse.ui.editors,
- org.eclipse.ui.ide,
- org.eclipse.ui.workbench,
- org.eclipse.ui.workbench.texteditor
+ org.eclipse.core.filesystem
 Export-Package: org.spearce.egit.core.op,
  org.spearce.egit.core.project
 Eclipse-LazyStart: true

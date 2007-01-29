@@ -14,7 +14,7 @@
  *  License along with this library; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  */
-package org.spearce.egit.core;
+package org.spearce.egit.ui.internal.decorators;
 
 import java.io.BufferedReader;
 import java.io.CharArrayWriter;
