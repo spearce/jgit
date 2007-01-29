@@ -23,7 +23,14 @@
                menubarPath="team.main/projectGroup"
                id="org.spearce.egit.ui.internal.actions.Disconnect">
          </action>
-  	 </objectContribution>
+         <action
+               class="org.spearce.egit.ui.internal.actions.CheckpointAction"
+               tooltip="%CheckpointAction_tooltip"
+               label="%CheckpointAction_label"
+               menubarPath="team.main/group1"
+               id="org.spearce.egit.ui.internal.actions.CheckpointAction">
+         </action>
+     </objectContribution>
      <objectContribution
             adaptable="true"
             id="org.spearce.egit.ui.fileFolderContributions"
