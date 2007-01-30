@@ -22,8 +22,10 @@ import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.jface.viewers.IDecoration;
 import org.eclipse.jface.viewers.ILightweightLabelDecorator;
 import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
 import org.spearce.egit.core.project.GitProjectData;
+import org.spearce.egit.core.project.RepositoryChangeListener;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIText;
@@ -32,6 +34,34 @@ import org.spearce.jgit.lib.TreeEntry;
 
 public class GitResourceDecorator extends LabelProvider implements
 	ILightweightLabelDecorator {
+
+	private static final RepositoryChangeListener myrcl = new RCL();
+
+	static class RCL implements RepositoryChangeListener, Runnable {
+		private boolean requested;
+
+		public synchronized void run() {
+			requested = false;
+			refresh();
+		}
+
+		public synchronized void repositoryChanged(final RepositoryMapping which) {
+			if (!requested) {
+				final Display d = PlatformUI.getWorkbench().getDisplay();
+				if (d.getThread() == Thread.currentThread()) {
+					run();
+				} else {
+					requested = true;
+					d.asyncExec(this);
+				}
+			}
+		}
+	};
+
+	static {
+		GitProjectData.addRepositoryChangeListener(myrcl);
+	}
+	
     public static void refresh() {
 	PlatformUI.getWorkbench().getDecoratorManager().update(
 		GitResourceDecorator.class.getName());

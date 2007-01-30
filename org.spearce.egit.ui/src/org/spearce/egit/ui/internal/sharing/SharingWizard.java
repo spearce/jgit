@@ -32,7 +32,6 @@ import org.eclipse.ui.IWorkbench;
 import org.spearce.egit.core.op.ConnectProviderOperation;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
-import org.spearce.egit.ui.internal.decorators.GitResourceDecorator;
 
 public class SharingWizard extends Wizard implements IConfigurationWizard {
     private IProject project;
@@ -83,8 +82,6 @@ public class SharingWizard extends Wizard implements IConfigurationWizard {
 		    }
 		}
 	    });
-
-	    GitResourceDecorator.refresh();
 	    return true;
 	} catch (Throwable e) {
 	    if (e instanceof InvocationTargetException) {

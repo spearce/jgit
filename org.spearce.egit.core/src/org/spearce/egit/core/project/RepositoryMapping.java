@@ -202,6 +202,7 @@ public class RepositoryMapping {
 		TreeEntry.MODIFIED_ONLY);
 
 	activeDiff = new MergedTree(new Tree[] { head, cacheTree });
+	GitProjectData.fireRepositoryChanged(this);
     }
 
     public synchronized Tree mapHEADTree() throws IOException,

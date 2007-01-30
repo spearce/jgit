@@ -168,6 +168,8 @@ public class CheckpointJob extends Job {
 		    trace("tree is still dirty; ref can't be written");
 		}
 	    }
+
+	    GitProjectData.fireRepositoryChanged(rm);
 	} catch (IOException ioe) {
 	    return Activator.error(CoreText.CheckpointJob_failed, ioe)
 		    .getStatus();

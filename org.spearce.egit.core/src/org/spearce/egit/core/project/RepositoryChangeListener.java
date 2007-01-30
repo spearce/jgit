@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2006  Robin Rosenberg <robin.rosenberg@dewire.com>
+ *  Copyright (C) 2006  Shawn Pearce <spearce@spearce.org>
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -14,17 +14,23 @@
  *  License along with this library; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  */
-package org.spearce.egit.ui.internal.actions;
+package org.spearce.egit.core.project;
 
-import java.util.List;
-
-import org.eclipse.core.resources.IWorkspaceRunnable;
-import org.eclipse.jface.action.IAction;
-import org.spearce.egit.core.op.CheckpointOperation;
-
-public class CheckpointAction extends AbstractOperationAction {
-    protected IWorkspaceRunnable createOperation(final IAction act,
-	    final List sel) {
-	return sel.isEmpty() ? null : new CheckpointOperation(sel);
-    }
+/**
+ * Receives notification of a repository change event.
+ * <p>
+ * A change listener may be called from any thread, especially background job
+ * threads, but also from the UI thread. Implementors are encouraged to complete
+ * quickly, and make arrange for their tasks to run on the UI event thread if
+ * necessary.
+ * </p>
+ */
+public interface RepositoryChangeListener {
+	/**
+	 * Invoked when a repository has had some or all of its contents change.
+	 * 
+	 * @param which
+	 *            the affected repository. Never null.
+	 */
+	public void repositoryChanged(RepositoryMapping which);
 }

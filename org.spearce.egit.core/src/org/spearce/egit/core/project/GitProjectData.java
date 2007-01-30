@@ -56,6 +56,8 @@ public class GitProjectData {
 
     private static final Map repositoryCache = new HashMap();
 
+    private static RepositoryChangeListener[] repositoryChangeListeners = {};
+
     private static final IResourceChangeListener rcl = new RCL();
 
     private static class RCL implements IResourceChangeListener {
@@ -90,6 +92,48 @@ public class GitProjectData {
 	trace("detachFromWorkspace - removeResourceChangeListener");
 	ResourcesPlugin.getWorkspace().removeResourceChangeListener(rcl);
     }
+
+	/**
+	 * Register a new listener for repository modification events.
+	 * <p>
+	 * This is a no-op if <code>objectThatCares</code> has already been
+	 * registered.
+	 * </p>
+	 * 
+	 * @param objectThatCares
+	 *            the new listener to register. Must not be null.
+	 */
+	public static synchronized void addRepositoryChangeListener(
+			final RepositoryChangeListener objectThatCares) {
+		if (objectThatCares == null)
+			throw new NullPointerException();
+		for (int k = repositoryChangeListeners.length - 1; k >= 0; k--) {
+			if (repositoryChangeListeners[k] == objectThatCares)
+				return;
+		}
+		final int p = repositoryChangeListeners.length;
+		final RepositoryChangeListener[] n;
+		n = new RepositoryChangeListener[p + 1];
+		System.arraycopy(repositoryChangeListeners, 0, n, 0, p);
+		n[p] = objectThatCares;
+		repositoryChangeListeners = n;
+	}
+
+	/**
+	 * Notify registered {@link RepositoryChangeListener}s of a change.
+	 * 
+	 * @param which
+	 *            the repository which has had changes occur within it.
+	 */
+	static void fireRepositoryChanged(final RepositoryMapping which) {
+		final RepositoryChangeListener[] e = getRepositoryChangeListeners();
+		for (int k = e.length - 1; k >= 0; k--)
+			e[k].repositoryChanged(which);
+	}
+
+	private static synchronized RepositoryChangeListener[] getRepositoryChangeListeners() {
+		return repositoryChangeListeners;
+	}
 
     public synchronized static GitProjectData get(final IProject p) {
 	try {
