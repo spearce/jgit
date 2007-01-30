@@ -31,9 +31,23 @@ import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
 
+/**
+ * Disconnects the Git team provider from a project.
+ * <p>
+ * Once disconnected, Git operations will no longer be available on the project.
+ * </p>
+ */
 public class DisconnectProviderOperation implements IWorkspaceRunnable {
 	private final Collection projectList;
 
+	/**
+	 * Create a new disconnect operation.
+	 * 
+	 * @param projs
+	 *            the collection of {@link IProject}s which should be
+	 *            disconnected from the Git team provider, and returned to
+	 *            untracked/unmanaged status.
+	 */
 	public DisconnectProviderOperation(final Collection projs) {
 		projectList = projs;
 	}

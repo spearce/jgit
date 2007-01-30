@@ -36,11 +36,24 @@ import org.spearce.egit.core.project.RepositoryFinder;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.Repository;
 
+/**
+ * Connects Eclipse to an existing Git repository, or creates a new one.
+ */
 public class ConnectProviderOperation implements IWorkspaceRunnable {
 	private final IProject project;
 
 	private final File newGitDir;
 
+	/**
+	 * Create a new connection operation to execute within the workspace.
+	 * 
+	 * @param proj
+	 *            the project to connect to the Git team provider.
+	 * @param newdir
+	 *            git repository to create if the user requested a new
+	 *            repository be constructed for this project; null to scan for
+	 *            an existing repository and connect to that.
+	 */
 	public ConnectProviderOperation(final IProject proj, final File newdir) {
 		project = proj;
 		newGitDir = newdir;

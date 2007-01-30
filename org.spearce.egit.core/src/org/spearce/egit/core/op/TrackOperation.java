@@ -36,9 +36,32 @@ import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 
+/**
+ * Add one or more new files/folders to the Git repository.
+ * <p>
+ * Accepts a collection of resources (files and/or directories) which should be
+ * added to the their corresponding Git repositories. Resources in the
+ * collection can be associated with multiple repositories. The operation will
+ * automatically associate each resource with the nearest containing Git
+ * repository.
+ * </p>
+ * <p>
+ * Resources are only scheduled for addition in the cache-tree. Their backing
+ * object in the object database is not built yet (as that can be a time
+ * consuming operation, depending on file size) and the cache-tree will be dirty
+ * in memory, needing a checkpoint.
+ * </p>
+ */
 public class TrackOperation implements IWorkspaceRunnable {
 	private final Collection rsrcList;
 
+	/**
+	 * Create a new operation to track additional files/folders.
+	 * 
+	 * @param rsrcs
+	 *            collection of {@link IResource}s which should be added to the
+	 *            relevant Git repositories.
+	 */
 	public TrackOperation(final Collection rsrcs) {
 		rsrcList = rsrcs;
 	}

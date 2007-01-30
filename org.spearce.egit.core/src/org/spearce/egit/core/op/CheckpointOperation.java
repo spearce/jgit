@@ -28,24 +28,47 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.spearce.egit.core.project.GitProjectData;
 
+/**
+ * Performs a checkpoint (flush of the cache-tree to the Git database).
+ * <p>
+ * Each project has a series of one or more <code>RepositoryMapping</code>s
+ * associated with it, and each of these has one Git tree stored within the Git
+ * object database. That tree defines the current state of the Eclipse
+ * workspace, and is used to keep track of what the user might intend on
+ * committing next. This operation updates the tree within the Git object
+ * database to reflect what EGit has stored in memory.
+ * </p>
+ * <p>
+ * This operation currently only performs a checkpoint if necessary. That is, a
+ * tree will only be written if the in memory structures indicate it is dirty.
+ * If the dirty flags are incorrect, this operation will not do the right thing.
+ * </p>
+ */
 public class CheckpointOperation implements IWorkspaceRunnable {
 	private final Collection rsrcList;
 
+	/**
+	 * Create a new checkpoint operation for execution.
+	 * 
+	 * @param rsrcs
+	 *            a collection of {@link IResource}s whose projects should have
+	 *            their cache trees checkpointed. Since a project is an
+	 *            IResource, this may just be a collection of projects.
+	 *            Duplicate projects will be automatically filtered out.
+	 */
 	public CheckpointOperation(final Collection rsrcs) {
 		rsrcList = rsrcs;
 	}
 
 	public void run(IProgressMonitor m) throws CoreException {
-		Set projects = new HashSet();
-		for (Iterator i = rsrcList.iterator(); i.hasNext();) {
-			IResource r = (IResource) i.next();
-			IProject p = r.getProject();
-			projects.add(p);
-		}
-		for (Iterator i = projects.iterator(); i.hasNext();) {
-			IProject project = (IProject) i.next();
-			GitProjectData projectData = GitProjectData.get(project);
-			projectData.checkpointIfNecessary();
+		final Set projects = new HashSet();
+		for (final Iterator i = rsrcList.iterator(); i.hasNext();)
+			projects.add(((IResource) i.next()).getProject());
+		for (final Iterator i = projects.iterator(); i.hasNext();) {
+			final IProject project = (IProject) i.next();
+			final GitProjectData projectData = GitProjectData.get(project);
+			if (projectData != null)
+				projectData.checkpointIfNecessary();
 		}
 	}
 }

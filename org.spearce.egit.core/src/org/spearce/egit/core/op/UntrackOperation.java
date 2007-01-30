@@ -34,9 +34,29 @@ import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 
+/**
+ * Remove one or more existing files/folders from the Git repository.
+ * <p>
+ * Accepts a collection of resources (files and/or directories) which should be
+ * removed from the their corresponding Git repositories. Resources in the
+ * collection can be associated with multiple repositories. The operation will
+ * automatically remove each resource from the correct Git repository.
+ * </p>
+ * <p>
+ * Resources are only scheduled for removal in the cache-tree. The cache-tree
+ * will be dirty in memory, needing a checkpoint.
+ * </p>
+ */
 public class UntrackOperation implements IWorkspaceRunnable {
 	private final Collection rsrcList;
 
+	/**
+	 * Create a new operation to stop tracking existing files/folders.
+	 * 
+	 * @param rsrcs
+	 *            collection of {@link IResource}s which should be removed from
+	 *            the relevant Git repositories.
+	 */
 	public UntrackOperation(final Collection rsrcs) {
 		rsrcList = rsrcs;
 	}
