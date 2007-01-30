@@ -26,22 +26,22 @@ import org.eclipse.team.core.history.provider.FileHistoryProvider;
 import org.spearce.egit.core.GitWorkspaceFileRevision;
 
 public class GitFileHistoryProvider extends FileHistoryProvider implements
-	IFileHistoryProvider {
+		IFileHistoryProvider {
 
-    public IFileHistory getFileHistoryFor(IResource resource, int flags,
-	    IProgressMonitor monitor) {
-	// TODO: implement flags
-	return new GitFileHistory(resource, flags); // TODO: implement flags
-    }
+	public IFileHistory getFileHistoryFor(IResource resource, int flags,
+			IProgressMonitor monitor) {
+		// TODO: implement flags
+		return new GitFileHistory(resource, flags); // TODO: implement flags
+	}
 
-    public IFileRevision getWorkspaceFileRevision(IResource resource) {
-	return new GitWorkspaceFileRevision(resource);
-    }
+	public IFileRevision getWorkspaceFileRevision(IResource resource) {
+		return new GitWorkspaceFileRevision(resource);
+	}
 
-    public IFileHistory getFileHistoryFor(IFileStore store, int flags,
-	    IProgressMonitor monitor) {
-	// TODO: implement flags and monitor
-	return null;
-    }
+	public IFileHistory getFileHistoryFor(IFileStore store, int flags,
+			IProgressMonitor monitor) {
+		// TODO: implement flags and monitor
+		return null;
+	}
 
 }

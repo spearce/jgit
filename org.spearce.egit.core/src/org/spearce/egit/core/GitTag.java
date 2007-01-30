@@ -20,14 +20,14 @@ import org.eclipse.team.core.history.ITag;
 
 public class GitTag implements ITag {
 
-    private String name;
+	private String name;
 
-    public GitTag(String name) {
-	this.name = name;
-    }
+	public GitTag(String name) {
+		this.name = name;
+	}
 
-    public String getName() {
-	return name;
-    }
+	public String getName() {
+		return name;
+	}
 
 }

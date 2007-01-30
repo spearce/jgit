@@ -22,41 +22,41 @@ import java.io.IOException;
 import java.io.InputStream;
 
 class XInputStream extends BufferedInputStream {
-    private final byte[] intbuf = new byte[8];
+	private final byte[] intbuf = new byte[8];
 
-    public XInputStream(final InputStream s) {
-	super(s);
-    }
-
-    public synchronized byte[] readFully(final int len) throws IOException {
-	final byte[] buf = new byte[len];
-	readFully(buf, 0, len);
-	return buf;
-    }
-
-    public synchronized void readFully(final byte[] buf, int o, int len)
-	    throws IOException {
-	int r;
-	while (len > 0 && (r = read(buf, o, len)) > 0) {
-	    o += r;
-	    len -= r;
+	public XInputStream(final InputStream s) {
+		super(s);
 	}
-	if (len > 0) {
-	    throw new EOFException();
-	}
-    }
 
-    public int readUInt8() throws IOException {
-	final int r = read();
-	if (r < 0) {
-	    throw new EOFException();
+	public synchronized byte[] readFully(final int len) throws IOException {
+		final byte[] buf = new byte[len];
+		readFully(buf, 0, len);
+		return buf;
 	}
-	return r;
-    }
 
-    public long readUInt32() throws IOException {
-	readFully(intbuf, 0, 4);
-	return (intbuf[0] & 0xff) << 24 | (intbuf[1] & 0xff) << 16
-		| (intbuf[2] & 0xff) << 8 | (intbuf[3] & 0xff);
-    }
+	public synchronized void readFully(final byte[] buf, int o, int len)
+			throws IOException {
+		int r;
+		while (len > 0 && (r = read(buf, o, len)) > 0) {
+			o += r;
+			len -= r;
+		}
+		if (len > 0) {
+			throw new EOFException();
+		}
+	}
+
+	public int readUInt8() throws IOException {
+		final int r = read();
+		if (r < 0) {
+			throw new EOFException();
+		}
+		return r;
+	}
+
+	public long readUInt32() throws IOException {
+		readFully(intbuf, 0, 4);
+		return (intbuf[0] & 0xff) << 24 | (intbuf[1] & 0xff) << 16
+				| (intbuf[2] & 0xff) << 8 | (intbuf[3] & 0xff);
+	}
 }

@@ -41,79 +41,79 @@ import org.spearce.egit.ui.UIText;
 
 public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 
-    private String id;
+	private String id;
 
-    private Document document;
+	private Document document;
 
-    private IFile file;
+	private IFile file;
 
-    public void dispose() {
-	// No resources to free
-    }
-
-    public String getId() {
-	return id;
-    }
-
-    public IDocument getReference(IProgressMonitor monitor)
-	    throws CoreException {
-	document = new Document();
-	Activator.trace("(GitQuickDiffProvider) file: " + file);
-
-	RepositoryProvider provider = RepositoryProvider
-		.getProvider(file.getProject());
-	if (provider != null) {
-	    try {
-		IFileHistoryProvider fileHistoryProvider = provider
-			.getFileHistoryProvider();
-		IFileHistory fileHistoryFor = fileHistoryProvider
-			.getFileHistoryFor(file,
-				IFileHistoryProvider.SINGLE_REVISION, null);
-		IFileRevision[] revisions = fileHistoryFor.getFileRevisions();
-		if (revisions != null && revisions.length > 0) {
-		    IFileRevision revision = revisions[0];
-		    Activator.trace("(GitQuickDiffProvider) compareTo: "
-			    + revision.getContentIdentifier());
-		    IStorage storage = revision.getStorage(null);
-		    InputStream contents = storage.getContents();
-		    BufferedReader in = new BufferedReader(
-			    new InputStreamReader(contents));
-		    final int DEFAULT_FILE_SIZE = 15 * 1024;
-
-		    CharArrayWriter caw = new CharArrayWriter(DEFAULT_FILE_SIZE);
-		    char[] readBuffer = new char[2048];
-		    int n = in.read(readBuffer);
-		    while (n > 0) {
-			caw.write(readBuffer, 0, n);
-			n = in.read(readBuffer);
-		    }
-		    String s = caw.toString();
-		    document.set(s);
-		} else {
-		    Activator.trace("(GitQuickDiffProvider) no revision.");
-		    document.set("");
-		}
-	    } catch (CoreException e) {
-		Activator.error(UIText.QuickDiff_failedLoading, e);
-	    } catch (IOException e) {
-		Activator.error(UIText.QuickDiff_failedLoading, e);
-	    }
-	    return document;
-	} else {
-	    return null;
+	public void dispose() {
+		// No resources to free
 	}
-    }
 
-    public boolean isEnabled() {
-	return true;
-    }
+	public String getId() {
+		return id;
+	}
 
-    public void setActiveEditor(ITextEditor editor) {
-	IEditorInput editorInput = editor.getEditorInput();
-	file = ResourceUtil.getFile(editorInput);
-    }
+	public IDocument getReference(IProgressMonitor monitor)
+			throws CoreException {
+		document = new Document();
+		Activator.trace("(GitQuickDiffProvider) file: " + file);
 
-    public void setId(String id) {
-	this.id = id;
-    }
+		RepositoryProvider provider = RepositoryProvider.getProvider(file
+				.getProject());
+		if (provider != null) {
+			try {
+				IFileHistoryProvider fileHistoryProvider = provider
+						.getFileHistoryProvider();
+				IFileHistory fileHistoryFor = fileHistoryProvider
+						.getFileHistoryFor(file,
+								IFileHistoryProvider.SINGLE_REVISION, null);
+				IFileRevision[] revisions = fileHistoryFor.getFileRevisions();
+				if (revisions != null && revisions.length > 0) {
+					IFileRevision revision = revisions[0];
+					Activator.trace("(GitQuickDiffProvider) compareTo: "
+							+ revision.getContentIdentifier());
+					IStorage storage = revision.getStorage(null);
+					InputStream contents = storage.getContents();
+					BufferedReader in = new BufferedReader(
+							new InputStreamReader(contents));
+					final int DEFAULT_FILE_SIZE = 15 * 1024;
+
+					CharArrayWriter caw = new CharArrayWriter(DEFAULT_FILE_SIZE);
+					char[] readBuffer = new char[2048];
+					int n = in.read(readBuffer);
+					while (n > 0) {
+						caw.write(readBuffer, 0, n);
+						n = in.read(readBuffer);
+					}
+					String s = caw.toString();
+					document.set(s);
+				} else {
+					Activator.trace("(GitQuickDiffProvider) no revision.");
+					document.set("");
+				}
+			} catch (CoreException e) {
+				Activator.error(UIText.QuickDiff_failedLoading, e);
+			} catch (IOException e) {
+				Activator.error(UIText.QuickDiff_failedLoading, e);
+			}
+			return document;
+		} else {
+			return null;
+		}
+	}
+
+	public boolean isEnabled() {
+		return true;
+	}
+
+	public void setActiveEditor(ITextEditor editor) {
+		IEditorInput editorInput = editor.getEditorInput();
+		file = ResourceUtil.getFile(editorInput);
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
 }

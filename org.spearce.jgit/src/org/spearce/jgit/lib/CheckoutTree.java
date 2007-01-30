@@ -24,35 +24,36 @@ import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 
 public class CheckoutTree extends TreeVisitorWithCurrentDirectory {
-    private static final String TYPE_BLOB = Constants.TYPE_BLOB;
+	private static final String TYPE_BLOB = Constants.TYPE_BLOB;
 
-    public CheckoutTree(final File root) {
-	super(root);
-    }
-
-    public void visitFile(final FileTreeEntry fte) throws IOException {
-	final File destFile = new File(getCurrentDirectory(), fte.getName());
-	final ObjectLoader loader = fte.openReader();
-	if (loader == null)
-	    throw new MissingObjectException(fte.getId(), TYPE_BLOB);
-	final byte[] data = loader.getBytes();
-	if (!TYPE_BLOB.equals(loader.getType()))
-	    throw new IncorrectObjectTypeException(fte.getId(), TYPE_BLOB);
-	final FileOutputStream fos = new FileOutputStream(destFile);
-	try {
-	    fos.write(data);
-	} finally {
-	    fos.close();
+	public CheckoutTree(final File root) {
+		super(root);
 	}
-    }
 
-    public void visitSymlink(final SymlinkTreeEntry s) throws IOException {
-	// TODO: handle symlinks. Only problem is that JGit is indepent of Eclipse
-	// and Pure Java does not know what to do about symbolic links.
-    }
+	public void visitFile(final FileTreeEntry fte) throws IOException {
+		final File destFile = new File(getCurrentDirectory(), fte.getName());
+		final ObjectLoader loader = fte.openReader();
+		if (loader == null)
+			throw new MissingObjectException(fte.getId(), TYPE_BLOB);
+		final byte[] data = loader.getBytes();
+		if (!TYPE_BLOB.equals(loader.getType()))
+			throw new IncorrectObjectTypeException(fte.getId(), TYPE_BLOB);
+		final FileOutputStream fos = new FileOutputStream(destFile);
+		try {
+			fos.write(data);
+		} finally {
+			fos.close();
+		}
+	}
 
-    public void startVisitTree(final Tree t) throws IOException {
-	super.startVisitTree(t);
-	getCurrentDirectory().mkdirs();
-    }
+	public void visitSymlink(final SymlinkTreeEntry s) throws IOException {
+		// TODO: handle symlinks. Only problem is that JGit is indepent of
+		// Eclipse
+		// and Pure Java does not know what to do about symbolic links.
+	}
+
+	public void startVisitTree(final Tree t) throws IOException {
+		super.startVisitTree(t);
+		getCurrentDirectory().mkdirs();
+	}
 }

@@ -24,46 +24,46 @@ import org.spearce.egit.core.internal.mapping.GitFileHistoryProvider;
 import org.spearce.egit.core.project.GitProjectData;
 
 public class GitProvider extends RepositoryProvider {
-    private GitProjectData data;
+	private GitProjectData data;
 
-    private GitMoveDeleteHook hook;
+	private GitMoveDeleteHook hook;
 
-    private GitFileHistoryProvider historyProvider;
+	private GitFileHistoryProvider historyProvider;
 
-    public String getID() {
-	return getClass().getName();
-    }
-
-    public void configureProject() throws CoreException {
-	getData().markTeamPrivateResources();
-    }
-
-    public void deconfigure() throws CoreException {
-	GitProjectData.delete(getProject());
-    }
-
-    public boolean canHandleLinkedResources() {
-	return true;
-    }
-
-    public synchronized IMoveDeleteHook getMoveDeleteHook() {
-	if (hook == null) {
-	    hook = new GitMoveDeleteHook(getData());
+	public String getID() {
+		return getClass().getName();
 	}
-	return hook;
-    }
 
-    public synchronized GitProjectData getData() {
-	if (data == null) {
-	    data = GitProjectData.get(getProject());
+	public void configureProject() throws CoreException {
+		getData().markTeamPrivateResources();
 	}
-	return data;
-    }
 
-    public synchronized IFileHistoryProvider getFileHistoryProvider() {
-	if (historyProvider == null) {
-	    historyProvider = new GitFileHistoryProvider();
+	public void deconfigure() throws CoreException {
+		GitProjectData.delete(getProject());
 	}
-	return historyProvider;
-    }
+
+	public boolean canHandleLinkedResources() {
+		return true;
+	}
+
+	public synchronized IMoveDeleteHook getMoveDeleteHook() {
+		if (hook == null) {
+			hook = new GitMoveDeleteHook(getData());
+		}
+		return hook;
+	}
+
+	public synchronized GitProjectData getData() {
+		if (data == null) {
+			data = GitProjectData.get(getProject());
+		}
+		return data;
+	}
+
+	public synchronized IFileHistoryProvider getFileHistoryProvider() {
+		if (historyProvider == null) {
+			historyProvider = new GitFileHistoryProvider();
+		}
+		return historyProvider;
+	}
 }

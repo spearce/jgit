@@ -42,166 +42,166 @@ import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 
 public class CheckpointJob extends Job {
-    private static final Object EXISTS = new Object();
+	private static final Object EXISTS = new Object();
 
-    private static final int MB = 1024 * 1024;
+	private static final int MB = 1024 * 1024;
 
-    private final Set blobQueue;
+	private final Set blobQueue;
 
-    private final Collection blobRules;
+	private final Collection blobRules;
 
-    private final Map treeQueue;
+	private final Map treeQueue;
 
-    private final ObjectWriter ow;
+	private final ObjectWriter ow;
 
-    private final RepositoryMapping rm;
+	private final RepositoryMapping rm;
 
-    private long byteCnt;
+	private long byteCnt;
 
-    private int objectCnt;
+	private int objectCnt;
 
-    public CheckpointJob(final RepositoryMapping m) {
-	super(NLS.bind(CoreText.CheckpointJob_name, m.getContainer()
-		.getFullPath()));
-	setPriority(Job.LONG);
+	public CheckpointJob(final RepositoryMapping m) {
+		super(NLS.bind(CoreText.CheckpointJob_name, m.getContainer()
+				.getFullPath()));
+		setPriority(Job.LONG);
 
-	blobQueue = new HashSet();
-	blobRules = new ArrayList();
-	treeQueue = new LinkedHashMap();
-	ow = new ObjectWriter(m.getRepository());
-	rm = m;
-    }
-
-    public void scheduleIfNecessary() {
-	if (!blobQueue.isEmpty() || !treeQueue.isEmpty()) {
-	    final ISchedulingRule[] r = new ISchedulingRule[blobRules.size()];
-	    blobRules.toArray(r);
-	    setRule(MultiRule.combine(r));
-	    trace("scheduling");
-	    schedule();
-	}
-    }
-
-    public void enqueue(final ISchedulingRule rule, final File s,
-	    final FileTreeEntry e) {
-	if (rule != null && e.isModified() && s.canRead()) {
-	    if (blobQueue.add(new QueuedBlob(s, e))) {
-		blobRules.add(rule);
-		byteCnt += s.length();
-		objectCnt++;
-	    }
-	}
-    }
-
-    public void enqueue(final Tree t) {
-	if (t.isModified()) {
-	    if (treeQueue.put(t, EXISTS) == null) {
-		objectCnt++;
-	    }
-	}
-    }
-
-    protected IStatus run(IProgressMonitor monitor) {
-	if (monitor == null) {
-	    monitor = new NullProgressMonitor();
+		blobQueue = new HashSet();
+		blobRules = new ArrayList();
+		treeQueue = new LinkedHashMap();
+		ow = new ObjectWriter(m.getRepository());
+		rm = m;
 	}
 
-	trace("running");
-	monitor.beginTask(CoreText.CheckpointJob_writing, (int) (byteCnt / MB)
-		+ objectCnt);
-	try {
-	    Iterator i;
-	    boolean wroteSomething;
-
-	    monitor.subTask(CoreText.CheckpointJob_writingBlobs);
-	    i = blobQueue.iterator();
-	    while (i.hasNext()) {
-		if (monitor.isCanceled()) {
-		    trace("canceled");
-		    return Status.CANCEL_STATUS;
+	public void scheduleIfNecessary() {
+		if (!blobQueue.isEmpty() || !treeQueue.isEmpty()) {
+			final ISchedulingRule[] r = new ISchedulingRule[blobRules.size()];
+			blobRules.toArray(r);
+			setRule(MultiRule.combine(r));
+			trace("scheduling");
+			schedule();
 		}
+	}
 
-		final QueuedBlob q = (QueuedBlob) i.next();
-		synchronized (q.ent) {
-		    if (q.ent.isModified() && q.src.canRead()) {
-			q.ent.setId(ow.writeBlob(q.src));
-		    }
-		}
-		monitor.worked((int) (q.src.length() / MB) + 1);
-	    }
-
-	    monitor.subTask(CoreText.CheckpointJob_writingTrees);
-	    wroteSomething = true;
-	    while (!treeQueue.isEmpty() && wroteSomething) {
-		i = treeQueue.keySet().iterator();
-		wroteSomething = false;
-		PICK_TREE: while (i.hasNext()) {
-		    if (monitor.isCanceled()) {
-			trace("canceled");
-			return Status.CANCEL_STATUS;
-		    }
-
-		    final Tree t = (Tree) i.next();
-		    synchronized (t) {
-			if (t.isModified()) {
-			    final TreeEntry[] m = t.members();
-			    for (int p = 0; p < m.length; p++) {
-				if (m[p].isModified()) {
-				    continue PICK_TREE;
-				}
-			    }
-			    t.setId(ow.writeTree(t));
+	public void enqueue(final ISchedulingRule rule, final File s,
+			final FileTreeEntry e) {
+		if (rule != null && e.isModified() && s.canRead()) {
+			if (blobQueue.add(new QueuedBlob(s, e))) {
+				blobRules.add(rule);
+				byteCnt += s.length();
+				objectCnt++;
 			}
-		    }
-		    wroteSomething = true;
-		    monitor.worked(1);
-		    i.remove();
 		}
-	    }
+	}
 
-	    synchronized (rm) {
-		if (!rm.getCacheTree().isModified()) {
-		    monitor.subTask(CoreText.CheckpointJob_writingRef);
-		    trace("writing ref");
-		    rm.saveCache();
-		} else {
-		    trace("tree is still dirty; ref can't be written");
+	public void enqueue(final Tree t) {
+		if (t.isModified()) {
+			if (treeQueue.put(t, EXISTS) == null) {
+				objectCnt++;
+			}
 		}
-	    }
-
-	    GitProjectData.fireRepositoryChanged(rm);
-	} catch (IOException ioe) {
-	    return Activator.error(CoreText.CheckpointJob_failed, ioe)
-		    .getStatus();
-	} finally {
-	    trace("done");
-	    monitor.done();
 	}
 
-	return Status.OK_STATUS;
-    }
+	protected IStatus run(IProgressMonitor monitor) {
+		if (monitor == null) {
+			monitor = new NullProgressMonitor();
+		}
 
-    private void trace(final String m) {
-	Activator.trace("(CheckpointJob " + rm.getContainer().getFullPath()
-		+ ") " + m);
-    }
+		trace("running");
+		monitor.beginTask(CoreText.CheckpointJob_writing, (int) (byteCnt / MB)
+				+ objectCnt);
+		try {
+			Iterator i;
+			boolean wroteSomething;
 
-    private static class QueuedBlob {
-	final File src;
+			monitor.subTask(CoreText.CheckpointJob_writingBlobs);
+			i = blobQueue.iterator();
+			while (i.hasNext()) {
+				if (monitor.isCanceled()) {
+					trace("canceled");
+					return Status.CANCEL_STATUS;
+				}
 
-	final FileTreeEntry ent;
+				final QueuedBlob q = (QueuedBlob) i.next();
+				synchronized (q.ent) {
+					if (q.ent.isModified() && q.src.canRead()) {
+						q.ent.setId(ow.writeBlob(q.src));
+					}
+				}
+				monitor.worked((int) (q.src.length() / MB) + 1);
+			}
 
-	QueuedBlob(final File s, final FileTreeEntry e) {
-	    src = s;
-	    ent = e;
+			monitor.subTask(CoreText.CheckpointJob_writingTrees);
+			wroteSomething = true;
+			while (!treeQueue.isEmpty() && wroteSomething) {
+				i = treeQueue.keySet().iterator();
+				wroteSomething = false;
+				PICK_TREE: while (i.hasNext()) {
+					if (monitor.isCanceled()) {
+						trace("canceled");
+						return Status.CANCEL_STATUS;
+					}
+
+					final Tree t = (Tree) i.next();
+					synchronized (t) {
+						if (t.isModified()) {
+							final TreeEntry[] m = t.members();
+							for (int p = 0; p < m.length; p++) {
+								if (m[p].isModified()) {
+									continue PICK_TREE;
+								}
+							}
+							t.setId(ow.writeTree(t));
+						}
+					}
+					wroteSomething = true;
+					monitor.worked(1);
+					i.remove();
+				}
+			}
+
+			synchronized (rm) {
+				if (!rm.getCacheTree().isModified()) {
+					monitor.subTask(CoreText.CheckpointJob_writingRef);
+					trace("writing ref");
+					rm.saveCache();
+				} else {
+					trace("tree is still dirty; ref can't be written");
+				}
+			}
+
+			GitProjectData.fireRepositoryChanged(rm);
+		} catch (IOException ioe) {
+			return Activator.error(CoreText.CheckpointJob_failed, ioe)
+					.getStatus();
+		} finally {
+			trace("done");
+			monitor.done();
+		}
+
+		return Status.OK_STATUS;
 	}
 
-	public int hashCode() {
-	    return ent.hashCode();
+	private void trace(final String m) {
+		Activator.trace("(CheckpointJob " + rm.getContainer().getFullPath()
+				+ ") " + m);
 	}
 
-	public boolean equals(final Object o) {
-	    return ent.equals(((QueuedBlob) o).ent);
+	private static class QueuedBlob {
+		final File src;
+
+		final FileTreeEntry ent;
+
+		QueuedBlob(final File s, final FileTreeEntry e) {
+			src = s;
+			ent = e;
+		}
+
+		public int hashCode() {
+			return ent.hashCode();
+		}
+
+		public boolean equals(final Object o) {
+			return ent.equals(((QueuedBlob) o).ent);
+		}
 	}
-    }
 }

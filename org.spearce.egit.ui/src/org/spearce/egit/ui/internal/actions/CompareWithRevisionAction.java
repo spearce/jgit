@@ -29,24 +29,24 @@ import org.eclipse.team.ui.history.HistoryPageSaveablePart;
 
 public class CompareWithRevisionAction extends TeamAction {
 
-    public void run(IAction action) {
-	super.run(action);
-	System.out.println("Run:" + action);
-	System.out.println("Selection resources:"
-		+ Arrays.asList(getSelectedResources()));
-	IResource[] r = getSelectedResources();
-	Hashtable providerMapping = this.getProviderMapping(r);
-	System.out.println("Mapping:" + providerMapping);
-	TeamUI.getHistoryView().showHistoryFor(getSelectedResources()[0]);
+	public void run(IAction action) {
+		super.run(action);
+		System.out.println("Run:" + action);
+		System.out.println("Selection resources:"
+				+ Arrays.asList(getSelectedResources()));
+		IResource[] r = getSelectedResources();
+		Hashtable providerMapping = this.getProviderMapping(r);
+		System.out.println("Mapping:" + providerMapping);
+		TeamUI.getHistoryView().showHistoryFor(getSelectedResources()[0]);
 
-    }
+	}
 
-    protected void showCompareInDialog(Shell shell, Object object) {
-	HistoryPageSaveablePart.showHistoryInDialog(shell, object);
-    }
+	protected void showCompareInDialog(Shell shell, Object object) {
+		HistoryPageSaveablePart.showHistoryInDialog(shell, object);
+	}
 
-    protected boolean isEnabled() throws TeamException {
-	return !getSelection().isEmpty();
-    }
+	protected boolean isEnabled() throws TeamException {
+		return !getSelection().isEmpty();
+	}
 
 }

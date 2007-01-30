@@ -40,93 +40,93 @@ import org.spearce.jgit.lib.Repository;
 
 public class GitFileRevision extends FileRevision {
 
-    private final IResource resource;
+	private final IResource resource;
 
-    private final Commit commit;
+	private final Commit commit;
 
-    public GitFileRevision(Commit commit, IResource resource) {
-	this.commit = commit;
-	this.resource = resource;
-    }
-
-    public String getName() {
-	return resource.toString();
-    }
-
-    public IStorage getStorage(IProgressMonitor monitor) throws CoreException {
-	return new GitStorage(commit.getTreeId(), resource);
-    }
-
-    public boolean isPropertyMissing() {
-	return false;
-    }
-
-    public IFileRevision withAllProperties(IProgressMonitor monitor)
-	    throws CoreException {
-	return this;
-    }
-
-    public long getTimestamp() {
-	PersonIdent author = commit.getAuthor();
-	if (author != null)
-	    return author.getWhen().getTime();
-	else
-	    return 0;
-    }
-
-    public String getContentIdentifier() {
-	return commit.getCommitId().toString();
-    }
-
-    public String getAuthor() {
-	PersonIdent author = commit.getAuthor();
-	if (author != null)
-	    return author.getName();
-	else
-	    return null;
-    }
-
-    public String getComment() {
-	return commit.getMessage();
-    }
-
-    public String toString() {
-	if (commit == null)
-	    return "WORKSPACE:" + resource.toString();
-	else
-	    return commit.toString() + ":" + resource.toString();
-    }
-
-    public URI getURI() {
-	return resource.getLocationURI();
-    }
-
-    public ITag[] getTags() {
-	GitProvider provider = (GitProvider) RepositoryProvider
-		.getProvider(resource.getProject());
-	Repository repository = provider.getData().getRepositoryMapping(
-		resource.getProject()).getRepository();
-	Collection allTags = repository.getTags();
-	Collection ret = new ArrayList();
-	ObjectId commitId = commit.getCommitId();
-	for (Iterator i = allTags.iterator(); i.hasNext();) {
-	    String tag = (String) i.next();
-	    try {
-		ObjectId id = repository.resolve(tag);
-		if (id.equals(commitId))
-		    ret.add(new GitTag(tag));
-	    } catch (IOException e) {
-		e.printStackTrace();
-	    }
+	public GitFileRevision(Commit commit, IResource resource) {
+		this.commit = commit;
+		this.resource = resource;
 	}
-	return (ITag[]) ret.toArray(new ITag[ret.size()]);
-    }
 
-    public Commit getCommit() {
-	return commit;
-    }
+	public String getName() {
+		return resource.toString();
+	}
 
-    public IResource getResource() {
-	return resource;
-    }
+	public IStorage getStorage(IProgressMonitor monitor) throws CoreException {
+		return new GitStorage(commit.getTreeId(), resource);
+	}
+
+	public boolean isPropertyMissing() {
+		return false;
+	}
+
+	public IFileRevision withAllProperties(IProgressMonitor monitor)
+			throws CoreException {
+		return this;
+	}
+
+	public long getTimestamp() {
+		PersonIdent author = commit.getAuthor();
+		if (author != null)
+			return author.getWhen().getTime();
+		else
+			return 0;
+	}
+
+	public String getContentIdentifier() {
+		return commit.getCommitId().toString();
+	}
+
+	public String getAuthor() {
+		PersonIdent author = commit.getAuthor();
+		if (author != null)
+			return author.getName();
+		else
+			return null;
+	}
+
+	public String getComment() {
+		return commit.getMessage();
+	}
+
+	public String toString() {
+		if (commit == null)
+			return "WORKSPACE:" + resource.toString();
+		else
+			return commit.toString() + ":" + resource.toString();
+	}
+
+	public URI getURI() {
+		return resource.getLocationURI();
+	}
+
+	public ITag[] getTags() {
+		GitProvider provider = (GitProvider) RepositoryProvider
+				.getProvider(resource.getProject());
+		Repository repository = provider.getData().getRepositoryMapping(
+				resource.getProject()).getRepository();
+		Collection allTags = repository.getTags();
+		Collection ret = new ArrayList();
+		ObjectId commitId = commit.getCommitId();
+		for (Iterator i = allTags.iterator(); i.hasNext();) {
+			String tag = (String) i.next();
+			try {
+				ObjectId id = repository.resolve(tag);
+				if (id.equals(commitId))
+					ret.add(new GitTag(tag));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return (ITag[]) ret.toArray(new ITag[ret.size()]);
+	}
+
+	public Commit getCommit() {
+		return commit;
+	}
+
+	public IResource getResource() {
+		return resource;
+	}
 }

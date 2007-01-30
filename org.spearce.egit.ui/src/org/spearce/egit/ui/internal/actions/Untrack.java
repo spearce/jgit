@@ -23,8 +23,8 @@ import org.eclipse.jface.action.IAction;
 import org.spearce.egit.core.op.UntrackOperation;
 
 public class Untrack extends AbstractOperationAction {
-    protected IWorkspaceRunnable createOperation(final IAction act,
-	    final List sel) {
-	return sel.isEmpty() ? null : new UntrackOperation(sel);
-    }
+	protected IWorkspaceRunnable createOperation(final IAction act,
+			final List sel) {
+		return sel.isEmpty() ? null : new UntrackOperation(sel);
+	}
 }

@@ -35,78 +35,78 @@ import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 
 public class UntrackOperation implements IWorkspaceRunnable {
-    private final Collection rsrcList;
+	private final Collection rsrcList;
 
-    public UntrackOperation(final Collection rsrcs) {
-	rsrcList = rsrcs;
-    }
-
-    public void run(IProgressMonitor m) throws CoreException {
-	if (m == null) {
-	    m = new NullProgressMonitor();
+	public UntrackOperation(final Collection rsrcs) {
+		rsrcList = rsrcs;
 	}
 
-	final IdentityHashMap tomerge = new IdentityHashMap();
-	m.beginTask(CoreText.UntrackOperation_adding, rsrcList.size() * 200);
-	try {
-	    final Iterator i = rsrcList.iterator();
-	    while (i.hasNext()) {
-		final Object obj = i.next();
-		if (obj instanceof IResource) {
-		    untrack(tomerge, (IResource) obj);
+	public void run(IProgressMonitor m) throws CoreException {
+		if (m == null) {
+			m = new NullProgressMonitor();
 		}
-		m.worked(200);
-	    }
-	} finally {
-	    try {
-		final Iterator i = tomerge.keySet().iterator();
-		while (i.hasNext()) {
-		    final RepositoryMapping r = (RepositoryMapping) i.next();
-		    r.recomputeMerge();
+
+		final IdentityHashMap tomerge = new IdentityHashMap();
+		m.beginTask(CoreText.UntrackOperation_adding, rsrcList.size() * 200);
+		try {
+			final Iterator i = rsrcList.iterator();
+			while (i.hasNext()) {
+				final Object obj = i.next();
+				if (obj instanceof IResource) {
+					untrack(tomerge, (IResource) obj);
+				}
+				m.worked(200);
+			}
+		} finally {
+			try {
+				final Iterator i = tomerge.keySet().iterator();
+				while (i.hasNext()) {
+					final RepositoryMapping r = (RepositoryMapping) i.next();
+					r.recomputeMerge();
+				}
+			} catch (IOException ioe) {
+				throw Activator.error(CoreText.UntrackOperation_failed, ioe);
+			} finally {
+				m.done();
+			}
 		}
-	    } catch (IOException ioe) {
-		throw Activator.error(CoreText.UntrackOperation_failed, ioe);
-	    } finally {
-		m.done();
-	    }
-	}
-    }
-
-    private void untrack(final Map tomerge, final IResource torm)
-	    throws CoreException {
-	final GitProjectData pd = GitProjectData.get(torm.getProject());
-	IResource r = torm;
-	String s = null;
-	RepositoryMapping m = null;
-
-	while (r != null) {
-	    m = pd.getRepositoryMapping(r);
-	    if (m != null) {
-		break;
-	    }
-
-	    if (s != null) {
-		s = r.getName() + "/" + s;
-	    } else {
-		s = r.getName();
-	    }
-
-	    r = r.getParent();
 	}
 
-	if (s == null || m == null || m.getCacheTree() == null) {
-	    return;
-	}
+	private void untrack(final Map tomerge, final IResource torm)
+			throws CoreException {
+		final GitProjectData pd = GitProjectData.get(torm.getProject());
+		IResource r = torm;
+		String s = null;
+		RepositoryMapping m = null;
 
-	try {
-	    final Tree t = m.getCacheTree();
-	    final TreeEntry e = t.findMember(s);
-	    if (e != null) {
-		e.delete();
-		tomerge.put(m, m);
-	    }
-	} catch (IOException ioe) {
-	    throw Activator.error(CoreText.UntrackOperation_failed, ioe);
+		while (r != null) {
+			m = pd.getRepositoryMapping(r);
+			if (m != null) {
+				break;
+			}
+
+			if (s != null) {
+				s = r.getName() + "/" + s;
+			} else {
+				s = r.getName();
+			}
+
+			r = r.getParent();
+		}
+
+		if (s == null || m == null || m.getCacheTree() == null) {
+			return;
+		}
+
+		try {
+			final Tree t = m.getCacheTree();
+			final TreeEntry e = t.findMember(s);
+			if (e != null) {
+				e.delete();
+				tomerge.put(m, m);
+			}
+		} catch (IOException ioe) {
+			throw Activator.error(CoreText.UntrackOperation_failed, ioe);
+		}
 	}
-    }
 }

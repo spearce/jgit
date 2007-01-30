@@ -23,8 +23,8 @@ import org.eclipse.jface.action.IAction;
 import org.spearce.egit.core.op.TrackOperation;
 
 public class Track extends AbstractOperationAction {
-    protected IWorkspaceRunnable createOperation(final IAction act,
-	    final List sel) {
-	return sel.isEmpty() ? null : new TrackOperation(sel);
-    }
+	protected IWorkspaceRunnable createOperation(final IAction act,
+			final List sel) {
+		return sel.isEmpty() ? null : new TrackOperation(sel);
+	}
 }

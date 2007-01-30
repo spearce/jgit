@@ -23,8 +23,8 @@ import org.eclipse.jface.action.IAction;
 import org.spearce.egit.core.op.CheckpointOperation;
 
 public class CheckpointAction extends AbstractOperationAction {
-    protected IWorkspaceRunnable createOperation(final IAction act,
-	    final List sel) {
-	return sel.isEmpty() ? null : new CheckpointOperation(sel);
-    }
+	protected IWorkspaceRunnable createOperation(final IAction act,
+			final List sel) {
+		return sel.isEmpty() ? null : new CheckpointOperation(sel);
+	}
 }

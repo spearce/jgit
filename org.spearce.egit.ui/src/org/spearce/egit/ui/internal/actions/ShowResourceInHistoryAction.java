@@ -25,15 +25,15 @@ import org.eclipse.team.ui.history.HistoryPageSaveablePart;
 
 public class ShowResourceInHistoryAction extends TeamAction {
 
-    public void run(IAction action) {
-	TeamUI.getHistoryView().showHistoryFor(getSelectedResources()[0]);
-    }
+	public void run(IAction action) {
+		TeamUI.getHistoryView().showHistoryFor(getSelectedResources()[0]);
+	}
 
-    protected void showCompareInDialog(Shell shell, Object object) {
-	HistoryPageSaveablePart.showHistoryInDialog(shell, object);
-    }
+	protected void showCompareInDialog(Shell shell, Object object) {
+		HistoryPageSaveablePart.showHistoryInDialog(shell, object);
+	}
 
-    protected boolean isEnabled() throws TeamException {
-	return !getSelection().isEmpty();
-    }
+	protected boolean isEnabled() throws TeamException {
+		return !getSelection().isEmpty();
+	}
 }

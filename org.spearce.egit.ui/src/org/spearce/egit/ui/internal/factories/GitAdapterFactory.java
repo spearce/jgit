@@ -23,23 +23,23 @@ import org.spearce.egit.ui.GitHistoryPageSource;
 
 public class GitAdapterFactory implements IAdapterFactory {
 
-    private Object historyPageSource = new GitHistoryPageSource();
+	private Object historyPageSource = new GitHistoryPageSource();
 
-    public Object getAdapter(Object adaptableObject, Class adapterType) {
-	if (adaptableObject instanceof File) {
-	    if (adapterType.isAssignableFrom(IHistoryPageSource.class)) {
-		return historyPageSource;
-	    }
+	public Object getAdapter(Object adaptableObject, Class adapterType) {
+		if (adaptableObject instanceof File) {
+			if (adapterType.isAssignableFrom(IHistoryPageSource.class)) {
+				return historyPageSource;
+			}
+		}
+		if (adapterType.isAssignableFrom(IHistoryPageSource.class)) {
+			return historyPageSource;
+		}
+		return null;
 	}
-	if (adapterType.isAssignableFrom(IHistoryPageSource.class)) {
-	    return historyPageSource;
-	}
-	return null;
-    }
 
-    public Class[] getAdapterList() {
-	// TODO Auto-generated method stub
-	return null;
-    }
+	public Class[] getAdapterList() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

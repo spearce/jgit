@@ -24,12 +24,12 @@ import org.spearce.egit.core.op.DisconnectProviderOperation;
 import org.spearce.egit.ui.internal.decorators.GitResourceDecorator;
 
 public class Disconnect extends AbstractOperationAction {
-    protected IWorkspaceRunnable createOperation(final IAction act,
-	    final List sel) {
-	return sel.isEmpty() ? null : new DisconnectProviderOperation(sel);
-    }
+	protected IWorkspaceRunnable createOperation(final IAction act,
+			final List sel) {
+		return sel.isEmpty() ? null : new DisconnectProviderOperation(sel);
+	}
 
-    protected void postOperation() {
-	GitResourceDecorator.refresh();
-    }
+	protected void postOperation() {
+		GitResourceDecorator.refresh();
+	}
 }

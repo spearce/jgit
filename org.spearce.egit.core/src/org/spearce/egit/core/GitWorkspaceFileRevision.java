@@ -24,44 +24,44 @@ import org.eclipse.team.core.history.IFileRevision;
 import org.spearce.egit.core.internal.mapping.GitFileRevision;
 
 public class GitWorkspaceFileRevision extends GitFileRevision implements
-	IFileRevision {
-    private final IResource resource;
+		IFileRevision {
+	private final IResource resource;
 
-    public GitWorkspaceFileRevision(IResource resource) {
-	super(null, resource);
-	this.resource = resource;
-    }
+	public GitWorkspaceFileRevision(IResource resource) {
+		super(null, resource);
+		this.resource = resource;
+	}
 
-    public String getName() {
-	return resource.getName();
-    }
+	public String getName() {
+		return resource.getName();
+	}
 
-    public IStorage getStorage(IProgressMonitor monitor) throws CoreException {
-	return new GitStorage(null, resource);
-    }
+	public IStorage getStorage(IProgressMonitor monitor) throws CoreException {
+		return new GitStorage(null, resource);
+	}
 
-    public boolean isPropertyMissing() {
-	return false;
-    }
+	public boolean isPropertyMissing() {
+		return false;
+	}
 
-    public IFileRevision withAllProperties(IProgressMonitor monitor)
-	    throws CoreException {
-	return null;
-    }
+	public IFileRevision withAllProperties(IProgressMonitor monitor)
+			throws CoreException {
+		return null;
+	}
 
-    public String getAuthor() {
-	return "";
-    }
+	public String getAuthor() {
+		return "";
+	}
 
-    public long getTimestamp() {
-	return -1;
-    }
+	public long getTimestamp() {
+		return -1;
+	}
 
-    public String getComment() {
-	return null;
-    }
+	public String getComment() {
+		return null;
+	}
 
-    public String getContentIdentifier() {
-	return null;
-    }
+	public String getContentIdentifier() {
+		return null;
+	}
 }

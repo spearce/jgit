@@ -37,70 +37,70 @@ import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
 
 public abstract class AbstractOperationAction implements IObjectActionDelegate {
-    private IWorkbenchPart wp;
+	private IWorkbenchPart wp;
 
-    private IWorkspaceRunnable op;
+	private IWorkspaceRunnable op;
 
-    public void selectionChanged(final IAction act, final ISelection sel) {
-	final List selection;
-	if (sel instanceof IStructuredSelection && !sel.isEmpty()) {
-	    selection = ((IStructuredSelection) sel).toList();
-	} else {
-	    selection = Collections.EMPTY_LIST;
-	}
-	op = createOperation(act, selection);
-	act.setEnabled(op != null && wp != null);
-    }
-
-    public void setActivePart(final IAction act, final IWorkbenchPart part) {
-	wp = part;
-    }
-
-    protected abstract IWorkspaceRunnable createOperation(final IAction act,
-	    final List selection);
-
-    protected void postOperation() {
-    }
-
-    public void run(final IAction act) {
-	if (op != null) {
-	    try {
-		try {
-		    wp.getSite().getWorkbenchWindow().run(true, false,
-			    new IRunnableWithProgress() {
-				public void run(final IProgressMonitor monitor)
-					throws InvocationTargetException {
-				    try {
-					op.run(monitor);
-				    } catch (CoreException ce) {
-					throw new InvocationTargetException(ce);
-				    }
-				}
-			    });
-		} finally {
-		    postOperation();
-		}
-	    } catch (Throwable e) {
-		final String msg = NLS.bind(UIText.GenericOperationFailed,
-			act.getText());
-		final IStatus status;
-
-		if (e instanceof InvocationTargetException) {
-		    e = e.getCause();
-		}
-
-		if (e instanceof CoreException) {
-		    status = ((CoreException) e).getStatus();
-		    e = status.getException();
+	public void selectionChanged(final IAction act, final ISelection sel) {
+		final List selection;
+		if (sel instanceof IStructuredSelection && !sel.isEmpty()) {
+			selection = ((IStructuredSelection) sel).toList();
 		} else {
-		    status = new Status(IStatus.ERROR, Activator.getPluginId(),
-			    1, msg, e);
+			selection = Collections.EMPTY_LIST;
 		}
-
-		Activator.logError(msg, e);
-		ErrorDialog.openError(wp.getSite().getShell(), act.getText(),
-			msg, status, status.getSeverity());
-	    }
+		op = createOperation(act, selection);
+		act.setEnabled(op != null && wp != null);
 	}
-    }
+
+	public void setActivePart(final IAction act, final IWorkbenchPart part) {
+		wp = part;
+	}
+
+	protected abstract IWorkspaceRunnable createOperation(final IAction act,
+			final List selection);
+
+	protected void postOperation() {
+	}
+
+	public void run(final IAction act) {
+		if (op != null) {
+			try {
+				try {
+					wp.getSite().getWorkbenchWindow().run(true, false,
+							new IRunnableWithProgress() {
+								public void run(final IProgressMonitor monitor)
+										throws InvocationTargetException {
+									try {
+										op.run(monitor);
+									} catch (CoreException ce) {
+										throw new InvocationTargetException(ce);
+									}
+								}
+							});
+				} finally {
+					postOperation();
+				}
+			} catch (Throwable e) {
+				final String msg = NLS.bind(UIText.GenericOperationFailed, act
+						.getText());
+				final IStatus status;
+
+				if (e instanceof InvocationTargetException) {
+					e = e.getCause();
+				}
+
+				if (e instanceof CoreException) {
+					status = ((CoreException) e).getStatus();
+					e = status.getException();
+				} else {
+					status = new Status(IStatus.ERROR, Activator.getPluginId(),
+							1, msg, e);
+				}
+
+				Activator.logError(msg, e);
+				ErrorDialog.openError(wp.getSite().getShell(), act.getText(),
+						msg, status, status.getSeverity());
+			}
+		}
+	}
 }

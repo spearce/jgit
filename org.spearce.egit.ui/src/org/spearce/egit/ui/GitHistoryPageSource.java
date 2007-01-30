@@ -22,12 +22,12 @@ import org.eclipse.ui.part.Page;
 
 public class GitHistoryPageSource extends HistoryPageSource {
 
-    public Page createPage(Object object) {
-	return new GitHistoryPage(object);
-    }
+	public Page createPage(Object object) {
+		return new GitHistoryPage(object);
+	}
 
-    public boolean canShowHistoryFor(Object object) {
-	return (object instanceof IResource && ((IResource) object).getType() == IResource.FILE);
-    }
+	public boolean canShowHistoryFor(Object object) {
+		return (object instanceof IResource && ((IResource) object).getType() == IResource.FILE);
+	}
 
 }

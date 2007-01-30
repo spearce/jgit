@@ -20,30 +20,30 @@ import java.io.IOException;
 import java.security.MessageDigest;
 
 public abstract class ObjectLoader {
-    private ObjectId objectId;
+	private ObjectId objectId;
 
-    public ObjectId getId() throws IOException {
-	if (objectId == null) {
-	    final MessageDigest md = Constants.newMessageDigest();
-	    md.update(Constants.encodeASCII(getType()));
-	    md.update((byte) ' ');
-	    md.update(Constants.encodeASCII(getSize()));
-	    md.update((byte) 0);
-	    md.update(getBytes());
-	    objectId = new ObjectId(md.digest());
+	public ObjectId getId() throws IOException {
+		if (objectId == null) {
+			final MessageDigest md = Constants.newMessageDigest();
+			md.update(Constants.encodeASCII(getType()));
+			md.update((byte) ' ');
+			md.update(Constants.encodeASCII(getSize()));
+			md.update((byte) 0);
+			md.update(getBytes());
+			objectId = new ObjectId(md.digest());
+		}
+		return objectId;
 	}
-	return objectId;
-    }
 
-    protected void setId(final ObjectId id) {
-	if (objectId != null)
-	    throw new IllegalStateException("Id already set.");
-	objectId = id;
-    }
+	protected void setId(final ObjectId id) {
+		if (objectId != null)
+			throw new IllegalStateException("Id already set.");
+		objectId = id;
+	}
 
-    public abstract String getType() throws IOException;
+	public abstract String getType() throws IOException;
 
-    public abstract long getSize() throws IOException;
+	public abstract long getSize() throws IOException;
 
-    public abstract byte[] getBytes() throws IOException;
+	public abstract byte[] getBytes() throws IOException;
 }

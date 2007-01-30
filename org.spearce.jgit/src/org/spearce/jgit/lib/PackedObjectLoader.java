@@ -19,28 +19,28 @@ package org.spearce.jgit.lib;
 import java.io.IOException;
 
 abstract class PackedObjectLoader extends ObjectLoader {
-    protected final PackFile pack;
+	protected final PackFile pack;
 
-    protected final long dataOffset;
+	protected final long dataOffset;
 
-    protected String objectType;
+	protected String objectType;
 
-    protected int objectSize;
+	protected int objectSize;
 
-    protected PackedObjectLoader(final PackFile pr, final long offset) {
-	pack = pr;
-	dataOffset = offset;
-    }
+	protected PackedObjectLoader(final PackFile pr, final long offset) {
+		pack = pr;
+		dataOffset = offset;
+	}
 
-    public String getType() throws IOException {
-	return objectType;
-    }
+	public String getType() throws IOException {
+		return objectType;
+	}
 
-    public long getSize() throws IOException {
-	return objectSize;
-    }
+	public long getSize() throws IOException {
+		return objectSize;
+	}
 
-    public long getDataOffset() {
-	return dataOffset;
-    }
+	public long getDataOffset() {
+		return dataOffset;
+	}
 }

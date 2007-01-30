@@ -29,23 +29,23 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.spearce.egit.core.project.GitProjectData;
 
 public class CheckpointOperation implements IWorkspaceRunnable {
-    private final Collection rsrcList;
+	private final Collection rsrcList;
 
-    public CheckpointOperation(final Collection rsrcs) {
-	rsrcList = rsrcs;
-    }
+	public CheckpointOperation(final Collection rsrcs) {
+		rsrcList = rsrcs;
+	}
 
-    public void run(IProgressMonitor m) throws CoreException {
-	Set projects = new HashSet();
-	for (Iterator i = rsrcList.iterator(); i.hasNext();) {
-	    IResource r = (IResource) i.next();
-	    IProject p = r.getProject();
-	    projects.add(p);
+	public void run(IProgressMonitor m) throws CoreException {
+		Set projects = new HashSet();
+		for (Iterator i = rsrcList.iterator(); i.hasNext();) {
+			IResource r = (IResource) i.next();
+			IProject p = r.getProject();
+			projects.add(p);
+		}
+		for (Iterator i = projects.iterator(); i.hasNext();) {
+			IProject project = (IProject) i.next();
+			GitProjectData projectData = GitProjectData.get(project);
+			projectData.checkpointIfNecessary();
+		}
 	}
-	for (Iterator i = projects.iterator(); i.hasNext();) {
-	    IProject project = (IProject) i.next();
-	    GitProjectData projectData = GitProjectData.get(project);
-	    projectData.checkpointIfNecessary();
-	}
-    }
 }

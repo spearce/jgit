@@ -37,69 +37,69 @@ import org.spearce.jgit.lib.TreeEntry;
 
 public class GitStorage implements IStorage {
 
-    private final IResource resource;
+	private final IResource resource;
 
-    private TreeEntry entry;
+	private TreeEntry entry;
 
-    public GitStorage(ObjectId treeId, IResource resource) {
-	this.resource = resource;
-	GitProvider provider = (GitProvider) RepositoryProvider
-		.getProvider(resource.getProject());
-	RepositoryMapping repositoryMapping = provider.getData()
-		.getRepositoryMapping(resource.getProject());
-	Tree tree;
-	try {
-	    tree = repositoryMapping.getRepository().mapTree(treeId);
-	    String prefix = repositoryMapping.getSubset();
-	    if (prefix != null)
-		prefix = prefix + "/";
-	    else
-		prefix = "";
-	    String name = prefix + resource.getProjectRelativePath().toString();
-	    entry = tree.findMember(name);
-	} catch (IOException e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
+	public GitStorage(ObjectId treeId, IResource resource) {
+		this.resource = resource;
+		GitProvider provider = (GitProvider) RepositoryProvider
+				.getProvider(resource.getProject());
+		RepositoryMapping repositoryMapping = provider.getData()
+				.getRepositoryMapping(resource.getProject());
+		Tree tree;
+		try {
+			tree = repositoryMapping.getRepository().mapTree(treeId);
+			String prefix = repositoryMapping.getSubset();
+			if (prefix != null)
+				prefix = prefix + "/";
+			else
+				prefix = "";
+			String name = prefix + resource.getProjectRelativePath().toString();
+			entry = tree.findMember(name);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
-    }
 
-    public InputStream getContents() throws CoreException {
-	try {
-	    if (entry == null) {
-		return ((IFile) resource).getContents();
-	    } else {
-		ObjectId id = entry.getId();
-		ObjectLoader reader = entry.getRepository().openBlob(id);
-		byte[] bytes = reader.getBytes();
-		return new ByteArrayInputStream(bytes);
-	    }
-	} catch (FileNotFoundException e) {
-	    throw new ResourceException(IResourceStatus.FAILED_READ_LOCAL,
-		    resource.getFullPath(), "Could not read file", e);
-	} catch (IOException e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
-	    throw new ResourceException(33, resource.getFullPath(), e
-		    .getMessage(), e);
+	public InputStream getContents() throws CoreException {
+		try {
+			if (entry == null) {
+				return ((IFile) resource).getContents();
+			} else {
+				ObjectId id = entry.getId();
+				ObjectLoader reader = entry.getRepository().openBlob(id);
+				byte[] bytes = reader.getBytes();
+				return new ByteArrayInputStream(bytes);
+			}
+		} catch (FileNotFoundException e) {
+			throw new ResourceException(IResourceStatus.FAILED_READ_LOCAL,
+					resource.getFullPath(), "Could not read file", e);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new ResourceException(33, resource.getFullPath(), e
+					.getMessage(), e);
+		}
 	}
-    }
 
-    public IPath getFullPath() {
-	return resource.getFullPath();
-    }
+	public IPath getFullPath() {
+		return resource.getFullPath();
+	}
 
-    public String getName() {
-	return resource.getName();
-    }
+	public String getName() {
+		return resource.getName();
+	}
 
-    public boolean isReadOnly() {
-	// TODO Auto-generated method stub
-	return false;
-    }
+	public boolean isReadOnly() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 
-    public Object getAdapter(Class adapter) {
-	// TODO Auto-generated method stub
-	return null;
-    }
+	public Object getAdapter(Class adapter) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }
