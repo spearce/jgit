@@ -43,6 +43,9 @@ public class GitStorage implements IStorage {
 
 	public GitStorage(ObjectId treeId, IResource resource) {
 		this.resource = resource;
+		if (treeId == null)
+			return;
+
 		GitProvider provider = (GitProvider) RepositoryProvider
 				.getProvider(resource.getProject());
 		RepositoryMapping repositoryMapping = provider.getData()
