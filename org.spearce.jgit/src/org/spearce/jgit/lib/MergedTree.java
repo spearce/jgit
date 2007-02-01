@@ -23,36 +23,33 @@ import org.spearce.jgit.errors.MissingObjectException;
 public class MergedTree {
 	public static final boolean isAdded(final TreeEntry[] ents) {
 		if (ents.length == 2) {
-			if (ents[0] == null && ents[1] != null) {
+			if (ents[0] == null && ents[1] != null)
 				return true;
-			} else if (ents[0] != null && ents[1] != null
-					&& ents[0].getClass() != ents[1].getClass()) {
+			else if (ents[0] != null && ents[1] != null
+					&& ents[0].getClass() != ents[1].getClass())
 				return true;
-			}
 		}
 		return false;
 	}
 
 	public static final boolean isRemoved(final TreeEntry[] ents) {
 		if (ents.length == 2) {
-			if (ents[0] != null && ents[1] == null) {
+			if (ents[0] != null && ents[1] == null)
 				return true;
-			} else if (ents[0] != null && ents[1] != null
-					&& ents[0].getClass() != ents[1].getClass()) {
+			else if (ents[0] != null && ents[1] != null
+					&& ents[0].getClass() != ents[1].getClass())
 				return true;
-			}
 		}
 		return false;
 	}
 
 	public static final boolean isModified(final TreeEntry[] ents) {
 		if (ents.length == 2 && ents[0] != null && ents[1] != null) {
-			if (ents[0].getId() == null || ents[1].getId() == null) {
+			if (ents[0].getId() == null || ents[1].getId() == null)
 				return true;
-			} else if (ents[0].getClass() == ents[1].getClass()
-					&& !ents[0].getId().equals(ents[1].getId())) {
+			else if (ents[0].getClass() == ents[1].getClass()
+					&& !ents[0].getId().equals(ents[1].getId()))
 				return true;
-			}
 		}
 		return false;
 	}
@@ -72,13 +69,12 @@ public class MergedTree {
 				ix++;
 			cmp = Tree.compareNames(entries[ix].getNameUTF8(), nameUTF8,
 					nameStart, nameEnd);
-			if (cmp < 0) {
+			if (cmp < 0)
 				low = mid + 1;
-			} else if (cmp == 0) {
+			else if (cmp == 0)
 				return mid;
-			} else {
+			else
 				high = mid;
-			}
 		} while (low < high);
 		return -(low + 1);
 	}
@@ -90,10 +86,9 @@ public class MergedTree {
 	private MergedTree[] subtrees;
 
 	public MergedTree(final Tree[] src) throws IOException {
-		if (src.length < 2) {
+		if (src.length < 2)
 			throw new IllegalArgumentException("At least two trees are"
 					+ " required to compute a merge.");
-		}
 		sources = src;
 		computeMerge();
 	}
@@ -114,19 +109,16 @@ public class MergedTree {
 			// search for path component terminator
 		}
 		p = binarySearch(merged, srcCnt, s, offset, slash);
-		if (p < 0) {
+		if (p < 0)
 			return null;
-		}
 
 		r = new TreeEntry[srcCnt];
-		for (int j = 0, k = p * srcCnt; j < srcCnt; j++, k++) {
+		for (int j = 0, k = p * srcCnt; j < srcCnt; j++, k++)
 			r[j] = merged[k];
-		}
 
 		if (slash < s.length) {
-			if (subtrees != null && p < subtrees.length && subtrees[p] != null) {
+			if (subtrees != null && p < subtrees.length && subtrees[p] != null)
 				return subtrees[p].findMember(s, slash + 1);
-			}
 			return null;
 		}
 		return r;
@@ -147,9 +139,8 @@ public class MergedTree {
 				final TreeEntry[] ents = sources[srcId].members();
 				entries[srcId] = ents;
 				pos = Math.max(pos, ents.length);
-				if (ents.length == 0) {
+				if (ents.length == 0)
 					done++;
-				}
 			} else {
 				entries[srcId] = Tree.EMPTY_TREE;
 				done++;
@@ -169,18 +160,16 @@ public class MergedTree {
 
 			if ((pos + srcCnt) >= newMerged.length) {
 				final TreeEntry[] t = new TreeEntry[newMerged.length * 2];
-				for (int j = newMerged.length - 1; j >= 0; j--) {
+				for (int j = newMerged.length - 1; j >= 0; j--)
 					t[j] = newMerged[j];
-				}
 				newMerged = t;
 			}
 
 			for (int srcId = 0; srcId < srcCnt; srcId++) {
 				final int ti = treeIndexes[srcId];
 				final TreeEntry[] ents = entries[srcId];
-				if (ti == ents.length) {
+				if (ti == ents.length)
 					continue;
-				}
 
 				final TreeEntry thisEntry = ents[ti];
 				final int cmp = minName == null ? -1 : Tree.compareNames(
@@ -192,9 +181,8 @@ public class MergedTree {
 					for (int j = srcId - 1; j >= 0; j--) {
 						if (newMerged[pos + j] != null) {
 							newMerged[pos + j] = null;
-							if (treeIndexes[j]-- == entries[j].length) {
+							if (treeIndexes[j]-- == entries[j].length)
 								done--;
-							}
 						}
 					}
 				}
@@ -202,9 +190,9 @@ public class MergedTree {
 				if (cmp <= 0) {
 					newMerged[pos + srcId] = thisEntry;
 					if (thisEntry instanceof Tree && !mergeCurrentTree) {
-						if (srcId == 0) {
+						if (srcId == 0)
 							mergeCurrentTree = true;
-						} else if (srcId == 1) {
+						else if (srcId == 1) {
 							final TreeEntry l = newMerged[pos];
 							mergeCurrentTree = !(l instanceof Tree)
 									|| l.getId() == null
@@ -216,9 +204,8 @@ public class MergedTree {
 									|| l.getId().equals(thisEntry.getId());
 						}
 					}
-					if (++treeIndexes[srcId] == ents.length) {
+					if (++treeIndexes[srcId] == ents.length)
 						done++;
-					}
 				}
 			}
 
@@ -226,41 +213,37 @@ public class MergedTree {
 				final Tree[] tmp = new Tree[srcCnt];
 				for (int srcId = srcCnt - 1; srcId >= 0; srcId--) {
 					final TreeEntry t = newMerged[pos + srcId];
-					if (t instanceof Tree) {
+					if (t instanceof Tree)
 						tmp[srcId] = (Tree) t;
-					}
 				}
 
-				if (newSubtrees == null) {
+				if (newSubtrees == null)
 					newSubtrees = new MergedTree[treeId + 1];
-				} else if (treeId >= newSubtrees.length) {
+				else if (treeId >= newSubtrees.length) {
 					final MergedTree[] s = new MergedTree[Math.max(treeId + 1,
 							newSubtrees.length * 2)];
-					for (int j = newSubtrees.length - 1; j >= 0; j--) {
+					for (int j = newSubtrees.length - 1; j >= 0; j--)
 						s[j] = newSubtrees[j];
-					}
 					newSubtrees = s;
 				}
 				newSubtrees[treeId] = new MergedTree(tmp);
 			}
 		}
 
-		if (newMerged.length == pos) {
+		if (newMerged.length == pos)
 			merged = newMerged;
-		} else {
+		else {
 			merged = new TreeEntry[pos];
-			for (int j = pos - 1; j >= 0; j--) {
+			for (int j = pos - 1; j >= 0; j--)
 				merged[j] = newMerged[j];
-			}
 		}
 
-		if (newSubtrees == null || newSubtrees.length == treeId) {
+		if (newSubtrees == null || newSubtrees.length == treeId)
 			subtrees = newSubtrees;
-		} else {
+		else {
 			subtrees = new MergedTree[treeId];
-			for (int j = Math.min(newSubtrees.length, treeId) - 1; j >= 0; j--) {
+			for (int j = Math.min(newSubtrees.length, treeId) - 1; j >= 0; j--)
 				subtrees[j] = newSubtrees[j];
-			}
 		}
 	}
 }
