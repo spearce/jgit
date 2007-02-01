@@ -107,6 +107,9 @@ public class GitResourceDecorator extends LabelProvider implements
 
 		RepositoryMapping mapped = d.getRepositoryMapping(rsrc);
 		if (mapped != null) {
+			final MergedTree diff = mapped.getActiveDiff();
+			if (diff != null && diff.isModified())
+				decoration.addPrefix(">");
 			if (mapped.getRepository().isStGitMode())
 				decoration.addSuffix(" [StGit]");
 			else
