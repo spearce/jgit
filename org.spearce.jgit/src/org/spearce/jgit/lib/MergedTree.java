@@ -196,12 +196,12 @@ public class MergedTree {
 							final TreeEntry e = newMerged[pos];
 							mergeCurrentTree = !(e instanceof Tree)
 									|| e.getId() == null
-									|| e.getId().equals(thisEntry.getId());
+									|| !e.getId().equals(thisEntry.getId());
 						} else if (!mergeCurrentTree) {
 							final TreeEntry e = newMerged[pos + srcId - 1];
 							mergeCurrentTree = !(e instanceof Tree)
 									|| e.getId() == null
-									|| e.getId().equals(thisEntry.getId());
+									|| !e.getId().equals(thisEntry.getId());
 						}
 					}
 					if (++treeIndexes[srcId] == ents.length)
