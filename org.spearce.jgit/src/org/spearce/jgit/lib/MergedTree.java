@@ -189,7 +189,7 @@ public class MergedTree {
 
 				if (cmp <= 0) {
 					newMerged[pos + srcId] = thisEntry;
-					if (thisEntry instanceof Tree && !mergeSubtree) {
+					if (thisEntry instanceof Tree) {
 						if (srcId == 0)
 							mergeSubtree = true;
 						else if (srcId == 1) {
