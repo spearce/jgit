@@ -32,39 +32,57 @@ import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.MergedTree;
 import org.spearce.jgit.lib.TreeEntry;
 
+/**
+ * Supplies annotations for displayed resources.
+ * <p>
+ * This decorator provides annotations to indicate the status of each resource
+ * when compared to <code>HEAD</code> in the relevant repository.
+ * </p>
+ */
 public class GitResourceDecorator extends LabelProvider implements
 		ILightweightLabelDecorator {
 
-	private static final RepositoryChangeListener myrcl = new RCL();
+	private static final RCL myrcl = new RCL();
 
 	static class RCL implements RepositoryChangeListener, Runnable {
 		private boolean requested;
 
 		public synchronized void run() {
 			requested = false;
-			refresh();
+			PlatformUI.getWorkbench().getDecoratorManager().update(
+					GitResourceDecorator.class.getName());
 		}
 
-		public synchronized void repositoryChanged(final RepositoryMapping which) {
-			if (!requested) {
-				final Display d = PlatformUI.getWorkbench().getDisplay();
-				if (d.getThread() == Thread.currentThread()) {
-					run();
-				} else {
-					requested = true;
-					d.asyncExec(this);
-				}
+		public void repositoryChanged(final RepositoryMapping which) {
+			start();
+		}
+
+		synchronized void start() {
+			if (requested)
+				return;
+			final Display d = PlatformUI.getWorkbench().getDisplay();
+			if (d.getThread() == Thread.currentThread())
+				run();
+			else {
+				requested = true;
+				d.asyncExec(this);
 			}
 		}
-	};
+	}
 
 	static {
 		GitProjectData.addRepositoryChangeListener(myrcl);
 	}
 
+	/**
+	 * Request that the decorator be updated, to reflect any recent changes.
+	 * <p>
+	 * Can be invoked any any thread. If the current thread is not the UI
+	 * thread, an async update will be scheduled.
+	 * </p>
+	 */
 	public static void refresh() {
-		PlatformUI.getWorkbench().getDecoratorManager().update(
-				GitResourceDecorator.class.getName());
+		myrcl.start();
 	}
 
 	private static IResource toIResource(final Object e) {
