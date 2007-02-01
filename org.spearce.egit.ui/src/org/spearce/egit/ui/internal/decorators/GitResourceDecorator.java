@@ -68,27 +68,24 @@ public class GitResourceDecorator extends LabelProvider implements
 	}
 
 	private static IResource toIResource(final Object e) {
-		if (e instanceof IResource) {
+		if (e instanceof IResource)
 			return (IResource) e;
-		} else if (e instanceof IAdaptable) {
+		if (e instanceof IAdaptable) {
 			final Object c = ((IAdaptable) e).getAdapter(IResource.class);
-			if (c instanceof IResource) {
+			if (c instanceof IResource)
 				return (IResource) c;
-			}
 		}
 		return null;
 	}
 
 	public void decorate(final Object element, final IDecoration decoration) {
 		final IResource rsrc = toIResource(element);
-		if (rsrc == null) {
+		if (rsrc == null)
 			return;
-		}
 
 		final GitProjectData d = GitProjectData.get(rsrc.getProject());
-		if (d == null) {
+		if (d == null)
 			return;
-		}
 
 		RepositoryMapping mapped = d.getRepositoryMapping(rsrc);
 		if (mapped != null) {
@@ -111,19 +108,19 @@ public class GitResourceDecorator extends LabelProvider implements
 			throw new RuntimeException(UIText.Decorator_failedLazyLoading, ioe);
 		}
 
-		if (n != null) {
-			if (MergedTree.isAdded(n)) {
-				decoration.addOverlay(UIIcons.OVR_PENDING_ADD);
-			} else if (MergedTree.isRemoved(n)) {
-				decoration.addOverlay(UIIcons.OVR_PENDING_REMOVE);
-			} else if (MergedTree.isModified(n)) {
-				decoration.addPrefix(">");
-				decoration.addOverlay(UIIcons.OVR_SHARED);
-			} else {
-				decoration.addOverlay(UIIcons.OVR_SHARED);
-			}
-		} else {
+		if (n == null) {
 			decoration.addSuffix(" (untracked)");
+			return;
 		}
+
+		if (MergedTree.isAdded(n))
+			decoration.addOverlay(UIIcons.OVR_PENDING_ADD);
+		else if (MergedTree.isRemoved(n))
+			decoration.addOverlay(UIIcons.OVR_PENDING_REMOVE);
+		else if (MergedTree.isModified(n)) {
+			decoration.addPrefix(">");
+			decoration.addOverlay(UIIcons.OVR_SHARED);
+		} else
+			decoration.addOverlay(UIIcons.OVR_SHARED);
 	}
 }
