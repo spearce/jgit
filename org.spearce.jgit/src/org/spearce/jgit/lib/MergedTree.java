@@ -156,7 +156,7 @@ public class MergedTree {
 		newMerged = new TreeEntry[pos * srcCnt];
 		for (pos = 0, treeId = 0; done < srcCnt; pos += srcCnt, treeId++) {
 			byte[] minName = null;
-			boolean mergeCurrentTree = false;
+			boolean mergeSubtree = false;
 
 			if ((pos + srcCnt) >= newMerged.length) {
 				final TreeEntry[] t = new TreeEntry[newMerged.length * 2];
@@ -177,7 +177,7 @@ public class MergedTree {
 
 				if (cmp < 0) {
 					minName = thisEntry.getNameUTF8();
-					mergeCurrentTree = false;
+					mergeSubtree = false;
 					for (int j = srcId - 1; j >= 0; j--) {
 						if (newMerged[pos + j] != null) {
 							newMerged[pos + j] = null;
@@ -189,17 +189,17 @@ public class MergedTree {
 
 				if (cmp <= 0) {
 					newMerged[pos + srcId] = thisEntry;
-					if (thisEntry instanceof Tree && !mergeCurrentTree) {
+					if (thisEntry instanceof Tree && !mergeSubtree) {
 						if (srcId == 0)
-							mergeCurrentTree = true;
+							mergeSubtree = true;
 						else if (srcId == 1) {
 							final TreeEntry e = newMerged[pos];
-							mergeCurrentTree = !(e instanceof Tree)
+							mergeSubtree = !(e instanceof Tree)
 									|| e.getId() == null
 									|| !e.getId().equals(thisEntry.getId());
-						} else if (!mergeCurrentTree) {
+						} else if (!mergeSubtree) {
 							final TreeEntry e = newMerged[pos + srcId - 1];
-							mergeCurrentTree = !(e instanceof Tree)
+							mergeSubtree = !(e instanceof Tree)
 									|| e.getId() == null
 									|| !e.getId().equals(thisEntry.getId());
 						}
@@ -209,7 +209,7 @@ public class MergedTree {
 				}
 			}
 
-			if (mergeCurrentTree) {
+			if (mergeSubtree) {
 				final Tree[] tmp = new Tree[srcCnt];
 				for (int srcId = srcCnt - 1; srcId >= 0; srcId--) {
 					final TreeEntry t = newMerged[pos + srcId];
