@@ -193,15 +193,15 @@ public class MergedTree {
 						if (srcId == 0)
 							mergeCurrentTree = true;
 						else if (srcId == 1) {
-							final TreeEntry l = newMerged[pos];
-							mergeCurrentTree = !(l instanceof Tree)
-									|| l.getId() == null
-									|| l.getId().equals(thisEntry.getId());
+							final TreeEntry e = newMerged[pos];
+							mergeCurrentTree = !(e instanceof Tree)
+									|| e.getId() == null
+									|| e.getId().equals(thisEntry.getId());
 						} else if (!mergeCurrentTree) {
-							final TreeEntry l = newMerged[pos + srcId - 1];
-							mergeCurrentTree = !(l instanceof Tree)
-									|| l.getId() == null
-									|| l.getId().equals(thisEntry.getId());
+							final TreeEntry e = newMerged[pos + srcId - 1];
+							mergeCurrentTree = !(e instanceof Tree)
+									|| e.getId() == null
+									|| e.getId().equals(thisEntry.getId());
 						}
 					}
 					if (++treeIndexes[srcId] == ents.length)
