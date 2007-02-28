@@ -94,11 +94,7 @@ public class Tag {
 				}
 				tagger = new PersonIdent(n.substring("tagger ".length()));
 
-				n = br.readLine();
-				if (n == null || !n.equals("")) {
-					throw new CorruptObjectException(tagId,
-							"malformed header");
-				}
+				// Message should start with an empty line, but
 				StringBuffer tempMessage = new StringBuffer();
 				char[] readBuf = new char[2048];
 				int readLen;
@@ -106,6 +102,8 @@ public class Tag {
 					tempMessage.append(readBuf, 0, readLen);
 				}
 				message = tempMessage.toString();
+				if (message.startsWith("\n"))
+					message = message.substring(1);
 			} catch (IOException e) {
 				e.printStackTrace();
 			} finally {
