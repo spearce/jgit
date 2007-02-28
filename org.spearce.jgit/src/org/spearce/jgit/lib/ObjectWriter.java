@@ -137,6 +137,38 @@ public class ObjectWriter {
 		return writeCommit(os.toByteArray());
 	}
 
+	public ObjectId writeTag(final byte[] b) throws IOException {
+		return writeTag(b.length, new ByteArrayInputStream(b));
+	}
+
+	public ObjectId writeTag(final Tag c) throws IOException {
+		final ByteArrayOutputStream os = new ByteArrayOutputStream();
+		final OutputStreamWriter w = new OutputStreamWriter(os,
+				Constants.CHARACTER_ENCODING);
+
+		w.write("object ");
+		c.getObjId().copyTo(w);
+		w.write('\n');
+
+		w.write("type ");
+		w.write(c.getType());
+		w.write("\n");
+
+		w.write("tag ");
+		w.write(c.getTag());
+		w.write("\n");
+
+		w.write("tagger ");
+		w.write(c.getAuthor().toExternalString());
+		w.write('\n');
+
+		w.write('\n');
+		w.write(c.getMessage());
+		w.close();
+
+		return writeTag(os.toByteArray());
+	}
+
 	public ObjectId writeCommit(final byte[] b) throws IOException {
 		return writeCommit(b.length, new ByteArrayInputStream(b));
 	}
@@ -144,6 +176,11 @@ public class ObjectWriter {
 	public ObjectId writeCommit(final long len, final InputStream is)
 			throws IOException {
 		return writeObject(Constants.OBJ_COMMIT, Constants.TYPE_COMMIT, len, is);
+	}
+
+	public ObjectId writeTag(final long len, final InputStream is)
+		throws IOException {
+		return writeObject(Constants.OBJ_TAG, Constants.TYPE_TAG, len, is);
 	}
 
 	public ObjectId writeObject(final int typeCode, final String type,

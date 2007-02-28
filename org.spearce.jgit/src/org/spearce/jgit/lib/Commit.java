@@ -79,7 +79,7 @@ public class Commit implements Treeish {
 	}
 
 	public void setTreeId(final ObjectId id) {
-		if (!treeId.equals(id)) {
+		if (treeId==null || !treeId.equals(id)) {
 			treeObj = null;
 		}
 		treeId = id;

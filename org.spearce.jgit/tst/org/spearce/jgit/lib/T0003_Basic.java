@@ -319,4 +319,70 @@ public class T0003_Basic extends RepositoryTestCase {
 		assertEquals(new ObjectId("b47a8f0a4190f7572e11212769090523e23eb1ea"),
 				t.getId());
 	}
+
+	public void test020_createBlobTag() throws IOException {
+		final ObjectId emptyId = new ObjectWriter(db).writeBlob(new byte[0]);
+		final Tag t = new Tag(db);
+		t.setObjId(emptyId);
+		t.setType("blob");
+		t.setTag("test020");
+		t.setAuthor(new PersonIdent(jauthor, 1154236443000L, -4 * 60));
+		t.setMessage("test020 tagged\n");
+		t.tag();
+		assertEquals("6759556b09fbb4fd8ae5e315134481cc25d46954", t.getTagId().toString());
+
+		Tag mapTag = db.mapTag("6759556b09fbb4fd8ae5e315134481cc25d46954");
+		assertEquals("blob", mapTag.getType());
+		assertEquals("test020 tagged\n", mapTag.getMessage());
+		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag.getAuthor());
+		assertEquals("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", mapTag.getObjId().toString());
+	}
+
+	public void test021_createTreeTag() throws IOException {
+		final ObjectId emptyId = new ObjectWriter(db).writeBlob(new byte[0]);
+		final Tree almostEmptyTree = new Tree(db);
+		almostEmptyTree.addEntry(new FileTreeEntry(almostEmptyTree, emptyId, "empty".getBytes(), false));
+		final ObjectId almostEmptyTreeId = new ObjectWriter(db).writeTree(almostEmptyTree);
+		final Tag t = new Tag(db);
+		t.setObjId(almostEmptyTreeId);
+		t.setType("tree");
+		t.setTag("test021");
+		t.setAuthor(new PersonIdent(jauthor, 1154236443000L, -4 * 60));
+		t.setMessage("test021 tagged\n");
+		t.tag();
+		assertEquals("b0517bc8dbe2096b419d42424cd7030733f4abe5", t.getTagId().toString());
+
+		Tag mapTag = db.mapTag("b0517bc8dbe2096b419d42424cd7030733f4abe5");
+		assertEquals("tree", mapTag.getType());
+		assertEquals("test021 tagged\n", mapTag.getMessage());
+		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag.getAuthor());
+		assertEquals("417c01c8795a35b8e835113a85a5c0c1c77f67fb", mapTag.getObjId().toString());
+	}
+
+	public void test022_createCommitTag() throws IOException {
+		final ObjectId emptyId = new ObjectWriter(db).writeBlob(new byte[0]);
+		final Tree almostEmptyTree = new Tree(db);
+		almostEmptyTree.addEntry(new FileTreeEntry(almostEmptyTree, emptyId, "empty".getBytes(), false));
+		final ObjectId almostEmptyTreeId = new ObjectWriter(db).writeTree(almostEmptyTree);
+		final Commit almostEmptyCommit = new Commit(db);
+		almostEmptyCommit.setAuthor(new PersonIdent(jauthor, 1154236443000L, -2 * 60)); // not exactly the same
+		almostEmptyCommit.setCommitter(new PersonIdent(jauthor, 1154236443000L, -2 * 60));
+		almostEmptyCommit.setMessage("test022\n");
+		almostEmptyCommit.setTreeId(almostEmptyTreeId);
+		ObjectId almostEmptyCommitId = new ObjectWriter(db).writeCommit(almostEmptyCommit);
+		final Tag t = new Tag(db);
+		t.setObjId(almostEmptyCommitId);
+		t.setType("commit");
+		t.setTag("test022");
+		t.setAuthor(new PersonIdent(jauthor, 1154236443000L, -4 * 60));
+		t.setMessage("test022 tagged\n");
+		t.tag();
+		assertEquals("0ce2ebdb36076ef0b38adbe077a07d43b43e3807", t.getTagId().toString());
+
+		Tag mapTag = db.mapTag("0ce2ebdb36076ef0b38adbe077a07d43b43e3807");
+		assertEquals("commit", mapTag.getType());
+		assertEquals("test022 tagged\n", mapTag.getMessage());
+		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag.getAuthor());
+		assertEquals("b5d3b45a96b340441f5abb9080411705c51cc86c", mapTag.getObjId().toString());
+	}
 }

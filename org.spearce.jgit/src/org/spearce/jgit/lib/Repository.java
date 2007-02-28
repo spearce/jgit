@@ -211,6 +211,21 @@ public class Repository {
 		throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
 	}
 
+	public Tag mapTag(String revstr) throws IOException {
+		final ObjectId id = resolve(revstr);
+		return id != null ? mapTag(id) : null;
+	}
+
+	public Tag mapTag(final ObjectId id) throws IOException {
+		final ObjectLoader or = openObject(id);
+		if (or == null)
+			return null;
+		final byte[] raw = or.getBytes();
+		if (Constants.TYPE_TAG.equals(or.getType()))
+			return new Tag(this, id, raw);
+		throw new IncorrectObjectTypeException(id, Constants.TYPE_TAG);
+	}
+
 	public RefLock lockRef(final String ref) throws IOException {
 		final RefLock l = new RefLock(readRef(ref, true));
 		return l.lock() ? l : null;
