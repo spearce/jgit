@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -85,7 +86,7 @@ public class WindowedFile {
 	 *            use the same window cache.
 	 * @param file
 	 *            the file to open. The file will be opened for reading only,
-	 *            unless {@link MapMode#READ_WRITE} or {@link MapMode#PRIVATE}
+	 *            unless {@link FileChannel.MapMode#READ_WRITE} or {@link FileChannel.MapMode#PRIVATE}
 	 *            is given.
 	 * @param windowSz
 	 *            number of bytes within a window. This value must be a power of
