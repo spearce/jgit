@@ -42,7 +42,7 @@ public class PackFile {
 		repo = parentRepo;
 		// FIXME window size and mmap type should be configurable
 		pack = new WindowedFile(repo.getWindowCache(), packFile,
-				64 * 1024 * 1024, false);
+				64 * 1024 * 1024, true);
 		try {
 			readPackHeader();
 
@@ -53,7 +53,7 @@ public class PackFile {
 					+ ".idx");
 			// FIXME window size and mmap type should be configurable
 			idx = new WindowedFile(repo.getWindowCache(), idxFile,
-					64 * 1024 * 1024, false);
+					64 * 1024 * 1024, true);
 			try {
 				idxHeader = readIndexHeader();
 			} catch (IOException ioe) {
