@@ -145,9 +145,22 @@ public class Repository {
 						return ol;
 				} catch (IOException ioe) {
 					// This shouldn't happen unless the pack was corrupted
-					// after we opened it. We'll ignore the error as though
-					// the object does not exist in this pack.
-					//
+					// after we opened it or the VM runs out of memory. This is
+					// a know problem with memory mapped I/O in java and have
+					// been noticed with JDK < 1.6. Tell the gc that now is a good
+					// time to collect and try once more.
+					try {
+						System.gc();
+						final ObjectLoader ol = packs[k].get(id, tmp);
+						if (ol != null)
+							return ol;
+					} catch (IOException ioe2) {
+						ioe2.printStackTrace();
+						ioe.printStackTrace();
+						// Still fails.. that's BAD, maybe the pack has
+						// been corrupted after all, or the gc didn't manage
+						// to release enough previously mmaped areas.
+					}
 				}
 			} while (k > 0);
 		}
