@@ -16,6 +16,8 @@
  */
 package org.spearce.egit.ui.internal.decorators;
 
+import java.io.IOException;
+
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
@@ -30,6 +32,7 @@ import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.MergedTree;
+import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.TreeEntry;
 
 /**
@@ -110,10 +113,19 @@ public class GitResourceDecorator extends LabelProvider implements
 			final MergedTree diff = mapped.getActiveDiff();
 			if (diff != null && diff.isModified())
 				decoration.addPrefix(">");
-			if (mapped.getRepository().isStGitMode())
-				decoration.addSuffix(" [StGit]");
-			else
-				decoration.addSuffix(" [Git]");
+			Repository repo = mapped.getRepository();
+			try {
+				String branch = repo.getBranch();
+				if (repo.isStGitMode()) {
+					String patch = repo.getPatch();
+					decoration.addSuffix(" [StGit " + patch + "@" + branch +"]");
+				} else {
+					decoration.addSuffix(" [Git @ "+ branch + "]");
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+				decoration.addSuffix(" [Git ?]");
+			}
 			decoration.addOverlay(UIIcons.OVR_SHARED);
 			return;
 		}

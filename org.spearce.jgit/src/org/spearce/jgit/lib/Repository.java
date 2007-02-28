@@ -342,6 +342,32 @@ public class Repository {
 		return "Repository[" + getDirectory() + "]";
 	}
 
+	public String getPatch() throws IOException {
+		final File ptr = new File(getDirectory(),"patches/"+getBranch()+"/current");
+		final BufferedReader br = new BufferedReader(new FileReader(ptr));
+		try {
+			return br.readLine();
+		} finally {
+			br.close();
+		}
+	}
+
+	public String getBranch() throws IOException {
+		final File ptr = new File(getDirectory(),"HEAD");
+		final BufferedReader br = new BufferedReader(new FileReader(ptr));
+		String ref;
+		try {
+			ref = br.readLine();
+		} finally {
+			br.close();
+		}
+		if (ref.startsWith("ref: "))
+			ref = ref.substring(5);
+		if (ref.startsWith("refs/heads/"))
+			ref = ref.substring(11);
+		return ref;
+	}
+
 	public Collection getBranches() {
 		return listFilesRecursively(new File(refsDir, "heads"), null);
 	}
