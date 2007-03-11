@@ -30,6 +30,10 @@ public class ObjectId implements Comparable {
 		ZEROID_STR = ZEROID.toString();
 	}
 
+	public static ObjectId zeroId() {
+		return ZEROID;
+	}
+	
 	public static final boolean isId(final String id) {
 		if (id.length() != (2 * Constants.OBJECT_ID_LENGTH)) {
 			return false;
@@ -80,6 +84,8 @@ public class ObjectId implements Comparable {
 	}
 
 	private static int compare(final byte[] a, final byte[] b) {
+		if (a==b)
+			return 0;
 		for (int k = 0; k < a.length && k < b.length; k++) {
 			final int ak = a[k] & 0xff;
 			final int bk = b[k] & 0xff;

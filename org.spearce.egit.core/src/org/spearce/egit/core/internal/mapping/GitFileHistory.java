@@ -18,6 +18,7 @@ package org.spearce.egit.core.internal.mapping;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -34,13 +35,14 @@ import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 
 public class GitFileHistory extends FileHistory {
 
 	private final IResource resource;
 
-	private final String relativeResourceName;
+	private final String[] relativeResourceName;
 
 	private final int flags;
 
@@ -50,12 +52,11 @@ public class GitFileHistory extends FileHistory {
 		this.resource = resource;
 		this.flags = flags;
 		String prefix = getRepositoryMapping().getSubset();
-		if (prefix != null)
-			prefix = prefix + "/";
-		else
-			prefix = "";
-		relativeResourceName = prefix
-				+ resource.getProjectRelativePath().toString();
+		String[] prefixSegments = prefix!=null ? prefix.split("/") : new String[0];
+		String[] resourceSegments = resource.getProjectRelativePath().segments(); 
+		relativeResourceName = new String[prefixSegments.length + resourceSegments.length];
+		System.arraycopy(prefixSegments, 0, relativeResourceName, 0, prefixSegments.length);
+		System.arraycopy(resourceSegments, 0, relativeResourceName, prefixSegments.length, resourceSegments.length);
 	}
 
 	public IFileRevision[] getContributors(IFileRevision revision) {
@@ -105,7 +106,9 @@ public class GitFileHistory extends FileHistory {
 		try {
 			ObjectId id = repository.resolve("HEAD");
 			Commit commit = repository.mapCommit(id);
-			return collectHistory(new ObjectId(ObjectId.toString(null)),
+			ObjectId[] initialResourceHash = new ObjectId[relativeResourceName.length];
+			Arrays.fill(initialResourceHash, ObjectId.zeroId());
+			return collectHistory(initialResourceHash, null,
 					repository, commit);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -113,29 +116,49 @@ public class GitFileHistory extends FileHistory {
 		}
 	}
 
-	private Collection collectHistory(ObjectId lastResourceHash,
-			Repository repository, Commit top) {
+	private Collection collectHistory(ObjectId[] lastResourceHash, TreeEntry lastEntry,
+			Repository repository, Commit top) throws IOException {
 		if (top == null)
 			return Collections.EMPTY_LIST;
 		Collection ret = new ArrayList(10000);
 		Commit current = top;
 		Commit previous = top;
-		do {
-			TreeEntry currentEntry;
-			try {
-				currentEntry = current.getTree().findMember(
-						relativeResourceName);
-			} catch (IOException e1) {
-				e1.printStackTrace();
-				return ret;
-			}
-			ObjectId currentResourceHash;
-			if (currentEntry == null)
-				currentResourceHash = new ObjectId(ObjectId.toString(null));
-			else
-				currentResourceHash = currentEntry.getId();
 
-			if (!currentResourceHash.equals(lastResourceHash))
+		do {
+			TreeEntry currentEntry = lastEntry;
+			ObjectId[] currentResourceHash = new ObjectId[lastResourceHash.length];
+			Tree t = current.getTree();
+			for (int i = 0; i < currentResourceHash.length; ++i) {
+				TreeEntry m = t.findMember(relativeResourceName[i]);
+				if (m != null) {
+					ObjectId id = m.getId();
+					currentResourceHash[i] = id;
+					if (id.equals(lastResourceHash[i])) {
+						while (++i < currentResourceHash.length) {
+							currentResourceHash[i] = lastResourceHash[i];
+						}
+					} else {
+						if (m instanceof Tree) {
+							t = (Tree)m;
+						} else {
+							if (i == currentResourceHash.length - 1) {
+								currentEntry = m;
+							} else {
+								currentEntry = null;
+								while (++i < currentResourceHash.length) {
+									currentResourceHash[i] = ObjectId.zeroId();
+								}
+							}
+						}
+					}
+				} else {
+					for (; i < currentResourceHash.length; ++i) {
+						currentResourceHash[i] = ObjectId.zeroId();
+					}
+				}
+			}
+			
+			if (!currentResourceHash[currentResourceHash.length-1].equals(lastResourceHash[currentResourceHash.length-1]))
 				ret.add(new GitFileRevision(previous, resource));
 
 			lastResourceHash = currentResourceHash;
@@ -150,7 +173,7 @@ public class GitFileHistory extends FileHistory {
 					Commit mergeParent;
 					try {
 						mergeParent = repository.mapCommit(mergeParentId);
-						ret.addAll(collectHistory(lastResourceHash, repository,
+						ret.addAll(collectHistory(lastResourceHash, currentEntry, repository, 
 								mergeParent));
 						// TODO: this gets us a lot of duplicates that we need
 						// to filter out
@@ -208,8 +231,10 @@ public class GitFileHistory extends FileHistory {
 					return;
 				}
 			}
-			TreeEntry currentEntry = current.getTree().findMember(
-					relativeResourceName);
+			TreeEntry currentEntry = current.getTree();
+			for (int i=0; i < relativeResourceName.length && currentEntry != null; ++i) {
+				((Tree)currentEntry).findMember(relativeResourceName[i]);
+			}
 			if (currentEntry != null)
 				revisions = new IFileRevision[] { new GitFileRevision(current,
 						resource) };
