@@ -16,7 +16,9 @@
  */
 package org.spearce.egit.core.internal.mapping;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,12 +27,14 @@ import java.util.Date;
 import java.util.List;
 
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.team.core.RepositoryProvider;
 import org.eclipse.team.core.history.IFileHistoryProvider;
 import org.eclipse.team.core.history.IFileRevision;
 import org.eclipse.team.core.history.provider.FileHistory;
 import org.spearce.egit.core.GitProvider;
 import org.spearce.egit.core.GitWorkspaceFileRevision;
+import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.ObjectId;
@@ -95,10 +99,14 @@ public class GitFileHistory extends FileHistory {
 		return getRepositoryMapping().getRepository();
 	}
 
-	private RepositoryMapping getRepositoryMapping() {
+	private GitProjectData getData() {
 		GitProvider provider = (GitProvider) RepositoryProvider
 				.getProvider(resource.getProject());
-		return provider.getData().getRepositoryMapping(resource.getProject());
+		return provider.getData();
+	}
+
+	private RepositoryMapping getRepositoryMapping() {
+		return getData().getRepositoryMapping(resource.getProject());
 	}
 
 	private Collection collectHistory() {
@@ -108,6 +116,15 @@ public class GitFileHistory extends FileHistory {
 			Commit commit = repository.mapCommit(id);
 			ObjectId[] initialResourceHash = new ObjectId[relativeResourceName.length];
 			Arrays.fill(initialResourceHash, ObjectId.zeroId());
+			TreeEntry[] activeDiffTreeEntries = null;
+			try {
+				activeDiffTreeEntries = getData().getActiveDiffTreeEntries(resource);
+			} catch (CoreException e1) {
+				// TODO: eclipse excetion logging
+				e1.printStackTrace();
+			}
+			if (activeDiffTreeEntries!=null)
+				initialResourceHash[initialResourceHash.length-1] = activeDiffTreeEntries[0].getId();
 			return collectHistory(initialResourceHash, null,
 					repository, commit);
 		} catch (IOException e) {
@@ -195,7 +212,6 @@ public class GitFileHistory extends FileHistory {
 				current = null;
 
 		} while (current != null);
-		ret.add(new GitFileRevision(previous, resource));
 
 		return ret;
 	}
@@ -251,13 +267,39 @@ public class GitFileHistory extends FileHistory {
 		RepositoryProvider provider = RepositoryProvider.getProvider(resource
 				.getProject());
 		if (provider instanceof GitProvider) {
-
-			List ret = new ArrayList();
-			ret.add(new GitWorkspaceFileRevision(resource));
+			GitWorkspaceFileRevision wsrevision = new GitWorkspaceFileRevision(resource);
 
 			long time0 = new Date().getTime();
 			System.out.println("getting file history");
-			ret.addAll(collectHistory());
+			List ret = new ArrayList();
+			Collection githistory = collectHistory();
+			if (githistory.size() >0) {
+				if (resource.getType()==IResource.FILE) {
+					// TODO: consider index in future versions
+					try {
+						InputStream wsContents = new BufferedInputStream(wsrevision.getStorage(null).getContents());
+						InputStream headContents = ((IFileRevision)githistory.toArray()[0]).getStorage(null).getContents();
+						if (!streamsEqual(wsContents,headContents)) {
+							ret.add(wsrevision);
+							ret.addAll(githistory);
+						} else {
+							ret.addAll(githistory);
+						}
+						wsContents.close();
+						headContents.close();
+					} catch (IOException e) {
+						// TODO: Eclipse error handling
+						e.printStackTrace();
+					} catch (CoreException e) {
+						// TODO: Eclipse error handling
+						e.printStackTrace();
+					}
+				} else {
+					ret.addAll(githistory);
+				}
+			} else {
+				ret.add(wsrevision);
+			}
 			long time1 = new Date().getTime();
 			System.out.println("got file history in " + (time1 - time0)
 					/ 1000.0 + "s");
@@ -267,6 +309,20 @@ public class GitFileHistory extends FileHistory {
 
 		} else {
 			revisions = new IFileRevision[0];
+		}
+	}
+
+	private boolean streamsEqual(InputStream s1, InputStream s2) {
+		// Speed up...
+		try {
+			int c1,c2;
+			while ((c1=s1.read()) == (c2=s2.read()) && c1!=-1)
+				;
+			return c1 == -1 && c2==-1;
+		} catch (IOException e) {
+			// TODO: eclipse error handling
+			e.printStackTrace();
+			return false;
 		}
 	}
 

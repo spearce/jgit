@@ -62,6 +62,6 @@ public class GitWorkspaceFileRevision extends GitFileRevision implements
 	}
 
 	public String getContentIdentifier() {
-		return null;
+		return "Workspace";
 	}
 }

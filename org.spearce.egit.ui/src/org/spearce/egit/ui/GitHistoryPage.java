@@ -156,7 +156,10 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			if (columnIndex == 0) {
 				String id = ((IFileRevision) element).getContentIdentifier();
 				if (id != null)
-					return id.substring(0, 7) + "..";
+					if (id.length() > 9) // make sure "Workspace" is spelled out
+						return id.substring(0, 7) + "..";
+					else
+						return id;
 				else
 					return id;
 			}
@@ -211,7 +214,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 						if (text != null)
 							item.setText(i, text);
 						else
-							item.setText("");
+							item.setText(i, "");
 					}
 					item.setData(fileRevisions[event.index]);
 				}
