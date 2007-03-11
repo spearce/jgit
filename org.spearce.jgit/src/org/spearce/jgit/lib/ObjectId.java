@@ -163,12 +163,13 @@ public class ObjectId implements Comparable {
 	}
 
 	public int hashCode() {
-		int r = 0;
-		for (int k = id.length - 1; k >= 0; k--) {
-			r *= 31;
-			r += id[k];
-		}
-		return r;
+		// Object Id' are well distributed so grab the first four bytes
+		int b0 = id[0] & 0xff;
+		int b1 = id[1] & 0xff;
+		int b2 = id[2] & 0xff;
+		int b3 = id[3] & 0xff;
+		int h = (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
+		return h;
 	}
 
 	public boolean equals(final ObjectId o) {
