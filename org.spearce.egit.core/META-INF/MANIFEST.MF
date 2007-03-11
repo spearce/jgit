@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: %plugin_name
 Bundle-SymbolicName: org.spearce.egit.core; singleton:=true
-Bundle-Version: 0.2.0.qualifier
+Bundle-Version: 0.2.1
 Bundle-Activator: org.spearce.egit.core.Activator
 Bundle-Vendor: %provider_name
 Bundle-Localization: plugin
