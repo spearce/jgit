@@ -25,6 +25,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.ObjectWritingException;
@@ -44,6 +46,8 @@ public class Repository {
 	private PackFile[] packs;
 
 	private WindowCache windows;
+
+	private Map cache = new WeakHashMap(30000); 
 
 	public Repository(final File d) throws IOException {
 		gitDir = d.getAbsoluteFile();
@@ -185,12 +189,19 @@ public class Repository {
 	}
 
 	public Commit mapCommit(final ObjectId id) throws IOException {
+		Commit ret = (Commit)cache.get(id);
+		if (ret != null)
+			return ret;
+
 		final ObjectLoader or = openObject(id);
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
-		if (Constants.TYPE_COMMIT.equals(or.getType()))
-			return new Commit(this, id, raw);
+		if (Constants.TYPE_COMMIT.equals(or.getType())) {
+			ret = new Commit(this, id, raw);
+			cache.put(id, ret);
+			return ret;
+		}
 		throw new IncorrectObjectTypeException(id, Constants.TYPE_COMMIT);
 	}
 
