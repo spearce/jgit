@@ -41,7 +41,10 @@ public class GitStorage implements IStorage {
 
 	private TreeEntry entry;
 
+	private ObjectId treeId;
+
 	public GitStorage(ObjectId treeId, IResource resource) {
+		this.treeId = treeId;
 		this.resource = resource;
 		if (treeId == null)
 			return;
@@ -68,13 +71,17 @@ public class GitStorage implements IStorage {
 
 	public InputStream getContents() throws CoreException {
 		try {
-			if (entry == null) {
+			if (treeId == null) {
 				return ((IFile) resource).getContents();
 			} else {
-				ObjectId id = entry.getId();
-				ObjectLoader reader = entry.getRepository().openBlob(id);
-				byte[] bytes = reader.getBytes();
-				return new ByteArrayInputStream(bytes);
+				if (entry == null)
+					return new ByteArrayInputStream(new byte[0]);
+				else {
+					ObjectId id = entry.getId();
+					ObjectLoader reader = entry.getRepository().openBlob(id);
+					byte[] bytes = reader.getBytes();
+					return new ByteArrayInputStream(bytes);
+				}
 			}
 		} catch (FileNotFoundException e) {
 			throw new ResourceException(IResourceStatus.FAILED_READ_LOCAL,
