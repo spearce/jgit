@@ -72,7 +72,7 @@ public class GitFileHistory extends FileHistory {
 			try {
 				ret[i] = new GitFileRevision(repository
 						.mapCommit((ObjectId) parents.get(i)), grevision
-						.getResource());
+				.getResource(), -1);
 			} catch (IOException e) {
 				e.printStackTrace();
 				return null;
@@ -87,7 +87,7 @@ public class GitFileHistory extends FileHistory {
 		} else {
 			try {
 				Repository repository = getRepository();
-				return new GitFileRevision(repository.mapCommit(id), resource);
+				return new GitFileRevision(repository.mapCommit(id), resource, 0);
 			} catch (IOException e) {
 				e.printStackTrace();
 				return null;
@@ -125,7 +125,7 @@ public class GitFileHistory extends FileHistory {
 			}
 			if (activeDiffTreeEntries!=null)
 				initialResourceHash[initialResourceHash.length-1] = activeDiffTreeEntries[0].getId();
-			return collectHistory(initialResourceHash, null,
+			return collectHistory(0, initialResourceHash, null,
 					repository, commit);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -133,7 +133,7 @@ public class GitFileHistory extends FileHistory {
 		}
 	}
 
-	private Collection collectHistory(ObjectId[] lastResourceHash, TreeEntry lastEntry,
+	private Collection collectHistory(int count, ObjectId[] lastResourceHash, TreeEntry lastEntry,
 			Repository repository, Commit top) throws IOException {
 		if (top == null)
 			return Collections.EMPTY_LIST;
@@ -176,7 +176,7 @@ public class GitFileHistory extends FileHistory {
 			}
 			
 			if (currentResourceHash.length == 0 || !currentResourceHash[currentResourceHash.length-1].equals(lastResourceHash[currentResourceHash.length-1]))
-				ret.add(new GitFileRevision(previous, resource));
+				ret.add(new GitFileRevision(previous, resource, count));
 
 			lastResourceHash = currentResourceHash;
 			previous = current;
@@ -190,7 +190,7 @@ public class GitFileHistory extends FileHistory {
 					Commit mergeParent;
 					try {
 						mergeParent = repository.mapCommit(mergeParentId);
-						ret.addAll(collectHistory(lastResourceHash, currentEntry, repository, 
+						ret.addAll(collectHistory(0, lastResourceHash, currentEntry, repository, 
 								mergeParent));
 						// TODO: this gets us a lot of duplicates that we need
 						// to filter out
@@ -210,7 +210,8 @@ public class GitFileHistory extends FileHistory {
 				}
 			} else
 				current = null;
-
+			if (count>=0)
+				count++;
 		} while (current != null);
 
 		return ret;
@@ -252,8 +253,8 @@ public class GitFileHistory extends FileHistory {
 				((Tree)currentEntry).findMember(relativeResourceName[i]);
 			}
 			if (currentEntry != null)
-				revisions = new IFileRevision[] { new GitFileRevision(current,
-						resource) };
+				revisions = new IFileRevision[] { new GitFileRevision(current, resource,
+						-1) };
 			else
 				revisions = new IFileRevision[0];
 

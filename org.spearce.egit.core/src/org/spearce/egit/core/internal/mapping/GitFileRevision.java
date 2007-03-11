@@ -44,7 +44,10 @@ public class GitFileRevision extends FileRevision {
 
 	private final Commit commit;
 
-	public GitFileRevision(Commit commit, IResource resource) {
+	private final int count;
+
+	public GitFileRevision(Commit commit, IResource resource, int count) {
+		this.count = count;
 		this.commit = commit;
 		this.resource = resource;
 	}
@@ -128,5 +131,9 @@ public class GitFileRevision extends FileRevision {
 
 	public IResource getResource() {
 		return resource;
+	}
+
+	public int getCount() {
+		return count;
 	}
 }

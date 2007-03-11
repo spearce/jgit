@@ -154,6 +154,19 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 		public String getColumnText(Object element, int columnIndex) {
 			if (columnIndex == 0) {
+				int count = ((GitFileRevision) element).getCount();
+				if (count < 0)
+					return "";
+				else
+					if (count == 0)
+						return "HEAD";
+					else
+						return "HEAD~"+count;
+			}
+			
+			if (columnIndex == 1) {
+				String rss = ((IFileRevision) element).getURI().toString();
+				String rs = rss.substring(rss.length()-10);
 				String id = ((IFileRevision) element).getContentIdentifier();
 				if (id != null)
 					if (id.length() > 9) // make sure "Workspace" is spelled out
@@ -161,20 +174,20 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					else
 						return id;
 				else
-					return id;
+					return id + "@.." + rs;
 			}
 
-			if (columnIndex == 1)
+			if (columnIndex == 2)
 				return ""; // TAGS
 
-			if (columnIndex == 2)
+			if (columnIndex == 3)
 				return new Date(((IFileRevision) element).getTimestamp())
 						.toString();
 
-			if (columnIndex == 3)
+			if (columnIndex == 4)
 				return ((IFileRevision) element).getAuthor();
 
-			if (columnIndex == 4) {
+			if (columnIndex == 5) {
 				String comment = ((IFileRevision) element).getComment();
 				if (comment == null)
 					return null;
@@ -186,8 +199,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			}
 			return Integer.toString(columnIndex);
 		}
-
-	}
+	};
 
 	private void createTree(Composite composite) {
 		tree = new Tree(composite, SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI
@@ -200,23 +212,27 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		tree.setData("HEAD");
 		tree.addListener(SWT.SetData, new Listener() {
 			public void handleEvent(Event event) {
-				TreeItem item = (TreeItem) event.item;
-				Tree parent = item.getParent();
-				if (parent == null) {
-					item.setText(new String[] { "hej", "san" });
-					item.setData("");
-				} else {
-					ITableLabelProvider p = (ITableLabelProvider) viewer
-							.getLabelProvider();
-					for (int i = 0; i < 5; ++i) {
-						String text = p.getColumnText(
-								fileRevisions[event.index], i);
-						if (text != null)
-							item.setText(i, text);
-						else
-							item.setText(i, "");
+				try {
+					TreeItem item = (TreeItem) event.item;
+					Tree parent = item.getParent();
+					if (parent == null) {
+						item.setText(new String[] { "hej", "san" });
+						item.setData("");
+					} else {
+						ITableLabelProvider p = (ITableLabelProvider) viewer
+								.getLabelProvider();
+						for (int i = 0; i < 6; ++i) {
+							String text = p.getColumnText(
+									fileRevisions[event.index], i);
+							if (text != null)
+								item.setText(i, text);
+							else
+								item.setText(i, "");
+						}
+						item.setData(fileRevisions[event.index]);
 					}
-					item.setData(fileRevisions[event.index]);
+				} catch (Throwable b) {
+					b.printStackTrace();
 				}
 			}
 		});
@@ -294,12 +310,20 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	private void createColumns() {
 		// X SelectionListener headerListener = getColumnListener(viewer);
-		// revision
+		// count from head
 		TreeColumn col = new TreeColumn(tree, SWT.NONE);
+		col.setResizable(true);
+		col.setText("^");
+		// X col.addSelectionListener(headerListener);
+		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(10,
+				true));
+
+		// revision
+		col = new TreeColumn(tree, SWT.NONE);
 		col.setResizable(true);
 		col.setText(TeamUIMessages.GenericHistoryTableProvider_Revision);
 		// X col.addSelectionListener(headerListener);
-		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(20,
+		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(10,
 				true));
 
 		// tags

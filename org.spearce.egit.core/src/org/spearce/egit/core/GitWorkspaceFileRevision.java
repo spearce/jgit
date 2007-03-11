@@ -28,7 +28,7 @@ public class GitWorkspaceFileRevision extends GitFileRevision implements
 	private final IResource resource;
 
 	public GitWorkspaceFileRevision(IResource resource) {
-		super(null, resource);
+		super(null, resource, -1);
 		this.resource = resource;
 	}
 
