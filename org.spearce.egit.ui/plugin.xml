@@ -50,7 +50,19 @@
                tooltip="%TrackAction_tooltip"
                menubarPath="team.main/group1"
                id="org.spearce.egit.ui.internal.actions.Track"/>
- 	 </objectContribution>
+         <action
+               class="org.spearce.egit.ui.internal.actions.ShowResourceInHistoryAction"
+               id="org.spearce.egit.ui.internal.actions.ShowResourceInHistoryAction"
+               label="%ShowResourceInHistoryAction_label"
+               menubarPath="team.main/group1"
+               tooltip="%ShowResourceInHistoryAction_tooltip"/>
+		<action
+		       class="org.spearce.egit.ui.internal.actions.GitCompareRevisionAction"
+        	   id="org.spearce.egit.ui.internal.actions.GitCompareAction"
+               menubarPath="team.main/group1"
+        	   label="Structured Git Compare">
+		</action>
+ 	  </objectContribution>
       <objectContribution
             objectClass="org.eclipse.core.resources.IFile"
             adaptable="true"
@@ -68,13 +80,6 @@
                overrideActionId="org.eclipse.team.ui.compareLocalHistory"
                tooltip="%CompareWithRevisionAction_tooltip">
          </action>
-         <action
-               class="org.spearce.egit.ui.internal.actions.ShowResourceInHistoryAction"
-               enablesFor="1"
-               id="org.spearce.egit.ui.internal.actions.ShowResourceInHistoryAction"
-               label="%ShowResourceInHistoryAction_label"
-               menubarPath="team.main/group1"
-               tooltip="%ShowResourceInHistoryAction_tooltip"/>
       </objectContribution>
    </extension>
 

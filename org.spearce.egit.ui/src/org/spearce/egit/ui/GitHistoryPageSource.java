@@ -27,7 +27,10 @@ public class GitHistoryPageSource extends HistoryPageSource {
 	}
 
 	public boolean canShowHistoryFor(Object object) {
-		return (object instanceof IResource && ((IResource) object).getType() == IResource.FILE);
+		return (object instanceof IResource 
+				&& (((IResource) object).getType() == IResource.FILE
+						|| ((IResource) object).getType() == IResource.FOLDER
+						|| ((IResource) object).getType() == IResource.PROJECT));
 	}
 
 }

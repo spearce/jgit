@@ -62,6 +62,7 @@ import org.eclipse.team.internal.ui.history.DialogHistoryPageSite;
 import org.eclipse.team.ui.history.HistoryPage;
 import org.eclipse.team.ui.history.IHistoryCompareAdapter;
 import org.eclipse.team.ui.history.IHistoryPageSite;
+import org.spearce.egit.core.internal.mapping.GitFileRevision;
 
 public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		IHistoryCompareAdapter {
@@ -115,6 +116,8 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				compareAction.setCurrentFileRevision(fileRevisions[0]);
 				compareAction.selectionChanged(new StructuredSelection(
 						selection2));
+				
+				compareAction.setEnabled(selection!=null && selection[0]!=null  && ((GitFileRevision)fileRevisions[0]).getResource().getType() == IResource.FILE);
 			}
 		});
 		compareAction.setPage(this);

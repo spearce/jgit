@@ -158,7 +158,7 @@ public class GitFileHistory extends FileHistory {
 				}
 			}
 			
-			if (!currentResourceHash[currentResourceHash.length-1].equals(lastResourceHash[currentResourceHash.length-1]))
+			if (currentResourceHash.length == 0 || !currentResourceHash[currentResourceHash.length-1].equals(lastResourceHash[currentResourceHash.length-1]))
 				ret.add(new GitFileRevision(previous, resource));
 
 			lastResourceHash = currentResourceHash;
