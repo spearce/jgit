@@ -242,9 +242,13 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					.getFileHistoryFor((IResource) getInput(),
 							IFileHistoryProvider.SINGLE_LINE_OF_DESCENT, null/* monitor */);
 			fileRevisions = fileHistoryFor.getFileRevisions();
-			tree.setData(fileRevisions);
+			tree.clearAll(true);
 			tree.setItemCount(fileRevisions.length);
+			tree.setData(fileRevisions);
+			System.out.println("inputchanged, invoking refresh");
 			viewer.refresh();
+			tree.getParent().layout();
+			tree.getParent().getParent().layout();
 		}
 
 		public void dispose() {
