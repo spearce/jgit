@@ -232,6 +232,8 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			ILazyTreeContentProvider {
 
 		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+			if (newInput == null)
+				return;
 			System.out.println("inputChanged(" + viewer + "," + oldInput + ","
 					+ newInput);
 			RepositoryProvider provider = RepositoryProvider
