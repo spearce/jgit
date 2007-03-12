@@ -199,7 +199,9 @@ public class Repository {
 		final byte[] raw = or.getBytes();
 		if (Constants.TYPE_COMMIT.equals(or.getType())) {
 			ret = new Commit(this, id, raw);
-			cache.put(id, ret);
+			// The key must not be the referenced strongly
+			// by the value in WeakHashMaps
+			cache.put(new ObjectId(id.getBytes()), ret);
 			return ret;
 		}
 		throw new IncorrectObjectTypeException(id, Constants.TYPE_COMMIT);
