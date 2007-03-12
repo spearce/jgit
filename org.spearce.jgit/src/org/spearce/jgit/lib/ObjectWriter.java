@@ -33,6 +33,16 @@ import java.util.zip.DeflaterOutputStream;
 import org.spearce.jgit.errors.ObjectWritingException;
 
 public class ObjectWriter {
+	private static final byte[] htree = Constants.encodeASCII("tree");
+
+	private static final byte[] hparent = Constants.encodeASCII("parent");
+
+	private static final byte[] hauthor = Constants.encodeASCII("author");
+
+	private static final byte[] hcommitter = Constants.encodeASCII("committer");
+
+	private static final byte[] hencoding = Constants.encodeASCII("encoding");
+
 	private final Repository r;
 
 	private final byte[] buf;
@@ -111,37 +121,43 @@ public class ObjectWriter {
 		String encoding = c.getEncoding();
 		if (encoding == null)
 			encoding = Constants.CHARACTER_ENCODING;
-		final OutputStreamWriter w = new OutputStreamWriter(os,
-				encoding);
+		final OutputStreamWriter w = new OutputStreamWriter(os, encoding);
 
-		w.write("tree ");
-		c.getTreeId().copyTo(w);
-		w.write('\n');
+		os.write(htree);
+		os.write(' ');
+		c.getTreeId().copyTo(os);
+		os.write('\n');
 
 		final Iterator i = c.getParentIds().iterator();
 		while (i.hasNext()) {
-			w.write("parent ");
-			((ObjectId) i.next()).copyTo(w);
-			w.write('\n');
+			os.write(hparent);
+			os.write(' ');
+			((ObjectId) i.next()).copyTo(os);
+			os.write('\n');
 		}
 
-		w.write("author ");
+		os.write(hauthor);
+		os.write(' ');
 		w.write(c.getAuthor().toExternalString());
-		w.write('\n');
+		w.flush();
+		os.write('\n');
 
-		w.write("committer ");
+		os.write(hcommitter);
+		os.write(' ');
 		w.write(c.getCommitter().toExternalString());
-		w.write('\n');
+		w.flush();
+		os.write('\n');
 
 		if (!encoding.equals("UTF-8")) {
-			w.write("encoding ");
-			w.write(encoding);
-			w.write('\n');
+			os.write(hencoding);
+			os.write(' ');
+			os.write(Constants.encodeASCII(encoding));
+			os.write('\n');
 		}
-		
-		w.write('\n');
+
+		os.write('\n');
 		w.write(c.getMessage());
-		w.close();
+		w.flush();
 
 		return writeCommit(os.toByteArray());
 	}
