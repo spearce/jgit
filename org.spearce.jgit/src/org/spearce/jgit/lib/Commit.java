@@ -16,10 +16,10 @@
  */
 package org.spearce.jgit.lib;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,6 +44,8 @@ public class Commit implements Treeish {
 	private Tree treeObj;
 
 	private byte[] raw;
+
+	private Charset encoding;
 
 	public Commit(final Repository db) {
 		objdb = db;
@@ -132,8 +134,7 @@ public class Commit implements Treeish {
 		// FIXME: handle I/O errors
 		if (raw != null) {
 			try {
-				BufferedReader br = new BufferedReader(new InputStreamReader(
-						new ByteArrayInputStream(raw)));
+				DataInputStream br = new DataInputStream(new ByteArrayInputStream(raw));
 				String n = br.readLine();
 				if (n == null || !n.startsWith("tree ")) {
 					throw new CorruptObjectException(commitId, "no tree");
@@ -144,24 +145,33 @@ public class Commit implements Treeish {
 				if (n == null || !n.startsWith("author ")) {
 					throw new CorruptObjectException(commitId, "no author");
 				}
-				author = new PersonIdent(n.substring("author ".length()));
+				String rawAuthor = n.substring("author ".length());
 				n = br.readLine();
 				if (n == null || !n.startsWith("committer ")) {
 					throw new CorruptObjectException(commitId, "no committer");
 				}
-				committer = new PersonIdent(n.substring("committer ".length()));
+				String rawCommitter = n.substring("committer ".length());
 				n = br.readLine();
-				if (n == null || !n.equals("")) {
-					throw new CorruptObjectException(commitId,
-							"malformed header");
+				if (n != null && n.startsWith(	"encoding"))
+					encoding = Charset.forName(n.substring("encoding ".length()));
+				else
+					if (n == null || !n.equals("")) {
+						throw new CorruptObjectException(commitId,
+								"malformed header:"+n);
 				}
-				StringBuffer tempMessage = new StringBuffer();
-				char[] readBuf = new char[2048];
-				int readLen;
-				while ((readLen = br.read(readBuf)) > 0) {
-					tempMessage.append(readBuf, 0, readLen);
+				byte[] readBuf = new byte[br.available()]; // in-memory stream so this is all bytes left
+				br.read(readBuf);
+				if (encoding != null) {
+					// TODO: this isn't reliable so we need to guess the encoding from the actual content
+					author = new PersonIdent(new String(rawAuthor.getBytes(),encoding.name()));
+					committer = new PersonIdent(new String(rawCommitter.getBytes(),encoding.name()));
+					message = new String(readBuf,encoding.name());
+				} else {
+					// TODO: use config setting / platform / ascii / iso-latin
+					author = new PersonIdent(new String(rawAuthor.getBytes()));
+					committer = new PersonIdent(new String(rawCommitter.getBytes()));
+					message = new String(readBuf);
 				}
-				message = tempMessage.toString();
 			} catch (IOException e) {
 				e.printStackTrace();
 			} finally {
@@ -182,5 +192,20 @@ public class Commit implements Treeish {
 
 	public String toString() {
 		return "Commit[" + getCommitId() + " " + getAuthor() + "]";
+	}
+
+	public void setEncoding(String e) {
+		encoding = Charset.forName(e);
+	}
+
+	public void setEncoding(Charset e) {
+		encoding = e;
+	}
+
+	public String getEncoding() {
+		if (encoding != null)
+			return encoding.name();
+		else
+			return null;
 	}
 }

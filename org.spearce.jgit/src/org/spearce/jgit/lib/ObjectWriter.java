@@ -108,8 +108,11 @@ public class ObjectWriter {
 
 	public ObjectId writeCommit(final Commit c) throws IOException {
 		final ByteArrayOutputStream os = new ByteArrayOutputStream();
+		String encoding = c.getEncoding();
+		if (encoding == null)
+			encoding = Constants.CHARACTER_ENCODING;
 		final OutputStreamWriter w = new OutputStreamWriter(os,
-				Constants.CHARACTER_ENCODING);
+				encoding);
 
 		w.write("tree ");
 		c.getTreeId().copyTo(w);
@@ -130,6 +133,12 @@ public class ObjectWriter {
 		w.write(c.getCommitter().toExternalString());
 		w.write('\n');
 
+		if (!encoding.equals("UTF-8")) {
+			w.write("encoding ");
+			w.write(encoding);
+			w.write('\n');
+		}
+		
 		w.write('\n');
 		w.write(c.getMessage());
 		w.close();

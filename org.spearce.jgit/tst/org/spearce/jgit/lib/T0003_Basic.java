@@ -385,4 +385,34 @@ public class T0003_Basic extends RepositoryTestCase {
 		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag.getAuthor());
 		assertEquals("b5d3b45a96b340441f5abb9080411705c51cc86c", mapTag.getObjId().toString());
 	}
+	
+	public void test023_createCommitNonAscii() throws IOException {
+		final ObjectId emptyId = new ObjectWriter(db).writeBlob(new byte[0]);
+		final Tree almostEmptyTree = new Tree(db);
+		almostEmptyTree.addEntry(new FileTreeEntry(almostEmptyTree, emptyId, "empty".getBytes(), false));
+		final ObjectId almostEmptyTreeId = new ObjectWriter(db).writeTree(almostEmptyTree);
+		Commit commit = new Commit(db);
+		commit.setTreeId(almostEmptyTreeId);
+		commit.setAuthor(new PersonIdent("Joe H\u00e4cker","joe@example.com",4294967295000L,60));
+		commit.setCommitter(new PersonIdent("Joe Hacker","joe2@example.com",4294967295000L,60));
+		commit.setEncoding("UTF-8");
+		commit.setMessage("\u00dcbergeeks");
+		ObjectId cid = new ObjectWriter(db).writeCommit(commit);
+		assertEquals("4680908112778718f37e686cbebcc912730b3154", cid.toString());
+	}
+
+	public void test024_createCommitNonAscii() throws IOException {
+		final ObjectId emptyId = new ObjectWriter(db).writeBlob(new byte[0]);
+		final Tree almostEmptyTree = new Tree(db);
+		almostEmptyTree.addEntry(new FileTreeEntry(almostEmptyTree, emptyId, "empty".getBytes(), false));
+		final ObjectId almostEmptyTreeId = new ObjectWriter(db).writeTree(almostEmptyTree);
+		Commit commit = new Commit(db);
+		commit.setTreeId(almostEmptyTreeId);
+		commit.setAuthor(new PersonIdent("Joe H\u00e4cker","joe@example.com",4294967295000L,60));
+		commit.setCommitter(new PersonIdent("Joe Hacker","joe2@example.com",4294967295000L,60));
+		commit.setEncoding("ISO-8859-1");
+		commit.setMessage("\u00dcbergeeks");
+		ObjectId cid = new ObjectWriter(db).writeCommit(commit);
+		assertEquals("2979b39d385014b33287054b87f77bcb3ecb5ebf", cid.toString());
+	}
 }
