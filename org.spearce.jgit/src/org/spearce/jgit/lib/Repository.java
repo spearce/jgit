@@ -47,7 +47,8 @@ public class Repository {
 
 	private WindowCache windows;
 
-	private Map cache = new WeakHashMap(30000); 
+	private Map treeCache = new WeakHashMap(30000);
+	private Map commitCache = new WeakHashMap(30000);
 
 	public Repository(final File d) throws IOException {
 		gitDir = d.getAbsoluteFile();
@@ -189,7 +190,7 @@ public class Repository {
 	}
 
 	public Commit mapCommit(final ObjectId id) throws IOException {
-		Commit ret = (Commit)cache.get(id);
+		Commit ret = (Commit)commitCache.get(id);
 		if (ret != null)
 			return ret;
 
@@ -201,7 +202,7 @@ public class Repository {
 			ret = new Commit(this, id, raw);
 			// The key must not be the referenced strongly
 			// by the value in WeakHashMaps
-			cache.put(new ObjectId(id.getBytes()), ret);
+			commitCache.put(new ObjectId(id.getBytes()), ret);
 			return ret;
 		}
 		throw new IncorrectObjectTypeException(id, Constants.TYPE_COMMIT);
@@ -213,12 +214,19 @@ public class Repository {
 	}
 
 	public Tree mapTree(final ObjectId id) throws IOException {
+		Tree ret = (Tree)treeCache.get(id);
+		if (ret != null)
+			return ret;
+
 		final ObjectLoader or = openObject(id);
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
-		if (Constants.TYPE_TREE.equals(or.getType()))
-			return new Tree(this, id, raw);
+		if (Constants.TYPE_TREE.equals(or.getType())) {
+			ret = new Tree(this, id, raw);
+			treeCache.put(new ObjectId(id.getBytes()), ret);
+			return ret;
+		}
 		if (Constants.TYPE_COMMIT.equals(or.getType()))
 			return mapTree(ObjectId.fromString(raw, 5));
 		throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
