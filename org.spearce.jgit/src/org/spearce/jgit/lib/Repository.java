@@ -23,6 +23,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -190,19 +192,24 @@ public class Repository {
 	}
 
 	public Commit mapCommit(final ObjectId id) throws IOException {
-		Commit ret = (Commit)commitCache.get(id);
-		if (ret != null)
-			return ret;
+//		System.out.println("commitcache.size="+commitCache.size());
+		Reference retr = (Reference)commitCache.get(id);
+		if (retr != null) {
+			Commit ret = (Commit)retr.get();
+			if (ret != null)
+				return ret;
+			System.out.println("Found a null id, size was "+commitCache.size());
+		}
 
 		final ObjectLoader or = openObject(id);
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
 		if (Constants.TYPE_COMMIT.equals(or.getType())) {
-			ret = new Commit(this, id, raw);
+			Commit ret = new Commit(this, id, raw);
 			// The key must not be the referenced strongly
 			// by the value in WeakHashMaps
-			commitCache.put(new ObjectId(id.getBytes()), ret);
+			commitCache.put(id, new SoftReference(ret));
 			return ret;
 		}
 		throw new IncorrectObjectTypeException(id, Constants.TYPE_COMMIT);
@@ -214,17 +221,20 @@ public class Repository {
 	}
 
 	public Tree mapTree(final ObjectId id) throws IOException {
-		Tree ret = (Tree)treeCache.get(id);
-		if (ret != null)
-			return ret;
+		Reference wret = (Reference)treeCache.get(id);
+		if (wret != null) {
+			Tree ret = (Tree)wret.get();
+			if (ret != null)
+				return ret;
+		}
 
 		final ObjectLoader or = openObject(id);
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
 		if (Constants.TYPE_TREE.equals(or.getType())) {
-			ret = new Tree(this, id, raw);
-			treeCache.put(new ObjectId(id.getBytes()), ret);
+			Tree ret = new Tree(this, id, raw);
+			treeCache.put(id, new SoftReference(ret));
 			return ret;
 		}
 		if (Constants.TYPE_COMMIT.equals(or.getType()))
