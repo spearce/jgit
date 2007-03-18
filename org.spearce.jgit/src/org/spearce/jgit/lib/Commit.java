@@ -161,16 +161,18 @@ public class Commit implements Treeish {
 				}
 				byte[] readBuf = new byte[br.available()]; // in-memory stream so this is all bytes left
 				br.read(readBuf);
+				int msgstart = readBuf[0] == '\n' ? 1 : 0;
+
 				if (encoding != null) {
 					// TODO: this isn't reliable so we need to guess the encoding from the actual content
 					author = new PersonIdent(new String(rawAuthor.getBytes(),encoding.name()));
 					committer = new PersonIdent(new String(rawCommitter.getBytes(),encoding.name()));
-					message = new String(readBuf,encoding.name());
+					message = new String(readBuf,msgstart, readBuf.length-msgstart, encoding.name());
 				} else {
 					// TODO: use config setting / platform / ascii / iso-latin
 					author = new PersonIdent(new String(rawAuthor.getBytes()));
 					committer = new PersonIdent(new String(rawCommitter.getBytes()));
-					message = new String(readBuf);
+					message = new String(readBuf, msgstart, readBuf.length-msgstart);
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
