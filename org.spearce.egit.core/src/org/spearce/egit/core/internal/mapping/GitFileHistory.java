@@ -28,6 +28,7 @@ import java.util.List;
 
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.team.core.RepositoryProvider;
 import org.eclipse.team.core.history.IFileHistoryProvider;
 import org.eclipse.team.core.history.IFileRevision;
@@ -42,7 +43,7 @@ import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 
-public class GitFileHistory extends FileHistory {
+public class GitFileHistory extends FileHistory implements IAdaptable {
 
 	private final IResource resource;
 
@@ -339,6 +340,11 @@ public class GitFileHistory extends FileHistory {
 			}
 		}
 		return (IFileRevision[]) ret.toArray(new IFileRevision[ret.size()]);
+	}
+
+	public Object getAdapter(Class adapter) {
+		System.out.println("GitFileHistory.getAdapter "+adapter.getName());
+		return null;
 	}
 
 }

@@ -56,12 +56,6 @@
                label="%ShowResourceInHistoryAction_label"
                menubarPath="team.main/group1"
                tooltip="%ShowResourceInHistoryAction_tooltip"/>
-		<action
-		       class="org.spearce.egit.ui.internal.actions.GitCompareRevisionAction"
-        	   id="org.spearce.egit.ui.internal.actions.GitCompareAction"
-               menubarPath="team.main/group1"
-        	   label="Structured Git Compare">
-		</action>
  	  </objectContribution>
       <objectContribution
             objectClass="org.eclipse.core.resources.IFile"
@@ -70,16 +64,6 @@
          <filter name="projectPersistentProperty"
                value="org.eclipse.team.core.repository=org.spearce.egit.core.GitProvider">
          </filter>
-         <action
-               class="org.spearce.egit.ui.internal.actions.CompareWithRevisionAction"
-               definitionId="org.spearce.egit.ui.compareWithRevision"
-               helpContextId="org.spearce.egit.ui.compare_with_revision_action_context"
-               id="org.spearce.egit.ui.compareWithRevision"
-               label="%CompareWithRevisionAction_label"
-               menubarPath="compareWithMenu/compareWithGroup"
-               overrideActionId="org.eclipse.team.ui.compareLocalHistory"
-               tooltip="%CompareWithRevisionAction_tooltip">
-         </action>
       </objectContribution>
    </extension>
 

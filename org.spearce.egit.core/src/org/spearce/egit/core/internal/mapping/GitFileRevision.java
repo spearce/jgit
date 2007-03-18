@@ -33,10 +33,13 @@ import org.eclipse.team.core.history.provider.FileRevision;
 import org.spearce.egit.core.GitProvider;
 import org.spearce.egit.core.GitStorage;
 import org.spearce.egit.core.GitTag;
+import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.Tree;
+import org.spearce.jgit.lib.TreeEntry;
 
 public class GitFileRevision extends FileRevision {
 
@@ -135,5 +138,27 @@ public class GitFileRevision extends FileRevision {
 
 	public int getCount() {
 		return count;
+	}
+
+	public TreeEntry getTreeEntry() {
+		GitProvider provider = (GitProvider) RepositoryProvider
+				.getProvider(resource.getProject());
+		RepositoryMapping repositoryMapping = provider.getData()
+				.getRepositoryMapping(resource.getProject());
+		Tree tree;
+		try {
+			tree = repositoryMapping.getRepository().mapTree(getCommit().getTreeId());
+			String prefix = repositoryMapping.getSubset();
+			if (prefix != null) {
+				prefix = prefix + "/";
+				String name = prefix + resource.getProjectRelativePath().toString();
+				return tree.findMember(name);
+			} else
+				return tree;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
 	}
 }

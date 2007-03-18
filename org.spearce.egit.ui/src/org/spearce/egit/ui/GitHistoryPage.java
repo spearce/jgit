@@ -63,6 +63,7 @@ import org.eclipse.team.ui.history.HistoryPage;
 import org.eclipse.team.ui.history.IHistoryCompareAdapter;
 import org.eclipse.team.ui.history.IHistoryPageSite;
 import org.spearce.egit.core.internal.mapping.GitFileRevision;
+import org.spearce.egit.ui.internal.actions.GitCompareRevisionAction;
 
 public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		IHistoryCompareAdapter {
@@ -104,6 +105,8 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 		final CompareRevisionAction compareAction = new CompareRevisionAction(
 				"Compare");
+		final GitCompareRevisionAction compareActionNG = new GitCompareRevisionAction(
+				"Compare NG");
 		tree.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				// update the current
@@ -116,16 +119,20 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				compareAction.setCurrentFileRevision(fileRevisions[0]);
 				compareAction.selectionChanged(new StructuredSelection(
 						selection2));
-				
-				compareAction.setEnabled(selection!=null && selection[0]!=null  && ((GitFileRevision)fileRevisions[0]).getResource().getType() == IResource.FILE);
+
+				compareActionNG.setCurrentFileRevision(fileRevisions[0]);
+				compareActionNG.selectionChanged(new StructuredSelection(
+						selection2));
 			}
 		});
 		compareAction.setPage(this);
+		compareActionNG.setPage(this);
 		MenuManager menuMgr = new MenuManager();
 		Menu menu = menuMgr.createContextMenu(tree);
 		menuMgr.addMenuListener(new IMenuListener() {
 			public void menuAboutToShow(IMenuManager menuMgr) {
 				menuMgr.add(compareAction);
+				menuMgr.add(compareActionNG);
 			}
 		});
 		menuMgr.setRemoveAllWhenShown(true);
