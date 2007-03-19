@@ -32,8 +32,8 @@ import org.eclipse.ui.IReusableEditor;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.actions.BaseSelectionListenerAction;
 import org.spearce.egit.core.GitWorkspaceFileRevision;
-import org.spearce.egit.core.internal.mapping.GitResourceNode;
 import org.spearce.egit.ui.internal.GitCompareFileRevisionEditorInput;
+import org.spearce.egit.ui.internal.GitResourceNode;
 
 /**
  * Action to invoke a Git based compare on selected revivsions in the history window.

@@ -1,4 +1,4 @@
-package org.spearce.egit.core.internal.mapping;
+package org.spearce.egit.ui.internal;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -11,6 +11,7 @@ import org.eclipse.compare.structuremergeviewer.IStructureComparator;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.team.core.history.IFileRevision;
+import org.spearce.egit.core.internal.mapping.GitFileRevision;
 import org.spearce.jgit.lib.FileTreeEntry;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectLoader;
