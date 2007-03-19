@@ -150,9 +150,14 @@ public class GitFileRevision extends FileRevision {
 			tree = repositoryMapping.getRepository().mapTree(getCommit().getTreeId());
 			String prefix = repositoryMapping.getSubset();
 			if (prefix != null) {
-				prefix = prefix + "/";
-				String name = prefix + resource.getProjectRelativePath().toString();
-				return tree.findMember(name);
+				String relPath = resource.getProjectRelativePath().toString();
+				if (relPath.equals(""))
+					return tree;
+				else {
+					prefix = prefix + "/";
+					String name = prefix + relPath;
+					return tree.findMember(name);
+				}
 			} else
 				return tree;
 		} catch (IOException e) {
