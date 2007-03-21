@@ -39,7 +39,7 @@ public class Repository {
 
 	private final File gitDir;
 
-	private final File objectsDir;
+	private final File[] objectsDirs;
 
 	private final File refsDir;
 
@@ -54,11 +54,17 @@ public class Repository {
 
 	public Repository(final File d) throws IOException {
 		gitDir = d.getAbsoluteFile();
-		objectsDir = new File(gitDir, "objects");
+		try {
+			objectsDirs = (File[])readObjectsDirs(new File(gitDir, "objects"), new ArrayList()).toArray(new File[0]);
+		} catch (IOException e) {
+			IOException ex = new IOException("Cannot find all object dirs for " + gitDir);
+			ex.initCause(e);
+			throw ex;
+		}
 		refsDir = new File(gitDir, "refs");
 		packs = new PackFile[0];
 		config = new RepositoryConfig(this);
-		if (objectsDir.exists()) {
+		if (objectsDirs[0].exists()) {
 			getConfig().load();
 			final String repositoryFormatVersion = getConfig().getString(
 					"core", "repositoryFormatVersion");
@@ -71,6 +77,19 @@ public class Repository {
 		}
 	}
 
+	private Collection readObjectsDirs(File objectsDir, Collection ret) throws IOException {
+		ret.add(objectsDir);
+		File alternatesFile = new File(objectsDir,"info/alternates");
+		if (alternatesFile.exists()) {
+			BufferedReader ar = new BufferedReader(new FileReader(alternatesFile));
+			for (String alt=ar.readLine(); alt!=null; alt=ar.readLine()) {
+				readObjectsDirs(new File(alt), ret);
+			}
+			ar.close();
+		}
+		return ret;
+	}
+
 	public void create() throws IOException {
 		if (gitDir.exists()) {
 			throw new IllegalStateException("Repository already exists: "
@@ -79,9 +98,9 @@ public class Repository {
 
 		gitDir.mkdirs();
 
-		objectsDir.mkdirs();
-		new File(objectsDir, "pack").mkdir();
-		new File(objectsDir, "info").mkdir();
+		objectsDirs[0].mkdirs();
+		new File(objectsDirs[0], "pack").mkdir();
+		new File(objectsDirs[0], "info").mkdir();
 
 		refsDir.mkdir();
 		new File(refsDir, "heads").mkdir();
@@ -106,7 +125,7 @@ public class Repository {
 	}
 
 	public File getObjectsDirectory() {
-		return objectsDir;
+		return objectsDirs[0];
 	}
 
 	public RepositoryConfig getConfig() {
@@ -119,7 +138,14 @@ public class Repository {
 
 	public File toFile(final ObjectId objectId) {
 		final String n = objectId.toString();
-		return new File(new File(objectsDir, n.substring(0, 2)), n.substring(2));
+		String d=n.substring(0, 2);
+		String f=n.substring(2);
+		for (int i=0; i<objectsDirs.length; ++i) {
+			File ret = new File(new File(objectsDirs[i], d), f);
+			if (ret.exists())
+				return ret;
+		}
+		return new File(new File(objectsDirs[0], d), f);
 	}
 
 	public boolean hasObject(final ObjectId objectId) {
@@ -291,7 +317,15 @@ public class Repository {
 	}
 
 	public void scanForPacks() {
-		final File packDir = new File(objectsDir, "pack");
+		final ArrayList p = new ArrayList();
+		for (int i=0; i<objectsDirs.length; ++i)
+			scanForPacks(new File(objectsDirs[i], "pack"), p);
+		final PackFile[] arr = new PackFile[p.size()];
+		p.toArray(arr);
+		packs = arr;
+	}
+
+	public void scanForPacks(final File packDir, Collection packList) {
 		final File[] list = packDir.listFiles(new FileFilter() {
 			public boolean accept(final File f) {
 				final String n = f.getName();
@@ -304,18 +338,14 @@ public class Repository {
 						&& idx.canRead();
 			}
 		});
-		final ArrayList p = new ArrayList(list.length);
 		for (int k = 0; k < list.length; k++) {
 			try {
-				p.add(new PackFile(this, list[k]));
+				packList.add(new PackFile(this, list[k]));
 			} catch (IOException ioe) {
 				// Whoops. That's not a pack!
 				//
 			}
 		}
-		final PackFile[] arr = new PackFile[p.size()];
-		p.toArray(arr);
-		packs = arr;
 	}
 
 	private void writeSymref(final String name, final String target)
