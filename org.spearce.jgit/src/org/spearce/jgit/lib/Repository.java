@@ -27,6 +27,7 @@ import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -475,6 +476,43 @@ public class Repository {
 			e.printStackTrace();
 			return false;
 		}
+	}
+
+	public static class StGitPatch {
+		public StGitPatch(String patchName, ObjectId id) {
+			name = patchName;
+			gitId = id;
+		}
+		public ObjectId getGitId() {
+			return gitId;
+		}
+		public String getName() {
+			return name;
+		}
+		private String name;
+		private ObjectId gitId;
+	}
+
+	/**
+	 * @return applied patches in a map indexed on current commit id
+	 * @throws IOException
+	 */
+	public Map getAppliedPatches() throws IOException {
+		Map ret = new HashMap();
+		if (isStGitMode()) {
+			File patchDir = new File(new File(getDirectory(),"patches"),getBranch());
+			BufferedReader apr = new BufferedReader(new FileReader(new File(patchDir,"applied")));
+			for (String patchName=apr.readLine(); patchName!=null; patchName=apr.readLine()) {
+				File topFile = new File(new File(new File(patchDir,"patches"), patchName), "top");
+				BufferedReader tfr = new BufferedReader(new FileReader(topFile));
+				String objectId = tfr.readLine();
+				ObjectId id = new ObjectId(objectId);
+				ret.put(id, new StGitPatch(patchName, id));
+				tfr.close();
+			}
+			apr.close();
+		}
+		return ret;
 	}
 
 	private Collection listFilesRecursively(File root, File start) {

@@ -18,6 +18,7 @@ package org.spearce.egit.ui;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.Map;
 
 import org.eclipse.compare.CompareConfiguration;
 import org.eclipse.compare.structuremergeviewer.ICompareInput;
@@ -69,6 +70,7 @@ import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.internal.actions.GitCompareRevisionAction;
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.Repository.StGitPatch;
 
 public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		IHistoryCompareAdapter {
@@ -198,6 +200,11 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				String rss = ((IFileRevision) element).getURI().toString();
 				String rs = rss.substring(rss.length()-10);
 				String id = ((IFileRevision) element).getContentIdentifier();
+				if (appliedPatches!=null) {
+					StGitPatch patch = (StGitPatch) appliedPatches.get(new ObjectId(id));
+					if (patch!=null)
+						return patch.getName();
+				}
 				if (id != null)
 					if (id.length() > 9) // make sure "Workspace" is spelled out
 						return id.substring(0, 7) + "..";
@@ -280,6 +287,8 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		viewer.setInput(getInput());
 	}
 
+	private Map appliedPatches;
+
 	class GitHistoryContentProvider implements ITreeContentProvider,
 			ILazyTreeContentProvider {
 
@@ -288,8 +297,17 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				return;
 			System.out.println("inputChanged(" + viewer + "," + oldInput + ","
 					+ newInput);
+			IProject project = ((IResource) getInput()).getProject();
 			RepositoryProvider provider = RepositoryProvider
-					.getProvider(((IResource) getInput()).getProject());
+					.getProvider(project);
+			RepositoryMapping repositoryMapping = ((GitProvider)provider).getData().getRepositoryMapping(project);
+			try {
+				appliedPatches = null;
+				appliedPatches = repositoryMapping.getRepository().getAppliedPatches();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			IFileHistoryProvider fileHistoryProvider = provider
 					.getFileHistoryProvider();
 			IFileHistory fileHistoryFor = fileHistoryProvider
