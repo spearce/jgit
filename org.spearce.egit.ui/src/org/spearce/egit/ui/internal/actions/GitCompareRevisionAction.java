@@ -32,8 +32,10 @@ import org.eclipse.ui.IReusableEditor;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.actions.BaseSelectionListenerAction;
 import org.spearce.egit.core.GitWorkspaceFileRevision;
+import org.spearce.egit.core.internal.mapping.GitFileRevision;
 import org.spearce.egit.ui.internal.GitCompareFileRevisionEditorInput;
 import org.spearce.egit.ui.internal.GitResourceNode;
+import org.spearce.jgit.lib.ObjectId;
 
 /**
  * Action to invoke a Git based compare on selected revivsions in the history window.
@@ -188,7 +190,18 @@ public class GitCompareRevisionAction extends BaseSelectionListenerAction {
 			return shouldShow();
 		}
 		else if (selection.size() == 2){
-			this.setText(TeamUIMessages.CompareRevisionAction_CompareWithOther);
+			IFileRevision rev1=(IFileRevision)selection.toArray()[0];
+			IFileRevision rev2=(IFileRevision)selection.toArray()[1];
+			System.out.println("Compare "+rev1.getContentIdentifier()+" with "+rev2.getContentIdentifier());
+			if (rev1 instanceof GitFileRevision && rev2 instanceof GitFileRevision) {
+				ObjectId pid = (ObjectId) ((GitFileRevision)rev1).getCommit().getParentIds().get(0);
+				if (pid.equals(((GitFileRevision)rev2).getCommit().getCommitId())) {
+					this.setText("Show commit diff");
+				} else {
+					this.setText(TeamUIMessages.CompareRevisionAction_CompareWithOther);
+				}
+			} else
+				this.setText(TeamUIMessages.CompareRevisionAction_CompareWithOther);
 			return shouldShow();
 		}
 

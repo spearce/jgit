@@ -16,10 +16,12 @@
  */
 package org.spearce.egit.ui;
 
+import java.io.IOException;
 import java.util.Date;
 
 import org.eclipse.compare.CompareConfiguration;
 import org.eclipse.compare.structuremergeviewer.ICompareInput;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
@@ -61,8 +63,12 @@ import org.eclipse.team.internal.ui.history.DialogHistoryPageSite;
 import org.eclipse.team.ui.history.HistoryPage;
 import org.eclipse.team.ui.history.IHistoryCompareAdapter;
 import org.eclipse.team.ui.history.IHistoryPageSite;
+import org.spearce.egit.core.GitProvider;
 import org.spearce.egit.core.internal.mapping.GitFileRevision;
+import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.internal.actions.GitCompareRevisionAction;
+import org.spearce.jgit.lib.Commit;
+import org.spearce.jgit.lib.ObjectId;
 
 public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		IHistoryCompareAdapter {
@@ -104,6 +110,8 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 		final GitCompareRevisionAction compareAction = new GitCompareRevisionAction(
 				"Compare");
+		final GitCompareRevisionAction compareActionPrev = new GitCompareRevisionAction(
+				"Show commit");
 		tree.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				// update the current
@@ -116,14 +124,38 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				compareAction.setCurrentFileRevision(fileRevisions[0]);
 				compareAction.selectionChanged(new StructuredSelection(
 						selection2));
+				IProject project = ((IResource) getInput()).getProject();
+				GitProvider provider = (GitProvider)RepositoryProvider
+						.getProvider(project);
+				RepositoryMapping repositoryMapping = provider.getData().getRepositoryMapping(project);
+				ObjectId parentId = (ObjectId)((GitFileRevision)selection2[0]).getCommit().getParentIds().get(0);
+				try {
+					if (selection2.length == 1) {
+						Commit parent = repositoryMapping.getRepository().mapCommit(parentId);
+						IFileRevision previous = new GitFileRevision(parent,
+								((GitFileRevision)selection2[0]).getResource(),
+								((GitFileRevision)selection2[0]).getCount()+1);
+//						compareActionPrev.setCurrentFileRevision(selection2[0]);
+						compareActionPrev.setCurrentFileRevision(null);
+						compareActionPrev.selectionChanged(new StructuredSelection(new IFileRevision[] {selection2[0], previous}));
+					} else {
+						compareActionPrev.setCurrentFileRevision(null);
+						compareActionPrev.selectionChanged(new StructuredSelection(new IFileRevision[0]));
+					}
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 			}
 		});
 		compareAction.setPage(this);
+		compareActionPrev.setPage(this);
 		MenuManager menuMgr = new MenuManager();
 		Menu menu = menuMgr.createContextMenu(tree);
 		menuMgr.addMenuListener(new IMenuListener() {
 			public void menuAboutToShow(IMenuManager menuMgr) {
 				menuMgr.add(compareAction);
+				menuMgr.add(compareActionPrev);
 			}
 		});
 		menuMgr.setRemoveAllWhenShown(true);
