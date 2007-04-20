@@ -57,7 +57,6 @@ import org.eclipse.team.core.history.IFileHistory;
 import org.eclipse.team.core.history.IFileHistoryProvider;
 import org.eclipse.team.core.history.IFileRevision;
 import org.eclipse.team.internal.ui.TeamUIMessages;
-import org.eclipse.team.internal.ui.actions.CompareRevisionAction;
 import org.eclipse.team.internal.ui.history.DialogHistoryPageSite;
 import org.eclipse.team.ui.history.HistoryPage;
 import org.eclipse.team.ui.history.IHistoryCompareAdapter;
@@ -103,10 +102,8 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		if (parentSite != null && parentSite instanceof DialogHistoryPageSite)
 			parentSite.setSelectionProvider(viewer);
 
-		final CompareRevisionAction compareAction = new CompareRevisionAction(
+		final GitCompareRevisionAction compareAction = new GitCompareRevisionAction(
 				"Compare");
-		final GitCompareRevisionAction compareActionNG = new GitCompareRevisionAction(
-				"Compare NG");
 		tree.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				// update the current
@@ -119,20 +116,14 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				compareAction.setCurrentFileRevision(fileRevisions[0]);
 				compareAction.selectionChanged(new StructuredSelection(
 						selection2));
-
-				compareActionNG.setCurrentFileRevision(fileRevisions[0]);
-				compareActionNG.selectionChanged(new StructuredSelection(
-						selection2));
 			}
 		});
 		compareAction.setPage(this);
-		compareActionNG.setPage(this);
 		MenuManager menuMgr = new MenuManager();
 		Menu menu = menuMgr.createContextMenu(tree);
 		menuMgr.addMenuListener(new IMenuListener() {
 			public void menuAboutToShow(IMenuManager menuMgr) {
 				menuMgr.add(compareAction);
-				menuMgr.add(compareActionNG);
 			}
 		});
 		menuMgr.setRemoveAllWhenShown(true);

@@ -188,7 +188,7 @@ public class GitCompareRevisionAction extends BaseSelectionListenerAction {
 			return shouldShow();
 		}
 		else if (selection.size() == 2){
-			this.setText(TeamUIMessages.CompareRevisionAction_CompareWithOther+" NG");
+			this.setText(TeamUIMessages.CompareRevisionAction_CompareWithOther);
 			return shouldShow();
 		}
 
