@@ -137,12 +137,14 @@ public class TrackOperation implements IWorkspaceRunnable {
 			// Uh, what? Why are we adding a phantom resource? Just say no!
 			//
 		} else if (toAdd instanceof IFile) {
-			if (!t.exists(path)) {
-				t.addFile(path);
+			if (!t.existsTree(path)) {
+				if (!t.existsBlob(path)) {
+					t.addFile(path);
+				}
 			}
 		} else if (toAdd instanceof IContainer) {
 			final IResource[] m = ((IContainer) toAdd).members();
-			final TreeEntry e = t.findMember(path);
+			final TreeEntry e = t.findTreeMember(path);
 			final Tree c;
 			c = e instanceof Tree ? (Tree) e : e == null ? t.addTree(path)
 					: null;

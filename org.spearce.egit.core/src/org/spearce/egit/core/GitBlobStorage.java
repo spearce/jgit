@@ -59,7 +59,7 @@ public class GitBlobStorage implements IStorage {
 			else
 				prefix = "";
 			String name = prefix + resource.getProjectRelativePath().toString();
-			entry = tree.findMember(name);
+			entry = tree.findBlobMember(name);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -122,7 +122,7 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 
 		if (s != null && m != null && m.getCacheTree() != null) {
 			try {
-				final TreeEntry e = m.getCacheTree().findMember(s);
+				final TreeEntry e = m.getCacheTree().findTreeMember(s);
 				if (e != null) {
 					e.delete();
 					m.recomputeMerge();
@@ -182,7 +182,10 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 		}
 
 		try {
-			srcEnt = srcMap.getCacheTree().findMember(srcPath);
+			if (src.getType() == IResource.FILE)
+				srcEnt = srcMap.getCacheTree().findBlobMember(srcPath);
+			else
+				srcEnt = srcMap.getCacheTree().findTreeMember(srcPath);
 			if (srcEnt == null) {
 				return FINISH_FOR_ME;
 			}
@@ -199,7 +202,11 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 			if (dstPath == null) {
 				dstTree = dstMap.getCacheTree();
 			} else {
-				final TreeEntry e = dstMap.getCacheTree().findMember(dstPath);
+				final TreeEntry e;
+				if (src.getType() == IResource.FILE)
+					e = dstMap.getCacheTree().findBlobMember(dstPath);
+				else
+					e = dstMap.getCacheTree().findTreeMember(dstPath);
 				if (e == null) {
 					dstTree = dstMap.getCacheTree().addTree(dstPath);
 				} else if (e instanceof Tree) {
@@ -216,7 +223,9 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 			// What? Something already exists at the destination? Assume
 			// Eclipse meant for us to replace the item.
 			//
-			final TreeEntry existing = dstTree.findMember(dstName);
+			TreeEntry existing = dstTree.findTreeMember(dstName);
+			if (existing == null)
+				dstTree.findBlobMember(dstName);
 			if (existing != null) {
 				existing.delete();
 			}

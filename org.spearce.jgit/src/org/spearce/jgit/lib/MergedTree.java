@@ -53,7 +53,7 @@ public class MergedTree {
 	}
 
 	private static final int binarySearch(final TreeEntry[] entries,
-			final int width, final byte[] nameUTF8, final int nameStart,
+			final int width, final byte[] nameUTF8, final byte nameUTF8last, final int nameStart,
 			final int nameEnd) {
 		if (entries.length == 0)
 			return -1;
@@ -66,7 +66,7 @@ public class MergedTree {
 			while (entries[ix] == null)
 				ix++;
 			cmp = Tree.compareNames(entries[ix].getNameUTF8(), nameUTF8,
-					nameStart, nameEnd);
+					nameStart, nameEnd, TreeEntry.lastChar(entries[ix]), nameUTF8last);
 			if (cmp < 0)
 				low = mid + 1;
 			else if (cmp == 0)
@@ -95,11 +95,11 @@ public class MergedTree {
 		return isModified(sources);
 	}
 
-	public TreeEntry[] findMember(final String s) throws IOException {
-		return findMember(s.getBytes(Constants.CHARACTER_ENCODING), 0);
+	public TreeEntry[] findMember(final String s, final byte slast) throws IOException {
+		return findMember(s.getBytes(Constants.CHARACTER_ENCODING), slast, 0);
 	}
 
-	public TreeEntry[] findMember(final byte[] s, final int offset)
+	public TreeEntry[] findMember(final byte[] s, final byte slast, final int offset)
 			throws IOException {
 		final int srcCnt = sources.length;
 		int slash;
@@ -108,7 +108,8 @@ public class MergedTree {
 		for (slash = offset; slash < s.length && s[slash] != '/'; slash++) {
 			// search for path component terminator
 		}
-		p = binarySearch(merged, srcCnt, s, offset, slash);
+		byte xlast = slash<s.length ? (byte)'/' : slast;
+		p = binarySearch(merged, srcCnt, s, xlast, offset, slash);
 		if (p < 0)
 			return null;
 
@@ -127,7 +128,15 @@ public class MergedTree {
 				subs[j] = merged[k] instanceof Tree ? (Tree) merged[k] : null;
 			subtrees[p] = new MergedTree(subs);
 		}
-		return subtrees[p].findMember(s, slash + 1);
+		return subtrees[p].findMember(s, slast, slash + 1);
+	}
+
+	public TreeEntry[] findBlobMember(String s) throws IOException {
+		return findMember(s,(byte)0);
+	}
+
+	public TreeEntry[] findTreeMember(String s) throws IOException {
+		return findMember(s,(byte)'/');
 	}
 
 	private void matchByName() throws IOException {
@@ -160,6 +169,7 @@ public class MergedTree {
 		newMerged = new TreeEntry[pos * srcCnt];
 		for (pos = 0, treeId = 0; done < srcCnt; pos += srcCnt, treeId++) {
 			byte[] minName = null;
+			int minNameLast = 0;
 
 			if ((pos + srcCnt) >= newMerged.length) {
 				final TreeEntry[] t = new TreeEntry[newMerged.length * 2];
@@ -176,10 +186,11 @@ public class MergedTree {
 
 				final TreeEntry thisEntry = ents[ti];
 				final int cmp = minName == null ? -1 : Tree.compareNames(
-						thisEntry.getNameUTF8(), minName);
+						thisEntry.getNameUTF8(), minName, TreeEntry.lastChar(thisEntry), minNameLast);
 
 				if (cmp < 0) {
 					minName = thisEntry.getNameUTF8();
+					minNameLast = TreeEntry.lastChar(thisEntry);
 					for (int j = srcId - 1; j >= 0; j--) {
 						if (newMerged[pos + j] != null) {
 							newMerged[pos + j] = null;

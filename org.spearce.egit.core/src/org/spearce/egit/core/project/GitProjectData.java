@@ -296,7 +296,10 @@ public class GitProjectData {
 
 		if (s != null && m != null && m.getActiveDiff() != null) {
 			try {
-				return m.getActiveDiff().findMember(s);
+				if (r.getType() == IResource.FILE)
+					return m.getActiveDiff().findBlobMember(s);
+				else
+					return m.getActiveDiff().findTreeMember(s);
 			} catch (IOException ioe) {
 				throw Activator.error(
 						CoreText.GitProjectData_lazyResolveFailed, ioe);
@@ -416,7 +419,10 @@ public class GitProjectData {
 							try {
 								synchronized (cacheTree) {
 									final TreeEntry e;
-									e = cacheTree.findMember(s);
+									if (r.getType() == IResource.FILE)
+										e = cacheTree.findBlobMember(s);
+									else
+										e = cacheTree.findTreeMember(s);
 									if (e instanceof FileTreeEntry) {
 										trace("modified " + r + " -> "
 												+ e.getFullName());

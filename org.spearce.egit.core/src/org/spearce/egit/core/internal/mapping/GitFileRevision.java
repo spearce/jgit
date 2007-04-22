@@ -156,7 +156,10 @@ public class GitFileRevision extends FileRevision {
 				else {
 					prefix = prefix + "/";
 					String name = prefix + relPath;
-					return tree.findMember(name);
+					if (resource.getType() == IResource.FILE)
+						return tree.findBlobMember(name);
+					else
+						return tree.findTreeMember(name);
 				}
 			} else
 				return tree;

@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.security.MessageDigest;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
@@ -82,12 +81,6 @@ public class ObjectWriter {
 	public ObjectId writeTree(final Tree t) throws IOException {
 		final ByteArrayOutputStream o = new ByteArrayOutputStream();
 		final TreeEntry[] items = t.members();
-		for (int k = items.length - 1; k >= 0; k--) {
-			if (items[k] instanceof Tree) {
-				Arrays.sort(items, SubtreeSorter.INSTANCE);
-				break;
-			}
-		}
 		for (int k = 0; k < items.length; k++) {
 			final TreeEntry e = items[k];
 			final ObjectId id = e.getId();

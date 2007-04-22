@@ -38,7 +38,8 @@ public class T0002_Tree extends RepositoryTestCase {
 		assertTrue("no id", t.getId() == null);
 		assertTrue("tree is self", t.getTree() == t);
 		assertTrue("database is r", t.getRepository() == db);
-		assertTrue("no foo child", t.findMember("foo") == null);
+		assertTrue("no foo child", t.findTreeMember("foo") == null);
+		assertTrue("no foo child", t.findBlobMember("foo") == null);
 	}
 
 	public void test002_addFile() throws IOException {
@@ -57,7 +58,7 @@ public class T0002_Tree extends RepositoryTestCase {
 		assertTrue("no id", f.getId() == null);
 		assertTrue("is modified", t.isModified());
 		assertTrue("has no id", t.getId() == null);
-		assertTrue("found bob", t.findMember(f.getName()) == f);
+		assertTrue("found bob", t.findBlobMember(f.getName()) == f);
 
 		final TreeEntry[] i = t.members();
 		assertTrue("iterator is not empty", i != null && i.length > 0);
@@ -87,7 +88,7 @@ public class T0002_Tree extends RepositoryTestCase {
 		assertTrue("tree is self", f.getTree() == f);
 		assertTrue("parent is modified", t.isModified());
 		assertTrue("parent has no id", t.getId() == null);
-		assertTrue("found bob child", t.findMember(f.getName()) == f);
+		assertTrue("found bob child", t.findTreeMember(f.getName()) == f);
 
 		final TreeEntry[] i = t.members();
 		assertTrue("iterator is not empty", i.length > 0);
@@ -145,14 +146,14 @@ public class T0002_Tree extends RepositoryTestCase {
 		assertTrue("t not modified.", !t.isModified());
 
 		assertEquals("full path of h ok", "f/g/h", h.getFullName());
-		assertTrue("Can find h", t.findMember(h.getFullName()) == h);
-		assertTrue("Can't find f/z", t.findMember("f/z") == null);
-		assertTrue("Can't find y/z", t.findMember("y/z") == null);
+		assertTrue("Can find h", t.findTreeMember(h.getFullName()) == h);
+		assertTrue("Can't find f/z", t.findBlobMember("f/z") == null);
+		assertTrue("Can't find y/z", t.findBlobMember("y/z") == null);
 
 		final FileTreeEntry i = h.addFile("i");
 		assertNotNull(i);
 		assertEquals("full path of i ok", "f/g/h/i", i.getFullName());
-		assertTrue("Can find i", t.findMember(i.getFullName()) == i);
+		assertTrue("Can find i", t.findBlobMember(i.getFullName()) == i);
 		assertTrue("h modified", h.isModified());
 		assertTrue("g modified", g.isModified());
 		assertTrue("f modified", f.isModified());
@@ -190,17 +191,17 @@ public class T0002_Tree extends RepositoryTestCase {
 
 	public void test008_SubtreeInternalSorting() throws IOException {
 		final Tree t = new Tree(db);
-		final FileTreeEntry e0 = t.addFile("a-");
-		final FileTreeEntry e1 = t.addFile("a-b");
-		final Tree e2 = t.addTree("a");
-		final FileTreeEntry e3 = t.addFile("a=");
-		final FileTreeEntry e4 = t.addFile("a=b");
+		final FileTreeEntry e0 = t.addFile("a-b");
+		final FileTreeEntry e1 = t.addFile("a-");
+		final FileTreeEntry e2 = t.addFile("a=b");
+		final Tree e3 = t.addTree("a");
+		final FileTreeEntry e4 = t.addFile("a=");
 
 		final TreeEntry[] ents = t.members();
-		assertSame(e2, ents[0]);
+		assertSame(e1, ents[0]);
 		assertSame(e0, ents[1]);
-		assertSame(e1, ents[2]);
-		assertSame(e3, ents[3]);
-		assertSame(e4, ents[4]);
+		assertSame(e3, ents[2]);
+		assertSame(e4, ents[3]);
+		assertSame(e2, ents[4]);
 	}
 }

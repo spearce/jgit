@@ -120,7 +120,11 @@ public class UntrackOperation implements IWorkspaceRunnable {
 
 		try {
 			final Tree t = m.getCacheTree();
-			final TreeEntry e = t.findMember(s);
+			final TreeEntry e;
+			if (torm.getType() == IResource.FILE)
+				e = t.findBlobMember(s);
+			else
+				e = t.findTreeMember(s);
 			if (e != null) {
 				e.delete();
 				tomerge.put(m, m);

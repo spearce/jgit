@@ -126,8 +126,15 @@ public abstract class TreeEntry implements Comparable {
 		if (this == o)
 			return 0;
 		if (o instanceof TreeEntry)
-			return Tree.compareNames(nameUTF8, ((TreeEntry) o).nameUTF8);
+			return Tree.compareNames(nameUTF8, ((TreeEntry) o).nameUTF8, lastChar(this), lastChar((TreeEntry)o));
 		return -1;
+	}
+
+	final public static int lastChar(TreeEntry treeEntry) {
+		if (treeEntry instanceof FileTreeEntry)
+			return '\0';
+		else
+			return '/';
 	}
 
 	public void accept(final TreeVisitor tv) throws IOException {

@@ -210,7 +210,7 @@ public class RepositoryMapping {
 		Tree head = getRepository().mapTree(Constants.HEAD);
 		if (head != null) {
 			if (getSubset() != null) {
-				final TreeEntry e = head.findMember(getSubset());
+				final TreeEntry e = head.findTreeMember(getSubset());
 				e.detachParent();
 				head = e instanceof Tree ? (Tree) e : null;
 			}

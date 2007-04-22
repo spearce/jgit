@@ -17,7 +17,6 @@
 package org.spearce.jgit.lib;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.EntryExistsException;
@@ -26,13 +25,14 @@ import org.spearce.jgit.errors.MissingObjectException;
 public class Tree extends TreeEntry implements Treeish {
 	public static final TreeEntry[] EMPTY_TREE = {};
 
-	public static final int compareNames(final byte[] a, final byte[] b) {
-		return compareNames(a, b, 0, b.length);
+	public static final int compareNames(final byte[] a, final byte[] b, final int lasta,final int lastb) {
+		return compareNames(a, b, 0, b.length, lasta, lastb);
 	}
 
 	public static final int compareNames(final byte[] a, final byte[] nameUTF8,
-			final int nameStart, final int nameEnd) {
-		for (int j = 0, k = nameStart; j < a.length && k < nameEnd; j++, k++) {
+			final int nameStart, final int nameEnd, final int lasta, int lastb) {
+		int j,k;
+		for (j = 0, k = nameStart; j < a.length && k < nameEnd; j++, k++) {
 			final int aj = a[j] & 0xff;
 			final int bk = nameUTF8[k] & 0xff;
 			if (aj < bk)
@@ -40,6 +40,28 @@ public class Tree extends TreeEntry implements Treeish {
 			else if (aj > bk)
 				return 1;
 		}
+		if (j < a.length) {
+			int aj = a[j]&0xff;
+			if (aj < lastb)
+				return -1;
+			else if (aj > lastb)
+				return 1;
+			else
+				return 0;
+		}
+		if (k < nameEnd) {
+			int bk = nameUTF8[k] & 0xff;
+			if (lasta < bk)
+				return -1;
+			else if (lasta > bk)
+				return 1;
+			else
+				return 0;
+		}
+		if (lasta < lastb)
+			return -1;
+		else if (lasta > lastb)
+			return 1;
 
 		final int namelength = nameEnd - nameStart;
 		if (a.length == namelength)
@@ -60,7 +82,7 @@ public class Tree extends TreeEntry implements Treeish {
 	}
 
 	private static final int binarySearch(final TreeEntry[] entries,
-			final byte[] nameUTF8, final int nameStart, final int nameEnd) {
+			final byte[] nameUTF8, final int nameUTF8last, final int nameStart, final int nameEnd) {
 		if (entries.length == 0)
 			return -1;
 		int high = entries.length;
@@ -68,7 +90,7 @@ public class Tree extends TreeEntry implements Treeish {
 		do {
 			final int mid = (low + high) / 2;
 			final int cmp = compareNames(entries[mid].getNameUTF8(), nameUTF8,
-					nameStart, nameEnd);
+					nameStart, nameEnd, TreeEntry.lastChar(entries[mid]), nameUTF8last);
 			if (cmp < 0)
 				low = mid + 1;
 			else if (cmp == 0)
@@ -151,7 +173,8 @@ public class Tree extends TreeEntry implements Treeish {
 		}
 
 		ensureLoaded();
-		p = binarySearch(contents, s, offset, slash);
+		byte xlast = slash<s.length ? (byte)'/' : 0;
+		p = binarySearch(contents, s, xlast, offset, slash);
 		if (p >= 0 && slash < s.length && contents[p] instanceof Tree)
 			return ((Tree) contents[p]).addFile(s, slash + 1);
 
@@ -184,7 +207,7 @@ public class Tree extends TreeEntry implements Treeish {
 		}
 
 		ensureLoaded();
-		p = binarySearch(contents, s, offset, slash);
+		p = binarySearch(contents, s, (byte)'/', offset, slash);
 		if (p >= 0 && slash < s.length && contents[p] instanceof Tree)
 			return ((Tree) contents[p]).addTree(s, slash + 1);
 
@@ -202,7 +225,7 @@ public class Tree extends TreeEntry implements Treeish {
 		final int p;
 
 		ensureLoaded();
-		p = binarySearch(contents, e.getNameUTF8(), 0, e.getNameUTF8().length);
+		p = binarySearch(contents, e.getNameUTF8(), TreeEntry.lastChar(e), 0, e.getNameUTF8().length);
 		if (p < 0) {
 			e.attachParent(this);
 			insertEntry(p, e);
@@ -227,7 +250,7 @@ public class Tree extends TreeEntry implements Treeish {
 
 	void removeEntry(final TreeEntry e) {
 		final TreeEntry[] c = contents;
-		final int p = binarySearch(c, e.getNameUTF8(), 0,
+		final int p = binarySearch(c, e.getNameUTF8(), TreeEntry.lastChar(e), 0,
 				e.getNameUTF8().length);
 		if (p >= 0) {
 			final TreeEntry[] n = new TreeEntry[c.length - 1];
@@ -257,15 +280,23 @@ public class Tree extends TreeEntry implements Treeish {
 			return c;
 	}
 
-	public boolean exists(final String s) throws IOException {
-		return findMember(s) != null;
+	public boolean exists(final String s, byte slast) throws IOException {
+		return findMember(s, slast) != null;
 	}
 
-	public TreeEntry findMember(final String s) throws IOException {
-		return findMember(s.getBytes(Constants.CHARACTER_ENCODING), 0);
+	public boolean existsTree(String path) throws IOException {
+		return exists(path,(byte)'/');
 	}
 
-	public TreeEntry findMember(final byte[] s, final int offset)
+	public boolean existsBlob(String path) throws IOException {
+		return exists(path,(byte)0);
+	}
+
+	public TreeEntry findMember(final String s, byte slast) throws IOException {
+		return findMember(s.getBytes(Constants.CHARACTER_ENCODING), slast, 0);
+	}
+
+	public TreeEntry findMember(final byte[] s, final byte slast, final int offset)
 			throws IOException {
 		int slash;
 		int p;
@@ -275,15 +306,24 @@ public class Tree extends TreeEntry implements Treeish {
 		}
 
 		ensureLoaded();
-		p = binarySearch(contents, s, offset, slash);
+		byte xlast = slash<s.length ? (byte)'/' : slast;
+		p = binarySearch(contents, s, xlast, offset, slash);
 		if (p >= 0) {
 			final TreeEntry r = contents[p];
 			if (slash < s.length)
-				return r instanceof Tree ? ((Tree) r).findMember(s, slash + 1)
+				return r instanceof Tree ? ((Tree) r).findMember(s, slast, slash + 1)
 						: null;
 			return r;
 		}
 		return null;
+	}
+
+	public TreeEntry findBlobMember(String s) throws IOException {
+		return findMember(s,(byte)0);
+	}
+
+	public TreeEntry findTreeMember(String s) throws IOException {
+		return findMember(s,(byte)'/');
 	}
 
 	public void accept(final TreeVisitor tv, final int flags)
@@ -326,7 +366,6 @@ public class Tree extends TreeEntry implements Treeish {
 		int rawPtr = 0;
 		TreeEntry[] temp = new TreeEntry[64];
 		int nextIndex = 0;
-		boolean resort = false;
 
 		while (rawPtr < raw.length) {
 			int c = raw[rawPtr++] & 0xff;
@@ -362,7 +401,6 @@ public class Tree extends TreeEntry implements Treeish {
 				ent = new FileTreeEntry(this, id, name, true);
 			else if (FileMode.TREE.equals(mode)) {
 				ent = new Tree(this, id, name);
-				resort = true;
 			} else if (FileMode.SYMLINK.equals(mode))
 				ent = new SymlinkTreeEntry(this, id, name);
 			else
@@ -388,12 +426,6 @@ public class Tree extends TreeEntry implements Treeish {
 			contents = n;
 		}
 
-		// Resort contents using our internal sorting order. Git sorts
-		// subtrees as though their names end in '/' but that's not how
-		// we sort them in memory. Its all the fault of the index...
-		//
-		if (resort)
-			Arrays.sort(contents);
 	}
 
 	public String toString() {
@@ -403,4 +435,5 @@ public class Tree extends TreeEntry implements Treeish {
 		r.append(getFullName());
 		return r.toString();
 	}
+
 }

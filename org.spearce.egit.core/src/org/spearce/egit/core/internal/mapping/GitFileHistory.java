@@ -147,7 +147,11 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 			ObjectId[] currentResourceHash = new ObjectId[lastResourceHash.length];
 			Tree t = current.getTree();
 			for (int i = 0; i < currentResourceHash.length; ++i) {
-				TreeEntry m = t.findMember(relativeResourceName[i]);
+				TreeEntry m;
+				if (i == relativeResourceName.length-1 && resource.getType() == IResource.FILE)
+					m = t.findBlobMember(relativeResourceName[i]);
+				else
+					m = t.findTreeMember(relativeResourceName[i]);
 				if (m != null) {
 					ObjectId id = m.getId();
 					currentResourceHash[i] = id;
@@ -251,7 +255,10 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 			}
 			TreeEntry currentEntry = current.getTree();
 			for (int i=0; i < relativeResourceName.length && currentEntry != null; ++i) {
-				((Tree)currentEntry).findMember(relativeResourceName[i]);
+				if (i == relativeResourceName.length-1 && resource.getType() == IResource.FILE)
+					((Tree)currentEntry).findBlobMember(relativeResourceName[i]);
+				else
+					((Tree)currentEntry).findTreeMember(relativeResourceName[i]);
 			}
 			if (currentEntry != null)
 				revisions = new IFileRevision[] { new GitFileRevision(current, resource,
