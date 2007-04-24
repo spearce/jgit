@@ -387,7 +387,8 @@ public class GitProjectData {
 				public boolean visit(final IResourceDelta d)
 						throws CoreException {
 					final int f = d.getFlags();
-					IResource r = d.getResource();
+					IResource res = d.getResource();
+					IResource r = res;
 					if ((f & IResourceDelta.CONTENT) != 0
 							|| (f & IResourceDelta.ENCODING) != 0
 							|| r instanceof IContainer) {
@@ -420,7 +421,7 @@ public class GitProjectData {
 							try {
 								synchronized (cacheTree) {
 									final TreeEntry e;
-									if (r.getType() == IResource.FILE)
+									if (res.getType() == IResource.FILE)
 										e = cacheTree.findBlobMember(s);
 									else
 										e = cacheTree.findTreeMember(s);
