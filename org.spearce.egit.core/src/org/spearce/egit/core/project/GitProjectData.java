@@ -274,11 +274,12 @@ public class GitProjectData {
 		return (RepositoryMapping) c2mapping.get(r);
 	}
 
-	public TreeEntry[] getActiveDiffTreeEntries(IResource r)
+	public TreeEntry[] getActiveDiffTreeEntries(IResource res)
 			throws CoreException {
 		String s = null;
 		RepositoryMapping m = null;
 
+		IResource r = res;
 		while (r != null) {
 			m = getRepositoryMapping(r);
 			if (m != null) {
@@ -296,7 +297,7 @@ public class GitProjectData {
 
 		if (s != null && m != null && m.getActiveDiff() != null) {
 			try {
-				if (r.getType() == IResource.FILE)
+				if (res.getType() == IResource.FILE)
 					return m.getActiveDiff().findBlobMember(s);
 				else
 					return m.getActiveDiff().findTreeMember(s);
