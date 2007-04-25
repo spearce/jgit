@@ -100,7 +100,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		layout.marginHeight = 0;
 		layout.marginWidth = 0;
 		localComposite.setLayout(layout);
-		GridData data = new GridData(GridData.FILL_BOTH);
+		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
 		data.grabExcessVerticalSpace = true;
 		localComposite.setLayoutData(data);
 
@@ -201,9 +201,11 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				String rs = rss.substring(rss.length()-10);
 				String id = ((IFileRevision) element).getContentIdentifier();
 				if (appliedPatches!=null) {
-					StGitPatch patch = (StGitPatch) appliedPatches.get(new ObjectId(id));
-					if (patch!=null)
-						return patch.getName();
+					if (!id.equals("Workspace")) {
+						StGitPatch patch = (StGitPatch) appliedPatches.get(new ObjectId(id));
+						if (patch!=null)
+							return patch.getName();
+					}
 				}
 				if (id != null)
 					if (id.length() > 9) // make sure "Workspace" is spelled out
@@ -217,10 +219,12 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			if (columnIndex == 2)
 				return ""; // TAGS
 
-			if (columnIndex == 3)
-				return new Date(((IFileRevision) element).getTimestamp())
-						.toString();
-
+			if (columnIndex == 3) {
+				Date d = new Date(((IFileRevision) element).getTimestamp());
+				if (d.getTime() == -1)
+					return "";
+				return d.toString();
+			}
 			if (columnIndex == 4)
 				return ((IFileRevision) element).getAuthor();
 
@@ -243,8 +247,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				| SWT.FULL_SELECTION | SWT.VIRTUAL);
 		tree.setHeaderVisible(true);
 		tree.setLinesVisible(true);
-
-		GridData data = new GridData(GridData.FILL_BOTH);
+		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
 		tree.setLayoutData(data);
 		tree.setData("HEAD");
 		tree.addListener(SWT.SetData, new Listener() {
@@ -314,13 +317,12 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					.getFileHistoryFor((IResource) getInput(),
 							IFileHistoryProvider.SINGLE_LINE_OF_DESCENT, null/* monitor */);
 			fileRevisions = fileHistoryFor.getFileRevisions();
-			tree.clearAll(true);
+			tree.removeAll();
 			tree.setItemCount(fileRevisions.length);
 			tree.setData(fileRevisions);
+			tree.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,true));
 			System.out.println("inputchanged, invoking refresh");
 			viewer.refresh();
-			tree.getParent().layout();
-			tree.getParent().getParent().layout();
 		}
 
 		public void dispose() {
@@ -363,7 +365,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		col.setResizable(true);
 		col.setText("^");
 		// X col.addSelectionListener(headerListener);
-		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(10,
+		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(15,
 				true));
 
 		// revision
@@ -371,22 +373,22 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		col.setResizable(true);
 		col.setText(TeamUIMessages.GenericHistoryTableProvider_Revision);
 		// X col.addSelectionListener(headerListener);
-		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(10,
+		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(15,
 				true));
 
 		// tags
 		col = new TreeColumn(tree, SWT.NONE);
 		col.setResizable(true);
-		// X col.setText(CVSUIMessages.HistoryView_tags);
+		col.setText("Tags");
 		// X col.addSelectionListener(headerListener);
-		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(20,
+		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(15,
 				true));
 		// creation date
 		col = new TreeColumn(tree, SWT.NONE);
 		col.setResizable(true);
 		col.setText(TeamUIMessages.GenericHistoryTableProvider_RevisionTime);
 		// X col.addSelectionListener(headerListener);
-		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(20,
+		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(30,
 				true));
 
 		// author
@@ -402,7 +404,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		col.setResizable(true);
 		col.setText(TeamUIMessages.GenericHistoryTableProvider_Comment);
 		// X col.addSelectionListener(headerListener);
-		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(50,
+		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(35,
 				true));
 	}
 
