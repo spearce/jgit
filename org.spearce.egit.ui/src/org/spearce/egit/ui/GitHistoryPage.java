@@ -18,6 +18,7 @@ package org.spearce.egit.ui;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.compare.CompareConfiguration;
@@ -42,6 +43,8 @@ import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
@@ -83,6 +86,8 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	private IFileRevision[] fileRevisions;
 
+	protected boolean hintShowDiffNow;
+
 	public GitHistoryPage(Object object) {
 		setInput(object);
 	}
@@ -114,6 +119,20 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				"Compare");
 		final GitCompareRevisionAction compareActionPrev = new GitCompareRevisionAction(
 				"Show commit");
+		tree.addMouseListener(new MouseListener() {
+		
+			public void mouseUp(MouseEvent e) {
+			}
+		
+			public void mouseDown(MouseEvent e) {
+				hintShowDiffNow = e.button==1;
+			}
+		
+			public void mouseDoubleClick(MouseEvent e) {
+			}
+		
+		});
+
 		tree.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				// update the current
@@ -130,16 +149,25 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				GitProvider provider = (GitProvider)RepositoryProvider
 						.getProvider(project);
 				RepositoryMapping repositoryMapping = provider.getData().getRepositoryMapping(project);
-				ObjectId parentId = (ObjectId)((GitFileRevision)selection2[0]).getCommit().getParentIds().get(0);
 				try {
-					if (selection2.length == 1) {
-						Commit parent = repositoryMapping.getRepository().mapCommit(parentId);
-						IFileRevision previous = new GitFileRevision(parent,
-								((GitFileRevision)selection2[0]).getResource(),
-								((GitFileRevision)selection2[0]).getCount()+1);
-//						compareActionPrev.setCurrentFileRevision(selection2[0]);
-						compareActionPrev.setCurrentFileRevision(null);
-						compareActionPrev.selectionChanged(new StructuredSelection(new IFileRevision[] {selection2[0], previous}));
+					if (selection2.length == 1 && hintShowDiffNow) {
+						List parentIds = ((GitFileRevision)selection2[0]).getCommit().getParentIds();
+						if (parentIds.size() > 0) {
+							ObjectId parentId = (ObjectId)parentIds.get(0);
+							Commit parent = repositoryMapping.getRepository().mapCommit(parentId);
+							IFileRevision previous = new GitFileRevision(parent,
+									((GitFileRevision)selection2[0]).getResource(),
+									((GitFileRevision)selection2[0]).getCount()+1);
+							compareActionPrev.setCurrentFileRevision(null);
+							compareActionPrev.selectionChanged(new StructuredSelection(new IFileRevision[] {selection2[0], previous}));
+							System.out.println("detail="+e.detail);
+							tree.getDisplay().asyncExec(new Runnable() {
+								public void run() {
+									if (GitCompareRevisionAction.findReusableCompareEditor(GitHistoryPage.this.getSite().getPage()) != null)
+										compareActionPrev.run();
+								}
+							});
+						}
 					} else {
 						compareActionPrev.setCurrentFileRevision(null);
 						compareActionPrev.selectionChanged(new StructuredSelection(new IFileRevision[0]));
@@ -148,6 +176,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
+				hintShowDiffNow = false;
 			}
 		});
 		compareAction.setPage(this);
