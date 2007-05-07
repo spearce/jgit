@@ -281,6 +281,8 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 		viewer = new TreeViewer(tree, SWT.VIRTUAL | SWT.FULL_SELECTION);
 
+		viewer.setUseHashlookup(true);
+
 		createColumns();
 
 		viewer.setLabelProvider(new GitHistoryLabelProvider());
@@ -354,6 +356,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		}
 
 		public void updateElement(Object parent, int index) {
+			System.out.println("updateElement("+parent+","+index);
 			viewer.replace(parent, index, fileRevisions[index]);
 		}
 	}
