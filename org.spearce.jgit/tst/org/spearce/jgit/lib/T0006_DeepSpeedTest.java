@@ -18,7 +18,6 @@ package org.spearce.jgit.lib;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 import junit.textui.TestRunner;
 
@@ -35,9 +34,9 @@ public class T0006_DeepSpeedTest extends SpeedTestBase {
 		int n = 1;
 		do {
 			// System.out.println("commit="+commit.getCommitId());
-			List parent = commit.getParentIds();
-			if (parent.size() > 0) {
-				ObjectId parentId = (ObjectId) parent.get(0);
+			ObjectId[] parents = commit.getParentIds();
+			if (parents.length > 0) {
+				ObjectId parentId = parents[0];
 				commit = db.mapCommit(parentId);
 				TreeEntry m = commit.getTree().findBlobMember("net/netfilter/nf_queue.c");
 				if (m != null)

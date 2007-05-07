@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.security.MessageDigest;
-import java.util.Iterator;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 
@@ -121,11 +120,11 @@ public class ObjectWriter {
 		c.getTreeId().copyTo(os);
 		os.write('\n');
 
-		final Iterator i = c.getParentIds().iterator();
-		while (i.hasNext()) {
+		ObjectId[] ps = c.getParentIds();
+		for (int i=0; i<ps.length; ++i) {
 			os.write(hparent);
 			os.write(' ');
-			((ObjectId) i.next()).copyTo(os);
+			ps[i].copyTo(os);
 			os.write('\n');
 		}
 

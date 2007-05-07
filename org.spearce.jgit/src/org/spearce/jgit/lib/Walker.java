@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 public abstract class Walker {
 	private String[] relativeResourceName;
@@ -98,10 +97,10 @@ public abstract class Walker {
 
 			// TODO: we may need to list more revisions when traversing
 			// branches
-			List parents = current.getParentIds();
+			ObjectId[] parents = current.getParentIds();
 			if (!followMainOnly) {
-				for (int i = 1; i < parents.size(); ++i) {
-					ObjectId mergeParentId = (ObjectId) parents.get(i);
+				for (int i = 1; i < parents.length; ++i) {
+					ObjectId mergeParentId = parents[i];
 					Commit mergeParent;
 					try {
 						mergeParent = repository.mapCommit(mergeParentId);
@@ -115,8 +114,8 @@ public abstract class Walker {
 					}
 				}
 			}
-			if (parents.size() > 0) {
-				ObjectId parentId = (ObjectId) parents.get(0);
+			if (parents.length > 0) {
+				ObjectId parentId = parents[0];
 				try {
 					current = repository.mapCommit(parentId);
 				} catch (IOException e) {

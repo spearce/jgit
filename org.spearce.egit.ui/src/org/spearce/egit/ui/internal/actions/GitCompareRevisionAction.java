@@ -194,7 +194,7 @@ public class GitCompareRevisionAction extends BaseSelectionListenerAction {
 			IFileRevision rev2=(IFileRevision)selection.toArray()[1];
 			System.out.println("Compare "+rev1.getContentIdentifier()+" with "+rev2.getContentIdentifier());
 			if (rev1 instanceof GitFileRevision && rev2 instanceof GitFileRevision) {
-				ObjectId pid = (ObjectId) ((GitFileRevision)rev1).getCommit().getParentIds().get(0);
+				ObjectId pid = ((GitFileRevision)rev1).getCommit().getParentIds()[0];
 				if (pid.equals(((GitFileRevision)rev2).getCommit().getCommitId())) {
 					this.setText("Show commit diff");
 				} else {

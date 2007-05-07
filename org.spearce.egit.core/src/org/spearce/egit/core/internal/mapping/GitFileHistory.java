@@ -65,13 +65,13 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 
 	public IFileRevision[] getContributors(IFileRevision revision) {
 		GitFileRevision grevision = (GitFileRevision) revision;
-		List parents = grevision.getCommit().getParentIds();
-		IFileRevision[] ret = new IFileRevision[parents.size()];
+		ObjectId[] parents = grevision.getCommit().getParentIds();
+		IFileRevision[] ret = new IFileRevision[parents.length];
 		Repository repository = getRepository();
-		for (int i = 0; i < parents.size(); ++i) {
+		for (int i = 0; i < parents.length; ++i) {
 			try {
 				ret[i] = new GitFileRevision(repository
-						.mapCommit((ObjectId) parents.get(i)), grevision
+						.mapCommit(parents[i]), grevision
 				.getResource(), -1);
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -150,9 +150,9 @@ static class EclipseWalker extends Walker {
 			ObjectId id = repository.resolve("HEAD");
 			Commit current = repository.mapCommit(id);
 			if (repository.isStGitMode()) {
-				List parentIds = current.getParentIds();
-				if (parentIds != null && parentIds.size() > 0)
-					current = repository.mapCommit((ObjectId) parentIds.get(0));
+				ObjectId[] parentIds = current.getParentIds();
+				if (parentIds != null && parentIds.length > 0)
+					current = repository.mapCommit(parentIds[0]);
 				else {
 					revisions = new IFileRevision[0];
 					return;
@@ -264,9 +264,12 @@ static class EclipseWalker extends Walker {
 		List ret = new ArrayList(4);
 		for (int i = 0; i < revisions.length; ++i) {
 			Commit ref = ((GitFileRevision) revisions[i]).getCommit();
-			List parentIds = ref.getParentIds();
-			if (parentIds.contains(targetCommitId)) {
-				ret.add(revisions[i]);
+			ObjectId[] parentIds = ref.getParentIds();
+			for (int j = 0; j < parentIds.length; ++j) {
+				if (parentIds[j].equals(targetCommitId)) {
+					ret.add(revisions[i]);
+					break;
+				}
 			}
 		}
 		return (IFileRevision[]) ret.toArray(new IFileRevision[ret.size()]);

@@ -20,21 +20,21 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.MissingObjectException;
 
 public class Commit implements Treeish {
+	private static final ObjectId[] EMPTY_OBJECTID_LIST = new ObjectId[0];
+
 	private final Repository objdb;
 
 	private ObjectId commitId;
 
 	private ObjectId treeId;
 
-	private List parentIds;
-
+	private ObjectId[] parentIds;
+	
 	private PersonIdent author;
 
 	private PersonIdent committer;
@@ -49,22 +49,42 @@ public class Commit implements Treeish {
 
 	public Commit(final Repository db) {
 		objdb = db;
-		parentIds = new ArrayList(2);
+		parentIds = EMPTY_OBJECTID_LIST;
 	}
 
 	public Commit(final Repository db, final ObjectId id, final byte[] raw) {
 		objdb = db;
 		commitId = id;
 		treeId = ObjectId.fromString(raw, 5);
-		parentIds = new ArrayList(2);
+		parentIds = new ObjectId[1];
+		int np=0;
 		int rawPtr = 46;
 		for (;;) {
 			if (raw[rawPtr] != 'p')
 				break;
-			parentIds.add(ObjectId.fromString(raw, rawPtr + 7));
+			if (np == 0) {
+				parentIds[np++] = ObjectId.fromString(raw, rawPtr + 7);
+			} else if (np == 1) {
+				parentIds = new ObjectId[] { parentIds[0], ObjectId.fromString(raw, rawPtr + 7) };
+			} else {
+				if (parentIds.length < np) {
+					ObjectId[] old = parentIds;
+					parentIds = new ObjectId[parentIds.length+32];
+					for (int i=0; i<np; ++i)
+						parentIds[i] = old[i];
+				}
+				parentIds[np++] = ObjectId.fromString(raw, rawPtr + 7);
+			}
 			rawPtr += 48;
 		}
-
+		if (np != parentIds.length) {
+			ObjectId[] old = parentIds;
+			parentIds = new ObjectId[np];
+			for (int i=0; i<np; ++i)
+				parentIds[i] = old[i];
+		} else
+			if (np == 0)
+				parentIds = EMPTY_OBJECTID_LIST;
 		this.raw = raw;
 	}
 
@@ -121,7 +141,7 @@ public class Commit implements Treeish {
 		committer = c;
 	}
 
-	public List getParentIds() {
+	public ObjectId[] getParentIds() {
 		return parentIds;
 	}
 

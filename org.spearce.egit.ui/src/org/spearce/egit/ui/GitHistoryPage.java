@@ -18,7 +18,6 @@ package org.spearce.egit.ui;
 
 import java.io.IOException;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 import org.eclipse.compare.CompareConfiguration;
@@ -151,9 +150,9 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				RepositoryMapping repositoryMapping = provider.getData().getRepositoryMapping(project);
 				try {
 					if (selection2.length == 1 && hintShowDiffNow) {
-						List parentIds = ((GitFileRevision)selection2[0]).getCommit().getParentIds();
-						if (parentIds.size() > 0) {
-							ObjectId parentId = (ObjectId)parentIds.get(0);
+						ObjectId[] parentIds = ((GitFileRevision)selection2[0]).getCommit().getParentIds();
+						if (parentIds.length > 0) {
+							ObjectId parentId = parentIds[0];
 							Commit parent = repositoryMapping.getRepository().mapCommit(parentId);
 							IFileRevision previous = new GitFileRevision(parent,
 									((GitFileRevision)selection2[0]).getResource(),
