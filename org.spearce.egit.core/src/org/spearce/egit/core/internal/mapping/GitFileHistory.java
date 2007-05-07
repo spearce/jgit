@@ -27,6 +27,7 @@ import java.util.List;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.team.core.RepositoryProvider;
 import org.eclipse.team.core.history.IFileHistoryProvider;
 import org.eclipse.team.core.history.IFileRevision;
@@ -52,7 +53,7 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 
 	private IFileRevision[] revisions;
 
-	public GitFileHistory(IResource resource, int flags) {
+	public GitFileHistory(IResource resource, int flags, IProgressMonitor monitor) {
 		this.resource = resource;
 		this.flags = flags;
 		String prefix = getRepositoryMapping().getSubset();
@@ -61,6 +62,15 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 		relativeResourceName = new String[prefixSegments.length + resourceSegments.length];
 		System.arraycopy(prefixSegments, 0, relativeResourceName, 0, prefixSegments.length);
 		System.arraycopy(resourceSegments, 0, relativeResourceName, prefixSegments.length, resourceSegments.length);
+		if ((flags & IFileHistoryProvider.SINGLE_LINE_OF_DESCENT) == 0) {
+			findSingleRevision(monitor);
+		} else {
+			try {
+				findRevisions(monitor);
+			} catch (IOException e) {
+				throw new Error(e);
+			}
+		}
 	}
 
 	public IFileRevision[] getContributors(IFileRevision revision) {
@@ -111,28 +121,24 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 
 static class EclipseWalker extends Walker {
 	IResource resource;
-	
-	EclipseWalker(Repository repository, Commit start, String[] relativeResourceName,boolean leafIsBlob,IResource resource,boolean followMainOnly, ObjectId lastActiveDiffId) {
+	private final IProgressMonitor monitor;
+
+	EclipseWalker(Repository repository, Commit start, String[] relativeResourceName,boolean leafIsBlob,IResource resource,boolean followMainOnly, ObjectId lastActiveDiffId, IProgressMonitor monitor) {
 		super(repository, start, relativeResourceName, leafIsBlob, followMainOnly, lastActiveDiffId);
 		this.resource = resource;
+		this.monitor = monitor;
 	}
 
 	protected void collect(Collection ret,Commit commit, int count) {
 		ret.add(new GitFileRevision(commit, resource, count));		
 	}
-	
+
+	public boolean isCancelled() {
+		return monitor.isCanceled();
+	}
 };
 
 	public IFileRevision[] getFileRevisions() {
-		if (revisions == null)
-			if ((flags & IFileHistoryProvider.SINGLE_LINE_OF_DESCENT) == 0)
-				findSingleRevision();
-			else
-				try {
-					findRevisions();
-				} catch (IOException e) {
-					throw new Error(e);
-				}
 		return revisions;
 	}
 
@@ -143,8 +149,9 @@ static class EclipseWalker extends Walker {
 	 * return the revision prior to the topmost patch, be it another patch or a
 	 * normal Git Commit. This is the revision in HEAD^. Otherwise we return the
 	 * revision in HEAD.
+	 * @param monitor 
 	 */
-	private void findSingleRevision() {
+	private void findSingleRevision(IProgressMonitor monitor) {
 		try {
 			Repository repository = getRepository();
 			ObjectId id = repository.resolve("HEAD");
@@ -177,7 +184,7 @@ static class EclipseWalker extends Walker {
 		}
 	}
 
-	private void findRevisions() throws IOException {
+	private void findRevisions(IProgressMonitor monitor) throws IOException {
 		RepositoryProvider provider = RepositoryProvider.getProvider(resource
 				.getProject());
 		if (provider instanceof GitProvider) {
@@ -203,7 +210,8 @@ static class EclipseWalker extends Walker {
 					resource.getType() == IResource.FILE, 
 					resource, 
 					(flags & IFileHistoryProvider.SINGLE_LINE_OF_DESCENT) == 0,
-					activeDiffLeafId);
+					activeDiffLeafId,
+					monitor);
 			Collection githistory = walker.collectHistory();
 			if (githistory.size() >0) {
 				if (resource.getType()==IResource.FILE) {

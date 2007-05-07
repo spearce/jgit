@@ -17,6 +17,8 @@ public abstract class Walker {
 	private ObjectId activeDiffLeafId;
 	private final Commit start;
 
+	protected abstract boolean isCancelled();
+	
 	protected abstract void collect(Collection ret,Commit commit, int count);
 
 	protected Walker(Repository repostory, Commit start, String[] relativeResourceName,boolean leafIsBlob,boolean followMainOnly, ObjectId activeDiffLeafId) {
@@ -126,7 +128,7 @@ public abstract class Walker {
 				current = null;
 			if (count>=0)
 				count++;
-		} while (current != null);
+		} while (current != null && !isCancelled());
 
 		return ret;
 	}

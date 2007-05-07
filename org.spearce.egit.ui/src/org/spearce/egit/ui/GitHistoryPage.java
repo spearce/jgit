@@ -29,6 +29,10 @@ import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
@@ -322,21 +326,22 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	private Map appliedPatches;
 
-	class GitHistoryContentProvider implements ITreeContentProvider,
-			ILazyTreeContentProvider {
+	class HistoryRefreshJob extends Job {
 
-		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-			if (newInput == null)
-				return;
-			System.out.println("inputChanged(" + viewer + "," + oldInput + ","
-					+ newInput);
+		public HistoryRefreshJob(String name) {
+			super(name);
+		}
+
+		protected IStatus run(IProgressMonitor monitor) {
+			monitor = new NullProgressMonitor();
+			monitor.beginTask("UpdateHistory", IProgressMonitor.UNKNOWN);
 			IProject project = ((IResource) getInput()).getProject();
 			RepositoryProvider provider = RepositoryProvider
 					.getProvider(project);
 			RepositoryMapping repositoryMapping = ((GitProvider)provider).getData().getRepositoryMapping(project);
+			Map newappliedPatches = null;
 			try {
-				appliedPatches = null;
-				appliedPatches = repositoryMapping.getRepository().getAppliedPatches();
+				newappliedPatches = repositoryMapping.getRepository().getAppliedPatches();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -345,18 +350,48 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					.getFileHistoryProvider();
 			IFileHistory fileHistoryFor = fileHistoryProvider
 					.getFileHistoryFor((IResource) getInput(),
-							IFileHistoryProvider.SINGLE_LINE_OF_DESCENT, null/* monitor */);
+							IFileHistoryProvider.SINGLE_LINE_OF_DESCENT, monitor);
 			fileRevisions = fileHistoryFor.getFileRevisions();
-			tree.removeAll();
-			tree.setItemCount(fileRevisions.length);
-			tree.setData(fileRevisions);
-			tree.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,true));
-			System.out.println("inputchanged, invoking refresh");
-			viewer.refresh();
+			
+			final Map fnewappliedPatches = newappliedPatches; 
+			tree.getDisplay().asyncExec(new Runnable() {
+			
+				public void run() {
+					tree.removeAll();
+					tree.setItemCount(fileRevisions.length);
+					tree.setData(fileRevisions);
+					tree.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,true));
+					System.out.println("inputchanged, invoking refresh");
+					viewer.refresh();
+					appliedPatches = fnewappliedPatches;
+					done(Status.OK_STATUS);
+				}
+			
+			});
+			return Status.OK_STATUS;
+		}
+		
+	}
+
+	HistoryRefreshJob historyRefreshJob = new HistoryRefreshJob("Git history refresh");
+	
+	class GitHistoryContentProvider implements ITreeContentProvider,
+			ILazyTreeContentProvider {
+
+		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+			if (newInput == null)
+				return;
+			System.out.println(new Date()+"inputChanged(" + viewer + "," + oldInput + ","
+					+ newInput);
+			if (historyRefreshJob.cancel()) {
+				System.out.println("rescheduling");
+				historyRefreshJob.schedule();
+			} else {
+				System.out.println("failed to cancel?");
+			}
 		}
 
 		public void dispose() {
-			// TODO Auto-generated method stub
 		}
 
 		public Object[] getElements(Object inputElement) {
@@ -380,12 +415,12 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		}
 
 		public void updateChildCount(Object element, int currentChildCount) {
-			viewer.setChildCount(element, fileRevisions.length);
+			viewer.setChildCount(element, fileRevisions!=null ? fileRevisions.length : 0);
 		}
 
 		public void updateElement(Object parent, int index) {
 			System.out.println("updateElement("+parent+","+index);
-			viewer.replace(parent, index, fileRevisions[index]);
+			viewer.replace(parent, index, fileRevisions!=null ? fileRevisions[index] : null);
 		}
 	}
 

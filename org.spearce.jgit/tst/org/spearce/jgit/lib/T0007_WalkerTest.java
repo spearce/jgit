@@ -42,6 +42,10 @@ public class T0007_WalkerTest extends SpeedTestBase {
 				System.out.println("Got: "+count+" "+commit.getCommitId());
 				ret.add(commit);
 			}
+
+			protected boolean isCancelled() {
+				return false;
+			}
 		
 		};
 		Commit[] history = (Commit[])walker.collectHistory().toArray(new Commit[0]);
