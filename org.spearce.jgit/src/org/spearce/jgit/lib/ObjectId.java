@@ -86,7 +86,7 @@ public class ObjectId implements Comparable {
 	private static int compare(final byte[] a, final byte[] b) {
 		if (a==b)
 			return 0;
-		for (int k = 0; k < a.length && k < b.length; k++) {
+		for (int k = 0; k < Constants.OBJECT_ID_LENGTH; k++) {
 			final int ak = a[k] & 0xff;
 			final int bk = b[k] & 0xff;
 			if (ak < bk)
@@ -94,7 +94,11 @@ public class ObjectId implements Comparable {
 			else if (ak > bk)
 				return 1;
 		}
-		return a.length == b.length ? 0 : a.length < b.length ? -1 : 1;
+		if (a.length != Constants.OBJECT_ID_LENGTH)
+			throw new IllegalArgumentException("Looks like a bad object id");
+		if (b.length != Constants.OBJECT_ID_LENGTH)
+			throw new IllegalArgumentException("Looks like a bad object id");
+		return 0;
 	}
 
 	private final byte[] id;
@@ -106,9 +110,11 @@ public class ObjectId implements Comparable {
 		}
 
 		id = new byte[Constants.OBJECT_ID_LENGTH];
+		char[] bs = new char[Constants.OBJECT_ID_LENGTH*2];
+		i.getChars(0,Constants.OBJECT_ID_LENGTH*2,bs,0);
 		for (int j = 0, k = 0; k < Constants.OBJECT_ID_LENGTH; k++) {
-			final char c1 = i.charAt(j++);
-			final char c2 = i.charAt(j++);
+			final char c1 = bs[j++];
+			final char c2 = bs[j++];
 			int b;
 
 			if ('0' <= c1 && c1 <= '9') {
@@ -181,7 +187,7 @@ public class ObjectId implements Comparable {
 	}
 
 	public void copyTo(final OutputStream w) throws IOException {
-		for (int k = 0; k < id.length; k++) {
+		for (int k = 0; k < Constants.OBJECT_ID_LENGTH; k++) {
 			final int b = id[k];
 			final int b1 = (b >> 4) & 0xf;
 			final int b2 = b & 0xf;
@@ -191,7 +197,7 @@ public class ObjectId implements Comparable {
 	}
 
 	public void copyTo(final Writer w) throws IOException {
-		for (int k = 0; k < id.length; k++) {
+		for (int k = 0; k < Constants.OBJECT_ID_LENGTH; k++) {
 			final int b = id[k];
 			final int b1 = (b >> 4) & 0xf;
 			final int b2 = b & 0xf;
@@ -201,14 +207,15 @@ public class ObjectId implements Comparable {
 	}
 
 	public String toString() {
-		final StringBuffer r = new StringBuffer(2 * id.length);
-		for (int k = 0; k < id.length; k++) {
+		byte s[] = new byte[Constants.OBJECT_ID_LENGTH*2];
+		int i = 0;
+		for (int k = 0; k < Constants.OBJECT_ID_LENGTH; k++) {
 			final int b = id[k];
 			final int b1 = (b >> 4) & 0xf;
 			final int b2 = b & 0xf;
-			r.append(b1 < 10 ? (char) ('0' + b1) : (char) ('a' + b1 - 10));
-			r.append(b2 < 10 ? (char) ('0' + b2) : (char) ('a' + b2 - 10));
+			s[i++] = (b1 < 10 ? (byte) ('0' + b1) : (byte) ('a' + b1 - 10));
+			s[i++] = (b2 < 10 ? (byte) ('0' + b2) : (byte) ('a' + b2 - 10));
 		}
-		return r.toString();
+		return new String(s,0);
 	}
 }
