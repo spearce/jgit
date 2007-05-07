@@ -32,8 +32,7 @@ public class PackFile {
 	private final WindowedFile pack;
 
 	private final WindowedFile idx;
-
-	private final long[] idxHeader;
+	private byte[][] idxdata;
 
 	private long objectCnt;
 
@@ -52,10 +51,9 @@ public class PackFile {
 					.substring(0, dot)
 					+ ".idx");
 			// FIXME window size and mmap type should be configurable
-			idx = new WindowedFile(repo.getWindowCache(), idxFile,
-					64 * 1024 * 1024, true);
+			idx = new WindowedFile(new WindowCache(8*1024*1024,1), idxFile, 8*1024*1024, true);
 			try {
-				idxHeader = readIndexHeader();
+				readIndexHeader();
 			} catch (IOException ioe) {
 				try {
 					idx.close();
@@ -75,7 +73,7 @@ public class PackFile {
 	}
 
 	ObjectLoader resolveBase(final long ofs) throws IOException {
-		return reader(ofs, new byte[Constants.OBJECT_ID_LENGTH]);
+		return reader(ofs);
 	}
 
 	/**
@@ -87,19 +85,10 @@ public class PackFile {
 	 * 
 	 * @param id
 	 *            the object to look for. Must not be null.
-	 * @param tmp
-	 *            a temporary buffer loaned to this pack for use during the
-	 *            search. This buffer must be at least
-	 *            {@link Constants#OBJECT_ID_LENGTH} bytes in size. The buffer
-	 *            will be overwritten during the search, but is unused upon
-	 *            return.
 	 * @return true if the object is in this pack; false otherwise.
-	 * @throws IOException
-	 *             there was an error reading data from the pack's index file.
 	 */
-	public boolean hasObject(final ObjectId id, final byte[] tmp)
-			throws IOException {
-		return findOffset(id, tmp) != -1;
+	public boolean hasObject(final ObjectId id) {
+		return findOffset(id) != -1;
 	}
 
 	/**
@@ -116,25 +105,17 @@ public class PackFile {
 	 * 
 	 * @param id
 	 *            the object to obtain from the pack. Must not be null.
-	 * @param tmp
-	 *            a temporary buffer loaned to this pack for use during the
-	 *            search, and given to the returned loader if the object is
-	 *            found. This buffer must be at least
-	 *            {@link Constants#OBJECT_ID_LENGTH} bytes in size. The buffer
-	 *            will be overwritten during the search. The buffer will be
-	 *            given to the loader if a loader is returned. If null is
-	 *            returned the caller may reuse the buffer.
 	 * @return the object loader for the requested object if it is contained in
 	 *         this pack; null if the object was not found.
 	 * @throws IOException
 	 *             the pack file or the index could not be read.
 	 */
-	public PackedObjectLoader get(final ObjectId id, final byte[] tmp)
+	public PackedObjectLoader get(final ObjectId id)
 			throws IOException {
-		final long offset = findOffset(id, tmp);
+		final long offset = findOffset(id);
 		if (offset == -1)
 			return null;
-		final PackedObjectLoader objReader = reader(offset, tmp);
+		final PackedObjectLoader objReader = reader(offset);
 		objReader.setId(id);
 		return objReader;
 	}
@@ -173,22 +154,35 @@ public class PackFile {
 		objectCnt = pack.readUInt32(position, intbuf);
 	}
 
-	private long[] readIndexHeader() throws CorruptObjectException, IOException {
+	private void readIndexHeader() throws CorruptObjectException, IOException {
 		if (idx.length() != (IDX_HDR_LEN + (24 * objectCnt) + (2 * Constants.OBJECT_ID_LENGTH)))
 			throw new CorruptObjectException("Invalid pack index");
 
-		final long[] idxHeader = new long[256];
+		final long[] idxHeader = new long[256]; // really unsigned 32-bit...
 		final byte[] intbuf = new byte[4];
 		for (int k = 0; k < idxHeader.length; k++)
 			idxHeader[k] = idx.readUInt32(k * 4, intbuf);
-		return idxHeader;
+		idxdata = new byte[idxHeader.length][];
+		for (int k = 0; k < idxHeader.length; k++) {
+			int n;
+			if (k == 0) {
+				n = (int)(idxHeader[k]);
+			} else {
+				n = (int)(idxHeader[k]-idxHeader[k-1]);
+			}
+			if (n > 0) {
+				idxdata[k] = new byte[n * (Constants.OBJECT_ID_LENGTH + 4)];
+				int off = (int) ((k == 0) ? 0 : idxHeader[k-1] * (Constants.OBJECT_ID_LENGTH + 4));
+				idx.read(off + IDX_HDR_LEN, idxdata[k]);
+			}
+		}
 	}
 
-	private PackedObjectLoader reader(final long objOffset, final byte[] ib)
+	private PackedObjectLoader reader(final long objOffset)
 			throws IOException {
 		long pos = objOffset;
 		int p = 0;
-
+		final byte[] ib = new byte[Constants.OBJECT_ID_LENGTH];
 		pack.readFully(pos, ib);
 		int c = ib[p++] & 0xff;
 		final int typeCode = (c >> 4) & 7;
@@ -239,23 +233,26 @@ public class PackFile {
 		return new WholePackedObjectLoader(this, pos, type, (int) size);
 	}
 
-	private long findOffset(final ObjectId objId, final byte[] tmpid)
-			throws IOException {
+	private long findOffset(final ObjectId objId) {
 		final int levelOne = objId.getFirstByte();
-		long high = idxHeader[levelOne];
-		long low = levelOne == 0 ? 0 : idxHeader[levelOne - 1];
-
+		byte[] data = idxdata[levelOne];
+		if (data == null)
+			return -1;
+		long high = data.length / (4 + Constants.OBJECT_ID_LENGTH);
+		long low = 0;
 		do {
 			final long mid = (low + high) / 2;
-			final long pos = IDX_HDR_LEN
-					+ ((4 + Constants.OBJECT_ID_LENGTH) * mid) + 4;
-			idx.readFully(pos, tmpid);
-			final int cmp = objId.compareTo(tmpid);
+			final long pos = ((4 + Constants.OBJECT_ID_LENGTH) * mid) + 4;
+			final int cmp = objId.compareTo(data, pos);
 			if (cmp < 0)
 				high = mid;
-			else if (cmp == 0)
-				return idx.readUInt32(pos - 4, tmpid);
-			else
+			else if (cmp == 0) {
+				int b0 = data[(int)pos-4] & 0xff;
+				int b1 = data[(int)pos-3] & 0xff;
+				int b2 = data[(int)pos-2] & 0xff;
+				int b3 = data[(int)pos-1] & 0xff;
+				return (((long)b0) << 24) | ( b1 << 16 ) | ( b2 << 8 ) | (b3); 
+			} else
 				low = mid + 1;
 		} while (low < high);
 		return -1;

@@ -83,10 +83,20 @@ public class ObjectId implements Comparable {
 		return new ObjectId(id);
 	}
 
-	private static int compare(final byte[] a, final byte[] b) {
-		if (a==b)
-			return 0;
+	public int compareTo(byte[] b, long pos) {
 		for (int k = 0; k < Constants.OBJECT_ID_LENGTH; k++) {
+			final int ak = id[k] & 0xff;
+			final int bk = b[k + (int)pos] & 0xff;
+			if (ak < bk)
+				return -1;
+			else if (ak > bk)
+				return 1;
+		}
+		return 0;
+	}
+
+	private static int compare(final byte[] a, final byte[] b) {
+		for (int k = 0 ; k < Constants.OBJECT_ID_LENGTH; k++) {
 			final int ak = a[k] & 0xff;
 			final int bk = b[k] & 0xff;
 			if (ak < bk)
@@ -218,4 +228,5 @@ public class ObjectId implements Comparable {
 		}
 		return new String(s,0);
 	}
+
 }

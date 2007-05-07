@@ -152,17 +152,9 @@ public class Repository {
 	public boolean hasObject(final ObjectId objectId) {
 		int k = packs.length;
 		if (k > 0) {
-			final byte[] tmp = new byte[Constants.OBJECT_ID_LENGTH];
 			do {
-				try {
-					if (packs[--k].hasObject(objectId, tmp))
-						return true;
-				} catch (IOException ioe) {
-					// This shouldn't happen unless the pack was corrupted
-					// after we opened it. We'll ignore the error as though
-					// the object does not exist in this pack.
-					//
-				}
+				if (packs[--k].hasObject(objectId))
+					return true;
 			} while (k > 0);
 		}
 		return toFile(objectId).isFile();
@@ -171,10 +163,9 @@ public class Repository {
 	public ObjectLoader openObject(final ObjectId id) throws IOException {
 		int k = packs.length;
 		if (k > 0) {
-			final byte[] tmp = new byte[Constants.OBJECT_ID_LENGTH];
 			do {
 				try {
-					final ObjectLoader ol = packs[--k].get(id, tmp);
+					final ObjectLoader ol = packs[--k].get(id);
 					if (ol != null)
 						return ol;
 				} catch (IOException ioe) {
@@ -185,7 +176,7 @@ public class Repository {
 					// time to collect and try once more.
 					try {
 						System.gc();
-						final ObjectLoader ol = packs[k].get(id, tmp);
+						final ObjectLoader ol = packs[k].get(id);
 						if (ol != null)
 							return ol;
 					} catch (IOException ioe2) {

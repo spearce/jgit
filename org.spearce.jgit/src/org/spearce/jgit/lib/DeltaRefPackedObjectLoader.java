@@ -15,8 +15,7 @@ class DeltaRefPackedObjectLoader extends DeltaPackedObjectLoader {
 	}
 
 	protected ObjectLoader getBaseLoader() throws IOException {
-		final ObjectLoader or = pack.get(deltaBase,
-				new byte[Constants.OBJECT_ID_LENGTH]);
+		final ObjectLoader or = pack.get(deltaBase);
 		if (or == null)
 			throw new MissingObjectException(deltaBase, "delta base");
 		return or;
