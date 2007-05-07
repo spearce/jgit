@@ -18,14 +18,13 @@ package org.spearce.egit.ui.internal.actions;
 
 import org.eclipse.jface.action.IAction;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.team.core.TeamException;
 import org.eclipse.team.internal.ui.actions.TeamAction;
 import org.eclipse.team.ui.TeamUI;
 import org.eclipse.team.ui.history.HistoryPageSaveablePart;
 
 public class ShowResourceInHistoryAction extends TeamAction {
 
-	public void run(IAction action) {
+	public void execute(IAction action) {
 		TeamUI.getHistoryView().showHistoryFor(getSelectedResources()[0]);
 	}
 
@@ -33,7 +32,7 @@ public class ShowResourceInHistoryAction extends TeamAction {
 		HistoryPageSaveablePart.showHistoryInDialog(shell, object);
 	}
 
-	protected boolean isEnabled() throws TeamException {
+	public boolean isEnabled() {
 		return !getSelection().isEmpty();
 	}
 }
