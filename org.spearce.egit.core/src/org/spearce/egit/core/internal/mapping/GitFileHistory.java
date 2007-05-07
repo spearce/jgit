@@ -20,9 +20,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -42,6 +40,7 @@ import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
+import org.spearce.jgit.lib.Walker;
 
 public class GitFileHistory extends FileHistory implements IAdaptable {
 
@@ -110,124 +109,30 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 		return getData().getRepositoryMapping(resource.getProject());
 	}
 
-	private Collection collectHistory() {
-		Repository repository = getRepository();
-		try {
-			ObjectId id = repository.resolve("HEAD");
-			Commit commit = repository.mapCommit(id);
-			ObjectId[] initialResourceHash = new ObjectId[relativeResourceName.length];
-			Arrays.fill(initialResourceHash, ObjectId.zeroId());
-			TreeEntry[] activeDiffTreeEntries = null;
-			try {
-				activeDiffTreeEntries = getData().getActiveDiffTreeEntries(resource);
-			} catch (CoreException e1) {
-				// TODO: eclipse excetion logging
-				e1.printStackTrace();
-			}
-			if (activeDiffTreeEntries!=null)
-				initialResourceHash[initialResourceHash.length-1] = activeDiffTreeEntries[0].getId();
-			return collectHistory(0, initialResourceHash, null,
-					repository, commit);
-		} catch (IOException e) {
-			e.printStackTrace();
-			return Collections.EMPTY_LIST;
-		}
+static class EclipseWalker extends Walker {
+	IResource resource;
+	
+	EclipseWalker(Repository repository, Commit start, String[] relativeResourceName,boolean leafIsBlob,IResource resource,boolean followMainOnly, ObjectId lastActiveDiffId) {
+		super(repository, start, relativeResourceName, leafIsBlob, followMainOnly, lastActiveDiffId);
+		this.resource = resource;
 	}
 
-	private Collection collectHistory(int count, ObjectId[] lastResourceHash, TreeEntry lastEntry,
-			Repository repository, Commit top) throws IOException {
-		if (top == null)
-			return Collections.EMPTY_LIST;
-		Collection ret = new ArrayList(10000);
-		Commit current = top;
-		Commit previous = top;
-
-		do {
-			TreeEntry currentEntry = lastEntry;
-			ObjectId[] currentResourceHash = new ObjectId[lastResourceHash.length];
-			Tree t = current.getTree();
-			for (int i = 0; i < currentResourceHash.length; ++i) {
-				TreeEntry m;
-				if (i == relativeResourceName.length-1 && resource.getType() == IResource.FILE)
-					m = t.findBlobMember(relativeResourceName[i]);
-				else
-					m = t.findTreeMember(relativeResourceName[i]);
-				if (m != null) {
-					ObjectId id = m.getId();
-					currentResourceHash[i] = id;
-					if (id.equals(lastResourceHash[i])) {
-						while (++i < currentResourceHash.length) {
-							currentResourceHash[i] = lastResourceHash[i];
-						}
-					} else {
-						if (m instanceof Tree) {
-							t = (Tree)m;
-						} else {
-							if (i == currentResourceHash.length - 1) {
-								currentEntry = m;
-							} else {
-								currentEntry = null;
-								while (++i < currentResourceHash.length) {
-									currentResourceHash[i] = ObjectId.zeroId();
-								}
-							}
-						}
-					}
-				} else {
-					for (; i < currentResourceHash.length; ++i) {
-						currentResourceHash[i] = ObjectId.zeroId();
-					}
-				}
-			}
-			
-			if (currentResourceHash.length == 0 || !currentResourceHash[currentResourceHash.length-1].equals(lastResourceHash[currentResourceHash.length-1]))
-				ret.add(new GitFileRevision(previous, resource, count));
-
-			lastResourceHash = currentResourceHash;
-			previous = current;
-
-			// TODO: we may need to list more revisions when traversing
-			// branches
-			List parents = current.getParentIds();
-			if ((flags & IFileHistoryProvider.SINGLE_LINE_OF_DESCENT) == 0) {
-				for (int i = 1; i < parents.size(); ++i) {
-					ObjectId mergeParentId = (ObjectId) parents.get(i);
-					Commit mergeParent;
-					try {
-						mergeParent = repository.mapCommit(mergeParentId);
-						ret.addAll(collectHistory(0, lastResourceHash, currentEntry, repository, 
-								mergeParent));
-						// TODO: this gets us a lot of duplicates that we need
-						// to filter out
-						// Leave that til we get a GUI.
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-			if (parents.size() > 0) {
-				ObjectId parentId = (ObjectId) parents.get(0);
-				try {
-					current = repository.mapCommit(parentId);
-				} catch (IOException e) {
-					e.printStackTrace();
-					current = null;
-				}
-			} else
-				current = null;
-			if (count>=0)
-				count++;
-		} while (current != null);
-
-		return ret;
+	protected void collect(Collection ret,Commit commit, int count) {
+		ret.add(new GitFileRevision(commit, resource, count));		
 	}
+	
+};
 
 	public IFileRevision[] getFileRevisions() {
 		if (revisions == null)
 			if ((flags & IFileHistoryProvider.SINGLE_LINE_OF_DESCENT) == 0)
 				findSingleRevision();
 			else
-				findRevisions();
+				try {
+					findRevisions();
+				} catch (IOException e) {
+					throw new Error(e);
+				}
 		return revisions;
 	}
 
@@ -272,7 +177,7 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 		}
 	}
 
-	private void findRevisions() {
+	private void findRevisions() throws IOException {
 		RepositoryProvider provider = RepositoryProvider.getProvider(resource
 				.getProject());
 		if (provider instanceof GitProvider) {
@@ -281,7 +186,25 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 			long time0 = new Date().getTime();
 			System.out.println("getting file history");
 			List ret = new ArrayList();
-			Collection githistory = collectHistory();
+			TreeEntry[] activeDiffTreeEntries = null;
+			try {
+				activeDiffTreeEntries = getData().getActiveDiffTreeEntries(resource);
+			} catch (CoreException e1) {
+				// TODO: eclipse excetion logging
+				e1.printStackTrace();
+			}
+			ObjectId activeDiffLeafId = null;
+			if (activeDiffTreeEntries!=null)
+				activeDiffLeafId = activeDiffTreeEntries[0].getId();
+
+			ObjectId head = getRepository().resolve("HEAD");
+			Commit start = getRepository().mapCommit(head);
+			EclipseWalker walker = new EclipseWalker(getRepository(), start, relativeResourceName, 
+					resource.getType() == IResource.FILE, 
+					resource, 
+					(flags & IFileHistoryProvider.SINGLE_LINE_OF_DESCENT) == 0,
+					activeDiffLeafId);
+			Collection githistory = walker.collectHistory();
 			if (githistory.size() >0) {
 				if (resource.getType()==IResource.FILE) {
 					// TODO: consider index in future versions
