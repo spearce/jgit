@@ -48,9 +48,11 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
+import org.eclipse.swt.events.MouseMoveListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -134,6 +136,31 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			public void mouseDoubleClick(MouseEvent e) {
 			}
 		
+		});
+
+		tree.addMouseMoveListener(new MouseMoveListener() {
+			TreeItem lastItem;
+			public void mouseMove(MouseEvent e) {
+				TreeItem item = tree.getItem(new Point(e.x,e.y));
+				if (item != null && item!=lastItem) {
+					IFileRevision rev = (IFileRevision) item.getData();
+					String commitStr=null;
+					if (appliedPatches!=null) {
+						String id = rev.getContentIdentifier();
+						if (!id.equals("Workspace")) {
+							StGitPatch patch = (StGitPatch) appliedPatches.get(new ObjectId(id));
+							if (patch!=null)
+								commitStr = "Patch: "+patch.getName();
+						} else {
+							commitStr = "Workspace:";
+						}
+					}
+					if (commitStr == null)
+						commitStr = "Commit: "+rev.getContentIdentifier();
+					tree.setToolTipText(commitStr+"\nAuthor:\t"+rev.getAuthor()+"\nDate:\t"+new Date(rev.getTimestamp())+"\n\n"+rev.getComment());
+				}
+				lastItem = item;
+			}
 		});
 
 		tree.addSelectionListener(new SelectionAdapter() {
