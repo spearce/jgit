@@ -70,7 +70,10 @@ public class GitResourceNode extends BufferedContent implements IStructureCompar
 	}
 
 	public String getName() {
-		return entry.getFullName();
+		if (entry != null)
+			return entry.getFullName();
+		else
+			return "<none>";
 	}
 
 	public Image getImage() {
@@ -81,16 +84,19 @@ public class GitResourceNode extends BufferedContent implements IStructureCompar
 		if (entry instanceof Tree)
 			return ITypedElement.FOLDER_TYPE;
 		else {
-			String name = entry.getName();
-			if (name != null) {
-				int index = name.lastIndexOf('.');
-				if (index == -1)
-					return ""; //$NON-NLS-1$
-				if (index == (name.length() - 1))
-					return ""; //$NON-NLS-1$
-				return name.substring(index + 1);
-			}
-			return "";
+			if (entry != null) {
+				String name = entry.getName();
+				if (name != null) {
+					int index = name.lastIndexOf('.');
+					if (index == -1)
+						return ""; //$NON-NLS-1$
+					if (index == (name.length() - 1))
+						return ""; //$NON-NLS-1$
+					return name.substring(index + 1);
+				}
+				return "";
+			} else
+				return "";
 		}
 	}
 
