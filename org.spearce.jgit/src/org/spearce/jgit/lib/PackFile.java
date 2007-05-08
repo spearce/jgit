@@ -31,7 +31,6 @@ public class PackFile {
 
 	private final WindowedFile pack;
 
-	private final WindowedFile idx;
 	private byte[][] idxdata;
 
 	private long objectCnt;
@@ -51,16 +50,15 @@ public class PackFile {
 					.substring(0, dot)
 					+ ".idx");
 			// FIXME window size and mmap type should be configurable
-			idx = new WindowedFile(new WindowCache(8*1024*1024,1), idxFile, 8*1024*1024, true);
+			final WindowedFile idx = new WindowedFile(new WindowCache(8*1024*1024,1), idxFile, 8*1024*1024, true);
 			try {
-				readIndexHeader();
-			} catch (IOException ioe) {
+				readIndexHeader(idx);
+			} finally {
 				try {
 					idx.close();
 				} catch (IOException err2) {
 					// ignore
 				}
-				throw ioe;
 			}
 		} catch (IOException ioe) {
 			try {
@@ -122,7 +120,6 @@ public class PackFile {
 
 	public void close() throws IOException {
 		pack.close();
-		idx.close();
 	}
 
 	byte[] decompress(final long position, final int totalSize)
@@ -154,7 +151,7 @@ public class PackFile {
 		objectCnt = pack.readUInt32(position, intbuf);
 	}
 
-	private void readIndexHeader() throws CorruptObjectException, IOException {
+	private void readIndexHeader(final WindowedFile idx) throws CorruptObjectException, IOException {
 		if (idx.length() != (IDX_HDR_LEN + (24 * objectCnt) + (2 * Constants.OBJECT_ID_LENGTH)))
 			throw new CorruptObjectException("Invalid pack index");
 
