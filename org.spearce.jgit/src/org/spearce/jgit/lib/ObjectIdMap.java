@@ -50,9 +50,9 @@ public class ObjectIdMap implements Map {
 
 	public ObjectIdMap(Map sample) {
 		try {
-			Method m=sample.getClass().getMethod("clone", null);
+			Method m=sample.getClass().getMethod("clone", (Class[])null);
 			for (int i=0; i<256; ++i) {
-				level0[i] = (Map)m.invoke(sample, null);
+				level0[i] = (Map)m.invoke(sample, (Object[])null);
 			}
 		} catch (IllegalAccessException e) {
 			throw new IllegalArgumentException(e);
