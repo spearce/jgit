@@ -18,6 +18,7 @@ package org.spearce.egit.ui;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.compare.CompareConfiguration;
@@ -78,6 +79,7 @@ import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.internal.actions.GitCompareRevisionAction;
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.Tag;
 import org.spearce.jgit.lib.Repository.StGitPatch;
 
 public class GitHistoryPage extends HistoryPage implements IAdaptable,
@@ -145,7 +147,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				if (item != null && item!=lastItem) {
 					IFileRevision rev = (IFileRevision) item.getData();
 					String commitStr=null;
-					if (appliedPatches!=null) {
+					if (rev!=null && appliedPatches!=null) {
 						String id = rev.getContentIdentifier();
 						if (!id.equals("Workspace")) {
 							StGitPatch patch = (StGitPatch) appliedPatches.get(new ObjectId(id));
@@ -275,8 +277,34 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					return id + "@.." + rs;
 			}
 
-			if (columnIndex == 2)
-				return ""; // TAGS
+			if (columnIndex == 2) {
+				String id = ((IFileRevision)element).getContentIdentifier();
+				ObjectId oid = new ObjectId(id);
+				StringBuilder b=new StringBuilder();
+				if (tags != null) {
+					Tag[] matching = tags.get(oid);
+					if (matching != null) {
+						for (Tag t : matching) {
+							if (b.length() > 0)
+								b.append(' ');
+							b.append(t.getTag());
+						}
+					}
+				}
+				if (branches != null) {
+					if (b.length() >0)
+						b.append('\n');
+					String[] matching = branches.get(oid);
+					if (matching != null) {
+						for (String t : matching) {
+							if (b.length() > 0)
+								b.append(' ');
+							b.append(t);
+						}
+					}
+				}
+				return b.toString();
+			}
 
 			if (columnIndex == 3) {
 				Date d = new Date(((IFileRevision) element).getTimestamp());
@@ -352,6 +380,8 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 	}
 
 	private Map appliedPatches;
+	private Map<ObjectId,Tag[]> tags;
+	private Map<ObjectId, String[]> branches;
 
 	class HistoryRefreshJob extends Job {
 
@@ -373,6 +403,48 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			Map<ObjectId,Tag[]> newtags = new HashMap<ObjectId,Tag[]>();
+			try {
+				for (String name : repositoryMapping.getRepository().getTags()) {
+					Tag t = repositoryMapping.getRepository().mapTag(name);
+					Tag[] samecommit = newtags.get(t.getObjId());
+					if (samecommit==null) { 
+						samecommit = new Tag[] { t };
+					} else {
+						Tag[] n=new Tag[samecommit.length+1];
+						for (int j=0; j<samecommit.length; ++j)
+							n[j] = samecommit[j];
+						n[n.length-1] = t;
+						samecommit = n;
+					}
+					newtags.put(t.getObjId(), samecommit);
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			Map<ObjectId, String[]> newBranches = new HashMap<ObjectId, String[]>();
+			try {
+				for (String branch : repositoryMapping.getRepository().getBranches()) {
+					ObjectId id = repositoryMapping.getRepository().resolve("refs/heads/"+branch);
+					String[] samecommit = newBranches.get(id);
+					if (samecommit == null) {
+						samecommit = new String[] { branch };
+					} else {
+						String[] n=new String[samecommit.length + 1];
+						for (int j=0; j<samecommit.length; ++j)
+							n[j] = samecommit[j];
+						n[n.length-1] = branch;
+						samecommit = n;
+					}
+					newBranches.put(id, samecommit);
+				}
+				branches = newBranches;
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 			IFileHistoryProvider fileHistoryProvider = provider
 					.getFileHistoryProvider();
 			IFileHistory fileHistoryFor = fileHistoryProvider
@@ -380,7 +452,9 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 							IFileHistoryProvider.SINGLE_LINE_OF_DESCENT, monitor);
 			fileRevisions = fileHistoryFor.getFileRevisions();
 			
-			final Map fnewappliedPatches = newappliedPatches; 
+			final Map fnewappliedPatches = newappliedPatches;
+			final Map<ObjectId,Tag[]> ftags = newtags;
+
 			tree.getDisplay().asyncExec(new Runnable() {
 			
 				public void run() {
@@ -389,8 +463,9 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					tree.setData(fileRevisions);
 					tree.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,true));
 					System.out.println("inputchanged, invoking refresh");
-					viewer.refresh();
 					appliedPatches = fnewappliedPatches;
+					tags = ftags;
+					viewer.refresh();
 					done(Status.OK_STATUS);
 				}
 			

@@ -470,7 +470,7 @@ public class Repository {
 		return ref;
 	}
 
-	public Collection getBranches() {
+	public Collection<String> getBranches() {
 		return listFilesRecursively(new File(refsDir, "heads"), null);
 	}
 
