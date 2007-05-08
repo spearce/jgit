@@ -262,17 +262,17 @@ public class Repository {
 
 	public Tag mapTag(String revstr) throws IOException {
 		final ObjectId id = resolve(revstr);
-		return id != null ? mapTag(id) : null;
+		return id != null ? mapTag(revstr, id) : null;
 	}
 
-	public Tag mapTag(final ObjectId id) throws IOException {
+	public Tag mapTag(final String refName, final ObjectId id) throws IOException {
 		final ObjectLoader or = openObject(id);
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
 		if (Constants.TYPE_TAG.equals(or.getType()))
-			return new Tag(this, id, raw);
-		throw new IncorrectObjectTypeException(id, Constants.TYPE_TAG);
+			return new Tag(this, id, refName, raw);
+		return new Tag(this, id, refName, null);
 	}
 
 	public RefLock lockRef(final String ref) throws IOException {
@@ -469,7 +469,7 @@ public class Repository {
 		return listFilesRecursively(new File(refsDir, "heads"), null);
 	}
 
-	public Collection getTags() {
+	public Collection<String> getTags() {
 		return listFilesRecursively(new File(refsDir, "tags"), null);
 	}
 
@@ -535,10 +535,10 @@ public class Repository {
 		return ret;
 	}
 
-	private Collection listFilesRecursively(File root, File start) {
+	private Collection<String> listFilesRecursively(File root, File start) {
 		if (start == null)
 			start = root;
-		Collection ret = new ArrayList();
+		Collection<String> ret = new ArrayList();
 		File[] files = start.listFiles();
 		for (int i = 0; i < files.length; ++i) {
 			if (files[i].isDirectory())

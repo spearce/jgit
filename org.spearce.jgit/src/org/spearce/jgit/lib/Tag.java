@@ -44,10 +44,16 @@ public class Tag {
 		objdb = db;
 	}
 
-	public Tag(final Repository db, final ObjectId id, final byte[] raw) {
+	public Tag(final Repository db, final ObjectId id, String refName, final byte[] raw) {
 		objdb = db;
-		tagId = id;
-		objId = ObjectId.fromString(raw, 7);
+		if (raw != null) {
+			tagId = id;
+			objId = ObjectId.fromString(raw, 7);
+		} else
+			objId = id;
+		if (refName.startsWith("refs/tags/"))
+			refName = refName.substring(10);
+		tag = refName;
 		this.raw = raw;
 	}
 
@@ -119,7 +125,13 @@ public class Tag {
 	public void tag() throws IOException {
 		if (getTagId() != null)
 			throw new IllegalStateException("exists " + getTagId());
-		setTagId(new ObjectWriter(objdb).writeTag(this));
+		if (tagger!=null || message!=null || type!=null) {
+			ObjectId tagid = new ObjectWriter(objdb).writeTag(this);
+			setTagId(tagid);
+			objdb.writeRef("refs/heads/"+getTag(),tagid);
+		} else {
+			objdb.writeRef("refs/heads/"+getTag(),objId);
+		}
 	}
 
 	public String toString() {

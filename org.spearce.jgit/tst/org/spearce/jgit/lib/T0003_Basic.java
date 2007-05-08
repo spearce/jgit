@@ -338,6 +338,19 @@ public class T0003_Basic extends RepositoryTestCase {
 		assertEquals("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", mapTag.getObjId().toString());
 	}
 
+	public void test020b_createBlobPlainTag() throws IOException {
+		test020_createBlobTag();
+		Tag t = new Tag(db);
+		t.setTag("test020b");
+		t.setObjId(new ObjectId("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"));
+		t.tag();
+		
+		Tag mapTag = db.mapTag("test020b");
+		assertEquals("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", mapTag.getObjId().toString());
+		
+		// We do not repeat the plain tag test for other object types
+	}
+
 	public void test021_createTreeTag() throws IOException {
 		final ObjectId emptyId = new ObjectWriter(db).writeBlob(new byte[0]);
 		final Tree almostEmptyTree = new Tree(db);
