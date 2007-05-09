@@ -16,6 +16,7 @@
  */
 package org.spearce.jgit.lib;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
@@ -471,5 +472,14 @@ public class T0003_Basic extends RepositoryTestCase {
 		assertEquals("test022 tagged\n", mapTag22.getMessage());
 		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag22.getAuthor());
 		assertEquals("b5d3b45a96b340441f5abb9080411705c51cc86c", mapTag22.getObjId().toString());
+	}
+
+	public void test025_computeSha1NoStore() throws IOException {
+		byte[] data = "test025 some data, more than 16 bytes to get good coverage"
+				.getBytes("ISO-8859-1");
+		// TODO: but we do not test legacy header writing
+		final ObjectId id = new ObjectWriter(db).computeBlobSha1(data.length,
+				new ByteArrayInputStream(data));
+		assertEquals("4f561df5ecf0dfbd53a0dc0f37262fef075d9dde", id.toString());
 	}
 }

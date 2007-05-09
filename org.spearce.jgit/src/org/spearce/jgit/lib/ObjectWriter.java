@@ -74,7 +74,8 @@ public class ObjectWriter {
 
 	public ObjectId writeBlob(final long len, final InputStream is)
 			throws IOException {
-		return writeObject(Constants.OBJ_BLOB, Constants.TYPE_BLOB, len, is);
+		return writeObject(Constants.OBJ_BLOB, Constants.TYPE_BLOB, len, is,
+				true);
 	}
 
 	public ObjectId writeTree(final Tree t) throws IOException {
@@ -105,7 +106,8 @@ public class ObjectWriter {
 
 	public ObjectId writeTree(final long len, final InputStream is)
 			throws IOException {
-		return writeObject(Constants.OBJ_TREE, Constants.TYPE_TREE, len, is);
+		return writeObject(Constants.OBJ_TREE, Constants.TYPE_TREE, len, is,
+				true);
 	}
 
 	public ObjectId writeCommit(final Commit c) throws IOException {
@@ -192,24 +194,37 @@ public class ObjectWriter {
 
 	public ObjectId writeCommit(final long len, final InputStream is)
 			throws IOException {
-		return writeObject(Constants.OBJ_COMMIT, Constants.TYPE_COMMIT, len, is);
+		return writeObject(Constants.OBJ_COMMIT, Constants.TYPE_COMMIT, len,
+				is, true);
 	}
 
 	public ObjectId writeTag(final long len, final InputStream is)
 		throws IOException {
-		return writeObject(Constants.OBJ_TAG, Constants.TYPE_TAG, len, is);
+		return writeObject(Constants.OBJ_TAG, Constants.TYPE_TAG, len, is, true);
 	}
 
+	public ObjectId computeBlobSha1(final long len, final InputStream is)
+			throws IOException {
+		return writeObject(Constants.OBJ_BLOB, Constants.TYPE_BLOB, len, is,
+				false);
+	}
+
+	@SuppressWarnings("null")
 	public ObjectId writeObject(final int typeCode, final String type,
-			long len, final InputStream is) throws IOException {
+			long len, final InputStream is, boolean store) throws IOException {
 		final File t;
 		final DeflaterOutputStream deflateStream;
 		final FileOutputStream fileStream;
 		ObjectId id = null;
 
-		t = File.createTempFile("noz", null, r.getObjectsDirectory());
-		fileStream = new FileOutputStream(t);
-		if (!legacyHeaders) {
+		if (store) {
+			t = File.createTempFile("noz", null, r.getObjectsDirectory());
+			fileStream = new FileOutputStream(t);
+		} else {
+			t = null;
+			fileStream = null;
+		}
+		if (fileStream !=null && !legacyHeaders) {
 			long sz = len;
 			int c = ((typeCode & 7) << 4) | (int) (sz & 0xf);
 			sz >>= 4;
@@ -222,8 +237,11 @@ public class ObjectWriter {
 		}
 
 		md.reset();
-		def.reset();
-		deflateStream = new DeflaterOutputStream(fileStream, def);
+		if (store) {
+			def.reset();
+			deflateStream = new DeflaterOutputStream(fileStream, def);
+		} else
+			deflateStream = null;
 
 		try {
 			byte[] header;
@@ -231,26 +249,27 @@ public class ObjectWriter {
 
 			header = Constants.encodeASCII(type);
 			md.update(header);
-			if (legacyHeaders)
+			if (deflateStream != null && legacyHeaders)
 				deflateStream.write(header);
 
 			md.update((byte) ' ');
-			if (legacyHeaders)
+			if (deflateStream != null && legacyHeaders)
 				deflateStream.write((byte) ' ');
 
 			header = Constants.encodeASCII(len);
 			md.update(header);
-			if (legacyHeaders)
+			if (deflateStream != null && legacyHeaders)
 				deflateStream.write(header);
 
 			md.update((byte) 0);
-			if (legacyHeaders)
+			if (deflateStream != null && legacyHeaders)
 				deflateStream.write((byte) 0);
 
 			while (len > 0
 					&& (r = is.read(buf, 0, (int) Math.min(len, buf.length))) > 0) {
 				md.update(buf, 0, r);
-				deflateStream.write(buf, 0, r);
+				if (deflateStream != null)
+					deflateStream.write(buf, 0, r);
 				len -= r;
 			}
 
@@ -258,11 +277,15 @@ public class ObjectWriter {
 				throw new IOException("Input did not match supplied length. "
 						+ len + " bytes are missing.");
 
-			deflateStream.close();
-			t.setReadOnly();
+			if (deflateStream != null ) {
+				deflateStream.close();
+				if (t != null)
+					t.setReadOnly();
+			}
+
 			id = new ObjectId(md.digest());
 		} finally {
-			if (id == null) {
+			if (id == null && deflateStream != null) {
 				try {
 					deflateStream.close();
 				} finally {
@@ -270,6 +293,9 @@ public class ObjectWriter {
 				}
 			}
 		}
+
+		if (t == null)
+			return id;
 
 		if (r.hasObject(id)) {
 			// Object is already in the repository so remove
