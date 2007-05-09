@@ -108,4 +108,11 @@ public abstract class FileMode {
 	public String toString() {
 		return Integer.toOctalString(modeBits);
 	}
+
+	/**
+	 * @return The mode bits as an integer.
+	 */
+	public int getBits() {
+		return modeBits;
+	}
 }

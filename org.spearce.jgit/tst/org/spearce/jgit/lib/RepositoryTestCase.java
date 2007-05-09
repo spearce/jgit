@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.Arrays;
 
 import junit.framework.TestCase;
 
@@ -69,12 +70,27 @@ public abstract class RepositoryTestCase extends TestCase {
 		fos.close();
 	}
 
-	protected static void writeTrashFile(final String name, final String data)
+	protected static File writeTrashFile(final String name, final String data)
 			throws IOException {
+		File tf = new File(trash, name);
+		File tfp = tf.getParentFile();
+		if (!tfp.exists() && !tf.getParentFile().mkdirs())
+			throw new Error("Could not create directory " + tf.getParentFile());
 		final OutputStreamWriter fw = new OutputStreamWriter(
-				new FileOutputStream(new File(trash, name)), "UTF-8");
+				new FileOutputStream(tf), "UTF-8");
 		fw.write(data);
 		fw.close();
+		return tf;
+	}
+
+	protected static void checkFile(File f, final String checkData)
+			throws IOException {
+		byte[] data = new byte[(int) f.length()];
+		assertEquals(f.length(), data.length);
+		FileInputStream stream = new FileInputStream(f);
+		stream.read(data);
+		byte[] bytes = checkData.getBytes("ISO-8859-1");
+		assertTrue(Arrays.equals(bytes, data));
 	}
 
 	protected Repository db;

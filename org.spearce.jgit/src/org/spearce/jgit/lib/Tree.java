@@ -118,7 +118,7 @@ public class Tree extends TreeEntry implements Treeish {
 		readTree(raw);
 	}
 
-	private Tree(final Tree parent, final byte[] nameUTF8) {
+	public Tree(final Tree parent, final byte[] nameUTF8) {
 		super(parent, null, nameUTF8);
 		db = parent.getRepository();
 		contents = EMPTY_TREE;
