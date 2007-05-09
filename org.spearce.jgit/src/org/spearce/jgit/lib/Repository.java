@@ -52,6 +52,8 @@ public class Repository {
 	private Map<ObjectId,Reference<Tree>> treeCache = new WeakHashMap<ObjectId,Reference<Tree>>(30000);
 	private Map<ObjectId,Reference<Commit>> commitCache = new WeakHashMap<ObjectId,Reference<Commit>>(30000);
 
+	private GitIndex index;
+
 	public Repository(final File d) throws IOException {
 		gitDir = d.getAbsoluteFile();
 		try {
@@ -556,5 +558,15 @@ public class Repository {
 	/** Clean up stale caches */
 	public void refreshFromDisk() {
 		packedRefs = null;
+	}
+
+	public GitIndex getIndex() throws IOException {
+		if (index == null) {
+			index = new GitIndex(this);
+			index.read();
+		} else {
+			index.rereadIfNecessary();
+		}
+		return index;
 	}
 }

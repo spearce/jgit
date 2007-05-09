@@ -27,8 +27,6 @@ import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.Constants;
-import org.spearce.jgit.lib.MergedTree;
-import org.spearce.jgit.lib.RefLock;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
@@ -44,8 +42,6 @@ public class RepositoryMapping {
 
 	private final String subset;
 
-	private final String cacheref;
-
 	private Repository db;
 
 	private CheckpointJob currowj;
@@ -53,10 +49,6 @@ public class RepositoryMapping {
 	private boolean runningowj;
 
 	private IContainer container;
-
-	private Tree cacheTree;
-
-	private MergedTree activeDiff;
 
 	public RepositoryMapping(final Properties p, final String initialKey) {
 		final int dot = initialKey.lastIndexOf('.');
@@ -66,7 +58,6 @@ public class RepositoryMapping {
 		gitdirPath = p.getProperty(initialKey);
 		s = p.getProperty(containerPath + ".subset");
 		subset = "".equals(s) ? null : s;
-		cacheref = p.getProperty(containerPath + ".cacheref");
 	}
 
 	public RepositoryMapping(final IContainer mappedContainer,
@@ -108,7 +99,6 @@ public class RepositoryMapping {
 				p += "-";
 			p += r.segment(j);
 		}
-		cacheref = p;
 	}
 
 	public IPath getContainerPath() {
@@ -123,12 +113,18 @@ public class RepositoryMapping {
 		return subset;
 	}
 
+	public File getWorkDir() {
+//		assert containerPath.endsWith("/" + subset);
+//		return Path.fromPortableString(
+//				containerPath.substring(containerPath.length() - 1
+//						- subset.length())).toFile();
+		return getRepository().getDirectory().getParentFile();
+	}
+
 	public synchronized void clear() {
 		db = null;
 		currowj = null;
 		container = null;
-		cacheTree = null;
-		activeDiff = null;
 	}
 
 	public synchronized Repository getRepository() {
@@ -137,8 +133,6 @@ public class RepositoryMapping {
 
 	public synchronized void setRepository(final Repository r) {
 		db = r;
-		cacheTree = null;
-		activeDiff = null;
 		if (db != null) {
 			initJob();
 		}
@@ -152,56 +146,18 @@ public class RepositoryMapping {
 		container = c;
 	}
 
-	public synchronized Tree getCacheTree() {
-		return cacheTree;
-	}
-
-	public synchronized MergedTree getActiveDiff() {
-		return activeDiff;
-	}
-
 	public synchronized void checkpointIfNecessary() {
 		if (!runningowj) {
 			currowj.scheduleIfNecessary();
 		}
 	}
 
-	public synchronized void saveCache() throws IOException {
-		final RefLock lock = getRepository().lockRef(cacheref);
-		if (lock != null) {
-			lock.write(cacheTree.getId());
-			lock.commit();
-		}
-	}
-
-	public synchronized void fullUpdate() throws IOException {
-		cacheTree = mapHEADTree();
-
-		if (container.exists()) {
-			cacheTree.accept(new UpdateTreeFromWorkspace(container),
-					TreeEntry.CONCURRENT_MODIFICATION);
-		} else {
-			cacheTree.delete();
-		}
-
+	public synchronized void fullUpdate() {
 		recomputeMerge();
 		currowj.scheduleIfNecessary();
 	}
 
-	public synchronized void recomputeMerge() throws IOException {
-		Tree head = mapHEADTree();
-
-		if (cacheTree == null) {
-			cacheTree = getRepository().mapTree(cacheref);
-		}
-		if (cacheTree == null) {
-			cacheTree = new Tree(getRepository());
-		}
-
-		cacheTree.accept(new EnqueueWriteTree(container, currowj),
-				TreeEntry.MODIFIED_ONLY);
-
-		activeDiff = new MergedTree(new Tree[] { head, cacheTree });
+	public synchronized void recomputeMerge() {
 		GitProjectData.fireRepositoryChanged(this);
 	}
 
@@ -223,15 +179,13 @@ public class RepositoryMapping {
 
 	public synchronized void store(final Properties p) {
 		p.setProperty(containerPath + ".gitdir", gitdirPath);
-		p.setProperty(containerPath + ".cacheref", cacheref);
 		if (subset != null && !"".equals(subset)) {
 			p.setProperty(containerPath + ".subset", subset);
 		}
 	}
 
 	public String toString() {
-		return "RepositoryMapping[" + containerPath + " -> " + gitdirPath
-				+ ", " + cacheref + "]";
+		return "RepositoryMapping[" + containerPath + " -> " + gitdirPath + "]";
 	}
 
 	@SuppressWarnings("synthetic-access")

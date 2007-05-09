@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
@@ -193,16 +194,17 @@ static class EclipseWalker extends Walker {
 			long time0 = new Date().getTime();
 			System.out.println("getting file history");
 			List ret = new ArrayList();
-			TreeEntry[] activeDiffTreeEntries = null;
-			try {
-				activeDiffTreeEntries = getData().getActiveDiffTreeEntries(resource);
-			} catch (CoreException e1) {
-				// TODO: eclipse excetion logging
-				e1.printStackTrace();
-			}
 			ObjectId activeDiffLeafId = null;
-			if (activeDiffTreeEntries!=null)
-				activeDiffLeafId = activeDiffTreeEntries[1].getId();
+			if (!(resource instanceof IContainer)) {
+				String relativeResourceNameString = resource
+						.getProjectRelativePath().toPortableString();
+				String prefix = getRepositoryMapping().getSubset();
+				if (prefix != null)
+					relativeResourceNameString = prefix + "/"
+							+ relativeResourceNameString;
+				activeDiffLeafId = getRepository().getIndex().getEntry(
+						relativeResourceNameString).getObjectId();
+			}
 
 			ObjectId head = getRepository().resolve("HEAD");
 			Commit start = getRepository().mapCommit(head);

@@ -158,17 +158,6 @@ public class CheckpointJob extends Job {
 					i.remove();
 				}
 			}
-
-			synchronized (rm) {
-				if (!rm.getCacheTree().isModified()) {
-					monitor.subTask(CoreText.CheckpointJob_writingRef);
-					trace("writing ref");
-					rm.saveCache();
-				} else {
-					trace("tree is still dirty; ref can't be written");
-				}
-			}
-
 			GitProjectData.fireRepositoryChanged(rm);
 		} catch (IOException ioe) {
 			return Activator.error(CoreText.CheckpointJob_failed, ioe)

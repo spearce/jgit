@@ -16,13 +16,16 @@
  */
 package org.spearce.egit.core.op;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.Map;
 
+import org.eclipse.core.resources.IContainer;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -31,8 +34,7 @@ import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
 import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryMapping;
-import org.spearce.jgit.lib.Tree;
-import org.spearce.jgit.lib.TreeEntry;
+import org.spearce.jgit.lib.GitIndex;
 
 /**
  * Remove one or more existing files/folders from the Git repository.
@@ -43,8 +45,7 @@ import org.spearce.jgit.lib.TreeEntry;
  * automatically remove each resource from the correct Git repository.
  * </p>
  * <p>
- * Resources are only scheduled for removal in the cache-tree. The cache-tree
- * will be dirty in memory, needing a checkpoint.
+ * Resources are only scheduled for removal in the index-
  * </p>
  */
 public class UntrackOperation implements IWorkspaceRunnable {
@@ -66,71 +67,64 @@ public class UntrackOperation implements IWorkspaceRunnable {
 			m = new NullProgressMonitor();
 		}
 
-		final IdentityHashMap tomerge = new IdentityHashMap();
-		m.beginTask(CoreText.UntrackOperation_adding, rsrcList.size() * 200);
+		final IdentityHashMap<RepositoryMapping, Boolean> tomerge = new IdentityHashMap<RepositoryMapping, Boolean>();
+		m.beginTask(CoreText.AddOperation_adding, rsrcList.size() * 200);
 		try {
 			final Iterator i = rsrcList.iterator();
 			while (i.hasNext()) {
 				final Object obj = i.next();
 				if (obj instanceof IResource) {
-					untrack(tomerge, (IResource) obj);
+					final IResource toRemove = (IResource)obj;
+					final IProject p = toRemove.getProject();					
+					final GitProjectData pd = GitProjectData.get(toRemove.getProject());
+					final RepositoryMapping rm = pd.getRepositoryMapping(p);
+					final GitIndex index = rm.getRepository().getIndex();
+					tomerge.put(rm, Boolean.TRUE);
+					String prefix = rm.getSubset();
+					if (prefix == null)
+						prefix = "";
+					else
+						prefix = prefix + "/";
+					final String fprefix = prefix;
+					if (toRemove instanceof IContainer) {
+						((IContainer)toRemove).accept(new IResourceVisitor() {
+							public boolean visit(IResource resource) throws CoreException {
+								if (resource.getType() == IResource.FILE) {
+									index.remove(rm.getWorkDir(), new File(rm.getWorkDir(),fprefix + resource.getProjectRelativePath().toFile()));
+								}
+								return true;
+							}
+						},IResource.DEPTH_INFINITE, IContainer.EXCLUDE_DERIVED);
+					} else {
+						index.remove(rm.getWorkDir(), new File(rm.getWorkDir(),prefix + toRemove.getProjectRelativePath().toFile()));
+					}
 				}
 				m.worked(200);
 			}
+			for (RepositoryMapping rm : tomerge.keySet()) {
+				m.setTaskName("Writing index for "+rm.getRepository().getDirectory());
+				rm.getRepository().getIndex().write();
+			}
+		} catch (RuntimeException e) {
+			e.printStackTrace();
+			throw Activator.error(CoreText.UntrackOperation_failed, e);
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw Activator.error(CoreText.UntrackOperation_failed, e);
 		} finally {
 			try {
 				final Iterator i = tomerge.keySet().iterator();
 				while (i.hasNext()) {
 					final RepositoryMapping r = (RepositoryMapping) i.next();
+					r.getRepository().getIndex().read();
 					r.recomputeMerge();
 				}
-			} catch (IOException ioe) {
-				throw Activator.error(CoreText.UntrackOperation_failed, ioe);
+			} catch (IOException e) {
+				e.printStackTrace();
 			} finally {
 				m.done();
 			}
 		}
 	}
 
-	private void untrack(final Map tomerge, final IResource torm)
-			throws CoreException {
-		final GitProjectData pd = GitProjectData.get(torm.getProject());
-		IResource r = torm;
-		String s = null;
-		RepositoryMapping m = null;
-
-		while (r != null) {
-			m = pd.getRepositoryMapping(r);
-			if (m != null) {
-				break;
-			}
-
-			if (s != null) {
-				s = r.getName() + "/" + s;
-			} else {
-				s = r.getName();
-			}
-
-			r = r.getParent();
-		}
-
-		if (s == null || m == null || m.getCacheTree() == null) {
-			return;
-		}
-
-		try {
-			final Tree t = m.getCacheTree();
-			final TreeEntry e;
-			if (torm.getType() == IResource.FILE)
-				e = t.findBlobMember(s);
-			else
-				e = t.findTreeMember(s);
-			if (e != null) {
-				e.delete();
-				tomerge.put(m, m);
-			}
-		} catch (IOException ioe) {
-			throw Activator.error(CoreText.UntrackOperation_failed, ioe);
-		}
-	}
 }

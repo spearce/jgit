@@ -22,7 +22,6 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
-import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.team.IMoveDeleteHook;
 import org.eclipse.core.resources.team.IResourceTree;
 import org.eclipse.core.runtime.Assert;
@@ -31,12 +30,12 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryMapping;
-import org.spearce.jgit.lib.ForceModified;
-import org.spearce.jgit.lib.Tree;
-import org.spearce.jgit.lib.TreeEntry;
+import org.spearce.jgit.lib.GitIndex;
+import org.spearce.jgit.lib.Repository;
 
 class GitMoveDeleteHook implements IMoveDeleteHook {
 	private static final boolean NOT_ALLOWED = true;
+	private static final boolean I_AM_DONE = true;
 
 	private static final boolean FINISH_FOR_ME = false;
 
@@ -49,7 +48,22 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 
 	public boolean deleteFile(final IResourceTree tree, final IFile file,
 			final int updateFlags, final IProgressMonitor monitor) {
-		return delete(tree, file);
+		try {
+			final GitProjectData d = GitProjectData.get(file.getProject());
+			RepositoryMapping map = d.getRepositoryMapping(file.getProject());
+			if (map != null) {
+				Repository repository = map.getRepository();
+				GitIndex index = repository.getIndex();
+				index.remove(map.getWorkDir(), file.getLocation().toFile());
+				index.write();
+			}
+			return FINISH_FOR_ME;
+		} catch (IOException e) {
+			e.printStackTrace();
+			tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(), 0,
+					CoreText.MoveDeleteHook_operationError, e));
+			return NOT_ALLOWED;
+		}
 	}
 
 	public boolean deleteFolder(final IResourceTree tree, final IFolder folder,
@@ -60,34 +74,66 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 		if (data.isProtected(folder)) {
 			return cannotModifyRepository(tree);
 		} else {
-			return delete(tree, folder);
+			return FINISH_FOR_ME;
 		}
 	}
 
 	public boolean deleteProject(final IResourceTree tree,
 			final IProject project, final int updateFlags,
 			final IProgressMonitor monitor) {
+		// TODO: Note that eclipse thinks folders are real, while
+		// Git does not care.
 		return FINISH_FOR_ME;
 	}
 
 	public boolean moveFile(final IResourceTree tree, final IFile source,
 			final IFile destination, final int updateFlags,
 			final IProgressMonitor monitor) {
-		return move(tree, source, destination);
+		try {
+			final GitProjectData d1 = GitProjectData.get(source.getProject());
+			final RepositoryMapping map1 = d1.getRepositoryMapping(source
+					.getProject());
+			if (map1 == null) {
+				tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(),
+						0, "Not in a git versioned project", null));
+				return NOT_ALLOWED;
+			}
+
+			final GitIndex index1 = map1.getRepository().getIndex();
+			final GitProjectData d2 = GitProjectData.get(destination
+					.getProject());
+			final RepositoryMapping map2 = d2.getRepositoryMapping(destination
+					.getProject());
+			if (map2 == null) {
+				tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(),
+						0, "Not in a git versioned project", null));
+				return NOT_ALLOWED;
+			}
+			GitIndex index2 = map2.getRepository().getIndex();
+			tree.standardMoveFile(source, destination, updateFlags, monitor);
+			index1.remove(map1.getWorkDir(), source.getLocation().toFile());
+			index2.add(map2.getWorkDir(), destination.getLocation().toFile());
+			index1.write();
+			if (index2 != index1)
+				index2.write();
+			return I_AM_DONE;
+
+		} catch (IOException e) {
+			// Recover properly!
+			e.printStackTrace();
+			tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(), 0,
+					CoreText.MoveDeleteHook_operationError, e));
+			return NOT_ALLOWED;
+
+		}
 	}
 
 	public boolean moveFolder(final IResourceTree tree, final IFolder source,
 			final IFolder destination, final int updateFlags,
 			final IProgressMonitor monitor) {
-		// Moving a GIT repository which is in use is rather complicated. So
-		// we just disallow it. Instead disconnect the team provider before
-		// attempting to move the repository.
-		//
-		if (data.isProtected(source)) {
-			return cannotModifyRepository(tree);
-		} else {
-			return move(tree, source, destination);
-		}
+		// TODO: Implement this. Should be relatively easy, but consider that
+		// Eclipse thinks folders are real thinsgs, while Git does not care.
+		return NOT_ALLOWED;
 	}
 
 	public boolean moveProject(final IResourceTree tree, final IProject source,
@@ -97,173 +143,10 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 		// project data with the new repository mappings. To move a project
 		// disconnect the GIT team provider, move the project, then reconnect
 		// the GIT team provider.
+		// We should be able to do this without too much effort when the
+		// projects belong to the same Git repository.
 		//
 		return NOT_ALLOWED;
-	}
-
-	private boolean delete(final IResourceTree tree, IResource r) {
-		String s = null;
-		RepositoryMapping m = null;
-
-		while (r != null) {
-			m = data.getRepositoryMapping(r);
-			if (m != null) {
-				break;
-			}
-
-			if (s != null) {
-				s = r.getName() + "/" + s;
-			} else {
-				s = r.getName();
-			}
-
-			r = r.getParent();
-		}
-
-		if (s != null && m != null && m.getCacheTree() != null) {
-			try {
-				final TreeEntry e = m.getCacheTree().findTreeMember(s);
-				if (e != null) {
-					e.delete();
-					m.recomputeMerge();
-				}
-			} catch (IOException ioe) {
-				tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(),
-						0, CoreText.MoveDeleteHook_operationError, ioe));
-				return NOT_ALLOWED;
-			}
-		}
-
-		return FINISH_FOR_ME;
-	}
-
-	private boolean move(final IResourceTree tree, IResource src, IResource dst) {
-		final String dstName = dst.getName();
-		String srcPath = null;
-		RepositoryMapping srcMap = null;
-		String dstPath = null;
-		RepositoryMapping dstMap = null;
-		final TreeEntry srcEnt;
-		Tree dstTree;
-
-		while (src != null) {
-			srcMap = data.getRepositoryMapping(src);
-			if (srcMap != null) {
-				break;
-			}
-
-			if (srcPath != null) {
-				srcPath = src.getName() + "/" + srcPath;
-			} else {
-				srcPath = src.getName();
-			}
-
-			src = src.getParent();
-		}
-
-		dst = dst.getParent();
-		while (dst != null) {
-			dstMap = data.getRepositoryMapping(dst);
-			if (dstMap != null) {
-				break;
-			}
-
-			if (dstPath != null) {
-				dstPath = dst.getName() + "/" + dstPath;
-			} else {
-				dstPath = dst.getName();
-			}
-
-			dst = dst.getParent();
-		}
-
-		if (src == null || srcPath == null || srcMap == null
-				|| srcMap.getCacheTree() == null)
-			return FINISH_FOR_ME;
-
-		try {
-			if (src.getType() == IResource.FILE)
-				srcEnt = srcMap.getCacheTree().findBlobMember(srcPath);
-			else
-				srcEnt = srcMap.getCacheTree().findTreeMember(srcPath);
-			if (srcEnt == null) {
-				return FINISH_FOR_ME;
-			}
-
-			// If it moved outside of our mapped area then simply delete it.
-			//
-			if (dstMap == null || dstMap.getCacheTree() == null) {
-				srcEnt.delete();
-				return FINISH_FOR_ME;
-			}
-
-			// Locate the target tree.
-			//
-			if (dstPath == null) {
-				dstTree = dstMap.getCacheTree();
-			} else {
-				final TreeEntry e;
-				if (src.getType() == IResource.FILE)
-					e = dstMap.getCacheTree().findBlobMember(dstPath);
-				else
-					e = dstMap.getCacheTree().findTreeMember(dstPath);
-				if (e == null) {
-					dstTree = dstMap.getCacheTree().addTree(dstPath);
-				} else if (e instanceof Tree) {
-					dstTree = (Tree) e;
-				} else {
-					// What the heck? Assume Eclipse meant for us to replace
-					// the item into here instead.
-					//
-					e.delete();
-					dstTree = dstMap.getCacheTree().addTree(dstPath);
-				}
-			}
-
-			// What? Something already exists at the destination? Assume
-			// Eclipse meant for us to replace the item.
-			//
-			TreeEntry existing = dstTree.findTreeMember(dstName);
-			if (existing == null)
-				dstTree.findBlobMember(dstName);
-			if (existing != null) {
-				existing.delete();
-			}
-
-			// Delete the entry from the source tree before we do anything.
-			//
-			final Tree srcTree = srcEnt.getParent();
-			srcEnt.delete();
-
-			// If the repository differs then we shouldn't assume the
-			// objects exist in the new repository so force everything to
-			// appear modified so we'll create any objects if necessary.
-			//
-			if (srcMap.getRepository() != dstMap.getRepository()) {
-				try {
-					srcEnt.accept(new ForceModified());
-				} catch (IOException ioe) {
-					srcTree.addEntry(srcEnt);
-					throw ioe;
-				}
-			}
-
-			srcEnt.rename(dstName);
-			dstTree.addEntry(srcEnt);
-
-			if (srcMap == dstMap) {
-				srcMap.recomputeMerge();
-			} else {
-				srcMap.recomputeMerge();
-				dstMap.recomputeMerge();
-			}
-
-			return FINISH_FOR_ME;
-		} catch (IOException ioe) {
-			tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(), 0,
-					CoreText.MoveDeleteHook_operationError, ioe));
-			return NOT_ALLOWED;
-		}
 	}
 
 	private boolean cannotModifyRepository(final IResourceTree tree) {

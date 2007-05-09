@@ -46,10 +46,7 @@ import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
 import org.spearce.egit.core.GitProvider;
-import org.spearce.jgit.lib.FileTreeEntry;
 import org.spearce.jgit.lib.Repository;
-import org.spearce.jgit.lib.Tree;
-import org.spearce.jgit.lib.TreeEntry;
 
 public class GitProjectData {
 	private static final Map projectDataCache = new HashMap();
@@ -276,44 +273,6 @@ public class GitProjectData {
 		return (RepositoryMapping) c2mapping.get(r);
 	}
 
-	public TreeEntry[] getActiveDiffTreeEntries(IResource res)
-			throws CoreException {
-		String s = null;
-		RepositoryMapping m = null;
-
-		IResource r = res;
-		while (r != null) {
-			m = getRepositoryMapping(r);
-			if (m != null) {
-				break;
-			}
-
-			if (s != null) {
-				s = r.getName() + "/" + s;
-			} else {
-				s = r.getName();
-			}
-
-			r = r.getParent();
-		}
-
-		if (s != null && m != null && m.getActiveDiff() != null) {
-			try {
-				if (res.getType() == IResource.FILE)
-					return m.getActiveDiff().findBlobMember(s);
-				else
-					return m.getActiveDiff().findTreeMember(s);
-			} catch (IOException ioe) {
-				throw Activator.error(
-						CoreText.GitProjectData_lazyResolveFailed, ioe);
-			}
-		} else if (s == null && m != null && m.getActiveDiff() != null) {
-			return m.getActiveDiff().findTop();
-		}
-
-		return null;
-	}
-
 	public void checkpointIfNecessary() {
 		final Iterator i = c2mapping.values().iterator();
 		while (i.hasNext()) {
@@ -324,12 +283,12 @@ public class GitProjectData {
 	public void fullUpdate() {
 		final Iterator i = c2mapping.values().iterator();
 		while (i.hasNext()) {
-			try {
+//			try {
 				((RepositoryMapping) i.next()).fullUpdate();
-			} catch (IOException ioe) {
-				Activator.logError(CoreText.GitProjectData_cannotReadHEAD, ioe);
-				return;
-			}
+//			} catch (IOException ioe) {
+//				Activator.logError(CoreText.GitProjectData_cannotReadHEAD, ioe);
+//				return;
+//			}
 		}
 	}
 
@@ -385,7 +344,7 @@ public class GitProjectData {
 	}
 
 	private void notifyChanged(final IResourceDelta projDelta) {
-		final Set affectedMappings = new HashSet();
+//		final Set affectedMappings = new HashSet();
 		try {
 			projDelta.accept(new IResourceDeltaVisitor() {
 				public boolean visit(final IResourceDelta d)
@@ -420,30 +379,30 @@ public class GitProjectData {
 							return true;
 						}
 
-						final Tree cacheTree = m.getCacheTree();
-						if (cacheTree != null) {
-							try {
-								synchronized (cacheTree) {
-									final TreeEntry e;
-									if (res.getType() == IResource.FILE)
-										e = cacheTree.findBlobMember(s);
-									else
-										e = cacheTree.findTreeMember(s);
-									if (e instanceof FileTreeEntry) {
-										trace("modified " + r + " -> "
-												+ e.getFullName());
-										e.setModified();
-										affectedMappings.add(m);
-									}
-								}
-							} catch (IOException ioe) {
-								throw Activator
-										.error(
-												CoreText.GitProjectData_lazyResolveFailed,
-												ioe);
-							}
-							return true;
-						}
+//						final Tree cacheTree = m.getCacheTree();
+//						if (cacheTree != null) {
+//							try {
+//								synchronized (cacheTree) {
+//									final TreeEntry e;
+//									if (res.getType() == IResource.FILE)
+//										e = cacheTree.findBlobMember(s);
+//									else
+//										e = cacheTree.findTreeMember(s);
+//									if (e instanceof FileTreeEntry) {
+//										trace("modified " + r + " -> "
+//												+ e.getFullName());
+//										e.setModified();
+//										affectedMappings.add(m);
+//									}
+//								}
+//							} catch (IOException ioe) {
+//								throw Activator
+//										.error(
+//												CoreText.GitProjectData_lazyResolveFailed,
+//												ioe);
+//							}
+//							return true;
+//						}
 					}
 					return false;
 				}
@@ -456,15 +415,15 @@ public class GitProjectData {
 			Activator.logError(CoreText.GitProjectData_notifyChangedFailed, ce);
 		}
 
-		try {
-			final Iterator i = affectedMappings.iterator();
-			while (i.hasNext()) {
-				((RepositoryMapping) i.next()).recomputeMerge();
-			}
-		} catch (IOException ioe) {
-			Activator
-					.logError(CoreText.GitProjectData_notifyChangedFailed, ioe);
-		}
+//		try {
+//			final Iterator i = affectedMappings.iterator();
+//			while (i.hasNext()) {
+//				((RepositoryMapping) i.next()).recomputeMerge();
+//			}
+//		} catch (IOException ioe) {
+//			Activator
+//					.logError(CoreText.GitProjectData_notifyChangedFailed, ioe);
+//		}
 	}
 
 	private File propertyFile() {
@@ -545,13 +504,7 @@ public class GitProjectData {
 			return;
 		}
 
-		try {
-			m.recomputeMerge();
-		} catch (IOException ioe) {
-			Activator.logError(CoreText.GitProjectData_cannotReadHEAD, ioe);
-			m.clear();
-			return;
-		}
+		m.recomputeMerge();
 
 		trace("map " + c + " -> " + m.getRepository());
 		c2mapping.put(c, m);

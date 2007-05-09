@@ -375,7 +375,7 @@ public class GitIndex {
 					try {
 						ObjectId newId = objectWriter.computeBlobSha1(file
 								.length(), is);
-						boolean ret = newId.equals(sha1);
+						boolean ret = !newId.equals(sha1);
 						theIndex.statDirty = true;
 						return ret;
 					} catch (IOException e) {
