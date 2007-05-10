@@ -399,6 +399,7 @@ public class Repository {
 
 	private Ref readRef(final String revstr, final boolean missingOk)
 			throws IOException {
+		refreshPackredRefsCache();
 		for (int k = 0; k < refSearchPaths.length; k++) {
 			final Ref r = readRefBasic(refSearchPaths[k] + revstr);
 			if (missingOk || r.getObjectId() != null) {
@@ -411,6 +412,10 @@ public class Repository {
 	private Ref readRefBasic(String name) throws IOException {
 		int depth = 0;
 		REF_READING: do {
+			ObjectId id = packedRefs.get(name);
+			if (id != null)
+				return new Ref(null, id);
+
 			final File f = new File(getDirectory(), name);
 			if (!f.isFile()) {
 				return new Ref(f, null);
@@ -470,7 +475,43 @@ public class Repository {
 	}
 
 	public Collection<String> getTags() {
-		return listFilesRecursively(new File(refsDir, "tags"), null);
+		Collection<String> tags = listFilesRecursively(new File(refsDir, "tags"), null);
+		refreshPackredRefsCache();
+		tags.addAll(packedRefs.keySet());
+		return tags;
+	}
+
+	private Map<String,ObjectId> packedRefs = new HashMap<String,ObjectId>();
+	private long packedrefstime = 0;
+
+	private void refreshPackredRefsCache() {
+		File file = new File(gitDir, "packed-refs");
+		if (!file.exists()) {
+			if (packedRefs.size() > 0)
+				packedRefs = new HashMap();
+			return;
+		}
+		if (file.lastModified() == packedrefstime)
+			return;
+		Map newPackedRefs = new HashMap();
+		try {
+			BufferedReader b=new BufferedReader(new FileReader(file));
+			String p;
+			while ((p = b.readLine()) != null) {
+				if (p.charAt(0) == '#')
+					continue;
+				if (p.charAt(0) == '^') {
+					continue;
+				}
+				int spos = p.indexOf(' ');
+				ObjectId id = new ObjectId(p.substring(0,spos));
+				String name = p.substring(spos+1);
+				newPackedRefs.put(name, id);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		packedRefs = newPackedRefs;
 	}
 
 	/**
@@ -550,5 +591,10 @@ public class Repository {
 			}
 		}
 		return ret;
+	}
+	
+	/** Clean up stale caches */
+	public void refreshFromDisk() {
+		packedRefs = null;
 	}
 }
