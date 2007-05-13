@@ -128,9 +128,9 @@ public class Tag {
 		if (tagger!=null || message!=null || type!=null) {
 			ObjectId tagid = new ObjectWriter(objdb).writeTag(this);
 			setTagId(tagid);
-			objdb.writeRef("refs/heads/"+getTag(),tagid);
+			objdb.writeRef("refs/tags/"+getTag(),tagid);
 		} else {
-			objdb.writeRef("refs/heads/"+getTag(),objId);
+			objdb.writeRef("refs/tags/"+getTag(),objId);
 		}
 	}
 
