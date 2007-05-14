@@ -17,3 +17,4 @@ Export-Package: org.spearce.egit.core.internal.mapping;x-friends:="org.spearce.e
  org.spearce.egit.core.op,
  org.spearce.egit.core.project
 Eclipse-LazyStart: true
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
