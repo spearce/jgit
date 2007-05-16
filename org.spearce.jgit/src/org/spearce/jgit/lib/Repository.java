@@ -340,35 +340,6 @@ public class Repository {
 		}
 	}
 
-    public void writeRef(String name, ObjectId id) throws IOException {
-		File f = new File(gitDir, name);
-		File t = File.createTempFile("ref", null, gitDir);
-		FileWriter w = new FileWriter(t);
-		try {
-			w.write(id.toString());
-			w.write('\n');
-			w.close();
-			w = null;
-			if (!t.renameTo(f)) {
-				f.getParentFile().mkdirs();
-				if (!t.renameTo(f)) {
-					f.delete();
-					if (!t.renameTo(f)) {
-						t.delete();
-						throw new ObjectWritingException("Unable to"
-								+ " write ref " + name + " to point to "
-								+ id.toString());
-					}
-				}
-			}
-		} finally {
-			if (w != null) {
-				w.close();
-				t.delete();
-			}
-		}
-	}
-
     public void writeSymref(final String name, final String target)
 			throws IOException {
 		final File s = new File(gitDir, name);
