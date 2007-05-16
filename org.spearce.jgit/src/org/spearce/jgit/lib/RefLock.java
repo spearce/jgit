@@ -84,13 +84,10 @@ public class RefLock {
 	}
 
 	public boolean commit() {
-		// FIXME: use exceptions here?
-		if (lck.renameTo(ref)) {
+		if (lck.renameTo(ref))
 			return true;
-		} else {
-			unlock();
-			return false;
-		}
+		unlock();
+		return false;
 	}
 
 	public void unlock() {
