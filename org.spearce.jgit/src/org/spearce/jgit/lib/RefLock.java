@@ -20,7 +20,6 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 
@@ -33,7 +32,7 @@ public class RefLock {
 
 	private boolean haveLck;
 
-	private OutputStream os;
+	private FileOutputStream os;
 
 	public RefLock(final Ref r) {
 		ref = r.getFile();
@@ -45,13 +44,10 @@ public class RefLock {
 		if (lck.createNewFile()) {
 			haveLck = true;
 			try {
-				final FileOutputStream f = new FileOutputStream(lck);
+				os = new FileOutputStream(lck);
 				try {
-					fLck = f.getChannel().tryLock();
-					if (fLck != null)
-						os = new BufferedOutputStream(f,
-								Constants.OBJECT_ID_LENGTH * 2 + 1);
-					else
+					fLck = os.getChannel().tryLock();
+					if (fLck == null)
 						throw new OverlappingFileLockException();
 				} catch (OverlappingFileLockException ofle) {
 					// We cannot use unlock() here as this file is not
@@ -59,7 +55,12 @@ public class RefLock {
 					// not delete it, as it belongs to some other process.
 					//
 					haveLck = false;
-					f.close();
+					try {
+						os.close();
+					} catch (IOException ioe) {
+						// Fail by returning haveLck = false.
+					}
+					os = null;
 				}
 			} catch (IOException ioe) {
 				unlock();
@@ -71,11 +72,13 @@ public class RefLock {
 
 	public void write(final ObjectId id) throws IOException {
 		try {
-			id.copyTo(os);
-			os.write('\n');
-			os.flush();
+			final BufferedOutputStream b;
+			b = new BufferedOutputStream(os, Constants.OBJECT_ID_LENGTH * 2 + 1);
+			id.copyTo(b);
+			b.write('\n');
+			b.flush();
 			fLck.release();
-			os.close();
+			b.close();
 			os = null;
 		} catch (IOException ioe) {
 			unlock();
