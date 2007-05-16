@@ -73,6 +73,7 @@ public class RefLock {
 		try {
 			id.copyTo(os);
 			os.write('\n');
+			os.flush();
 			fLck.release();
 			os.close();
 			os = null;
