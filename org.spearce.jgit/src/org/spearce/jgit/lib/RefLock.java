@@ -48,14 +48,16 @@ public class RefLock {
 				final FileOutputStream f = new FileOutputStream(lck);
 				try {
 					fLck = f.getChannel().tryLock();
-					if (fLck != null) {
+					if (fLck != null)
 						os = new BufferedOutputStream(f,
 								Constants.OBJECT_ID_LENGTH * 2 + 1);
-					} else {
-						haveLck = false;
-						f.close();
-					}
+					else
+						throw new OverlappingFileLockException();
 				} catch (OverlappingFileLockException ofle) {
+					// We cannot use unlock() here as this file is not
+					// held by us, but we thought we created it. We must
+					// not delete it, as it belongs to some other process.
+					//
 					haveLck = false;
 					f.close();
 				}
