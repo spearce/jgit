@@ -29,28 +29,26 @@ class XInputStream extends BufferedInputStream {
 	}
 
 	public synchronized byte[] readFully(final int len) throws IOException {
-		final byte[] buf = new byte[len];
-		readFully(buf, 0, len);
-		return buf;
+		final byte[] b = new byte[len];
+		readFully(b, 0, len);
+		return b;
 	}
 
-	public synchronized void readFully(final byte[] buf, int o, int len)
+	public synchronized void readFully(final byte[] b, int o, int len)
 			throws IOException {
 		int r;
-		while (len > 0 && (r = read(buf, o, len)) > 0) {
+		while (len > 0 && (r = read(b, o, len)) > 0) {
 			o += r;
 			len -= r;
 		}
-		if (len > 0) {
+		if (len > 0)
 			throw new EOFException();
-		}
 	}
 
 	public int readUInt8() throws IOException {
 		final int r = read();
-		if (r < 0) {
+		if (r < 0)
 			throw new EOFException();
-		}
 		return r;
 	}
 
