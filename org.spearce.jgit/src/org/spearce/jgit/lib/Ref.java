@@ -16,20 +16,46 @@
  */
 package org.spearce.jgit.lib;
 
+/**
+ * Pairing of a name and the {@link ObjectId} it currently has.
+ * <p>
+ * A ref in Git is (more or less) a variable that holds a single object
+ * identifier. The object identifier can be any valid Git object (blob, tree,
+ * commit, annotated tag, ...).
+ */
 public class Ref {
 	private final String name;
 
 	private ObjectId objectId;
 
+	/**
+	 * Create a new ref pairing.
+	 * 
+	 * @param refName
+	 *            name of this ref.
+	 * @param id
+	 *            current value of the ref. May be null to indicate a ref that
+	 *            does not exist yet.
+	 */
 	public Ref(final String refName, final ObjectId id) {
 		name = refName;
 		objectId = id;
 	}
 
+	/**
+	 * What this ref is called within the repository.
+	 * 
+	 * @return name of this ref.
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * Cached value of this ref.
+	 * 
+	 * @return the value of this ref at the last time we read it.
+	 */
 	public ObjectId getObjectId() {
 		return objectId;
 	}
