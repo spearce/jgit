@@ -484,7 +484,7 @@ public class RepositoryConfig {
 		return "RepositoryConfig[" + configFile.getPath() + "]";
 	}
 
-	private static class Entry {
+	static class Entry {
 		String prefix;
 
 		String base;

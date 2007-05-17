@@ -58,9 +58,11 @@ public class GitProjectData {
 
 	private static RepositoryChangeListener[] repositoryChangeListeners = {};
 
+	@SuppressWarnings("synthetic-access")
 	private static final IResourceChangeListener rcl = new RCL();
 
 	private static class RCL implements IResourceChangeListener {
+		@SuppressWarnings("synthetic-access")
 		public void resourceChanged(final IResourceChangeEvent event) {
 			switch (event.getType()) {
 			case IResourceChangeEvent.POST_CHANGE:
@@ -170,7 +172,7 @@ public class GitProjectData {
 		}
 	}
 
-	private static void trace(final String m) {
+	static void trace(final String m) {
 		Activator.trace("(GitProjectData) " + m);
 	}
 

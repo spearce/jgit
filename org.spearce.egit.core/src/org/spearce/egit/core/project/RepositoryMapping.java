@@ -234,6 +234,7 @@ public class RepositoryMapping {
 				+ ", " + cacheref + "]";
 	}
 
+	@SuppressWarnings("synthetic-access")
 	private void initJob() {
 		currowj = new CheckpointJob(this);
 		currowj.addJobChangeListener(new JobChangeAdapter() {

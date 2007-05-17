@@ -29,6 +29,7 @@ import java.io.OutputStream;
  */
 public abstract class FileMode {
 	/** Mode indicating an entry is a {@link Tree}. */
+	@SuppressWarnings("synthetic-access")
 	public static final FileMode TREE = new FileMode(040000) {
 		public boolean equals(final int modeBits) {
 			return (modeBits & 040000) == 040000;
@@ -36,6 +37,7 @@ public abstract class FileMode {
 	};
 
 	/** Mode indicating an entry is a {@link SymlinkTreeEntry}. */
+	@SuppressWarnings("synthetic-access")
 	public static final FileMode SYMLINK = new FileMode(0120000) {
 		public boolean equals(final int modeBits) {
 			return (modeBits & 020000) == 020000;
@@ -43,6 +45,7 @@ public abstract class FileMode {
 	};
 
 	/** Mode indicating an entry is a non-executable {@link FileTreeEntry}. */
+	@SuppressWarnings("synthetic-access")
 	public static final FileMode REGULAR_FILE = new FileMode(0100644) {
 		public boolean equals(final int modeBits) {
 			return (modeBits & 0100000) == 0100000 && (modeBits & 0111) == 0;
@@ -50,6 +53,7 @@ public abstract class FileMode {
 	};
 
 	/** Mode indicating an entry is an executable {@link FileTreeEntry}. */
+	@SuppressWarnings("synthetic-access")
 	public static final FileMode EXECUTABLE_FILE = new FileMode(0100755) {
 		public boolean equals(final int modeBits) {
 			return (modeBits & 0100000) == 0100000 && (modeBits & 0111) != 0;
