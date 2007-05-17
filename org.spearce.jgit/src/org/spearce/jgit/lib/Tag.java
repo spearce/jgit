@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import org.spearce.jgit.errors.CorruptObjectException;
+import org.spearce.jgit.errors.ObjectWritingException;
 
 public class Tag {
 	private final Repository objdb;
@@ -44,10 +45,16 @@ public class Tag {
 		objdb = db;
 	}
 
-	public Tag(final Repository db, final ObjectId id, final byte[] raw) {
+	public Tag(final Repository db, final ObjectId id, String refName, final byte[] raw) {
 		objdb = db;
-		tagId = id;
-		objId = ObjectId.fromString(raw, 7);
+		if (raw != null) {
+			tagId = id;
+			objId = ObjectId.fromString(raw, 7);
+		} else
+			objId = id;
+		if (refName.startsWith("refs/tags/"))
+			refName = refName.substring(10);
+		tag = refName;
 		this.raw = raw;
 	}
 
@@ -119,7 +126,20 @@ public class Tag {
 	public void tag() throws IOException {
 		if (getTagId() != null)
 			throw new IllegalStateException("exists " + getTagId());
-		setTagId(new ObjectWriter(objdb).writeTag(this));
+		final ObjectId id;
+		if (tagger!=null || message!=null || type!=null) {
+			ObjectId tagid = new ObjectWriter(objdb).writeTag(this);
+			setTagId(tagid);
+			id = tagid;
+		} else {
+			id = objId;
+		}
+		final RefLock lck = objdb.lockRef("refs/tags/" + getTag());
+		if (lck == null)
+			throw new ObjectWritingException("Unable to lock tag " + getTag());
+		lck.write(id);
+		if (!lck.commit())
+			throw new ObjectWritingException("Unable to write tag " + getTag());
 	}
 
 	public String toString() {

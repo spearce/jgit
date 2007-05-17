@@ -261,17 +261,17 @@ public class Repository {
 
 	public Tag mapTag(String revstr) throws IOException {
 		final ObjectId id = resolve(revstr);
-		return id != null ? mapTag(id) : null;
+		return id != null ? mapTag(revstr, id) : null;
 	}
 
-	public Tag mapTag(final ObjectId id) throws IOException {
+	public Tag mapTag(final String refName, final ObjectId id) throws IOException {
 		final ObjectLoader or = openObject(id);
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
 		if (Constants.TYPE_TAG.equals(or.getType()))
-			return new Tag(this, id, raw);
-		throw new IncorrectObjectTypeException(id, Constants.TYPE_TAG);
+			return new Tag(this, id, refName, raw);
+		return new Tag(this, id, refName, null);
 	}
 
 	public RefLock lockRef(final String ref) throws IOException {
@@ -357,6 +357,7 @@ public class Repository {
 
 	private Ref readRef(final String revstr, final boolean missingOk)
 			throws IOException {
+		refreshPackredRefsCache();
 		for (int k = 0; k < refSearchPaths.length; k++) {
 			final Ref r = readRefBasic(refSearchPaths[k] + revstr);
 			if (missingOk || r.getObjectId() != null) {
@@ -369,6 +370,10 @@ public class Repository {
 	private Ref readRefBasic(String name) throws IOException {
 		int depth = 0;
 		REF_READING: do {
+			ObjectId id = packedRefs.get(name);
+			if (id != null)
+				return new Ref(null, id);
+
 			final File f = new File(getDirectory(), name);
 			if (!f.isFile())
 				return new Ref(name, null);
@@ -421,12 +426,48 @@ public class Repository {
 		return ref;
 	}
 
-	public Collection getBranches() {
+	public Collection<String> getBranches() {
 		return listFilesRecursively(new File(refsDir, "heads"), null);
 	}
 
-	public Collection getTags() {
-		return listFilesRecursively(new File(refsDir, "tags"), null);
+	public Collection<String> getTags() {
+		Collection<String> tags = listFilesRecursively(new File(refsDir, "tags"), null);
+		refreshPackredRefsCache();
+		tags.addAll(packedRefs.keySet());
+		return tags;
+	}
+
+	private Map<String,ObjectId> packedRefs = new HashMap<String,ObjectId>();
+	private long packedrefstime = 0;
+
+	private void refreshPackredRefsCache() {
+		File file = new File(gitDir, "packed-refs");
+		if (!file.exists()) {
+			if (packedRefs.size() > 0)
+				packedRefs = new HashMap();
+			return;
+		}
+		if (file.lastModified() == packedrefstime)
+			return;
+		Map newPackedRefs = new HashMap();
+		try {
+			BufferedReader b=new BufferedReader(new FileReader(file));
+			String p;
+			while ((p = b.readLine()) != null) {
+				if (p.charAt(0) == '#')
+					continue;
+				if (p.charAt(0) == '^') {
+					continue;
+				}
+				int spos = p.indexOf(' ');
+				ObjectId id = new ObjectId(p.substring(0,spos));
+				String name = p.substring(spos+1);
+				newPackedRefs.put(name, id);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		packedRefs = newPackedRefs;
 	}
 
 	/**
@@ -491,10 +532,10 @@ public class Repository {
 		return ret;
 	}
 
-	private Collection listFilesRecursively(File root, File start) {
+	private Collection<String> listFilesRecursively(File root, File start) {
 		if (start == null)
 			start = root;
-		Collection ret = new ArrayList();
+		Collection<String> ret = new ArrayList();
 		File[] files = start.listFiles();
 		for (int i = 0; i < files.length; ++i) {
 			if (files[i].isDirectory())
@@ -506,5 +547,10 @@ public class Repository {
 			}
 		}
 		return ret;
+	}
+	
+	/** Clean up stale caches */
+	public void refreshFromDisk() {
+		packedRefs = null;
 	}
 }

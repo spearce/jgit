@@ -19,3 +19,4 @@ Require-Bundle: org.eclipse.core.runtime,
  org.spearce.jgit,
  org.spearce.egit.core
 Eclipse-LazyStart: true
+Bundle-RequiredExecutionEnvironment: J2SE-1.5

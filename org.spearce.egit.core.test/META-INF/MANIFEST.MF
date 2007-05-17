@@ -17,3 +17,4 @@ Import-Package: org.eclipse.core.resources,
  org.eclipse.jdt.junit,
  org.eclipse.jdt.launching
 Export-Package: org.spearce.egit.core.internal.mapping
+Bundle-RequiredExecutionEnvironment: J2SE-1.5

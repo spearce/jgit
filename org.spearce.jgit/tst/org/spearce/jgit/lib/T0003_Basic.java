@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 public class T0003_Basic extends RepositoryTestCase {
 	public void test001_Initalize() {
@@ -331,11 +332,24 @@ public class T0003_Basic extends RepositoryTestCase {
 		t.tag();
 		assertEquals("6759556b09fbb4fd8ae5e315134481cc25d46954", t.getTagId().toString());
 
-		Tag mapTag = db.mapTag("6759556b09fbb4fd8ae5e315134481cc25d46954");
+		Tag mapTag = db.mapTag("test020");
 		assertEquals("blob", mapTag.getType());
 		assertEquals("test020 tagged\n", mapTag.getMessage());
 		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag.getAuthor());
 		assertEquals("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", mapTag.getObjId().toString());
+	}
+
+	public void test020b_createBlobPlainTag() throws IOException {
+		test020_createBlobTag();
+		Tag t = new Tag(db);
+		t.setTag("test020b");
+		t.setObjId(new ObjectId("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"));
+		t.tag();
+		
+		Tag mapTag = db.mapTag("test020b");
+		assertEquals("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", mapTag.getObjId().toString());
+		
+		// We do not repeat the plain tag test for other object types
 	}
 
 	public void test021_createTreeTag() throws IOException {
@@ -352,7 +366,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		t.tag();
 		assertEquals("b0517bc8dbe2096b419d42424cd7030733f4abe5", t.getTagId().toString());
 
-		Tag mapTag = db.mapTag("b0517bc8dbe2096b419d42424cd7030733f4abe5");
+		Tag mapTag = db.mapTag("test021");
 		assertEquals("tree", mapTag.getType());
 		assertEquals("test021 tagged\n", mapTag.getMessage());
 		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag.getAuthor());
@@ -379,7 +393,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		t.tag();
 		assertEquals("0ce2ebdb36076ef0b38adbe077a07d43b43e3807", t.getTagId().toString());
 
-		Tag mapTag = db.mapTag("0ce2ebdb36076ef0b38adbe077a07d43b43e3807");
+		Tag mapTag = db.mapTag("test022");
 		assertEquals("commit", mapTag.getType());
 		assertEquals("test022 tagged\n", mapTag.getMessage());
 		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag.getAuthor());
@@ -414,5 +428,48 @@ public class T0003_Basic extends RepositoryTestCase {
 		commit.setMessage("\u00dcbergeeks");
 		ObjectId cid = new ObjectWriter(db).writeCommit(commit);
 		assertEquals("2979b39d385014b33287054b87f77bcb3ecb5ebf", cid.toString());
+	}
+	
+	public void test025_packedRefs() throws IOException {
+		test020_createBlobTag();
+		test021_createTreeTag();
+		test022_createCommitTag();
+
+		if (!new File(db.getDirectory(),"refs/tags/test020").delete()) throw new Error("Cannot delete unpacked tag");
+		if (!new File(db.getDirectory(),"refs/tags/test021").delete()) throw new Error("Cannot delete unpacked tag");
+		if (!new File(db.getDirectory(),"refs/tags/test022").delete()) throw new Error("Cannot delete unpacked tag");
+
+		// We cannot resolve it now, since we have no ref
+		Tag mapTag20missing = db.mapTag("test020");
+		assertNull(mapTag20missing);
+
+		// Construct packed refs file
+		PrintWriter w = new PrintWriter(new FileWriter(new File(db.getDirectory(), "packed-refs")));
+		w.println("# packed-refs with: peeled");
+		w.println("6759556b09fbb4fd8ae5e315134481cc25d46954 refs/tags/test020");
+		w.println("^e69de29bb2d1d6434b8b29ae775ad8c2e48c5391");
+		w.println("b0517bc8dbe2096b419d42424cd7030733f4abe5 refs/tags/test021");
+		w.println("^417c01c8795a35b8e835113a85a5c0c1c77f67fb");
+		w.println("0ce2ebdb36076ef0b38adbe077a07d43b43e3807 refs/tags/test022");
+		w.println("^b5d3b45a96b340441f5abb9080411705c51cc86c");
+		w.close();
+
+		Tag mapTag20 = db.mapTag("test020");
+		assertEquals("blob", mapTag20.getType());
+		assertEquals("test020 tagged\n", mapTag20.getMessage());
+		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag20.getAuthor());
+		assertEquals("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", mapTag20.getObjId().toString());
+
+		Tag mapTag21 = db.mapTag("test021");
+		assertEquals("tree", mapTag21.getType());
+		assertEquals("test021 tagged\n", mapTag21.getMessage());
+		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag21.getAuthor());
+		assertEquals("417c01c8795a35b8e835113a85a5c0c1c77f67fb", mapTag21.getObjId().toString());
+
+		Tag mapTag22 = db.mapTag("test022");
+		assertEquals("commit", mapTag22.getType());
+		assertEquals("test022 tagged\n", mapTag22.getMessage());
+		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag22.getAuthor());
+		assertEquals("b5d3b45a96b340441f5abb9080411705c51cc86c", mapTag22.getObjId().toString());
 	}
 }
