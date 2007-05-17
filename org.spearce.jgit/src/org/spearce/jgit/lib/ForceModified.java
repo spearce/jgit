@@ -24,6 +24,7 @@ public class ForceModified implements TreeVisitor {
 	}
 
 	public void endVisitTree(final Tree t) throws IOException {
+		// Nothing to do.
 	}
 
 	public void visitFile(final FileTreeEntry f) throws IOException {

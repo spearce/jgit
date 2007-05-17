@@ -32,8 +32,9 @@ public abstract class SpeedTestBase extends TestCase {
 		InputStream inputStream = p.getInputStream();
 		InputStream errorStream = p.getErrorStream();
 		byte[] buf=new byte[1024*1024];
-		while (inputStream.read(buf)>=0)
-			; // empty
+		for (;;)
+			if (inputStream.read(buf) < 0)
+				break;
 		if (p.waitFor()!=0) {
 			int c;
 			while ((c=errorStream.read())!=-1)

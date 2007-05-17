@@ -39,5 +39,6 @@ public class TreePrinter implements TreeVisitor {
 	}
 
 	public void endVisitTree(final Tree t) throws IOException {
+		// Nothing to do.
 	}
 }
