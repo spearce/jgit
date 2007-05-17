@@ -24,17 +24,17 @@ import java.io.InputStream;
 class XInputStream extends BufferedInputStream {
 	private final byte[] intbuf = new byte[8];
 
-	public XInputStream(final InputStream s) {
+	XInputStream(final InputStream s) {
 		super(s);
 	}
 
-	public synchronized byte[] readFully(final int len) throws IOException {
+	synchronized byte[] readFully(final int len) throws IOException {
 		final byte[] b = new byte[len];
 		readFully(b, 0, len);
 		return b;
 	}
 
-	public synchronized void readFully(final byte[] b, int o, int len)
+	synchronized void readFully(final byte[] b, int o, int len)
 			throws IOException {
 		int r;
 		while (len > 0 && (r = read(b, o, len)) > 0) {
@@ -45,14 +45,14 @@ class XInputStream extends BufferedInputStream {
 			throw new EOFException();
 	}
 
-	public int readUInt8() throws IOException {
+	int readUInt8() throws IOException {
 		final int r = read();
 		if (r < 0)
 			throw new EOFException();
 		return r;
 	}
 
-	public long readUInt32() throws IOException {
+	long readUInt32() throws IOException {
 		readFully(intbuf, 0, 4);
 		return (intbuf[0] & 0xff) << 24 | (intbuf[1] & 0xff) << 16
 				| (intbuf[2] & 0xff) << 8 | (intbuf[3] & 0xff);
