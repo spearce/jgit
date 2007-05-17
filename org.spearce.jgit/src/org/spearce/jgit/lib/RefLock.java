@@ -35,7 +35,11 @@ public class RefLock {
 	private FileOutputStream os;
 
 	public RefLock(final Ref r) {
-		ref = r.getFile();
+		this(r.getFile());
+	}
+
+	public RefLock(final File f) {
+		ref = f;
 		lck = new File(ref.getParentFile(), ref.getName() + ".lock");
 	}
 
