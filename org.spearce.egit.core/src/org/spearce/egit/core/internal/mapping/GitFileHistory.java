@@ -136,7 +136,7 @@ static class EclipseWalker extends Walker {
 	public boolean isCancelled() {
 		return monitor.isCanceled();
 	}
-};
+}
 
 	public IFileRevision[] getFileRevisions() {
 		return revisions;

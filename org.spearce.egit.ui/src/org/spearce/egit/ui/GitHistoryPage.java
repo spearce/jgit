@@ -329,7 +329,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			}
 			return Integer.toString(columnIndex);
 		}
-	};
+	}
 
 	private void createTree(Composite composite) {
 		tree = new Tree(composite, SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI
