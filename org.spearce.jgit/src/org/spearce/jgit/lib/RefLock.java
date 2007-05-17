@@ -23,6 +23,16 @@ import java.io.IOException;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 
+/**
+ * Git style file locking and replacement.
+ * <p>
+ * To modify a ref file Git tries to use an atomic update approach: we write the
+ * new data into a brand new file, then rename it in place over the old name.
+ * This way we can just delete the temporary file if anything goes wrong, and
+ * nothing has been damaged. To coordinate access from multiple processes at
+ * once Git tries to atomically create the new temporary file under a well-known
+ * name.
+ */
 public class RefLock {
 	private final File ref;
 
@@ -34,15 +44,36 @@ public class RefLock {
 
 	private FileOutputStream os;
 
+	/**
+	 * Create a new lock for a specific ref.
+	 * 
+	 * @param r
+	 *            the ref whose underlying storage file will get locked.
+	 */
 	public RefLock(final Ref r) {
 		this(r.getFile());
 	}
 
+	/**
+	 * Create a new lock for any file.
+	 * 
+	 * @param f
+	 *            the file that will be locked.
+	 */
 	public RefLock(final File f) {
 		ref = f;
 		lck = new File(ref.getParentFile(), ref.getName() + ".lock");
 	}
 
+	/**
+	 * Try to establish the lock.
+	 * 
+	 * @return true if the lock is now held by the caller; false if it is held
+	 *         by someone else.
+	 * @throws IOException
+	 *             the temporary output file could not be created. The caller
+	 *             does not hold the lock.
+	 */
 	public boolean lock() throws IOException {
 		lck.getParentFile().mkdirs();
 		if (lck.createNewFile()) {
@@ -74,6 +105,19 @@ public class RefLock {
 		return haveLck;
 	}
 
+	/**
+	 * Write an ObjectId and LF to the temporary file.
+	 * 
+	 * @param id
+	 *            the id to store in the file. The id will be written in hex,
+	 *            followed by a sole LF.
+	 * @throws IOException
+	 *             the temporary file could not be written. The lock is released
+	 *             before throwing the underlying IO exception to the caller.
+	 * @throws RuntimeException
+	 *             the temporary file could not be written. The lock is released
+	 *             before throwing the underlying exception to the caller.
+	 */
 	public void write(final ObjectId id) throws IOException {
 		try {
 			final BufferedOutputStream b;
@@ -93,6 +137,20 @@ public class RefLock {
 		}
 	}
 
+	/**
+	 * Write arbitrary data to the temporary file.
+	 * 
+	 * @param content
+	 *            the bytes to store in the temporary file. No additional bytes
+	 *            are added, so if the file must end with an LF it must appear
+	 *            at the end of the byte array.
+	 * @throws IOException
+	 *             the temporary file could not be written. The lock is released
+	 *             before throwing the underlying IO exception to the caller.
+	 * @throws RuntimeException
+	 *             the temporary file could not be written. The lock is released
+	 *             before throwing the underlying exception to the caller.
+	 */
 	public void write(final byte[] content) throws IOException {
 		try {
 			os.write(content);
@@ -109,6 +167,15 @@ public class RefLock {
 		}
 	}
 
+	/**
+	 * Commit this change and release the lock.
+	 * <p>
+	 * If this method fails (returns false) the lock is still released.
+	 * 
+	 * @return true if the commit was successful and the file contains the new
+	 *         data; false if the commit failed and the file remains with the
+	 *         old data.
+	 */
 	public boolean commit() {
 		if (lck.renameTo(ref))
 			return true;
@@ -116,6 +183,11 @@ public class RefLock {
 		return false;
 	}
 
+	/**
+	 * Unlock this file and abort this change.
+	 * <p>
+	 * The temporary file (if created) is deleted before returning.
+	 */
 	public void unlock() {
 		if (os != null) {
 			if (fLck != null) {
