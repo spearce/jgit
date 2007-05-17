@@ -49,13 +49,13 @@ public class Repository {
 
 	private WindowCache windows;
 
-	private Map treeCache = new WeakHashMap(30000);
-	private Map commitCache = new WeakHashMap(30000);
+	private Map<ObjectId,Reference<Tree>> treeCache = new WeakHashMap<ObjectId,Reference<Tree>>(30000);
+	private Map<ObjectId,Reference<Commit>> commitCache = new WeakHashMap<ObjectId,Reference<Commit>>(30000);
 
 	public Repository(final File d) throws IOException {
 		gitDir = d.getAbsoluteFile();
 		try {
-			objectsDirs = (File[])readObjectsDirs(new File(gitDir, "objects"), new ArrayList()).toArray(new File[0]);
+			objectsDirs = readObjectsDirs(new File(gitDir, "objects"), new ArrayList<File>()).toArray(new File[0]);
 		} catch (IOException e) {
 			IOException ex = new IOException("Cannot find all object dirs for " + gitDir);
 			ex.initCause(e);
@@ -77,7 +77,7 @@ public class Repository {
 		}
 	}
 
-	private Collection readObjectsDirs(File objectsDir, Collection ret) throws IOException {
+	private Collection<File> readObjectsDirs(File objectsDir, Collection<File> ret) throws IOException {
 		ret.add(objectsDir);
 		File alternatesFile = new File(objectsDir,"info/alternates");
 		if (alternatesFile.exists()) {
@@ -209,10 +209,9 @@ public class Repository {
 	}
 
 	public Commit mapCommit(final ObjectId id) throws IOException {
-//		System.out.println("commitcache.size="+commitCache.size());
-		Reference retr = (Reference)commitCache.get(id);
+		Reference<Commit> retr = commitCache.get(id);
 		if (retr != null) {
-			Commit ret = (Commit)retr.get();
+			Commit ret = retr.get();
 			if (ret != null)
 				return ret;
 			System.out.println("Found a null id, size was "+commitCache.size());
@@ -226,7 +225,7 @@ public class Repository {
 			Commit ret = new Commit(this, id, raw);
 			// The key must not be the referenced strongly
 			// by the value in WeakHashMaps
-			commitCache.put(id, new SoftReference(ret));
+			commitCache.put(id, new SoftReference<Commit>(ret));
 			return ret;
 		}
 		throw new IncorrectObjectTypeException(id, Constants.TYPE_COMMIT);
@@ -238,9 +237,9 @@ public class Repository {
 	}
 
 	public Tree mapTree(final ObjectId id) throws IOException {
-		Reference wret = (Reference)treeCache.get(id);
+		Reference<Tree> wret = treeCache.get(id);
 		if (wret != null) {
-			Tree ret = (Tree)wret.get();
+			Tree ret = wret.get();
 			if (ret != null)
 				return ret;
 		}
@@ -251,7 +250,7 @@ public class Repository {
 		final byte[] raw = or.getBytes();
 		if (Constants.TYPE_TREE.equals(or.getType())) {
 			Tree ret = new Tree(this, id, raw);
-			treeCache.put(id, new SoftReference(ret));
+			treeCache.put(id, new SoftReference<Tree>(ret));
 			return ret;
 		}
 		if (Constants.TYPE_COMMIT.equals(or.getType()))
@@ -309,7 +308,7 @@ public class Repository {
 	}
 
 	public void scanForPacks() {
-		final ArrayList p = new ArrayList();
+		final ArrayList<PackFile> p = new ArrayList<PackFile>();
 		for (int i=0; i<objectsDirs.length; ++i)
 			scanForPacks(new File(objectsDirs[i], "pack"), p);
 		final PackFile[] arr = new PackFile[p.size()];
@@ -317,7 +316,7 @@ public class Repository {
 		packs = arr;
 	}
 
-	public void scanForPacks(final File packDir, Collection packList) {
+	public void scanForPacks(final File packDir, Collection<PackFile> packList) {
 		final File[] list = packDir.listFiles(new FileFilter() {
 			public boolean accept(final File f) {
 				final String n = f.getName();
@@ -444,12 +443,12 @@ public class Repository {
 		File file = new File(gitDir, "packed-refs");
 		if (!file.exists()) {
 			if (packedRefs.size() > 0)
-				packedRefs = new HashMap();
+				packedRefs = new HashMap<String,ObjectId>();
 			return;
 		}
 		if (file.lastModified() == packedrefstime)
 			return;
-		Map newPackedRefs = new HashMap();
+		Map<String,ObjectId> newPackedRefs = new HashMap<String,ObjectId>();
 		try {
 			BufferedReader b=new BufferedReader(new FileReader(file));
 			String p;
@@ -514,8 +513,8 @@ public class Repository {
 	 * @return applied patches in a map indexed on current commit id
 	 * @throws IOException
 	 */
-	public Map getAppliedPatches() throws IOException {
-		Map ret = new HashMap();
+	public Map<ObjectId,StGitPatch> getAppliedPatches() throws IOException {
+		Map<ObjectId,StGitPatch> ret = new HashMap<ObjectId,StGitPatch>();
 		if (isStGitMode()) {
 			File patchDir = new File(new File(getDirectory(),"patches"),getBranch());
 			BufferedReader apr = new BufferedReader(new FileReader(new File(patchDir,"applied")));
@@ -535,7 +534,7 @@ public class Repository {
 	private Collection<String> listFilesRecursively(File root, File start) {
 		if (start == null)
 			start = root;
-		Collection<String> ret = new ArrayList();
+		Collection<String> ret = new ArrayList<String>();
 		File[] files = start.listFiles();
 		for (int i = 0; i < files.length; ++i) {
 			if (files[i].isDirectory())
