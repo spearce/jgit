@@ -275,7 +275,8 @@ public class Repository {
 	}
 
 	public RefLock lockRef(final String ref) throws IOException {
-		final RefLock l = new RefLock(readRef(ref, true));
+		final Ref r = readRef(ref, true);
+		final RefLock l = new RefLock(new File(gitDir, r.getName()));
 		return l.lock() ? l : null;
 	}
 
@@ -369,21 +370,19 @@ public class Repository {
 		int depth = 0;
 		REF_READING: do {
 			final File f = new File(getDirectory(), name);
-			if (!f.isFile()) {
-				return new Ref(f, null);
-			}
+			if (!f.isFile())
+				return new Ref(name, null);
 
 			final BufferedReader br = new BufferedReader(new FileReader(f));
 			try {
 				final String line = br.readLine();
-				if (line == null || line.length() == 0) {
-					return new Ref(f, null);
-				} else if (line.startsWith("ref: ")) {
+				if (line == null || line.length() == 0)
+					return new Ref(name, null);
+				else if (line.startsWith("ref: ")) {
 					name = line.substring("ref: ".length());
 					continue REF_READING;
-				} else if (ObjectId.isId(line)) {
-					return new Ref(f, new ObjectId(line));
-				}
+				} else if (ObjectId.isId(line))
+					return new Ref(name, new ObjectId(line));
 				throw new IOException("Not a ref: " + name + ": " + line);
 			} finally {
 				br.close();

@@ -16,20 +16,18 @@
  */
 package org.spearce.jgit.lib;
 
-import java.io.File;
-
 public class Ref {
-	private final File file;
+	private final String name;
 
 	private ObjectId objectId;
 
-	public Ref(final File f, final ObjectId id) {
-		file = f;
+	public Ref(final String refName, final ObjectId id) {
+		name = refName;
 		objectId = id;
 	}
 
-	public File getFile() {
-		return file;
+	public String getName() {
+		return name;
 	}
 
 	public ObjectId getObjectId() {
@@ -37,6 +35,6 @@ public class Ref {
 	}
 
 	public String toString() {
-		return "Ref[" + file + "=" + getObjectId() + "]";
+		return "Ref[" + name + "=" + getObjectId() + "]";
 	}
 }

@@ -45,16 +45,6 @@ public class RefLock {
 	private FileOutputStream os;
 
 	/**
-	 * Create a new lock for a specific ref.
-	 * 
-	 * @param r
-	 *            the ref whose underlying storage file will get locked.
-	 */
-	public RefLock(final Ref r) {
-		this(r.getFile());
-	}
-
-	/**
 	 * Create a new lock for any file.
 	 * 
 	 * @param f
