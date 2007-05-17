@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
@@ -342,30 +341,17 @@ public class Repository {
 
     public void writeSymref(final String name, final String target)
 			throws IOException {
-		final File s = new File(gitDir, name);
-		final File t = File.createTempFile("srf", null, gitDir);
-		FileWriter w = new FileWriter(t);
+		final byte[] content = ("ref: " + target + "\n").getBytes("UTF-8");
+		final RefLock lck = new RefLock(new File(gitDir, name));
+		if (!lck.lock())
+			throw new ObjectWritingException("Unable to lock " + name);
 		try {
-			w.write("ref: ");
-			w.write(target);
-			w.write('\n');
-			w.close();
-			w = null;
-			if (!t.renameTo(s)) {
-				s.getParentFile().mkdirs();
-				if (!t.renameTo(s)) {
-					t.delete();
-					throw new ObjectWritingException("Unable to"
-							+ " write symref " + name + " to point to "
-							+ target);
-				}
-			}
-		} finally {
-			if (w != null) {
-				w.close();
-				t.delete();
-			}
+			lck.write(content);
+		} catch (IOException ioe) {
+			throw new ObjectWritingException("Unable to write " + name, ioe);
 		}
+		if (!lck.commit())
+			throw new ObjectWritingException("Unable to write " + name);
 	}
 
 	private Ref readRef(final String revstr, final boolean missingOk)

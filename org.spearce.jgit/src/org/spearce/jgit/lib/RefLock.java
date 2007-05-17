@@ -93,6 +93,22 @@ public class RefLock {
 		}
 	}
 
+	public void write(final byte[] content) throws IOException {
+		try {
+			os.write(content);
+			os.flush();
+			fLck.release();
+			os.close();
+			os = null;
+		} catch (IOException ioe) {
+			unlock();
+			throw ioe;
+		} catch (RuntimeException ioe) {
+			unlock();
+			throw ioe;
+		}
+	}
+
 	public boolean commit() {
 		if (lck.renameTo(ref))
 			return true;

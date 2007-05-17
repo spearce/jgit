@@ -24,4 +24,9 @@ public class ObjectWritingException extends IOException {
 	public ObjectWritingException(final String s) {
 		super(s);
 	}
+
+	public ObjectWritingException(final String s, final Throwable cause) {
+		super(s);
+		initCause(cause);
+	}
 }
