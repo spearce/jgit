@@ -61,9 +61,10 @@ public class T0002_Tree extends RepositoryTestCase {
 		assertTrue("found bob", t.findBlobMember(f.getName()) == f);
 
 		final TreeEntry[] i = t.members();
+		assertNotNull("members array not null", i);
 		assertTrue("iterator is not empty", i != null && i.length > 0);
-		assertTrue("iterator returns file", i[0] == f);
-		assertTrue("iterator is empty", i.length == 1);
+		assertTrue("iterator returns file", i != null && i[0] == f);
+		assertTrue("iterator is empty", i != null && i.length == 1);
 	}
 
 	public void test004_addTree() throws IOException {

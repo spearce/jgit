@@ -177,9 +177,9 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 			dst = dst.getParent();
 		}
 
-		if (srcPath == null || srcMap == null || srcMap.getCacheTree() == null) {
+		if (src == null || srcPath == null || srcMap == null
+				|| srcMap.getCacheTree() == null)
 			return FINISH_FOR_ME;
-		}
 
 		try {
 			if (src.getType() == IResource.FILE)

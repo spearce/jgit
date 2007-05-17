@@ -32,18 +32,15 @@ public class T0005_ShallowSpeedTest extends SpeedTestBase {
 		Repository db = new Repository(new File(kernelrepo));
 		Commit commit = db.mapCommit("365bbe0d0caaf2ba74d56556827babf0bc66965d");
 		int n = 1;
-		do {
-			// System.out.println("commit="+commit.getCommitId());
+		for (;;) {
 			ObjectId[] parents = commit.getParentIds();
-			if (parents.length > 0) {
-				ObjectId parentId = parents[0];
-				commit = db.mapCommit(parentId);
-				commit.getCommitId().toString();
-				++n;
-			} else {
-				commit = null;
-			}
-		} while (commit != null);
+			if (parents.length == 0)
+				break;
+			ObjectId parentId = parents[0];
+			commit = db.mapCommit(parentId);
+			commit.getCommitId().toString();
+			++n;
+		}
 		assertEquals(12275, n);
 		long stop = System.currentTimeMillis();
 		long time = stop - start;

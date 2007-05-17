@@ -53,7 +53,7 @@ public abstract class Walker {
 		Commit current = top;
 		Commit previous = top;
 
-		do {
+		 while (current != null && !isCancelled()) {
 			TreeEntry currentEntry = lastEntry;
 			ObjectId[] currentResourceHash = new ObjectId[lastResourceHash.length];
 			Tree t = current.getTree();
@@ -128,7 +128,7 @@ public abstract class Walker {
 				current = null;
 			if (count>=0)
 				count++;
-		} while (current != null && !isCancelled());
+		}
 
 		return ret;
 	}

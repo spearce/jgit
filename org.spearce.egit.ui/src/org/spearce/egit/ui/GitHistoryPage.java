@@ -146,8 +146,10 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				TreeItem item = tree.getItem(new Point(e.x,e.y));
 				if (item != null && item!=lastItem) {
 					IFileRevision rev = (IFileRevision) item.getData();
+					if (rev == null)
+						return;
 					String commitStr=null;
-					if (rev!=null && appliedPatches!=null) {
+					if (appliedPatches!=null) {
 						String id = rev.getContentIdentifier();
 						if (!id.equals("Workspace")) {
 							StGitPatch patch = (StGitPatch) appliedPatches.get(new ObjectId(id));
