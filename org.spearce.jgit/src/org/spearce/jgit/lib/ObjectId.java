@@ -217,16 +217,15 @@ public class ObjectId implements Comparable {
 	}
 
 	public String toString() {
-		byte s[] = new byte[Constants.OBJECT_ID_LENGTH*2];
+		final char s[] = new char[Constants.OBJECT_ID_LENGTH*2];
 		int i = 0;
 		for (int k = 0; k < Constants.OBJECT_ID_LENGTH; k++) {
 			final int b = id[k];
 			final int b1 = (b >> 4) & 0xf;
 			final int b2 = b & 0xf;
-			s[i++] = (b1 < 10 ? (byte) ('0' + b1) : (byte) ('a' + b1 - 10));
-			s[i++] = (b2 < 10 ? (byte) ('0' + b2) : (byte) ('a' + b2 - 10));
+			s[i++] = (b1 < 10 ? (char) ('0' + b1) : (char) ('a' + b1 - 10));
+			s[i++] = (b2 < 10 ? (char) ('0' + b2) : (char) ('a' + b2 - 10));
 		}
-		return new String(s,0);
+		return new String(s);
 	}
-
 }
