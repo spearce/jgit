@@ -98,6 +98,14 @@ public class RefLock {
 
 	public void unlock() {
 		if (os != null) {
+			if (fLck != null) {
+				try {
+					fLck.release();
+				} catch (IOException ioe) {
+					// Huh?
+				}
+				fLck = null;
+			}
 			try {
 				os.close();
 			} catch (IOException ioe) {
