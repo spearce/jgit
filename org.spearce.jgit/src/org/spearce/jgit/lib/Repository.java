@@ -400,13 +400,18 @@ public class Repository {
 	}
 
 	public String getPatch() throws IOException {
-		final File ptr = new File(getDirectory(),"patches/"+getBranch()+"/current");
+		final File ptr = new File(getDirectory(),"patches/"+getBranch()+"/applied");
 		final BufferedReader br = new BufferedReader(new FileReader(ptr));
+		String last=null;
 		try {
-			return br.readLine();
+			String line;
+			while ((line=br.readLine())!=null) {
+				last = line;
+			}
 		} finally {
 			br.close();
 		}
+		return last;
 	}
 
 	public String getBranch() throws IOException {
@@ -480,11 +485,11 @@ public class Repository {
 			if (!string.startsWith("ref: refs/heads/"))
 				return false;
 			String branch = string.substring("ref: refs/heads/".length());
-			File currentPatch = new File(new File(new File(getDirectory(),
-					"patches"), branch), "current");
-			if (!currentPatch.exists())
+			File currentPatches = new File(new File(new File(getDirectory(),
+					"patches"), branch), "applied");
+			if (!currentPatches.exists())
 				return false;
-			if (currentPatch.length() == 0)
+			if (currentPatches.length() == 0)
 				return false;
 			return true;
 
