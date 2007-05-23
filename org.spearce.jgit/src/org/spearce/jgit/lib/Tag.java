@@ -96,10 +96,16 @@ public class Tag {
 				tag = n.substring("tag ".length());
 				n = br.readLine();
 
-				if (n == null || !n.startsWith("tagger ")) {
-					throw new CorruptObjectException(tagId, "no tagger");
-				}
-				tagger = new PersonIdent(n.substring("tagger ".length()));
+				// We should see a "tagger" header here, but some repos have tags
+				// without it.
+				if (n == null)
+					throw new CorruptObjectException(tagId, "no tagger header");
+
+				if (n.length()>0)
+					if (n.startsWith("tagger "))
+						tagger = new PersonIdent(n.substring("tagger ".length()));
+					else
+						throw new CorruptObjectException(tagId, "no tagger/bad header");
 
 				// Message should start with an empty line, but
 				StringBuffer tempMessage = new StringBuffer();
