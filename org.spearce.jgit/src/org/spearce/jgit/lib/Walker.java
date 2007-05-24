@@ -35,7 +35,7 @@ public abstract class Walker {
 			Commit commit = start;
 			ObjectId[] initialResourceHash = new ObjectId[relativeResourceName.length];
 			Arrays.fill(initialResourceHash, ObjectId.zeroId());
-			if (activeDiffLeafId != null)
+			if (activeDiffLeafId != null && initialResourceHash.length > 0)
 				initialResourceHash[initialResourceHash.length-1] = activeDiffLeafId;
 			return collectHistory(0, initialResourceHash, null,
 					repository, commit);
@@ -92,7 +92,8 @@ public abstract class Walker {
 			}
 			
 			if (currentResourceHash.length == 0 || !currentResourceHash[currentResourceHash.length-1].equals(lastResourceHash[currentResourceHash.length-1])) {
-				collect(ret, previous, count);
+				if (current != previous)
+					collect(ret, previous, count);
 			}
 			lastResourceHash = currentResourceHash;
 			previous = current;

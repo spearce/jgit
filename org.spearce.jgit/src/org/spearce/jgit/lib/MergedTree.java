@@ -95,6 +95,10 @@ public class MergedTree {
 		return isModified(sources);
 	}
 
+	public TreeEntry[] findTop() {
+		return new TreeEntry[] { sources[0], sources[1] };
+	}
+	
 	public TreeEntry[] findMember(final String s, final byte slast) throws IOException {
 		return findMember(s.getBytes(Constants.CHARACTER_ENCODING), slast, 0);
 	}

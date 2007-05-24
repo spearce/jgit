@@ -202,7 +202,7 @@ static class EclipseWalker extends Walker {
 			}
 			ObjectId activeDiffLeafId = null;
 			if (activeDiffTreeEntries!=null)
-				activeDiffLeafId = activeDiffTreeEntries[0].getId();
+				activeDiffLeafId = activeDiffTreeEntries[1].getId();
 
 			ObjectId head = getRepository().resolve("HEAD");
 			Commit start = getRepository().mapCommit(head);

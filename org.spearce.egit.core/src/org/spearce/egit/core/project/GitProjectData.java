@@ -307,6 +307,8 @@ public class GitProjectData {
 				throw Activator.error(
 						CoreText.GitProjectData_lazyResolveFailed, ioe);
 			}
+		} else if (s == null && m != null && m.getActiveDiff() != null) {
+			return m.getActiveDiff().findTop();
 		}
 
 		return null;
