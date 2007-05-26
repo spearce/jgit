@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.eclipse.compare.CompareConfiguration;
 import org.eclipse.compare.structuremergeviewer.ICompareInput;
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
@@ -87,6 +88,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		IHistoryCompareAdapter {
 
 	private static final String PREF_SHOWALLPROJECTVERSIONS = "org.spearce.egit.ui.githistorypage.showallprojectversions";
+	private static final String PREF_SHOWALLFOLDERVERSIONS = "org.spearce.egit.ui.githistorypage.showallfolderversions";
 
 	private Composite localComposite;
 
@@ -100,10 +102,14 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	private boolean showAllVersions;
 
+	private boolean showAllFolderVersions;
+
 	public GitHistoryPage(Object object) {
 		setInput(object);
 		showAllVersions = Activator.getDefault().getPreferenceStore()
 				.getBoolean(PREF_SHOWALLPROJECTVERSIONS);
+		showAllFolderVersions = Activator.getDefault().getPreferenceStore()
+				.getBoolean(PREF_SHOWALLFOLDERVERSIONS);
 	}
 
 	public boolean inputSet() {
@@ -253,6 +259,23 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		showAllVersionsAction.setChecked(isShowAllVersions());
 		getSite().getActionBars().getToolBarManager()
 				.add(showAllVersionsAction);
+
+		Action showAllFolderVersionsAction = new Action("F") {
+			public void run() {
+				setShowAllFolderVersion(isChecked());
+				if (historyRefreshJob.cancel()) {
+					System.out.println("rescheduling");
+					historyRefreshJob.schedule();
+				} else {
+					System.out.println("failed to cancel?");
+				}
+			}
+		};
+		showAllFolderVersionsAction
+				.setToolTipText("Show all versions for the folder containing the resource");
+		showAllFolderVersionsAction.setChecked(isShowAllFolderVersions());
+		getSite().getActionBars().getToolBarManager().add(
+				showAllFolderVersionsAction);
 	}
 
 	private boolean isShowAllVersions() {
@@ -263,6 +286,16 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		this.showAllVersions = showAllVersions;
 		Activator.getDefault().getPreferenceStore().setValue(
 				PREF_SHOWALLPROJECTVERSIONS, showAllVersions);
+	}
+
+	private boolean isShowAllFolderVersions() {
+		return showAllFolderVersions;
+	}
+
+	protected void setShowAllFolderVersion(boolean showAllFolderVersions) {
+		this.showAllFolderVersions = showAllFolderVersions;
+		Activator.getDefault().getPreferenceStore().setValue(
+				PREF_SHOWALLFOLDERVERSIONS, showAllFolderVersions);
 	}
 
 	class GitHistoryResourceListener implements IResourceChangeListener {
@@ -483,6 +516,9 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			IFileHistoryProvider fileHistoryProvider = provider
 					.getFileHistoryProvider();
 			IResource startingPoint = (IResource) getInput();
+			if (isShowAllFolderVersions())
+				if (!(startingPoint instanceof IContainer))
+					startingPoint = startingPoint.getParent();
 			if (isShowAllVersions())
 				startingPoint = startingPoint.getProject();
 			IFileHistory fileHistoryFor = fileHistoryProvider
