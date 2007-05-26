@@ -34,6 +34,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
@@ -85,6 +86,8 @@ import org.spearce.jgit.lib.Repository.StGitPatch;
 public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		IHistoryCompareAdapter {
 
+	private static final String PREF_SHOWALLPROJECTVERSIONS = "org.spearce.egit.ui.githistorypage.showallprojectversions";
+
 	private Composite localComposite;
 
 	private TreeViewer viewer;
@@ -95,8 +98,12 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	protected boolean hintShowDiffNow;
 
+	private boolean showAllVersions;
+
 	public GitHistoryPage(Object object) {
 		setInput(object);
+		showAllVersions = Activator.getDefault().getPreferenceStore()
+				.getBoolean(PREF_SHOWALLPROJECTVERSIONS);
 	}
 
 	public boolean inputSet() {
@@ -230,6 +237,32 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(
 				resourceListener, IResourceChangeEvent.POST_CHANGE);
 
+		Action showAllVersionsAction = new Action("\u2200" /* unicode: FOR ALL */) {
+			public void run() {
+				setShowAllVersions(isChecked());
+				if (historyRefreshJob.cancel()) {
+					System.out.println("rescheduling");
+					historyRefreshJob.schedule();
+				} else {
+					System.out.println("failed to cancel?");
+				}
+			}
+		};
+		showAllVersionsAction
+				.setToolTipText("Show all versions for the project containing the resource");
+		showAllVersionsAction.setChecked(isShowAllVersions());
+		getSite().getActionBars().getToolBarManager()
+				.add(showAllVersionsAction);
+	}
+
+	private boolean isShowAllVersions() {
+		return showAllVersions;
+	}
+
+	protected void setShowAllVersions(boolean showAllVersions) {
+		this.showAllVersions = showAllVersions;
+		Activator.getDefault().getPreferenceStore().setValue(
+				PREF_SHOWALLPROJECTVERSIONS, showAllVersions);
 	}
 
 	class GitHistoryResourceListener implements IResourceChangeListener {
@@ -449,9 +482,13 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 			IFileHistoryProvider fileHistoryProvider = provider
 					.getFileHistoryProvider();
+			IResource startingPoint = (IResource) getInput();
+			if (isShowAllVersions())
+				startingPoint = startingPoint.getProject();
 			IFileHistory fileHistoryFor = fileHistoryProvider
-					.getFileHistoryFor((IResource) getInput(),
-							IFileHistoryProvider.SINGLE_LINE_OF_DESCENT, monitor);
+					.getFileHistoryFor(startingPoint,
+							IFileHistoryProvider.SINGLE_LINE_OF_DESCENT,
+							monitor);
 			fileRevisions = fileHistoryFor.getFileRevisions();
 			
 			final Map fnewappliedPatches = newappliedPatches;
