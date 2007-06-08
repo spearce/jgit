@@ -24,7 +24,8 @@ import org.eclipse.team.ui.history.HistoryPageSaveablePart;
 
 public class ShowResourceInHistoryAction extends TeamAction {
 
-	public void execute(IAction action) {
+	@Override
+	public void run(IAction action) {
 		TeamUI.getHistoryView().showHistoryFor(getSelectedResources()[0]);
 	}
 
