@@ -107,6 +107,7 @@ public class GitIndex {
 				entries.put(entry.name, entry);
 			}
 			long t1 = System.currentTimeMillis();
+			lastCacheTime = cacheFile.lastModified();
 			System.out.println("Read index "+cacheFile+" in "+((t1-t0)/1000.0)+"s");
 		} finally {
 			cache.close();
