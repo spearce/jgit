@@ -17,58 +17,56 @@
 package org.spearce.egit.core.op;
 
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.spearce.egit.core.project.CheckpointJob;
 import org.spearce.egit.core.project.GitProjectData;
+import org.spearce.egit.core.project.RepositoryMapping;
 
 /**
- * Performs a checkpoint (flush of the cache-tree to the Git database).
+ * Performs a checkpoint (Update of the Git index).
  * <p>
  * Each project has a series of one or more <code>RepositoryMapping</code>s
- * associated with it, and each of these has one Git tree stored within the Git
- * object database. That tree defines the current state of the Eclipse
- * workspace, and is used to keep track of what the user might intend on
- * committing next. This operation updates the tree within the Git object
- * database to reflect what EGit has stored in memory.
- * </p>
- * <p>
- * This operation currently only performs a checkpoint if necessary. That is, a
- * tree will only be written if the in memory structures indicate it is dirty.
- * If the dirty flags are incorrect, this operation will not do the right thing.
+ * associated with it, and each of these has a Git index. That tree defines the
+ * current state of the Eclipse workspace, and is used to keep track of what the
+ * user might intend on committing next. This operation updates the tree within
+ * the Git object database to reflect what EGit has stored in memory.
  * </p>
  */
 public class CheckpointOperation implements IWorkspaceRunnable {
-	private final Collection rsrcList;
+	private final Collection<IResource> rsrcList;
 
 	/**
-	 * Create a new checkpoint operation for execution.
+	 * Create a new checkpoint operation for execution. A checkpoint updates
+	 * all resources managed by a particular git repository. 
+	 * 
+	 * A git repo (and it's index) could manage a number of projects and even
+	 * resources not visible in eclipse.
 	 * 
 	 * @param rsrcs
-	 *            a collection of {@link IResource}s whose projects should have
-	 *            their cache trees checkpointed. Since a project is an
-	 *            IResource, this may just be a collection of projects.
-	 *            Duplicate projects will be automatically filtered out.
+	 *            a collection of {@link IResource}s whose git indexes
+	 *            should be updates.
 	 */
-	public CheckpointOperation(final Collection rsrcs) {
+	public CheckpointOperation(final Collection<IResource> rsrcs) {
 		rsrcList = rsrcs;
 	}
 
 	public void run(IProgressMonitor m) throws CoreException {
-		final Set projects = new HashSet();
-		for (final Iterator i = rsrcList.iterator(); i.hasNext();)
-			projects.add(((IResource) i.next()).getProject());
-		for (final Iterator i = projects.iterator(); i.hasNext();) {
-			final IProject project = (IProject) i.next();
+		final Map<RepositoryMapping, RepositoryMapping> repositories = new IdentityHashMap<RepositoryMapping, RepositoryMapping>();
+		for (IResource i : rsrcList) {
+			final IProject project=i.getProject();
 			final GitProjectData projectData = GitProjectData.get(project);
-			if (projectData != null)
-				projectData.fullUpdate();
+			RepositoryMapping rm = projectData.getRepositoryMapping(project);
+			repositories.put(rm,rm);
+		}
+		for (RepositoryMapping i : repositories.keySet()) {
+			new CheckpointJob(i).schedule();
 		}
 	}
 }

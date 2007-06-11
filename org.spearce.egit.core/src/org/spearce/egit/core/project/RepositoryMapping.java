@@ -27,8 +27,6 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.core.runtime.jobs.IJobChangeEvent;
-import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.GitProvider;
 import org.spearce.jgit.errors.MissingObjectException;
@@ -51,10 +49,6 @@ public class RepositoryMapping {
 	private final String subset;
 
 	private Repository db;
-
-	private CheckpointJob currowj;
-
-	private boolean runningowj;
 
 	private IContainer container;
 
@@ -131,7 +125,6 @@ public class RepositoryMapping {
 
 	public synchronized void clear() {
 		db = null;
-		currowj = null;
 		container = null;
 	}
 
@@ -141,9 +134,6 @@ public class RepositoryMapping {
 
 	public synchronized void setRepository(final Repository r) {
 		db = r;
-		if (db != null) {
-			initJob();
-		}
 	}
 
 	public synchronized IContainer getContainer() {
@@ -154,15 +144,8 @@ public class RepositoryMapping {
 		container = c;
 	}
 
-	public synchronized void checkpointIfNecessary() {
-		if (!runningowj) {
-			currowj.scheduleIfNecessary();
-		}
-	}
-
 	public synchronized void fullUpdate() {
 		recomputeMerge();
-		currowj.scheduleIfNecessary();
 	}
 
 	public synchronized void recomputeMerge() {
@@ -194,25 +177,6 @@ public class RepositoryMapping {
 
 	public String toString() {
 		return "RepositoryMapping[" + containerPath + " -> " + gitdirPath + "]";
-	}
-
-	@SuppressWarnings("synthetic-access")
-	private void initJob() {
-		currowj = new CheckpointJob(this);
-		currowj.addJobChangeListener(new JobChangeAdapter() {
-			public void running(final IJobChangeEvent event) {
-				synchronized (RepositoryMapping.this) {
-					runningowj = true;
-					initJob();
-				}
-			}
-
-			public void done(final IJobChangeEvent event) {
-				synchronized (RepositoryMapping.this) {
-					runningowj = false;
-				}
-			}
-		});
 	}
 
 	public boolean isResourceChanged(IResource rsrc) throws IOException, UnsupportedEncodingException {

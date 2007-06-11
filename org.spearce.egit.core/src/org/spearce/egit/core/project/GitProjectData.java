@@ -162,13 +162,6 @@ public class GitProjectData {
 		d.delete();
 	}
 
-	public static synchronized void checkpointAllProjects() {
-		final Iterator i = projectDataCache.values().iterator();
-		while (i.hasNext()) {
-			((GitProjectData) i.next()).checkpointIfNecessary();
-		}
-	}
-
 	static void trace(final String m) {
 		Activator.trace("(GitProjectData) " + m);
 	}
@@ -271,25 +264,6 @@ public class GitProjectData {
 
 	public RepositoryMapping getRepositoryMapping(final IResource r) {
 		return (RepositoryMapping) c2mapping.get(r);
-	}
-
-	public void checkpointIfNecessary() {
-		final Iterator i = c2mapping.values().iterator();
-		while (i.hasNext()) {
-			((RepositoryMapping) i.next()).checkpointIfNecessary();
-		}
-	}
-
-	public void fullUpdate() {
-		final Iterator i = c2mapping.values().iterator();
-		while (i.hasNext()) {
-//			try {
-				((RepositoryMapping) i.next()).fullUpdate();
-//			} catch (IOException ioe) {
-//				Activator.logError(CoreText.GitProjectData_cannotReadHEAD, ioe);
-//				return;
-//			}
-		}
 	}
 
 	public void delete() {

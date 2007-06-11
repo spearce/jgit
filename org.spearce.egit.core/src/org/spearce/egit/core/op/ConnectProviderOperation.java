@@ -122,7 +122,6 @@ public class ConnectProviderOperation implements IWorkspaceRunnable {
 					new SubProgressMonitor(m, 50));
 
 			m.subTask(CoreText.ConnectProviderOperation_updatingCache);
-			projectData.fullUpdate();
 		} finally {
 			m.done();
 		}

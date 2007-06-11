@@ -65,12 +65,6 @@ public class CoreText extends NLS {
 
 	public static String CheckpointJob_name;
 
-	public static String CheckpointJob_writingBlobs;
-
-	public static String CheckpointJob_writingTrees;
-
-	public static String CheckpointJob_writingRef;
-
 	public static String CheckpointJob_failed;
 
 	static {
