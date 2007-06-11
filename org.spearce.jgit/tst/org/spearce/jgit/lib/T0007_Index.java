@@ -102,7 +102,7 @@ public class T0007_Index extends RepositoryTestCase {
 		index.add(trash, new File(trash, "a.b"));
 		index.write();
 		assertEquals(0, system(trash, "git status"));
-		ObjectId id = index.writeTree(trash);
+		ObjectId id = index.writeTree();
 		assertEquals("c696abc3ab8e091c665f49d00eb8919690b3aec3", id.toString());
 		
 		writeTrashFile("a/b", "data:a/b");
@@ -121,7 +121,7 @@ public class T0007_Index extends RepositoryTestCase {
 		index.add(trash, new File(trash, "a.b"));
 		index.write();
 		assertEquals(0, system(trash, "git status"));
-		ObjectId id = index.writeTree(trash);
+		ObjectId id = index.writeTree();
 		System.out.println("wrote id " + id);
 		assertEquals("c696abc3ab8e091c665f49d00eb8919690b3aec3", id.toString());
 		GitIndex index2 = new GitIndex(db);
@@ -154,7 +154,7 @@ public class T0007_Index extends RepositoryTestCase {
 		index.add(trash, f5);
 		index.add(trash, f6);
 		index.write();
-		ObjectId id = index.writeTree(trash);
+		ObjectId id = index.writeTree();
 		System.out.println("wrote id " + id);
 		assertEquals("ba78e065e2c261d4f7b8f42107588051e87e18e9", id.toString());
 		GitIndex index2 = new GitIndex(db);
@@ -182,7 +182,7 @@ public class T0007_Index extends RepositoryTestCase {
 		index.add(trash, new File(trash, "a.b"));
 		index.write();
 		assertEquals(0, system(trash, "git status"));
-		index.writeTree(trash);
+		index.writeTree();
 		index.remove(trash, new File(trash, "a:b"));
 		index.write();
 		assertEquals("a.b", index.getMembers()[0].getName());
@@ -201,7 +201,7 @@ public class T0007_Index extends RepositoryTestCase {
 		index.add(trash, adotb);
 		index.write();
 		assertEquals(0, system(trash, "git status"));
-		index.writeTree(trash);
+		index.writeTree();
 		delete(aslashb);
 		delete(acolonb);
 		delete(adotb);

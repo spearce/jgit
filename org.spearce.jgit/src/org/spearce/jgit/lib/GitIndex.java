@@ -497,7 +497,7 @@ public class GitIndex {
 		}
 	}
 
-	public ObjectId writeTree(File wd) throws IOException {
+	public ObjectId writeTree() throws IOException {
 		ObjectWriter writer = new ObjectWriter(db);
 		Tree current = new Tree(db);
 		Stack trees = new Stack();
