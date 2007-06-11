@@ -56,6 +56,13 @@
                label="%ShowResourceInHistoryAction_label"
                menubarPath="team.main/group1"
                tooltip="%ShowResourceInHistoryAction_tooltip"/>
+         <action
+               class="org.spearce.egit.ui.internal.actions.Update"
+               id="org.spearce.egit.ui.internal.actions.Update"
+               label="%UpdateAction_label"
+               menubarPath="team.main/group1"
+               tooltip="%UpdateAction_tooltip">
+         </action>
  	  </objectContribution>
       <objectContribution
             objectClass="org.eclipse.core.resources.IFile"
