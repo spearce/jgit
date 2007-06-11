@@ -256,17 +256,24 @@ public class GitIndex {
 
 		public boolean update(File f, Repository db) throws IOException {
 			boolean modified = false;
-			if (mtime != f.lastModified())
+			long lm = f.lastModified() * 1000000L;
+			if (mtime != lm)
 				modified = true;
 			mtime = f.lastModified() * 1000000L;
 			if (size != f.length())
 				modified = true;
-			size = (int) f.length();
-			ObjectWriter writer = new ObjectWriter(db);
-			ObjectId newsha1 = sha1 = writer.writeBlob(f);
-			if (!newsha1.equals(sha1))
+			if (File_canExecute(f) != FileMode.EXECUTABLE_FILE.equals(mode)) {
+				mode = FileMode.EXECUTABLE_FILE.getBits();
 				modified = true;
-			sha1 = newsha1;
+			}
+			if (modified) {
+				size = (int) f.length();
+				ObjectWriter writer = new ObjectWriter(db);
+				ObjectId newsha1 = sha1 = writer.writeBlob(f);
+				if (!newsha1.equals(sha1))
+					modified = true;
+				sha1 = newsha1;
+			}
 			return modified;
 		}
 
