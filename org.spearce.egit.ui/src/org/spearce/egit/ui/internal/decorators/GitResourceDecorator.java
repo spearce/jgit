@@ -324,13 +324,17 @@ public class GitResourceDecorator extends LabelProvider implements
 						orState(rsrc.getParent(), CHANGED);
 					} else {
 						decoration.addOverlay(UIIcons.OVR_SHARED);
-					}
-					if (entry.isModified(repository.getDirectory()
-							.getParentFile())) {
-						decoration.addPrefix(">");
-						orState(rsrc.getParent(), CHANGED);
-					} else {
-						decoration.addSuffix(""); // set it to avoid further calls
+
+						if (entry.isModified(mapped.getWorkDir())) {
+							decoration.addPrefix(">");
+							decoration.addSuffix("(not updated)");
+							orState(rsrc.getParent(), CHANGED);
+						} else {
+							if (!entry.getObjectId().equals(blob.getId()))
+								decoration.addPrefix(">");
+							else
+								decoration.addPrefix(""); // set it to avoid further calls
+						}
 					}
 				}
 			}
