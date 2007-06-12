@@ -82,6 +82,15 @@ public class TrackOperation implements IWorkspaceRunnable {
 					final GitProjectData pd = GitProjectData.get(toAdd.getProject());
 					final RepositoryMapping rm = pd.getRepositoryMapping(p);
 					final GitIndex index = rm.getRepository().getIndex();
+
+					if (obj instanceof IFile) {
+						String repoPath = rm.getRepoRelativePath((IResource) obj);
+						if (index.getEntry(repoPath) != null) {
+							System.out.println("Already tracked - skipping");
+							continue;
+						}
+					}
+
 					tomerge.put(rm, Boolean.TRUE);
 					String prefix = rm.getSubset();
 					if (prefix == null)
