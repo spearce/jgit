@@ -61,8 +61,13 @@
                id="org.spearce.egit.ui.internal.actions.Update"
                label="%UpdateAction_label"
                menubarPath="team.main/group1"
-               tooltip="%UpdateAction_tooltip">
-         </action>
+               tooltip="%UpdateAction_tooltip"/>
+         <action
+               class="org.spearce.egit.ui.internal.actions.CommitAction"
+               id="org.spearce.egit.ui.internal.actions.CommitAction"
+               label="%CommitAction_label"
+               menubarPath="team.main/group1"
+               tooltip="%CommitAction_tooltip"/>
  	  </objectContribution>
       <objectContribution
             objectClass="org.eclipse.core.resources.IFile"
