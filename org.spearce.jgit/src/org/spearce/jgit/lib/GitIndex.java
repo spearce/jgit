@@ -340,7 +340,36 @@ public class GitIndex {
 				return false;
 		}
 
+		/**
+		 * Check if an entry's content is different from the cache, 
+		 * 
+		 * File status information is used and status is same we
+		 * consider the file identical to the state in the working
+		 * directory. Native git uses more stat fields than we
+		 * have accessible in Java.
+		 * 
+		 * @param wd working directory to compare content with
+		 * @return true if content is most likely different.
+		 */
 		public boolean isModified(File wd) {
+			return isModified(wd, false);
+		}
+
+		/**
+		 * Check if an entry's content is different from the cache, 
+		 * 
+		 * File status information is used and status is same we
+		 * consider the file identical to the state in the working
+		 * directory. Native git uses more stat fields than we
+		 * have accessible in Java.
+		 * 
+		 * @param wd working directory to compare content with
+		 * @param forceContentCheck True if the actual file content
+		 * should be checked if modification time differs.
+		 * 
+		 * @return true if content is most likely different.
+		 */
+		public boolean isModified(File wd, boolean forceContentCheck) {
 			File file = getFile(wd);
 			if (!file.exists())
 				return true;
@@ -377,6 +406,9 @@ public class GitIndex {
 			if (file.length() != size)
 				return true;
 			if (lastm != javamtime) {
+				if (!forceContentCheck)
+					return true;
+
 				try {
 					InputStream is = new FileInputStream(file);
 					ObjectWriter objectWriter = new ObjectWriter(theIndex.db);
