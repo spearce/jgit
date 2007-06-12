@@ -18,18 +18,23 @@ package org.spearce.egit.core.project;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Properties;
 
 import org.eclipse.core.resources.IContainer;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
+import org.spearce.jgit.lib.GitIndex.Entry;
 
 public class RepositoryMapping {
 	public static boolean isInitialKey(final String key) {
@@ -205,5 +210,35 @@ public class RepositoryMapping {
 				}
 			}
 		});
+	}
+
+	public Boolean isResourceChanged(IResource rsrc) throws IOException, UnsupportedEncodingException {
+		Repository repository = getRepository();
+		GitIndex index = repository.getIndex();
+		String repoRelativePath = getRepoRelativePath(rsrc);
+		Tree headTree = repository.mapTree("HEAD");
+		TreeEntry blob = headTree.findBlobMember(repoRelativePath);
+		Entry entry = index.getEntry(repoRelativePath);
+		if (rsrc instanceof IFile && entry == null && blob == null)
+			return Boolean.FALSE;
+		if (entry == null)
+			return Boolean.TRUE; // flags new resources as changes
+		if (blob == null)
+			return Boolean.TRUE; // added in index
+		boolean hashesDiffer = !entry.getObjectId().equals(blob.getId());
+		System.out.println("HashesDiffer: " + rsrc);
+		return hashesDiffer	|| entry.isModified(repository.getDirectory()
+						.getParentFile());
+	}
+
+	public String getRepoRelativePath(IResource rsrc) {
+		String prefix = getSubset();
+		String projectRelativePath = rsrc.getProjectRelativePath().toString();
+		String repoRelativePath;
+		if (prefix != null)
+			repoRelativePath = prefix + "/" + projectRelativePath;
+		else
+			repoRelativePath = projectRelativePath;
+		return repoRelativePath;
 	}
 }

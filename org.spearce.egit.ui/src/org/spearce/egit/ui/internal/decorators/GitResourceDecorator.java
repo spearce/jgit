@@ -187,17 +187,6 @@ public class GitResourceDecorator extends LabelProvider implements
 
 	static final int CHANGED = 1;
 
-	private String getRepoRelativePath(IResource rsrc, RepositoryMapping mapped) {
-		String prefix = mapped.getSubset();
-		String projectRelativePath = rsrc.getProjectRelativePath().toString();
-		String repoRelativePath;
-		if (prefix != null)
-			repoRelativePath = prefix + "/" + projectRelativePath;
-		else
-			repoRelativePath = projectRelativePath;
-		return repoRelativePath;
-	}
-
 	private Boolean isDirty(IResource rsrc) {
 //		Activator.trace("isDirty(" + rsrc.getFullPath().toOSString() +")");
 		try {
@@ -208,9 +197,6 @@ public class GitResourceDecorator extends LabelProvider implements
 			RepositoryMapping mapped = d
 					.getRepositoryMapping(rsrc.getProject());
 			if (mapped != null) {
-				Repository repository = mapped.getRepository();
-				GitIndex index = repository.getIndex();
-				String repoRelativePath = getRepoRelativePath(rsrc, mapped);
 				if (rsrc instanceof IContainer) {
 					for (IResource r : ((IContainer) rsrc)
 							.members(IContainer.EXCLUDE_DERIVED)) {
@@ -220,16 +206,8 @@ public class GitResourceDecorator extends LabelProvider implements
 					}
 					return Boolean.FALSE;
 				}
-				Tree headTree = repository.mapTree("HEAD");
-				TreeEntry blob = headTree.findBlobMember(repoRelativePath);
-				Entry entry = index.getEntry(repoRelativePath);
-				if (entry == null)
-					return Boolean.TRUE; // flags new resources as changes
-				if (blob == null)
-					return Boolean.TRUE; // added in index
-				return !entry.getObjectId().equals(blob.getId())
-						|| entry.isModified(repository.getDirectory()
-								.getParentFile());
+
+				return mapped.isResourceChanged(rsrc);
 			}
 			return null; // not mapped
 		} catch (CoreException e) {
@@ -279,7 +257,7 @@ public class GitResourceDecorator extends LabelProvider implements
 			if (mapped != null) {
 				Repository repository = mapped.getRepository();
 				GitIndex index = repository.getIndex();
-				String repoRelativePath = getRepoRelativePath(rsrc, mapped);
+				String repoRelativePath = mapped.getRepoRelativePath(rsrc);
 				Tree headTree = repository.mapTree("HEAD");
 				TreeEntry blob = headTree.findBlobMember(repoRelativePath);
 				Entry entry = index.getEntry(repoRelativePath);
