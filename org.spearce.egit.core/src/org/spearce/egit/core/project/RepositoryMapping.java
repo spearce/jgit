@@ -212,7 +212,7 @@ public class RepositoryMapping {
 		});
 	}
 
-	public Boolean isResourceChanged(IResource rsrc) throws IOException, UnsupportedEncodingException {
+	public boolean isResourceChanged(IResource rsrc) throws IOException, UnsupportedEncodingException {
 		Repository repository = getRepository();
 		GitIndex index = repository.getIndex();
 		String repoRelativePath = getRepoRelativePath(rsrc);
@@ -220,11 +220,11 @@ public class RepositoryMapping {
 		TreeEntry blob = headTree.findBlobMember(repoRelativePath);
 		Entry entry = index.getEntry(repoRelativePath);
 		if (rsrc instanceof IFile && entry == null && blob == null)
-			return Boolean.FALSE;
+			return false;
 		if (entry == null)
-			return Boolean.TRUE; // flags new resources as changes
+			return true; // flags new resources as changes
 		if (blob == null)
-			return Boolean.TRUE; // added in index
+			return true; // added in index
 		boolean hashesDiffer = !entry.getObjectId().equals(blob.getId());
 		System.out.println("HashesDiffer: " + rsrc);
 		return hashesDiffer || entry.isModified(getWorkDir());
