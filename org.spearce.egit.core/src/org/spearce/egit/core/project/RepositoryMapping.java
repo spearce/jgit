@@ -227,8 +227,7 @@ public class RepositoryMapping {
 			return Boolean.TRUE; // added in index
 		boolean hashesDiffer = !entry.getObjectId().equals(blob.getId());
 		System.out.println("HashesDiffer: " + rsrc);
-		return hashesDiffer	|| entry.isModified(repository.getDirectory()
-						.getParentFile());
+		return hashesDiffer || entry.isModified(getWorkDir());
 	}
 
 	public String getRepoRelativePath(IResource rsrc) {
