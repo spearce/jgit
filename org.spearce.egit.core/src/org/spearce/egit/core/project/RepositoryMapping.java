@@ -226,7 +226,7 @@ public class RepositoryMapping {
 		if (blob == null)
 			return true; // added in index
 		boolean hashesDiffer = !entry.getObjectId().equals(blob.getId());
-		System.out.println("HashesDiffer: " + rsrc);
+//		System.out.println("HashesDiffer: " + rsrc);
 		return hashesDiffer || entry.isModified(getWorkDir());
 	}
 
