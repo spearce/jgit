@@ -83,14 +83,19 @@ public class CommitDialog extends Dialog {
 					Entry indexEntry = index.getEntry(repoPath);
 					if (headEntry == null) {
 						prefix = "Added";
+						if (indexEntry.isModified(repositoryMapping.getWorkDir()))
+							prefix = "Added, index diff";
 					} else if (indexEntry == null) {
-						prefix = "Removed(?)";
+						prefix = "Removed";
 					} else if (headExists
 							&& !headEntry.getId().equals(
 									indexEntry.getObjectId())) {
 						prefix = "Modified";
-					} else
-						prefix = "Mod., index diff";
+
+
+						if (indexEntry.isModified(repositoryMapping.getWorkDir()))
+							prefix = "Mod., index diff";
+					}
 
 				} catch (Exception e) {
 				}
