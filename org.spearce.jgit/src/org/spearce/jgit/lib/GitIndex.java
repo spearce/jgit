@@ -115,6 +115,7 @@ public class GitIndex {
 	}
 
 	public void write() throws IOException {
+		checkWriteOk();
 		File tmpIndex = new File(cacheFile.getAbsoluteFile() + ".tmp");
 		File lock = new File(cacheFile.getAbsoluteFile() + ".lock");
 		if (!lock.createNewFile())
@@ -159,6 +160,15 @@ public class GitIndex {
 			if (tmpIndex.exists() && !tmpIndex.delete())
 				throw new IOException(
 						"Could not delete temporary index file. Should not happen");
+		}
+	}
+
+	private void checkWriteOk() throws IOException {
+		for (Iterator i = entries.values().iterator(); i.hasNext();) {
+			Entry e = (Entry) i.next();
+			if (e.stage != 0) {
+				throw new IOException("Cannot work with other stages than zero right now. Won't write corrupt index.");
+			}
 		}
 	}
 
@@ -245,7 +255,7 @@ public class GitIndex {
 			b.get(sha1bytes);
 			sha1 = new ObjectId(sha1bytes);
 			flags = b.getShort();
-			stage = (flags & 0x4000) >> 12;
+			stage = (flags & 0x3000) >> 12;
 			name = new byte[flags & 0xFFF];
 			b.get(name);
 			b
@@ -537,6 +547,7 @@ public class GitIndex {
 	}
 
 	public ObjectId writeTree() throws IOException {
+		checkWriteOk();
 		ObjectWriter writer = new ObjectWriter(db);
 		Tree current = new Tree(db);
 		Stack trees = new Stack();
