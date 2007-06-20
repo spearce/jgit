@@ -27,6 +27,9 @@ import org.spearce.jgit.errors.CorruptObjectException;
 
 public class GitIndex {
 
+	/** Stage 0 represents merged entries. */
+	public static final int STAGE_0 = 0;
+
 	private RandomAccessFile cache;
 
 	private File cacheFile;
@@ -465,6 +468,10 @@ public class GitIndex {
 
 		public ObjectId getObjectId() {
 			return sha1;
+		}
+
+		public int getStage() {
+			return stage;
 		}
 	}
 

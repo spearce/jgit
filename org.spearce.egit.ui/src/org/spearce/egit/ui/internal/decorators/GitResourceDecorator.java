@@ -297,6 +297,13 @@ public class GitResourceDecorator extends LabelProvider implements
 						orState(rsrc.getParent(), CHANGED);
 					}
 				} else {
+					if (entry.getStage() != GitIndex.STAGE_0) {
+						decoration.addSuffix("(conflict)");
+						decoration.addOverlay(UIIcons.OVR_CONFLICT);
+						orState(rsrc.getParent(), CHANGED);
+						return;
+					}
+
 					if (blob == null) {
 						decoration.addOverlay(UIIcons.OVR_PENDING_ADD);
 						orState(rsrc.getParent(), CHANGED);
