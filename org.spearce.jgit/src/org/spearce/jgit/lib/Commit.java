@@ -51,6 +51,11 @@ public class Commit implements Treeish {
 		objdb = db;
 		parentIds = EMPTY_OBJECTID_LIST;
 	}
+	
+	public Commit(final Repository db, final ObjectId parentId) {
+		objdb = db;
+		parentIds = new ObjectId[] {parentId};
+	}
 
 	public Commit(final Repository db, final ObjectId id, final byte[] raw) {
 		objdb = db;

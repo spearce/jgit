@@ -20,10 +20,14 @@ package org.spearce.egit.ui.internal.actions;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -41,10 +45,17 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.internal.dialogs.CommitDialog;
+import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.IndexDiff;
+import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.ObjectWriter;
+import org.spearce.jgit.lib.PersonIdent;
+import org.spearce.jgit.lib.RefLock;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
+import org.spearce.jgit.lib.TreeEntry;
+import org.spearce.jgit.lib.GitIndex.Entry;
 
 public class CommitAction implements IObjectActionDelegate {
 	private IWorkbenchPart wp;
@@ -77,10 +88,96 @@ public class CommitAction implements IObjectActionDelegate {
 			return;
 
 		String commitMessage = commitDialog.getCommitMessage();
+		try {
+			performCommit(commitDialog, commitMessage);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void performCommit(CommitDialog commitDialog, String commitMessage) throws IOException {
 		System.out.println("Commit Message: " + commitMessage);
 		IFile[] selectedItems = commitDialog.getSelectedItems();
+		
+		HashMap<IProject, Tree> treeMap = new HashMap<IProject, Tree>();
 		for (IFile file : selectedItems) {
-			System.out.println("\t" + file);
+//			System.out.println("\t" + file);
+			
+			IProject project = file.getProject();
+			final GitProjectData projectData = GitProjectData.get(project);
+			RepositoryMapping repositoryMapping = projectData.getRepositoryMapping(project);
+			
+			Tree projTree = treeMap.get(project);
+			Repository repository = repositoryMapping.getRepository();
+			if (projTree == null) {
+				projTree = repository.mapTree("HEAD");
+				treeMap.put(project, projTree);
+				System.out.println("Orig tree id: " + projTree.getId());
+			}
+			GitIndex index = repository.getIndex();
+			String repoRelativePath = repositoryMapping.getRepoRelativePath(file);
+			String string = repoRelativePath;
+
+			TreeEntry treeMember = projTree.findBlobMember(repoRelativePath);
+			// we always want to delete it from the current tree, since if it's updated, we'll add it again
+			if (treeMember != null)
+				treeMember.delete();
+			
+			Entry idxEntry = index.getEntry(string);
+			if (idxEntry != null) {
+				projTree.addFile(repoRelativePath);
+				TreeEntry newMember = projTree.findBlobMember(repoRelativePath);
+				
+				newMember.setId(idxEntry.getObjectId());
+				System.out.println("New member id for " + repoRelativePath + ": " + newMember.getId() + " idx id: " + idxEntry.getObjectId());
+			}
+		}
+		
+		for (java.util.Map.Entry<IProject, Tree> entry: treeMap.entrySet()) {
+			Tree tree = entry.getValue();
+			RepositoryMapping repositoryMapping = GitProjectData.get(entry.getKey()).getRepositoryMapping(entry.getKey());
+
+			ObjectId parentId = tree.getRepository().resolve("HEAD");
+			writeTreeWithSubTrees(tree);
+//			System.out.println("New tree id: " + tree.getId());
+			Commit commit = new Commit(tree.getRepository(), parentId);
+			commit.setTree(tree);
+			commit.setMessage(commitMessage.replaceAll("\r", "\n"));
+			commit.setAuthor(new PersonIdent("Joe Schmoe", "jschmoe@mailinator.com", new Date(Calendar.getInstance().getTimeInMillis()), TimeZone.getDefault()));
+			commit.setCommitter(new PersonIdent("Joe Bloggs", "jbloggs@mailinator.com", new Date(Calendar.getInstance().getTimeInMillis()), TimeZone.getDefault()));
+			
+			ObjectWriter writer = new ObjectWriter(tree.getRepository());
+			commit.setCommitId(writer.writeCommit(commit));
+			System.out.println("Commit iD: " + commit.getCommitId());
+			
+			RefLock lockRef = tree.getRepository().lockRef("HEAD");
+			lockRef.write(commit.getCommitId());
+			if (lockRef.commit()) {
+				System.out.println("Success!!!!");
+			}
+			repositoryMapping.recomputeMerge();
+		}
+	}
+
+	private void writeTreeWithSubTrees(Tree tree) {
+		if (tree.getId() == null) {
+			System.out.println("writing tree for: " + tree.getFullName());
+			try {
+				for (TreeEntry entry : tree.members()) {
+					if (entry.isModified()) {
+						if (entry instanceof Tree) {
+							writeTreeWithSubTrees((Tree) entry);
+						} else {
+							// this shouldn't happen.... not quite sure what to do here :)
+							System.out.println("BAD JUJU: " + entry.getFullName());
+						}
+					}
+				}
+				ObjectWriter writer  = new ObjectWriter(tree.getRepository());
+				tree.setId(writer.writeTree(tree));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
