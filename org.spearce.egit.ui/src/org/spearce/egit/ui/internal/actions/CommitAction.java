@@ -17,7 +17,11 @@
 
 package org.spearce.egit.ui.internal.actions;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -59,6 +63,7 @@ import org.spearce.jgit.lib.GitIndex.Entry;
 
 public class CommitAction implements IObjectActionDelegate {
 	private IWorkbenchPart wp;
+
 	private List rsrcList;
 
 	public void setActivePart(final IAction act, final IWorkbenchPart part) {
@@ -95,18 +100,20 @@ public class CommitAction implements IObjectActionDelegate {
 		}
 	}
 
-	private void performCommit(CommitDialog commitDialog, String commitMessage) throws IOException {
+	private void performCommit(CommitDialog commitDialog, String commitMessage)
+			throws IOException {
 		System.out.println("Commit Message: " + commitMessage);
 		IFile[] selectedItems = commitDialog.getSelectedItems();
-		
+
 		HashMap<IProject, Tree> treeMap = new HashMap<IProject, Tree>();
 		for (IFile file : selectedItems) {
-//			System.out.println("\t" + file);
-			
+			// System.out.println("\t" + file);
+
 			IProject project = file.getProject();
 			final GitProjectData projectData = GitProjectData.get(project);
-			RepositoryMapping repositoryMapping = projectData.getRepositoryMapping(project);
-			
+			RepositoryMapping repositoryMapping = projectData
+					.getRepositoryMapping(project);
+
 			Tree projTree = treeMap.get(project);
 			Repository repository = repositoryMapping.getRepository();
 			if (projTree == null) {
@@ -115,47 +122,82 @@ public class CommitAction implements IObjectActionDelegate {
 				System.out.println("Orig tree id: " + projTree.getId());
 			}
 			GitIndex index = repository.getIndex();
-			String repoRelativePath = repositoryMapping.getRepoRelativePath(file);
+			String repoRelativePath = repositoryMapping
+					.getRepoRelativePath(file);
 			String string = repoRelativePath;
 
 			TreeEntry treeMember = projTree.findBlobMember(repoRelativePath);
-			// we always want to delete it from the current tree, since if it's updated, we'll add it again
+			// we always want to delete it from the current tree, since if it's
+			// updated, we'll add it again
 			if (treeMember != null)
 				treeMember.delete();
-			
+
 			Entry idxEntry = index.getEntry(string);
 			if (idxEntry != null) {
 				projTree.addFile(repoRelativePath);
 				TreeEntry newMember = projTree.findBlobMember(repoRelativePath);
-				
+
 				newMember.setId(idxEntry.getObjectId());
-				System.out.println("New member id for " + repoRelativePath + ": " + newMember.getId() + " idx id: " + idxEntry.getObjectId());
+				System.out.println("New member id for " + repoRelativePath
+						+ ": " + newMember.getId() + " idx id: "
+						+ idxEntry.getObjectId());
 			}
 		}
-		
-		for (java.util.Map.Entry<IProject, Tree> entry: treeMap.entrySet()) {
-			Tree tree = entry.getValue();
-			RepositoryMapping repositoryMapping = GitProjectData.get(entry.getKey()).getRepositoryMapping(entry.getKey());
 
-			ObjectId parentId = tree.getRepository().resolve("HEAD");
+		for (java.util.Map.Entry<IProject, Tree> entry : treeMap.entrySet()) {
+			Tree tree = entry.getValue();
+			RepositoryMapping repositoryMapping = GitProjectData.get(
+					entry.getKey()).getRepositoryMapping(entry.getKey());
+
+			Repository repo = tree.getRepository();
+			ObjectId parentId = repo.resolve("HEAD");
 			writeTreeWithSubTrees(tree);
-//			System.out.println("New tree id: " + tree.getId());
-			Commit commit = new Commit(tree.getRepository(), parentId);
+			// System.out.println("New tree id: " + tree.getId());
+			Commit commit = new Commit(repo, parentId);
 			commit.setTree(tree);
-			commit.setMessage(commitMessage.replaceAll("\r", "\n"));
-			commit.setAuthor(new PersonIdent("Joe Schmoe", "jschmoe@mailinator.com", new Date(Calendar.getInstance().getTimeInMillis()), TimeZone.getDefault()));
-			commit.setCommitter(new PersonIdent("Joe Bloggs", "jbloggs@mailinator.com", new Date(Calendar.getInstance().getTimeInMillis()), TimeZone.getDefault()));
-			
-			ObjectWriter writer = new ObjectWriter(tree.getRepository());
+			commitMessage = commitMessage.replaceAll("\r", "\n");
+			commit.setMessage(commitMessage);
+			commit.setAuthor(new PersonIdent("Joe Schmoe",
+					"jschmoe@mailinator.com", new Date(Calendar.getInstance()
+							.getTimeInMillis()), TimeZone.getDefault()));
+			commit.setCommitter(new PersonIdent("Joe Bloggs",
+					"jbloggs@mailinator.com", new Date(Calendar.getInstance()
+							.getTimeInMillis()), TimeZone.getDefault()));
+
+			ObjectWriter writer = new ObjectWriter(repo);
 			commit.setCommitId(writer.writeCommit(commit));
 			System.out.println("Commit iD: " + commit.getCommitId());
-			
-			RefLock lockRef = tree.getRepository().lockRef("HEAD");
+
+			RefLock lockRef = repo.lockRef("HEAD");
 			lockRef.write(commit.getCommitId());
 			if (lockRef.commit()) {
 				System.out.println("Success!!!!");
+				updateReflog(repo, commitMessage, parentId, commit
+						.getCommitId(), commit.getCommitter());
 			}
 			repositoryMapping.recomputeMerge();
+		}
+	}
+
+	private void updateReflog(Repository repo, String commitMessage,
+			ObjectId parentId, ObjectId commitId, PersonIdent committer) {
+		String firstLine = commitMessage;
+		int newlineIndex = commitMessage.indexOf("\n");
+		if (newlineIndex > 0) {
+			firstLine = commitMessage.substring(0, newlineIndex);
+		}
+		PrintWriter out = null;
+		try {
+			out = new PrintWriter(new FileOutputStream(new File(repo
+					.getDirectory(), "logs/HEAD"), true));
+			out.println(parentId + " " + commitId + " "
+					+ committer.toExternalString() + "\tcommit: " + firstLine);
+
+		} catch (FileNotFoundException e) {
+			System.out.println("Couldn't write reflog!");
+		} finally {
+			if (out != null)
+				out.close();
 		}
 	}
 
@@ -168,12 +210,14 @@ public class CommitAction implements IObjectActionDelegate {
 						if (entry instanceof Tree) {
 							writeTreeWithSubTrees((Tree) entry);
 						} else {
-							// this shouldn't happen.... not quite sure what to do here :)
-							System.out.println("BAD JUJU: " + entry.getFullName());
+							// this shouldn't happen.... not quite sure what to
+							// do here :)
+							System.out.println("BAD JUJU: "
+									+ entry.getFullName());
 						}
 					}
 				}
-				ObjectWriter writer  = new ObjectWriter(tree.getRepository());
+				ObjectWriter writer = new ObjectWriter(tree.getRepository());
 				tree.setId(writer.writeTree(tree));
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -185,7 +229,8 @@ public class CommitAction implements IObjectActionDelegate {
 		for (IProject project : listProjects()) {
 			final GitProjectData projectData = GitProjectData.get(project);
 			if (projectData != null) {
-				RepositoryMapping repositoryMapping = projectData.getRepositoryMapping(project);
+				RepositoryMapping repositoryMapping = projectData
+						.getRepositoryMapping(project);
 				Repository repository = repositoryMapping.getRepository();
 				Tree head = repository.mapTree("HEAD");
 				GitIndex index = repository.getIndex();
@@ -203,7 +248,8 @@ public class CommitAction implements IObjectActionDelegate {
 		for (String filename : added) {
 			Path path = new Path(filename);
 			try {
-				IResource member = project.getWorkspace().getRoot().getFile(path);
+				IResource member = project.getWorkspace().getRoot().getFile(
+						path);
 				if (member == null)
 					member = project.getFile(path);
 
@@ -212,7 +258,9 @@ public class CommitAction implements IObjectActionDelegate {
 				} else {
 					System.out.println("Couldn't find " + filename);
 				}
-			} catch (Exception t) { continue;} // if it's outside the workspace, bad things happen
+			} catch (Exception t) {
+				continue;
+			} // if it's outside the workspace, bad things happen
 		}
 	}
 
@@ -285,7 +333,7 @@ public class CommitAction implements IObjectActionDelegate {
 		} else {
 			selection = Collections.EMPTY_LIST;
 		}
-		act.setEnabled(!selection.isEmpty()) ;
+		act.setEnabled(!selection.isEmpty());
 		rsrcList = selection;
 	}
 
