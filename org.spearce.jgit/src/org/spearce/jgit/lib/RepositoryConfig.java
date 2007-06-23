@@ -46,6 +46,26 @@ public class RepositoryConfig {
 
 	private Map lastInGroup;
 
+	// used for global configs
+	private RepositoryConfig() {
+		repo = null;
+		configFile = new File(System.getProperty("user.home"), ".gitconfig");
+		clear();
+		try {
+			load();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private static RepositoryConfig globalConfig = null;
+	
+	public static RepositoryConfig getGlobalConfig() {
+		if (globalConfig == null) 
+			globalConfig = new RepositoryConfig();
+		return globalConfig;
+	}
+	
 	protected RepositoryConfig(final Repository r) {
 		repo = r;
 		configFile = new File(repo.getDirectory(), "config");
@@ -60,7 +80,9 @@ public class RepositoryConfig {
 			final int defaultValue) {
 		final String n = getString(group, name);
 		if (n == null) {
-			return defaultValue;
+			if (repo == null)
+				return defaultValue;
+			return getGlobalConfig().getInt(group, name, defaultValue);
 		}
 
 		try {
@@ -75,7 +97,9 @@ public class RepositoryConfig {
 			final boolean defaultValue) {
 		String n = getString(group, name);
 		if (n == null) {
-			return defaultValue;
+			if (repo == null)
+				return defaultValue;
+			return getGlobalConfig().getBoolean(group, name, defaultValue);
 		}
 
 		n = n.toLowerCase();
@@ -97,7 +121,9 @@ public class RepositoryConfig {
 		} else if (o instanceof Entry) {
 			return ((Entry) o).value;
 		} else {
-			return null;
+			if (repo == null)
+				return null;
+			return getGlobalConfig().getString(group, name);
 		}
 	}
 
