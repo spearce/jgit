@@ -57,11 +57,13 @@ import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.RefLock;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.RepositoryConfig;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 import org.spearce.jgit.lib.GitIndex.Entry;
 
 public class CommitAction implements IObjectActionDelegate {
+
 	private IWorkbenchPart wp;
 
 	private List rsrcList;
@@ -157,11 +159,20 @@ public class CommitAction implements IObjectActionDelegate {
 			commit.setTree(tree);
 			commitMessage = commitMessage.replaceAll("\r", "\n");
 			commit.setMessage(commitMessage);
-			commit.setAuthor(new PersonIdent("Joe Schmoe",
-					"jschmoe@mailinator.com", new Date(Calendar.getInstance()
+			RepositoryConfig config = repo.getConfig();
+			String username = config.getString("user", "name");
+			if (username == null)
+				username = System.getProperty("user.name");
+			
+			String email = config.getString("user", "email");
+			if (email == null)
+				email = System.getProperty("user.name") + "@" + getHostName();
+			
+			commit.setAuthor(new PersonIdent(username,
+					email, new Date(Calendar.getInstance()
 							.getTimeInMillis()), TimeZone.getDefault()));
-			commit.setCommitter(new PersonIdent("Joe Bloggs",
-					"jbloggs@mailinator.com", new Date(Calendar.getInstance()
+			commit.setCommitter(new PersonIdent(username,
+					email, new Date(Calendar.getInstance()
 							.getTimeInMillis()), TimeZone.getDefault()));
 
 			ObjectWriter writer = new ObjectWriter(repo);
@@ -177,6 +188,16 @@ public class CommitAction implements IObjectActionDelegate {
 			}
 			repositoryMapping.recomputeMerge();
 		}
+	}
+	
+	private String getHostName() {
+	    try {
+	        java.net.InetAddress addr = java.net.InetAddress.getLocalHost();
+	        String hostname = addr.getCanonicalHostName();
+	        return hostname;
+	    } catch (java.net.UnknownHostException e) {
+	    	return "localhost";
+	    }
 	}
 
 	private void updateReflog(Repository repo, String commitMessage,
