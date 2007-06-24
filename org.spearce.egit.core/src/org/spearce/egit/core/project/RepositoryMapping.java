@@ -217,7 +217,7 @@ public class RepositoryMapping {
 		GitIndex index = repository.getIndex();
 		String repoRelativePath = getRepoRelativePath(rsrc);
 		Tree headTree = repository.mapTree("HEAD");
-		TreeEntry blob = headTree.findBlobMember(repoRelativePath);
+		TreeEntry blob = headTree!=null ? headTree.findBlobMember(repoRelativePath) : null;
 		Entry entry = index.getEntry(repoRelativePath);
 		if (rsrc instanceof IFile && entry == null && blob == null)
 			return false;

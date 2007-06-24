@@ -259,7 +259,7 @@ public class GitResourceDecorator extends LabelProvider implements
 				GitIndex index = repository.getIndex();
 				String repoRelativePath = mapped.getRepoRelativePath(rsrc);
 				Tree headTree = repository.mapTree("HEAD");
-				TreeEntry blob = headTree.findBlobMember(repoRelativePath);
+				TreeEntry blob = headTree!=null ? headTree.findBlobMember(repoRelativePath) : null;
 				Entry entry = index.getEntry(repoRelativePath);
 				if (entry == null) {
 					if (blob == null) {

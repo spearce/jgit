@@ -206,15 +206,22 @@ static class EclipseWalker extends Walker {
 						relativeResourceNameString).getObjectId();
 			}
 
+			Collection<IFileRevision> githistory;
 			ObjectId head = getRepository().resolve("HEAD");
-			Commit start = getRepository().mapCommit(head);
-			EclipseWalker walker = new EclipseWalker(getRepository(), start, relativeResourceName, 
-					resource.getType() == IResource.FILE, 
-					resource, 
-					(flags & IFileHistoryProvider.SINGLE_LINE_OF_DESCENT) == 0,
-					activeDiffLeafId,
-					monitor);
-			Collection githistory = walker.collectHistory();
+			if (head != null) {
+				Commit start = getRepository().mapCommit(head);
+				EclipseWalker walker = new EclipseWalker(
+						getRepository(),
+						start,
+						relativeResourceName,
+						resource.getType() == IResource.FILE,
+						resource,
+						(flags & IFileHistoryProvider.SINGLE_LINE_OF_DESCENT) == 0,
+						activeDiffLeafId, monitor);
+				githistory = walker.collectHistory();
+			} else {
+				githistory = new ArrayList<IFileRevision>();
+			}
 			if (githistory.size() >0) {
 				if (resource.getType()==IResource.FILE) {
 					// TODO: consider index in future versions
