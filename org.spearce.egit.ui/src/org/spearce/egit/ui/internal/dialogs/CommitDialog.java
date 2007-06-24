@@ -135,6 +135,7 @@ public class CommitDialog extends Dialog {
 
 	Text commitText;
 	Text authorText;
+	Button amendingButton;
 	Button signedOffButton;
 	
 	CheckboxTableViewer filesViewer;
@@ -160,7 +161,17 @@ public class CommitDialog extends Dialog {
 		authorText.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).create());
 		if (author != null)
 			authorText.setText(author);
+
+		amendingButton = new Button(container, SWT.CHECK);
+		if (amending) {
+			amendingButton.setSelection(amending);
+			amendingButton.setEnabled(false); // if already set, don't allow any changes
+			commitText.setText(previousCommitMessage);
+		}
 		
+		amendingButton.setText("Amend previous commit");
+		amendingButton.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).span(2, 1).create());
+
 		signedOffButton = new Button(container, SWT.CHECK);
 		signedOffButton.setSelection(signedOff);
 		signedOffButton.setText("Add Signed-off-by");
@@ -214,8 +225,10 @@ public class CommitDialog extends Dialog {
 	private String commitMessage = "";
 	private String author = null;
 	private boolean signedOff = false;
+	private boolean amending = false;
 
 	private ArrayList<IFile> selectedItems = new ArrayList<IFile>();
+	private String previousCommitMessage = "";
 
 	public void setSelectedItems(IFile[] items) {
 		Collections.addAll(selectedItems, items);
@@ -230,6 +243,7 @@ public class CommitDialog extends Dialog {
 		commitMessage = commitText.getText();
 		author = authorText.getText().trim();
 		signedOff = signedOffButton.getSelection();
+		amending = amendingButton.getSelection();
 		
 		Object[] checkedElements = filesViewer.getCheckedElements();
 		selectedItems.clear();
@@ -250,7 +264,7 @@ public class CommitDialog extends Dialog {
 			}
 		} else author = null;
 
-		if (selectedItems.isEmpty()) {
+		if (selectedItems.isEmpty() && !amending) {
 			MessageDialog.openWarning(getShell(), "No items selected", "No items are currently selected to be committed.");
 			return;
 		}
@@ -286,6 +300,18 @@ public class CommitDialog extends Dialog {
 
 	public void setSignedOff(boolean signedOff) {
 		this.signedOff = signedOff;
+	}
+
+	public boolean isAmending() {
+		return amending;
+	}
+
+	public void setAmending(boolean amending) {
+		this.amending = amending;
+	}
+
+	public void setPreviousCommitMessage(String string) {
+		this.previousCommitMessage = string;
 	}
 
 }

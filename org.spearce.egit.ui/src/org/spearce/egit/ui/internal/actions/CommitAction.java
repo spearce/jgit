@@ -84,78 +84,74 @@ public class CommitAction implements IObjectActionDelegate {
 			return;
 		}
 		if (files.isEmpty()) {
-			MessageDialog.openWarning(wp.getSite().getShell(),
-					"No files to commit", "No changed items were selected.");
-			return;
+			boolean result = MessageDialog.openQuestion(wp.getSite().getShell(),
+					"No files to commit", "No changed items were selected. Do you wish to amend the last commit?");
+			if (!result) return;
+			amending = true;
 		}
 
+		loadPreviousCommit();
+		
 		CommitDialog commitDialog = new CommitDialog(wp.getSite().getShell());
+		commitDialog.setAmending(amending);
 		commitDialog.setFileList(files);
+		if (previousCommit != null)
+			commitDialog.setPreviousCommitMessage(previousCommit.getMessage());
+		
 		if (commitDialog.open() != IDialogConstants.OK_ID)
 			return;
 
 		String commitMessage = commitDialog.getCommitMessage();
+		amending = commitDialog.isAmending();
 		try {
 			performCommit(commitDialog, commitMessage);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
+	
+	private Commit previousCommit;
+	
+	private void loadPreviousCommit() {
+		IProject project = ((IResource)rsrcList.get(0)).getProject();
+		GitProjectData gitProjectData = GitProjectData.get(project);
+
+		Repository repo = gitProjectData.getRepositoryMapping(project).getRepository();
+		try {
+			ObjectId parentId = repo.resolve("HEAD");
+			previousCommit = repo.mapCommit(parentId);
+		} catch (IOException e) {
+		}
+	}
+
+	private boolean amending = false;
 
 	private void performCommit(CommitDialog commitDialog, String commitMessage)
 			throws IOException {
-		System.out.println("Commit Message: " + commitMessage);
+//		System.out.println("Commit Message: " + commitMessage);
 		IFile[] selectedItems = commitDialog.getSelectedItems();
 
 		HashMap<IProject, Tree> treeMap = new HashMap<IProject, Tree>();
-		for (IFile file : selectedItems) {
-			// System.out.println("\t" + file);
+		prepareTrees(selectedItems, treeMap);
 
-			IProject project = file.getProject();
-			final GitProjectData projectData = GitProjectData.get(project);
-			RepositoryMapping repositoryMapping = projectData
-					.getRepositoryMapping(project);
+		commitMessage = doCommits(commitDialog, commitMessage, treeMap);
+	}
 
-			Tree projTree = treeMap.get(project);
-			Repository repository = repositoryMapping.getRepository();
-			if (projTree == null) {
-				projTree = repository.mapTree("HEAD");
-				treeMap.put(project, projTree);
-				System.out.println("Orig tree id: " + projTree.getId());
-			}
-			GitIndex index = repository.getIndex();
-			String repoRelativePath = repositoryMapping
-					.getRepoRelativePath(file);
-			String string = repoRelativePath;
-
-			TreeEntry treeMember = projTree.findBlobMember(repoRelativePath);
-			// we always want to delete it from the current tree, since if it's
-			// updated, we'll add it again
-			if (treeMember != null)
-				treeMember.delete();
-
-			Entry idxEntry = index.getEntry(string);
-			if (idxEntry != null) {
-				projTree.addFile(repoRelativePath);
-				TreeEntry newMember = projTree.findBlobMember(repoRelativePath);
-
-				newMember.setId(idxEntry.getObjectId());
-				System.out.println("New member id for " + repoRelativePath
-						+ ": " + newMember.getId() + " idx id: "
-						+ idxEntry.getObjectId());
-			}
-		}
-
+	private String doCommits(CommitDialog commitDialog, String commitMessage, HashMap<IProject, Tree> treeMap) throws IOException {
 		for (java.util.Map.Entry<IProject, Tree> entry : treeMap.entrySet()) {
 			Tree tree = entry.getValue();
 			RepositoryMapping repositoryMapping = GitProjectData.get(
 					entry.getKey()).getRepositoryMapping(entry.getKey());
 
 			Repository repo = tree.getRepository();
-			ObjectId parentId = repo.resolve("HEAD");
 			writeTreeWithSubTrees(tree);
-			// System.out.println("New tree id: " + tree.getId());
-			Commit commit = new Commit(repo, parentId);
+			
+			ObjectId currentHeadId = repo.resolve("HEAD");
+			ObjectId[] parentIds = new ObjectId[] {currentHeadId};
+			if (amending) {
+				parentIds = previousCommit.getParentIds();
+			}
+			Commit commit = new Commit(repo, parentIds);
 			commit.setTree(tree);
 			commitMessage = commitMessage.replaceAll("\r", "\n");
 
@@ -194,10 +190,58 @@ public class CommitAction implements IObjectActionDelegate {
 			lockRef.write(commit.getCommitId());
 			if (lockRef.commit()) {
 				System.out.println("Success!!!!");
-				updateReflog(repo, commitMessage, parentId, commit
+				updateReflog(repo, commitMessage, currentHeadId, commit
 						.getCommitId(), commit.getCommitter());
 			}
 			repositoryMapping.recomputeMerge();
+		}
+		return commitMessage;
+	}
+
+	private void prepareTrees(IFile[] selectedItems, HashMap<IProject, Tree> treeMap) throws IOException, UnsupportedEncodingException {
+		if (selectedItems.length == 0) {
+			// amending commit - need to put something into the map
+			for (IProject proj : listProjects()) {
+				treeMap.put(proj, GitProjectData.get(proj).getRepositoryMapping(proj).getRepository().mapTree("HEAD"));
+			}
+		}
+		
+		for (IFile file : selectedItems) {
+			// System.out.println("\t" + file);
+
+			IProject project = file.getProject();
+			final GitProjectData projectData = GitProjectData.get(project);
+			RepositoryMapping repositoryMapping = projectData
+					.getRepositoryMapping(project);
+
+			Tree projTree = treeMap.get(project);
+			Repository repository = repositoryMapping.getRepository();
+			if (projTree == null) {
+				projTree = repository.mapTree("HEAD");
+				treeMap.put(project, projTree);
+				System.out.println("Orig tree id: " + projTree.getId());
+			}
+			GitIndex index = repository.getIndex();
+			String repoRelativePath = repositoryMapping
+					.getRepoRelativePath(file);
+			String string = repoRelativePath;
+
+			TreeEntry treeMember = projTree.findBlobMember(repoRelativePath);
+			// we always want to delete it from the current tree, since if it's
+			// updated, we'll add it again
+			if (treeMember != null)
+				treeMember.delete();
+
+			Entry idxEntry = index.getEntry(string);
+			if (idxEntry != null) {
+				projTree.addFile(repoRelativePath);
+				TreeEntry newMember = projTree.findBlobMember(repoRelativePath);
+
+				newMember.setId(idxEntry.getObjectId());
+				System.out.println("New member id for " + repoRelativePath
+						+ ": " + newMember.getId() + " idx id: "
+						+ idxEntry.getObjectId());
+			}
 		}
 	}
 	
@@ -222,8 +266,9 @@ public class CommitAction implements IObjectActionDelegate {
 		try {
 			out = new PrintWriter(new FileOutputStream(new File(repo
 					.getDirectory(), "logs/HEAD"), true));
+			String commitStr = amending ? "\tcommit (amend):" : "\tcommit: ";
 			out.println(parentId + " " + commitId + " "
-					+ committer.toExternalString() + "\tcommit: " + firstLine);
+					+ committer.toExternalString() + commitStr + firstLine);
 
 		} catch (FileNotFoundException e) {
 			System.out.println("Couldn't write reflog!");

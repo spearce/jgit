@@ -52,9 +52,9 @@ public class Commit implements Treeish {
 		parentIds = EMPTY_OBJECTID_LIST;
 	}
 	
-	public Commit(final Repository db, final ObjectId parentId) {
+	public Commit(final Repository db, final ObjectId[] parentIds) {
 		objdb = db;
-		parentIds = new ObjectId[] {parentId};
+		this.parentIds = parentIds;
 	}
 
 	public Commit(final Repository db, final ObjectId id, final byte[] raw) {
