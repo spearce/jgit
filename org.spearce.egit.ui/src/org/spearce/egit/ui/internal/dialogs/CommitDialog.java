@@ -30,6 +30,8 @@ import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -168,6 +170,23 @@ public class CommitDialog extends Dialog {
 			amendingButton.setEnabled(false); // if already set, don't allow any changes
 			commitText.setText(previousCommitMessage);
 		}
+		amendingButton.addSelectionListener(new SelectionListener() {
+			boolean alreadyAdded = false;
+			public void widgetSelected(SelectionEvent arg0) {
+				if (alreadyAdded)
+					return;
+				if (amendingButton.getSelection()) {
+					alreadyAdded = true;
+					String curText = commitText.getText();
+					if (curText.length() > 0)
+						curText += "\n";
+					commitText.setText(curText + previousCommitMessage);
+				}
+			}
+		
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+			}
+		});
 		
 		amendingButton.setText("Amend previous commit");
 		amendingButton.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).span(2, 1).create());
