@@ -168,9 +168,15 @@ public class CommitAction implements IObjectActionDelegate {
 			if (email == null)
 				email = System.getProperty("user.name") + "@" + getHostName();
 			
-			commit.setAuthor(new PersonIdent(username,
-					email, new Date(Calendar.getInstance()
-							.getTimeInMillis()), TimeZone.getDefault()));
+			if (commitDialog.getAuthor() == null) {
+				commit.setAuthor(new PersonIdent(username,
+						email, new Date(Calendar.getInstance()
+								.getTimeInMillis()), TimeZone.getDefault()));
+			} else {
+				PersonIdent author = new PersonIdent(commitDialog.getAuthor());
+				commit.setAuthor(new PersonIdent(author, new Date(Calendar.getInstance()
+								.getTimeInMillis()), TimeZone.getDefault()));
+			}
 			commit.setCommitter(new PersonIdent(username,
 					email, new Date(Calendar.getInstance()
 							.getTimeInMillis()), TimeZone.getDefault()));

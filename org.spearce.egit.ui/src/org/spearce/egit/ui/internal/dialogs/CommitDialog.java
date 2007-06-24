@@ -43,6 +43,7 @@ import org.eclipse.ui.model.WorkbenchLabelProvider;
 import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.GitIndex;
+import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
@@ -132,7 +133,8 @@ public class CommitDialog extends Dialog {
 	}
 
 	Text commitText;
-
+	Text authorText;
+	
 	CheckboxTableViewer filesViewer;
 
 	@Override
@@ -140,21 +142,27 @@ public class CommitDialog extends Dialog {
 		Composite container = (Composite) super.createDialogArea(parent);
 		parent.getShell().setText("Commit Changes");
 
-		GridLayout layout = new GridLayout(1, false);
+		GridLayout layout = new GridLayout(2, false);
 		container.setLayout(layout);
 
 		Label label = new Label(container, SWT.LEFT);
 		label.setText("Commit Message:");
-		label.setLayoutData(GridDataFactory.fillDefaults().span(1, 1).create());
+		label.setLayoutData(GridDataFactory.fillDefaults().span(2, 1).create());
 
 		commitText = new Text(container, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL);
-		commitText.setLayoutData(GridDataFactory.fillDefaults().span(1, 1)
+		commitText.setLayoutData(GridDataFactory.fillDefaults().span(2, 1)
 				.hint(600, 200).create());
 
+		new Label(container, SWT.LEFT).setText("Author: ");
+		authorText = new Text(container, SWT.BORDER);
+		authorText.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).create());
+		if (author != null)
+			authorText.setText(author);
+		
 		Table resourcesTable = new Table(container, SWT.H_SCROLL | SWT.V_SCROLL
 				| SWT.FULL_SELECTION | SWT.MULTI | SWT.CHECK | SWT.BORDER);
 		resourcesTable.setLayoutData(GridDataFactory.fillDefaults().hint(600,
-				200).create());
+				200).span(2,1).create());
 
 		resourcesTable.setHeaderVisible(true);
 		TableColumn statCol = new TableColumn(resourcesTable, SWT.LEFT);
@@ -197,6 +205,7 @@ public class CommitDialog extends Dialog {
 	}
 
 	private String commitMessage = "";
+	private String author = null;
 
 	private ArrayList<IFile> selectedItems = new ArrayList<IFile>();
 
@@ -211,6 +220,7 @@ public class CommitDialog extends Dialog {
 	@Override
 	protected void okPressed() {
 		commitMessage = commitText.getText();
+		author = authorText.getText().trim();
 		Object[] checkedElements = filesViewer.getCheckedElements();
 		selectedItems.clear();
 		for (Object obj : checkedElements)
@@ -220,6 +230,15 @@ public class CommitDialog extends Dialog {
 			MessageDialog.openWarning(getShell(), "No message", "You must enter a commit message");
 			return;
 		}
+		
+		if (author.length() > 0) {
+			try {
+				new PersonIdent(author);
+			} catch (IllegalArgumentException e) {
+				MessageDialog.openWarning(getShell(), "Invalid author", "Invalid author specified. Please use the form:\nA U Thor <author@example.com>");
+				return;
+			}
+		} else author = null;
 
 		if (selectedItems.isEmpty()) {
 			MessageDialog.openWarning(getShell(), "No items selected", "No items are currently selected to be committed.");
@@ -241,6 +260,14 @@ public class CommitDialog extends Dialog {
 			filesViewer.setAllChecked(false);
 		}
 		super.buttonPressed(buttonId);
+	}
+
+	public String getAuthor() {
+		return author;
+	}
+
+	public void setAuthor(String author) {
+		this.author = author;
 	}
 
 }
