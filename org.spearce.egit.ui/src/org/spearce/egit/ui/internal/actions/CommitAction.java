@@ -158,7 +158,7 @@ public class CommitAction implements IObjectActionDelegate {
 			Commit commit = new Commit(repo, parentId);
 			commit.setTree(tree);
 			commitMessage = commitMessage.replaceAll("\r", "\n");
-			commit.setMessage(commitMessage);
+
 			RepositoryConfig config = repo.getConfig();
 			String username = config.getString("user", "name");
 			if (username == null)
@@ -167,6 +167,11 @@ public class CommitAction implements IObjectActionDelegate {
 			String email = config.getString("user", "email");
 			if (email == null)
 				email = System.getProperty("user.name") + "@" + getHostName();
+
+			if (commitDialog.isSignedOff()) {
+				commitMessage += "\n\nSigned-off-by: " + username + " <" + email + ">";
+			}
+			commit.setMessage(commitMessage);
 			
 			if (commitDialog.getAuthor() == null) {
 				commit.setAuthor(new PersonIdent(username,

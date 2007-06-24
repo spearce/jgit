@@ -32,6 +32,7 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
@@ -134,6 +135,7 @@ public class CommitDialog extends Dialog {
 
 	Text commitText;
 	Text authorText;
+	Button signedOffButton;
 	
 	CheckboxTableViewer filesViewer;
 
@@ -158,6 +160,11 @@ public class CommitDialog extends Dialog {
 		authorText.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).create());
 		if (author != null)
 			authorText.setText(author);
+		
+		signedOffButton = new Button(container, SWT.CHECK);
+		signedOffButton.setSelection(signedOff);
+		signedOffButton.setText("Add Signed-off-by");
+		signedOffButton.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).span(2, 1).create());
 		
 		Table resourcesTable = new Table(container, SWT.H_SCROLL | SWT.V_SCROLL
 				| SWT.FULL_SELECTION | SWT.MULTI | SWT.CHECK | SWT.BORDER);
@@ -206,6 +213,7 @@ public class CommitDialog extends Dialog {
 
 	private String commitMessage = "";
 	private String author = null;
+	private boolean signedOff = false;
 
 	private ArrayList<IFile> selectedItems = new ArrayList<IFile>();
 
@@ -221,6 +229,8 @@ public class CommitDialog extends Dialog {
 	protected void okPressed() {
 		commitMessage = commitText.getText();
 		author = authorText.getText().trim();
+		signedOff = signedOffButton.getSelection();
+		
 		Object[] checkedElements = filesViewer.getCheckedElements();
 		selectedItems.clear();
 		for (Object obj : checkedElements)
@@ -268,6 +278,14 @@ public class CommitDialog extends Dialog {
 
 	public void setAuthor(String author) {
 		this.author = author;
+	}
+
+	public boolean isSignedOff() {
+		return signedOff;
+	}
+
+	public void setSignedOff(boolean signedOff) {
+		this.signedOff = signedOff;
 	}
 
 }
