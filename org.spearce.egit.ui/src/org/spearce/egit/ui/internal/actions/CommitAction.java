@@ -17,9 +17,11 @@
 
 package org.spearce.egit.ui.internal.actions;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -84,20 +86,23 @@ public class CommitAction implements IObjectActionDelegate {
 			return;
 		}
 		if (files.isEmpty()) {
-			boolean result = MessageDialog.openQuestion(wp.getSite().getShell(),
-					"No files to commit", "No changed items were selected. Do you wish to amend the last commit?");
-			if (!result) return;
+			boolean result = MessageDialog
+					.openQuestion(wp.getSite().getShell(),
+							"No files to commit",
+							"No changed items were selected. Do you wish to amend the last commit?");
+			if (!result)
+				return;
 			amending = true;
 		}
 
 		loadPreviousCommit();
-		
+
 		CommitDialog commitDialog = new CommitDialog(wp.getSite().getShell());
 		commitDialog.setAmending(amending);
 		commitDialog.setFileList(files);
 		if (previousCommit != null)
 			commitDialog.setPreviousCommitMessage(previousCommit.getMessage());
-		
+
 		if (commitDialog.open() != IDialogConstants.OK_ID)
 			return;
 
@@ -109,14 +114,15 @@ public class CommitAction implements IObjectActionDelegate {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private Commit previousCommit;
-	
+
 	private void loadPreviousCommit() {
-		IProject project = ((IResource)rsrcList.get(0)).getProject();
+		IProject project = ((IResource) rsrcList.get(0)).getProject();
 		GitProjectData gitProjectData = GitProjectData.get(project);
 
-		Repository repo = gitProjectData.getRepositoryMapping(project).getRepository();
+		Repository repo = gitProjectData.getRepositoryMapping(project)
+				.getRepository();
 		try {
 			ObjectId parentId = repo.resolve("HEAD");
 			previousCommit = repo.mapCommit(parentId);
@@ -128,7 +134,7 @@ public class CommitAction implements IObjectActionDelegate {
 
 	private void performCommit(CommitDialog commitDialog, String commitMessage)
 			throws IOException {
-//		System.out.println("Commit Message: " + commitMessage);
+		// System.out.println("Commit Message: " + commitMessage);
 		IFile[] selectedItems = commitDialog.getSelectedItems();
 
 		HashMap<IProject, Tree> treeMap = new HashMap<IProject, Tree>();
@@ -137,7 +143,8 @@ public class CommitAction implements IObjectActionDelegate {
 		commitMessage = doCommits(commitDialog, commitMessage, treeMap);
 	}
 
-	private String doCommits(CommitDialog commitDialog, String commitMessage, HashMap<IProject, Tree> treeMap) throws IOException {
+	private String doCommits(CommitDialog commitDialog, String commitMessage,
+			HashMap<IProject, Tree> treeMap) throws IOException {
 		for (java.util.Map.Entry<IProject, Tree> entry : treeMap.entrySet()) {
 			Tree tree = entry.getValue();
 			RepositoryMapping repositoryMapping = GitProjectData.get(
@@ -145,9 +152,9 @@ public class CommitAction implements IObjectActionDelegate {
 
 			Repository repo = tree.getRepository();
 			writeTreeWithSubTrees(tree);
-			
+
 			ObjectId currentHeadId = repo.resolve("HEAD");
-			ObjectId[] parentIds = new ObjectId[] {currentHeadId};
+			ObjectId[] parentIds = new ObjectId[] { currentHeadId };
 			if (amending) {
 				parentIds = previousCommit.getParentIds();
 			}
@@ -159,28 +166,30 @@ public class CommitAction implements IObjectActionDelegate {
 			String username = config.getString("user", "name");
 			if (username == null)
 				username = System.getProperty("user.name");
-			
+
 			String email = config.getString("user", "email");
 			if (email == null)
 				email = System.getProperty("user.name") + "@" + getHostName();
 
 			if (commitDialog.isSignedOff()) {
-				commitMessage += "\n\nSigned-off-by: " + username + " <" + email + ">";
+				commitMessage += "\n\nSigned-off-by: " + username + " <"
+						+ email + ">";
 			}
 			commit.setMessage(commitMessage);
-			
+
 			if (commitDialog.getAuthor() == null) {
-				commit.setAuthor(new PersonIdent(username,
-						email, new Date(Calendar.getInstance()
-								.getTimeInMillis()), TimeZone.getDefault()));
+				commit.setAuthor(new PersonIdent(username, email, new Date(
+						Calendar.getInstance().getTimeInMillis()), TimeZone
+						.getDefault()));
 			} else {
 				PersonIdent author = new PersonIdent(commitDialog.getAuthor());
-				commit.setAuthor(new PersonIdent(author, new Date(Calendar.getInstance()
-								.getTimeInMillis()), TimeZone.getDefault()));
+				commit.setAuthor(new PersonIdent(author, new Date(Calendar
+						.getInstance().getTimeInMillis()), TimeZone
+						.getDefault()));
 			}
-			commit.setCommitter(new PersonIdent(username,
-					email, new Date(Calendar.getInstance()
-							.getTimeInMillis()), TimeZone.getDefault()));
+			commit.setCommitter(new PersonIdent(username, email, new Date(
+					Calendar.getInstance().getTimeInMillis()), TimeZone
+					.getDefault()));
 
 			ObjectWriter writer = new ObjectWriter(repo);
 			commit.setCommitId(writer.writeCommit(commit));
@@ -198,14 +207,18 @@ public class CommitAction implements IObjectActionDelegate {
 		return commitMessage;
 	}
 
-	private void prepareTrees(IFile[] selectedItems, HashMap<IProject, Tree> treeMap) throws IOException, UnsupportedEncodingException {
+	private void prepareTrees(IFile[] selectedItems,
+			HashMap<IProject, Tree> treeMap) throws IOException,
+			UnsupportedEncodingException {
 		if (selectedItems.length == 0) {
 			// amending commit - need to put something into the map
 			for (IProject proj : listProjects()) {
-				treeMap.put(proj, GitProjectData.get(proj).getRepositoryMapping(proj).getRepository().mapTree("HEAD"));
+				treeMap.put(proj, GitProjectData.get(proj)
+						.getRepositoryMapping(proj).getRepository().mapTree(
+								"HEAD"));
 			}
 		}
-		
+
 		for (IFile file : selectedItems) {
 			// System.out.println("\t" + file);
 
@@ -244,19 +257,46 @@ public class CommitAction implements IObjectActionDelegate {
 			}
 		}
 	}
-	
+
 	private String getHostName() {
-	    try {
-	        java.net.InetAddress addr = java.net.InetAddress.getLocalHost();
-	        String hostname = addr.getCanonicalHostName();
-	        return hostname;
-	    } catch (java.net.UnknownHostException e) {
-	    	return "localhost";
-	    }
+		try {
+			java.net.InetAddress addr = java.net.InetAddress.getLocalHost();
+			String hostname = addr.getCanonicalHostName();
+			return hostname;
+		} catch (java.net.UnknownHostException e) {
+			return "localhost";
+		}
 	}
 
 	private void updateReflog(Repository repo, String commitMessage,
 			ObjectId parentId, ObjectId commitId, PersonIdent committer) {
+		File headLog = new File(repo.getDirectory(), "logs/HEAD");
+		writeReflog(commitMessage, parentId, commitId, committer, headLog);
+		
+		
+		try {
+			final File ptr = new File(repo.getDirectory(),"HEAD");
+			final BufferedReader br = new BufferedReader(new FileReader(ptr));
+			String ref;
+			try {
+				ref = br.readLine();
+			} finally {
+				br.close();
+			}
+			if (ref != null) {
+				if (ref.startsWith("ref: "))
+					ref = ref.substring(5);
+				
+				File branchLog = new File(repo.getDirectory(), "logs/" + ref);
+				writeReflog(commitMessage, parentId, commitId, committer, branchLog);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void writeReflog(String commitMessage, ObjectId parentId,
+			ObjectId commitId, PersonIdent committer, File file) {
 		String firstLine = commitMessage;
 		int newlineIndex = commitMessage.indexOf("\n");
 		if (newlineIndex > 0) {
@@ -264,8 +304,7 @@ public class CommitAction implements IObjectActionDelegate {
 		}
 		PrintWriter out = null;
 		try {
-			out = new PrintWriter(new FileOutputStream(new File(repo
-					.getDirectory(), "logs/HEAD"), true));
+			out = new PrintWriter(new FileOutputStream(file, true));
 			String commitStr = amending ? "\tcommit (amend):" : "\tcommit: ";
 			out.println(parentId + " " + commitId + " "
 					+ committer.toExternalString() + commitStr + firstLine);
