@@ -17,6 +17,7 @@
 
 package org.spearce.egit.ui.internal.dialogs;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -99,6 +100,10 @@ public class CommitDialog extends Dialog {
 
 						if (indexEntry.isModified(repositoryMapping.getWorkDir()))
 							prefix = "Mod., index diff";
+					} else if (!new File(repositoryMapping.getWorkDir(), indexEntry.getName()).isFile()) {
+						prefix = "Rem., not staged";
+					} else if (indexEntry.isModified(repositoryMapping.getWorkDir())) {
+						prefix = "Mod., not staged";
 					}
 
 				} catch (Exception e) {

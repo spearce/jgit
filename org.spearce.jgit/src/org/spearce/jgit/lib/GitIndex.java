@@ -630,4 +630,7 @@ public class GitIndex {
 		return (Entry) entries.get(path.getBytes("ISO-8859-1"));
 	}
 
+	public Repository getRepository() {
+		return db;
+	}
 }

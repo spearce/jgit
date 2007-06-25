@@ -17,6 +17,7 @@
 
 package org.spearce.jgit.lib;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 
@@ -42,6 +43,12 @@ public class IndexDiff {
 				added.add(filename);
 			} else if (entry.getObjectId() != null && !entry.getObjectId().equals(treeBlob.getId())) {
 				changed.add(filename);
+			} else {
+				File file = new File(index.getRepository().getDirectory().getParentFile(), filename);
+				if (!file.isFile()) {
+					System.out.println("Missing file: " + file);
+					missing.add(filename);
+				}
 			}
 
 			checked.add(filename);
@@ -75,6 +82,7 @@ public class IndexDiff {
 	private HashSet<String> added = new HashSet<String>();
 	private HashSet<String> changed = new HashSet<String>();
 	private HashSet<String> removed = new HashSet<String>();
+	private HashSet<String> missing = new HashSet<String>();
 
 	public HashSet<String> getAdded() {
 		return added;
@@ -86,5 +94,10 @@ public class IndexDiff {
 
 	public HashSet<String> getRemoved() {
 		return removed;
+	}
+
+	
+	public HashSet<String> getMissing() {
+		return missing;
 	}
 }

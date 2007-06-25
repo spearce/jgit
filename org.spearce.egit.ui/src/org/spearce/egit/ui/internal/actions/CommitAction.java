@@ -73,13 +73,16 @@ public class CommitAction implements IObjectActionDelegate {
 	public void setActivePart(final IAction act, final IWorkbenchPart part) {
 		wp = part;
 	}
+	
+	private ArrayList<IFile> notIndexed = new ArrayList<IFile>();
+	private ArrayList<IFile> indexChanges = new ArrayList<IFile>();
 
 	public void run(IAction act) {
 		files.clear();
+		notIndexed.clear();
 		try {
 			buildIndexHeadDiffList();
-			if (false)
-				buildList();
+			buildFilesystemList();
 		} catch (CoreException e) {
 			return;
 		} catch (IOException e) {
@@ -246,6 +249,20 @@ public class CommitAction implements IObjectActionDelegate {
 				treeMember.delete();
 
 			Entry idxEntry = index.getEntry(string);
+			if (notIndexed.contains(file)) {
+				File thisfile = new File(repositoryMapping.getWorkDir(), idxEntry.getName());
+				if (!thisfile.isFile()) {
+					index.remove(repositoryMapping.getWorkDir(), thisfile);
+					index.write();
+					System.out.println("Phantom file, so removing from index");
+					continue;
+				} else {
+					if (idxEntry.update(thisfile, repository))
+						index.write();
+				}
+			}
+				
+			
 			if (idxEntry != null) {
 				projTree.addFile(repoRelativePath);
 				TreeEntry newMember = projTree.findBlobMember(repoRelativePath);
@@ -353,14 +370,15 @@ public class CommitAction implements IObjectActionDelegate {
 				IndexDiff indexDiff = new IndexDiff(head, index);
 				indexDiff.diff();
 
-				includeList(project, indexDiff.getAdded());
-				includeList(project, indexDiff.getChanged());
-				includeList(project, indexDiff.getRemoved());
+				includeList(project, indexDiff.getAdded(), indexChanges);
+				includeList(project, indexDiff.getChanged(), indexChanges);
+				includeList(project, indexDiff.getRemoved(), indexChanges);
+				includeList(project, indexDiff.getMissing(), notIndexed);
 			}
 		}
 	}
 
-	private void includeList(IProject project, HashSet<String> added) {
+	private void includeList(IProject project, HashSet<String> added, ArrayList<IFile> category) {
 		for (String filename : added) {
 			Path path = new Path(filename);
 			try {
@@ -371,6 +389,7 @@ public class CommitAction implements IObjectActionDelegate {
 
 				if (member != null && member instanceof IFile) {
 					files.add((IFile) member);
+					category.add((IFile) member);
 				} else {
 					System.out.println("Couldn't find " + filename);
 				}
@@ -393,7 +412,7 @@ public class CommitAction implements IObjectActionDelegate {
 
 	private ArrayList<IFile> files = new ArrayList<IFile>();
 
-	private void buildList() throws CoreException {
+	private void buildFilesystemList() throws CoreException {
 		for (final Iterator i = rsrcList.iterator(); i.hasNext();) {
 			IResource resource = (IResource) i.next();
 			final IProject project = resource.getProject();
@@ -406,13 +425,13 @@ public class CommitAction implements IObjectActionDelegate {
 				// repositoryMapping.getRepository();
 
 				if (resource instanceof IFile) {
-					tryAddResource((IFile) resource, projectData);
+					tryAddResource((IFile) resource, projectData, notIndexed);
 				} else {
 					resource.accept(new IResourceVisitor() {
 						public boolean visit(IResource rsrc)
 								throws CoreException {
 							if (rsrc instanceof IFile) {
-								tryAddResource((IFile) rsrc, projectData);
+								tryAddResource((IFile) rsrc, projectData, notIndexed);
 								return false;
 							}
 							return true;
@@ -423,16 +442,19 @@ public class CommitAction implements IObjectActionDelegate {
 		}
 	}
 
-	public void tryAddResource(IFile resource, GitProjectData projectData) {
+	public boolean tryAddResource(IFile resource, GitProjectData projectData, ArrayList<IFile> category) {
 		if (files.contains(resource))
-			return;
+			return false;
 
 		try {
 			RepositoryMapping repositoryMapping = projectData
 					.getRepositoryMapping(resource.getProject());
 
-			if (repositoryMapping.isResourceChanged(resource))
+			if (repositoryMapping.isResourceChanged(resource)) {
 				files.add(resource);
+				category.add(resource);
+				return true;
+			}
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -440,6 +462,7 @@ public class CommitAction implements IObjectActionDelegate {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		return false;
 	}
 
 	public void selectionChanged(IAction act, ISelection sel) {
