@@ -88,18 +88,12 @@ public class UpdateJob extends Job {
 						final RepositoryMapping rm = pd.getRepositoryMapping(p);
 						final GitIndex index = rm.getRepository().getIndex();
 						tomerge.put(rm, Boolean.TRUE);
-						String prefix = rm.getSubset();
-						if (prefix == null)
-							prefix = "";
-						else
-							prefix = prefix + "/";
-						final String fprefix = prefix;
 						if (r instanceof IContainer) {
 							((IContainer)r).accept(new IResourceVisitor() {
 								public boolean visit(IResource resource) throws CoreException {
 									try {
 										if (resource.getType() == IResource.FILE) {
-											String path = fprefix + resource.getProjectRelativePath();
+											String path = rm.getRepoRelativePath(resource);
 											Entry entry = index.getEntry(path);
 											if (entry != null) {
 												entry.update(new File(rm.getWorkDir(),path), rm.getRepository());
@@ -114,7 +108,7 @@ public class UpdateJob extends Job {
 								}
 							},IResource.DEPTH_INFINITE, IContainer.EXCLUDE_DERIVED);
 						} else {
-							String path = fprefix + r.getProjectRelativePath();
+							String path = rm.getRepoRelativePath(r);
 							Entry entry = index.getEntry(path);
 							if (entry != null) {
 								entry.update(new File(rm.getWorkDir(),path), rm.getRepository());

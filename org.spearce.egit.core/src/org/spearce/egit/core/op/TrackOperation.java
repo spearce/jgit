@@ -92,19 +92,13 @@ public class TrackOperation implements IWorkspaceRunnable {
 					}
 
 					tomerge.put(rm, Boolean.TRUE);
-					String prefix = rm.getSubset();
-					if (prefix == null)
-						prefix = "";
-					else
-						prefix = prefix + "/";
-					final String fprefix = prefix;
 					if (toAdd instanceof IContainer) {
 						((IContainer)toAdd).accept(new IResourceVisitor() {
 							public boolean visit(IResource resource) throws CoreException {
 								try {
 									if (resource.getType() == IResource.FILE) {
 										if (!Team.isIgnored((IFile)resource))
-											index.add(rm.getWorkDir(), new File(rm.getWorkDir(),fprefix + resource.getProjectRelativePath().toFile()));
+											index.add(rm.getWorkDir(), new File(rm.getWorkDir(),rm.getRepoRelativePath(resource)));
 									}
 								} catch (IOException e) {
 									e.printStackTrace();
@@ -114,7 +108,7 @@ public class TrackOperation implements IWorkspaceRunnable {
 							}
 						},IResource.DEPTH_INFINITE, IContainer.EXCLUDE_DERIVED);
 					} else {
-						index.add(rm.getWorkDir(), new File(rm.getWorkDir(),prefix + toAdd.getProjectRelativePath().toFile()));
+						index.add(rm.getWorkDir(), new File(rm.getWorkDir(),rm.getRepoRelativePath(toAdd)));
 						
 					}
 				}

@@ -80,23 +80,17 @@ public class UntrackOperation implements IWorkspaceRunnable {
 					final RepositoryMapping rm = pd.getRepositoryMapping(p);
 					final GitIndex index = rm.getRepository().getIndex();
 					tomerge.put(rm, Boolean.TRUE);
-					String prefix = rm.getSubset();
-					if (prefix == null)
-						prefix = "";
-					else
-						prefix = prefix + "/";
-					final String fprefix = prefix;
 					if (toRemove instanceof IContainer) {
 						((IContainer)toRemove).accept(new IResourceVisitor() {
 							public boolean visit(IResource resource) throws CoreException {
 								if (resource.getType() == IResource.FILE) {
-									index.remove(rm.getWorkDir(), new File(rm.getWorkDir(),fprefix + resource.getProjectRelativePath().toFile()));
+									index.remove(rm.getWorkDir(), new File(rm.getWorkDir(),rm.getRepoRelativePath(resource)));
 								}
 								return true;
 							}
 						},IResource.DEPTH_INFINITE, IContainer.EXCLUDE_DERIVED);
 					} else {
-						index.remove(rm.getWorkDir(), new File(rm.getWorkDir(),prefix + toRemove.getProjectRelativePath().toFile()));
+						index.remove(rm.getWorkDir(), new File(rm.getWorkDir(),rm.getRepoRelativePath(toRemove)));
 					}
 				}
 				m.worked(200);

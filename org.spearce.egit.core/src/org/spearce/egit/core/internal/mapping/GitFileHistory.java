@@ -196,12 +196,8 @@ static class EclipseWalker extends Walker {
 			List ret = new ArrayList();
 			ObjectId activeDiffLeafId = null;
 			if (!(resource instanceof IContainer)) {
-				String relativeResourceNameString = resource
-						.getProjectRelativePath().toPortableString();
-				String prefix = getRepositoryMapping().getSubset();
-				if (prefix != null)
-					relativeResourceNameString = prefix + "/"
-							+ relativeResourceNameString;
+				String relativeResourceNameString = getRepositoryMapping()
+						.getRepoRelativePath(resource);
 				activeDiffLeafId = getRepository().getIndex().getEntry(
 						relativeResourceNameString).getObjectId();
 			}

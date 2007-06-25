@@ -53,12 +53,7 @@ public class GitBlobStorage implements IStorage {
 		Tree tree;
 		try {
 			tree = repositoryMapping.getRepository().mapTree(treeId);
-			String prefix = repositoryMapping.getSubset();
-			if (prefix != null)
-				prefix = prefix + "/";
-			else
-				prefix = "";
-			String name = prefix + resource.getProjectRelativePath().toString();
+			String name = repositoryMapping.getRepoRelativePath(resource);
 			entry = tree.findBlobMember(name);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
