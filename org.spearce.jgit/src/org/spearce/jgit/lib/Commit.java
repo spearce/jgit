@@ -66,8 +66,9 @@ public class Commit implements Treeish {
 				parentIds[np++] = ObjectId.fromString(raw, rawPtr + 7);
 			} else if (np == 1) {
 				parentIds = new ObjectId[] { parentIds[0], ObjectId.fromString(raw, rawPtr + 7) };
+				np++;
 			} else {
-				if (parentIds.length < np) {
+				if (parentIds.length <= np) {
 					ObjectId[] old = parentIds;
 					parentIds = new ObjectId[parentIds.length+32];
 					for (int i=0; i<np; ++i)
@@ -148,6 +149,12 @@ public class Commit implements Treeish {
 	public String getMessage() {
 		decode();
 		return message;
+	}
+
+	public void setParentIds(ObjectId[] parentIds) {
+		this.parentIds = new ObjectId[parentIds.length];
+		for (int i=0; i<parentIds.length; ++i)
+			this.parentIds[i] = parentIds[i];
 	}
 
 	private void decode() {

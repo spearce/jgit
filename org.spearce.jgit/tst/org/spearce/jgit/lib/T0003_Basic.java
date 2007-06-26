@@ -482,4 +482,92 @@ public class T0003_Basic extends RepositoryTestCase {
 				new ByteArrayInputStream(data));
 		assertEquals("4f561df5ecf0dfbd53a0dc0f37262fef075d9dde", id.toString());
 	}
+
+	public void test026_CreateCommitMultipleparents() throws IOException {
+		db.getConfig().load();
+
+		final Tree t = new Tree(db);
+		final FileTreeEntry f = t.addFile("i-am-a-file");
+		writeTrashFile(f.getName(), "and this is the data in me\n");
+		t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
+		assertEquals(new ObjectId("00b1f73724f493096d1ffa0b0f1f1482dbb8c936"),
+				t.getTreeId());
+
+		final Commit c1 = new Commit(db);
+		c1.setAuthor(new PersonIdent(jauthor, 1154236443000L, -4 * 60));
+		c1.setCommitter(new PersonIdent(jcommitter, 1154236443000L, -4 * 60));
+		c1.setMessage("A Commit\n");
+		c1.setTree(t);
+		assertEquals(t.getTreeId(), c1.getTreeId());
+		c1.commit();
+		final ObjectId cmtid1 = new ObjectId(
+				"803aec4aba175e8ab1d666873c984c0308179099");
+		assertEquals(cmtid1, c1.getCommitId());
+
+		final Commit c2 = new Commit(db);
+		c2.setAuthor(new PersonIdent(jauthor, 1154236443000L, -4 * 60));
+		c2.setCommitter(new PersonIdent(jcommitter, 1154236443000L, -4 * 60));
+		c2.setMessage("A Commit 2\n");
+		c2.setTree(t);
+		assertEquals(t.getTreeId(), c2.getTreeId());
+		c2.setParentIds(new ObjectId[] { c1.getCommitId() } );
+		c2.commit();
+		final ObjectId cmtid2 = new ObjectId(
+				"95d068687c91c5c044fb8c77c5154d5247901553");
+		assertEquals(cmtid2, c2.getCommitId());
+
+		Commit rm2 = db.mapCommit(cmtid2);
+		assertNotSame(c2, rm2); // assert the parsed objects is not from the cache
+		assertEquals(c2.getAuthor(), rm2.getAuthor());
+		assertEquals(c2.getCommitId(), rm2.getCommitId());
+		assertEquals(c2.getMessage(), rm2.getMessage());
+		assertEquals(c2.getTree().getTreeId(), rm2.getTree().getTreeId());
+		assertEquals(1, rm2.getParentIds().length);
+		assertEquals(c1.getCommitId(), rm2.getParentIds()[0]);
+
+		final Commit c3 = new Commit(db);
+		c3.setAuthor(new PersonIdent(jauthor, 1154236443000L, -4 * 60));
+		c3.setCommitter(new PersonIdent(jcommitter, 1154236443000L, -4 * 60));
+		c3.setMessage("A Commit 3\n");
+		c3.setTree(t);
+		assertEquals(t.getTreeId(), c3.getTreeId());
+		c3.setParentIds(new ObjectId[] { c1.getCommitId(), c2.getCommitId() });
+		c3.commit();
+		final ObjectId cmtid3 = new ObjectId(
+				"ce6e1ce48fbeeb15a83f628dc8dc2debefa066f4");
+		assertEquals(cmtid3, c3.getCommitId());
+
+		Commit rm3 = db.mapCommit(cmtid3);
+		assertNotSame(c3, rm3); // assert the parsed objects is not from the cache
+		assertEquals(c3.getAuthor(), rm3.getAuthor());
+		assertEquals(c3.getCommitId(), rm3.getCommitId());
+		assertEquals(c3.getMessage(), rm3.getMessage());
+		assertEquals(c3.getTree().getTreeId(), rm3.getTree().getTreeId());
+		assertEquals(2, rm3.getParentIds().length);
+		assertEquals(c1.getCommitId(), rm3.getParentIds()[0]);
+		assertEquals(c2.getCommitId(), rm3.getParentIds()[1]);
+
+		final Commit c4 = new Commit(db);
+		c4.setAuthor(new PersonIdent(jauthor, 1154236443000L, -4 * 60));
+		c4.setCommitter(new PersonIdent(jcommitter, 1154236443000L, -4 * 60));
+		c4.setMessage("A Commit 4\n");
+		c4.setTree(t);
+		assertEquals(t.getTreeId(), c3.getTreeId());
+		c4.setParentIds(new ObjectId[] { c1.getCommitId(), c2.getCommitId(), c3.getCommitId() });
+		c4.commit();
+		final ObjectId cmtid4 = new ObjectId(
+				"d1fca9fe3fef54e5212eb67902c8ed3e79736e27");
+		assertEquals(cmtid4, c4.getCommitId());
+
+		Commit rm4 = db.mapCommit(cmtid4);
+		assertNotSame(c4, rm3); // assert the parsed objects is not from the cache
+		assertEquals(c4.getAuthor(), rm4.getAuthor());
+		assertEquals(c4.getCommitId(), rm4.getCommitId());
+		assertEquals(c4.getMessage(), rm4.getMessage());
+		assertEquals(c4.getTree().getTreeId(), rm4.getTree().getTreeId());
+		assertEquals(3, rm4.getParentIds().length);
+		assertEquals(c1.getCommitId(), rm4.getParentIds()[0]);
+		assertEquals(c2.getCommitId(), rm4.getParentIds()[1]);
+		assertEquals(c3.getCommitId(), rm4.getParentIds()[2]);
+	}
 }
