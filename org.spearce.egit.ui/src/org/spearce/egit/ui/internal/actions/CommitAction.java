@@ -140,19 +140,19 @@ public class CommitAction implements IObjectActionDelegate {
 		// System.out.println("Commit Message: " + commitMessage);
 		IFile[] selectedItems = commitDialog.getSelectedItems();
 
-		HashMap<IProject, Tree> treeMap = new HashMap<IProject, Tree>();
+		HashMap<Repository, Tree> treeMap = new HashMap<Repository, Tree>();
 		prepareTrees(selectedItems, treeMap);
 
 		commitMessage = doCommits(commitDialog, commitMessage, treeMap);
+		for (IProject proj : listProjects()) {
+			GitProjectData.get(proj).getRepositoryMapping(proj).recomputeMerge();
+		}
 	}
 
 	private String doCommits(CommitDialog commitDialog, String commitMessage,
-			HashMap<IProject, Tree> treeMap) throws IOException {
-		for (java.util.Map.Entry<IProject, Tree> entry : treeMap.entrySet()) {
+			HashMap<Repository, Tree> treeMap) throws IOException {
+		for (java.util.Map.Entry<Repository, Tree> entry : treeMap.entrySet()) {
 			Tree tree = entry.getValue();
-			RepositoryMapping repositoryMapping = GitProjectData.get(
-					entry.getKey()).getRepositoryMapping(entry.getKey());
-
 			Repository repo = tree.getRepository();
 			writeTreeWithSubTrees(tree);
 
@@ -205,20 +205,20 @@ public class CommitAction implements IObjectActionDelegate {
 				updateReflog(repo, commitMessage, currentHeadId, commit
 						.getCommitId(), commit.getCommitter());
 			}
-			repositoryMapping.recomputeMerge();
 		}
 		return commitMessage;
 	}
 
 	private void prepareTrees(IFile[] selectedItems,
-			HashMap<IProject, Tree> treeMap) throws IOException,
+			HashMap<Repository, Tree> treeMap) throws IOException,
 			UnsupportedEncodingException {
 		if (selectedItems.length == 0) {
 			// amending commit - need to put something into the map
 			for (IProject proj : listProjects()) {
-				treeMap.put(proj, GitProjectData.get(proj)
-						.getRepositoryMapping(proj).getRepository().mapTree(
-								"HEAD"));
+				Repository repo = GitProjectData.get(proj)
+				.getRepositoryMapping(proj).getRepository();
+				if (!treeMap.containsKey(repo))
+					treeMap.put(repo, repo.mapTree("HEAD"));
 			}
 		}
 
@@ -230,11 +230,11 @@ public class CommitAction implements IObjectActionDelegate {
 			RepositoryMapping repositoryMapping = projectData
 					.getRepositoryMapping(project);
 
-			Tree projTree = treeMap.get(project);
 			Repository repository = repositoryMapping.getRepository();
+			Tree projTree = treeMap.get(repository);
 			if (projTree == null) {
 				projTree = repository.mapTree("HEAD");
-				treeMap.put(project, projTree);
+				treeMap.put(repository, projTree);
 				System.out.println("Orig tree id: " + projTree.getId());
 			}
 			GitIndex index = repository.getIndex();
