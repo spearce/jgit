@@ -347,7 +347,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 			if (columnIndex == 2) {
 				String id = ((IFileRevision)element).getContentIdentifier();
-				if (!id.equals("Workspace")) {
+				if (id.equals("Workspace")) {
 					return "";
 				}
 				ObjectId oid = new ObjectId(id);
