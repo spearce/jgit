@@ -382,10 +382,10 @@ public class CommitAction implements IObjectActionDelegate {
 		for (String filename : added) {
 			Path path = new Path(filename);
 			try {
-				IResource member = project.getWorkspace().getRoot().getFile(
-						path);
+				IResource member;
+				member = project.getFile(path);
 				if (member == null)
-					member = project.getFile(path);
+					member= project.getWorkspace().getRoot().getFile(path);
 
 				if (member != null && member instanceof IFile) {
 					files.add((IFile) member);
