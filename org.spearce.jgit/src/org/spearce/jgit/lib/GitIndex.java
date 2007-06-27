@@ -391,13 +391,13 @@ public class GitIndex {
 			// if (file.canExecute() != FileMode.EXECUTABLE_FILE.equals(mode))
 			// return true;
 			if (FileMode.EXECUTABLE_FILE.equals(mode)) {
-				if (!File_canExecute(file))
+				if (!File_canExecute(file)&& canExecute != null)
 					return true;
 			} else {
 				if (FileMode.REGULAR_FILE.equals(mode)) {
 					if (!file.isFile())
 						return true;
-					if (File_canExecute(file))
+					if (File_canExecute(file) && canExecute != null)
 						return true;
 				} else {
 					if (FileMode.SYMLINK.equals(mode)) {
