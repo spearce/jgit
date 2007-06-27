@@ -387,14 +387,14 @@ public class RepositoryConfig {
 					} else if (' ' == c || '\t' == c) {
 						// Skipped...
 					} else {
-						throw new IOException("Bad base entry.");
+						throw new IOException("Bad base entry. : " + base + "," + c);
 					}
 				}
 				break;
-			} else if (Character.isLetterOrDigit((char) c) || '.' == c) {
+			} else if (Character.isLetterOrDigit((char) c) || '.' == c || '-' == c) {
 				base.append((char) c);
 			} else {
-				throw new IOException("Bad base entry.");
+				throw new IOException("Bad base entry. : " + base + ", " + c);
 			}
 		}
 		return base.toString();
