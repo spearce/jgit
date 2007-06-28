@@ -74,14 +74,18 @@ public class CommitAction implements IObjectActionDelegate {
 		wp = part;
 	}
 	
-	private ArrayList<IFile> notIndexed = new ArrayList<IFile>();
-	private ArrayList<IFile> indexChanges = new ArrayList<IFile>();
+	private ArrayList<IFile> notIndexed;
+	private ArrayList<IFile> indexChanges;
+	private ArrayList<IFile> files;
 
-	private boolean amendAllowed = true;
+	private Commit previousCommit;
+
+	private boolean amendAllowed ;
+	private boolean amending;
+
 
 	public void run(IAction act) {
-		files.clear();
-		notIndexed.clear();
+		resetState();
 		try {
 			buildIndexHeadDiffList();
 			buildFilesystemList();
@@ -139,7 +143,14 @@ public class CommitAction implements IObjectActionDelegate {
 		}
 	}
 
-	private Commit previousCommit;
+	private void resetState() {
+		files = new ArrayList<IFile>();
+		notIndexed = new ArrayList<IFile>();
+		indexChanges = new ArrayList<IFile>();
+		amendAllowed = true;
+		amending = false;
+		previousCommit = null;
+	}
 
 	private void loadPreviousCommit() {
 		IProject project = ((IResource) rsrcList.get(0)).getProject();
@@ -153,8 +164,6 @@ public class CommitAction implements IObjectActionDelegate {
 		} catch (IOException e) {
 		}
 	}
-
-	private boolean amending = false;
 
 	private void performCommit(CommitDialog commitDialog, String commitMessage)
 			throws IOException {
@@ -442,8 +451,6 @@ public class CommitAction implements IObjectActionDelegate {
 		}
 		return projects;
 	}
-
-	private ArrayList<IFile> files = new ArrayList<IFile>();
 
 	private void buildFilesystemList() throws CoreException {
 		for (final Iterator i = rsrcList.iterator(); i.hasNext();) {
