@@ -18,8 +18,10 @@
 package org.spearce.egit.ui.internal.dialogs;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.jface.dialogs.Dialog;
@@ -28,6 +30,7 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
@@ -38,7 +41,11 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
@@ -233,9 +240,48 @@ public class CommitDialog extends Dialog {
 		filesViewer.setLabelProvider(new CommitLabelProvider());
 		filesViewer.setInput(files);
 		filesViewer.setAllChecked(true);
+		filesViewer.getTable().setMenu(getContextMenu());
 
 		container.pack();
 		return container;
+	}
+
+	private Menu getContextMenu() {
+		Menu menu = new Menu(filesViewer.getTable());
+		MenuItem item = new MenuItem(menu, SWT.PUSH);
+		item.setText("Add file on disk to index");
+		item.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event arg0) {
+				IStructuredSelection sel = (IStructuredSelection) filesViewer.getSelection();
+				if (sel.isEmpty()) {
+					return;
+				}
+				for (Iterator<Object> it = sel.iterator(); it.hasNext();) {
+					IFile file = (IFile) it.next();
+
+					final GitProjectData projectData = GitProjectData.get(file
+							.getProject());
+					RepositoryMapping repositoryMapping = projectData
+					.getRepositoryMapping(file.getProject());
+
+					Repository repo = repositoryMapping.getRepository();
+					GitIndex index = null;
+					try {
+						index = repo.getIndex();
+						Entry entry = index.getEntry(repositoryMapping.getRepoRelativePath(file));
+						if (entry != null && entry.isModified(repositoryMapping.getWorkDir())) {
+							entry.update(new File(repositoryMapping.getWorkDir(), entry.getName()), repo);
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+						return;
+					}
+				}
+				filesViewer.refresh(true);
+			}
+		});
+		
+		return menu;
 	}
 
 	public String getCommitMessage() {
