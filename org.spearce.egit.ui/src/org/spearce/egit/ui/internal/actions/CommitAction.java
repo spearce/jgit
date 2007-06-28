@@ -77,6 +77,8 @@ public class CommitAction implements IObjectActionDelegate {
 	private ArrayList<IFile> notIndexed = new ArrayList<IFile>();
 	private ArrayList<IFile> indexChanges = new ArrayList<IFile>();
 
+	private boolean amendAllowed = true;
+
 	public void run(IAction act) {
 		files.clear();
 		notIndexed.clear();
@@ -88,20 +90,39 @@ public class CommitAction implements IObjectActionDelegate {
 		} catch (IOException e) {
 			return;
 		}
+
+		Repository repo = null;
+		for (IProject proj : listProjects()) {
+			Repository repository = GitProjectData.get(proj).getRepositoryMapping(proj).getRepository();
+			if (repo == null)
+				repo = repository;
+			else if (repo != repository) {
+				amendAllowed = false;
+				break;
+			}
+		}
+
+		
 		if (files.isEmpty()) {
-			boolean result = MessageDialog
-					.openQuestion(wp.getSite().getShell(),
-							"No files to commit",
-							"No changed items were selected. Do you wish to amend the last commit?");
-			if (!result)
+			if (amendAllowed) {
+				boolean result = MessageDialog
+				.openQuestion(wp.getSite().getShell(),
+						"No files to commit",
+				"No changed items were selected. Do you wish to amend the last commit?");
+				if (!result)
+					return;
+				amending = true;
+			} else {
+				MessageDialog.openWarning(wp.getSite().getShell(), "No files to commit", "No changed items were selected.\n\nAmend is not possible as you have selected multiple repositories.");
 				return;
-			amending = true;
+			}
 		}
 
 		loadPreviousCommit();
 
 		CommitDialog commitDialog = new CommitDialog(wp.getSite().getShell());
 		commitDialog.setAmending(amending);
+		commitDialog.setAmendAllowed(amendAllowed);
 		commitDialog.setFileList(files);
 		if (previousCommit != null)
 			commitDialog.setPreviousCommitMessage(previousCommit.getMessage());

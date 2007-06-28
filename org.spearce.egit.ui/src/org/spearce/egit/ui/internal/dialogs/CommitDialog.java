@@ -181,6 +181,8 @@ public class CommitDialog extends Dialog {
 			amendingButton.setSelection(amending);
 			amendingButton.setEnabled(false); // if already set, don't allow any changes
 			commitText.setText(previousCommitMessage);
+		} else if (!amendAllowed) {
+			amendingButton.setEnabled(false);
 		}
 		amendingButton.addSelectionListener(new SelectionListener() {
 			boolean alreadyAdded = false;
@@ -296,6 +298,7 @@ public class CommitDialog extends Dialog {
 	private String author = null;
 	private boolean signedOff = false;
 	private boolean amending = false;
+	private boolean amendAllowed = true;
 
 	private ArrayList<IFile> selectedItems = new ArrayList<IFile>();
 	private String previousCommitMessage = "";
@@ -384,4 +387,7 @@ public class CommitDialog extends Dialog {
 		this.previousCommitMessage = string;
 	}
 
+	public void setAmendAllowed(boolean amendAllowed) {
+		this.amendAllowed = amendAllowed;
+	}
 }
