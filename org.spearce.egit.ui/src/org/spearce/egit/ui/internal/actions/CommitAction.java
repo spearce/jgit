@@ -378,14 +378,26 @@ public class CommitAction implements IObjectActionDelegate {
 		}
 	}
 
+	private boolean isRepositoryRootedInProject(IProject project) {
+		RepositoryMapping repositoryMapping = GitProjectData.get(project).getRepositoryMapping(project);
+		File projectRoot = project.getLocation().toFile();
+		File workDir = repositoryMapping.getWorkDir();
+
+		return workDir.equals(projectRoot);
+	}
+	
 	private void includeList(IProject project, HashSet<String> added, ArrayList<IFile> category) {
 		for (String filename : added) {
 			Path path = new Path(filename);
 			try {
 				IResource member;
-				member = project.getFile(path);
-				if (member == null)
-					member= project.getWorkspace().getRoot().getFile(path);
+				if (isRepositoryRootedInProject(project)) {
+					member = project.getFile(path);
+				} else {
+					if (filename.startsWith(project.getFullPath().toFile().getName()))
+						member = project.getWorkspace().getRoot().getFile(path);
+					else continue;
+				}
 
 				if (member != null && member instanceof IFile) {
 					files.add((IFile) member);
