@@ -6,5 +6,11 @@
     		class="org.spearce.egit.core.GitProvider"
 		id="org.spearce.egit.core.GitProvider">
 	</repository>
+  </extension>
+  <extension
+        point="org.eclipse.team.core.ignore">
+     <ignore
+           enabled="true"
+           pattern=".git"/>
   </extension>   
 </plugin>
