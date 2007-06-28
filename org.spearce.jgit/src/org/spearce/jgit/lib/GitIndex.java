@@ -89,9 +89,9 @@ public class GitIndex {
 		}
 	}
 
-	public void remove(File wd, File f) {
+	public boolean remove(File wd, File f) {
 		byte[] key = Entry.makeKey(wd, f);
-		entries.remove(key);
+		return entries.remove(key) != null;
 	}
 
 	public void read() throws IOException {
