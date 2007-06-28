@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Iterator;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -258,28 +259,35 @@ public class CommitDialog extends Dialog {
 				if (sel.isEmpty()) {
 					return;
 				}
-				for (Iterator<Object> it = sel.iterator(); it.hasNext();) {
-					IFile file = (IFile) it.next();
+				try {
+					ArrayList<GitIndex> changedIndexes = new ArrayList<GitIndex>();
+					for (Iterator<Object> it = sel.iterator(); it.hasNext();) {
+						IFile file = (IFile) it.next();
 
-					final GitProjectData projectData = GitProjectData.get(file
-							.getProject());
-					RepositoryMapping repositoryMapping = projectData
-					.getRepositoryMapping(file.getProject());
+						IProject project = file.getProject();
+						GitProjectData pd = GitProjectData.get(project);
+						RepositoryMapping map = pd.getRepositoryMapping(project);
 
-					Repository repo = repositoryMapping.getRepository();
-					GitIndex index = null;
-					try {
+						Repository repo = map.getRepository();
+						GitIndex index = null;
 						index = repo.getIndex();
-						Entry entry = index.getEntry(repositoryMapping.getRepoRelativePath(file));
-						if (entry != null && entry.isModified(repositoryMapping.getWorkDir())) {
-							entry.update(new File(repositoryMapping.getWorkDir(), entry.getName()), repo);
+						Entry entry = index.getEntry(map.getRepoRelativePath(file));
+						if (entry != null && entry.isModified(map.getWorkDir())) {
+							entry.update(new File(map.getWorkDir(), entry.getName()), repo);
+							if (!changedIndexes.contains(index))
+								changedIndexes.add(index);
 						}
-					} catch (IOException e) {
-						e.printStackTrace();
-						return;
 					}
+					if (!changedIndexes.isEmpty()) {
+						for (GitIndex idx : changedIndexes) {
+							idx.write();
+						}
+						filesViewer.refresh(true);
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+					return;
 				}
-				filesViewer.refresh(true);
 			}
 		});
 		
