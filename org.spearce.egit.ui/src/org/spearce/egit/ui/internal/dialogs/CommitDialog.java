@@ -35,6 +35,8 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
@@ -145,7 +147,7 @@ public class CommitDialog extends Dialog {
 
 		createButton(parent, IDialogConstants.OK_ID, "Commit", true);
 		createButton(parent, IDialogConstants.CANCEL_ID,
-				IDialogConstants.CANCEL_LABEL, true);
+				IDialogConstants.CANCEL_LABEL, false);
 	}
 
 	Text commitText;
@@ -170,6 +172,20 @@ public class CommitDialog extends Dialog {
 		commitText = new Text(container, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL);
 		commitText.setLayoutData(GridDataFactory.fillDefaults().span(2, 1)
 				.hint(600, 200).create());
+
+		// allow to commit with ctrl-enter
+		commitText.addKeyListener(new KeyAdapter() {
+			public void keyPressed(KeyEvent arg0) {
+				if (arg0.keyCode == SWT.CR
+						&& (arg0.stateMask & SWT.CONTROL) > 0) {
+					okPressed();
+				} else if (arg0.keyCode == SWT.TAB
+						&& (arg0.stateMask & SWT.SHIFT) == 0) {
+					arg0.doit = false;
+					commitText.traverse(SWT.TRAVERSE_TAB_NEXT);
+				}
+			}
+		});
 
 		new Label(container, SWT.LEFT).setText("Author: ");
 		authorText = new Text(container, SWT.BORDER);
