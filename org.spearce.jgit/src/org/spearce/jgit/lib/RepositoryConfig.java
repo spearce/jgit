@@ -45,6 +45,8 @@ public class RepositoryConfig {
 	private Map lastInEntry;
 
 	private Map lastInGroup;
+	
+	private static final String MAGIC_EMPTY_VALUE = "%%magic%%empty%%";
 
 	// used for global configs
 	private RepositoryConfig() {
@@ -95,7 +97,7 @@ public class RepositoryConfig {
 
 	public boolean getBoolean(final String group, final String name,
 			final boolean defaultValue) {
-		String n = getString(group, name);
+		String n = getRawString(group, name);
 		if (n == null) {
 			if (repo == null)
 				return defaultValue;
@@ -103,7 +105,7 @@ public class RepositoryConfig {
 		}
 
 		n = n.toLowerCase();
-		if ("yes".equals(n) || "true".equals(n) || "1".equals(n)) {
+		if (MAGIC_EMPTY_VALUE.equals(n) || "yes".equals(n) || "true".equals(n) || "1".equals(n)) {
 			return true;
 		} else if ("no".equals(n) || "false".equals(n) || "0".equals(n)) {
 			return false;
@@ -114,6 +116,14 @@ public class RepositoryConfig {
 	}
 
 	public String getString(final String group, final String name) {
+		String val = getRawString(group, name);
+		if (MAGIC_EMPTY_VALUE.equals(val)) {
+			return "";
+		}
+		return val;
+	}
+	
+	private String getRawString(final String group, final String name) {
 		final Object o;
 		o = byName.get(group.toLowerCase() + "." + name.toLowerCase());
 		if (o instanceof List) {
@@ -182,8 +192,10 @@ public class RepositoryConfig {
 					}
 					r.print(e.name);
 					if (e.value != null) {
-						r.print(" = ");
-						r.print(escapeValue(e.value));
+						if (!MAGIC_EMPTY_VALUE.equals(e.value)) {
+							r.print(" = ");
+							r.print(escapeValue(e.value));
+						}
 					}
 					if (e.suffix != null) {
 						r.print(' ');
@@ -255,7 +267,11 @@ public class RepositoryConfig {
 					e.extendedBase = last.extendedBase;
 					r.reset();
 					e.name = readName(r);
-					e.value = readValue(r, false, -1);
+					if (e.name.endsWith("\n")) {
+						e.name = e.name.substring(0, e.name.length()-1);
+						e.value = MAGIC_EMPTY_VALUE;
+					} else 
+						e.value = readValue(r, false, -1);
 				} else {
 					throw new IOException("Invalid line in config file.");
 				}
@@ -403,6 +419,7 @@ public class RepositoryConfig {
 	private static String readName(final BufferedReader r) throws IOException {
 		final StringBuffer name = new StringBuffer();
 		for (;;) {
+			r.mark(1);
 			int c = r.read();
 			if (c < 0) {
 				throw new IOException("Unexpected end of config file.");
@@ -428,8 +445,12 @@ public class RepositoryConfig {
 				break;
 			} else if (Character.isLetterOrDigit((char) c)) {
 				name.append((char) c);
+			} else if ('\n' == c) {
+				r.reset();
+				name.append((char) c);
+				break;
 			} else {
-				throw new IOException("Bad config entry name.");
+				throw new IOException("Bad config entry name: " + name + (char) c);
 			}
 		}
 		return name.toString();
@@ -522,5 +543,12 @@ public class RepositoryConfig {
 		String value;
 
 		String suffix;
+	}
+	
+	RepositoryConfig(String file) throws IOException  {
+		repo = null;
+		configFile = new File(file);
+		clear();
+		load();
 	}
 }
