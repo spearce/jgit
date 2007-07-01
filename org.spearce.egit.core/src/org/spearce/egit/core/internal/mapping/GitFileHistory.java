@@ -43,6 +43,7 @@ import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 import org.spearce.jgit.lib.Walker;
+import org.spearce.jgit.lib.GitIndex.Entry;
 
 public class GitFileHistory extends FileHistory implements IAdaptable {
 
@@ -198,8 +199,9 @@ static class EclipseWalker extends Walker {
 			if (!(resource instanceof IContainer)) {
 				String relativeResourceNameString = getRepositoryMapping()
 						.getRepoRelativePath(resource);
-				activeDiffLeafId = getRepository().getIndex().getEntry(
-						relativeResourceNameString).getObjectId();
+				Entry entry = getRepository().getIndex().getEntry(
+						relativeResourceNameString);
+				activeDiffLeafId = entry != null ? entry.getObjectId() : null;
 			}
 
 			Collection<IFileRevision> githistory;
