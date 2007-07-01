@@ -193,7 +193,7 @@ public class Commit implements Treeish {
 				}
 				byte[] readBuf = new byte[br.available()]; // in-memory stream so this is all bytes left
 				br.read(readBuf);
-				int msgstart = readBuf[0] == '\n' ? 1 : 0;
+				int msgstart = readBuf.length != 0 ? ( readBuf[0] == '\n' ? 1 : 0 ) : 0;
 
 				if (encoding != null) {
 					// TODO: this isn't reliable so we need to guess the encoding from the actual content
