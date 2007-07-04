@@ -170,11 +170,10 @@ public class ObjectId implements Comparable {
 	}
 
 	public int compareTo(final Object o) {
-		if (o instanceof ObjectId) {
+		if (o.getClass() == ObjectId.class)
 			return compare(id, ((ObjectId) o).id);
-		} else if (o instanceof byte[]) {
+		if (o.getClass().getComponentType() == Byte.TYPE)
 			return compare(id, (byte[]) o);
-		}
 		return 1;
 	}
 
@@ -189,11 +188,21 @@ public class ObjectId implements Comparable {
 	}
 
 	public boolean equals(final ObjectId o) {
-		return compareTo(o) == 0;
+		if (this == o)
+			return true;
+		if (o == null)
+			return false;
+		for (int k = 0 ; k < Constants.OBJECT_ID_LENGTH; k++) {
+			final byte ak = id[k];
+			final byte bk = o.id[k];
+			if (ak != bk)
+				return false;
+		}
+		return true;
 	}
 
 	public boolean equals(final Object o) {
-		return compareTo(o) == 0;
+		return equals((ObjectId)o);
 	}
 
 	public void copyTo(final OutputStream w) throws IOException {
