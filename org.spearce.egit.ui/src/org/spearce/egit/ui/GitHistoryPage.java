@@ -40,13 +40,10 @@ import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.viewers.ColumnWeightData;
-import org.eclipse.jface.viewers.ILazyTreeContentProvider;
-import org.eclipse.jface.viewers.ITableLabelProvider;
-import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.jface.viewers.ILazyContentProvider;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableLayout;
-import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseEvent;
@@ -54,7 +51,6 @@ import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.MouseMoveListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -63,9 +59,9 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.Tree;
-import org.eclipse.swt.widgets.TreeColumn;
-import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.team.core.RepositoryProvider;
 import org.eclipse.team.core.history.IFileHistory;
 import org.eclipse.team.core.history.IFileHistoryProvider;
@@ -92,9 +88,9 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	private Composite localComposite;
 
-	private TreeViewer viewer;
+	private TableViewer viewer;
 
-	private Tree tree;
+	private Table table;
 
 	private IFileRevision[] fileRevisions;
 
@@ -129,7 +125,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		data.grabExcessVerticalSpace = true;
 		localComposite.setLayoutData(data);
 
-		createTree(localComposite);
+		createTable(localComposite);
 
 		IHistoryPageSite parentSite = getHistoryPageSite();
 		if (parentSite != null && parentSite instanceof DialogHistoryPageSite)
@@ -139,7 +135,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				"Compare");
 		final GitCompareRevisionAction compareActionPrev = new GitCompareRevisionAction(
 				"Show commit");
-		tree.addMouseListener(new MouseListener() {
+		table.addMouseListener(new MouseListener() {
 		
 			public void mouseUp(MouseEvent e) {
 			}
@@ -153,10 +149,10 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		
 		});
 
-		tree.addMouseMoveListener(new MouseMoveListener() {
-			TreeItem lastItem;
+		table.addMouseMoveListener(new MouseMoveListener() {
+			TableItem lastItem;
 			public void mouseMove(MouseEvent e) {
-				TreeItem item = tree.getItem(new Point(e.x,e.y));
+				TableItem item = table.getItem(new Point(e.x,e.y));
 				if (item != null && item!=lastItem) {
 					IFileRevision rev = (IFileRevision) item.getData();
 					if (rev == null)
@@ -174,16 +170,16 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					}
 					if (commitStr == null)
 						commitStr = "Commit: "+rev.getContentIdentifier();
-					tree.setToolTipText(commitStr+"\nAuthor:\t"+rev.getAuthor()+"\nDate:\t"+new Date(rev.getTimestamp())+"\n\n"+rev.getComment());
+					table.setToolTipText(commitStr+"\nAuthor:\t"+rev.getAuthor()+"\nDate:\t"+new Date(rev.getTimestamp())+"\n\n"+rev.getComment());
 				}
 				lastItem = item;
 			}
 		});
 
-		tree.addSelectionListener(new SelectionAdapter() {
+		table.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				// update the current
-				TreeItem[] selection = tree.getSelection();
+				TableItem[] selection = table.getSelection();
 				IFileRevision[] selection2 = new IFileRevision[selection.length];
 				for (int i = 0; i < selection.length; ++i) {
 					selection2[i] = (IFileRevision) selection[i].getData();
@@ -208,7 +204,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 							compareActionPrev.setCurrentFileRevision(null);
 							compareActionPrev.selectionChanged(new StructuredSelection(new IFileRevision[] {selection2[0], previous}));
 							System.out.println("detail="+e.detail);
-							tree.getDisplay().asyncExec(new Runnable() {
+							table.getDisplay().asyncExec(new Runnable() {
 								public void run() {
 									if (GitCompareRevisionAction.findReusableCompareEditor(GitHistoryPage.this.getSite().getPage()) != null)
 										compareActionPrev.run();
@@ -218,6 +214,13 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					} else {
 						compareActionPrev.setCurrentFileRevision(null);
 						compareActionPrev.selectionChanged(new StructuredSelection(new IFileRevision[0]));
+						System.out.println("detail="+e.detail);
+						table.getDisplay().asyncExec(new Runnable() {
+							public void run() {
+								if (GitCompareRevisionAction.findReusableCompareEditor(GitHistoryPage.this.getSite().getPage()) != null)
+									compareActionPrev.run();
+							}
+						});
 					}
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
@@ -229,7 +232,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		compareAction.setPage(this);
 		compareActionPrev.setPage(this);
 		MenuManager menuMgr = new MenuManager();
-		Menu menu = menuMgr.createContextMenu(tree);
+		Menu menu = menuMgr.createContextMenu(table);
 		menuMgr.addMenuListener(new IMenuListener() {
 			public void menuAboutToShow(IMenuManager menuMgr) {
 				menuMgr.add(compareAction);
@@ -237,7 +240,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			}
 		});
 		menuMgr.setRemoveAllWhenShown(true);
-		tree.setMenu(menu);
+		table.setMenu(menu);
 
 		GitHistoryResourceListener resourceListener = new GitHistoryResourceListener();
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(
@@ -306,16 +309,12 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	}
 
-	class GitHistoryLabelProvider extends LabelProvider implements
-			ITableLabelProvider {
+	class GitHistoryLabelProvider {
 
-		public Image getColumnImage(Object element, int columnIndex) {
-			return null;
-		}
-
-		public String getColumnText(Object element, int columnIndex) {
+		public String getColumnText(int index, int columnIndex) {
+			GitFileRevision element = (GitFileRevision) fileRevisions[index];
 			if (columnIndex == 0) {
-				int count = ((GitFileRevision) element).getCount();
+				int count = element.getCount();
 				if (count < 0)
 					return "";
 				else
@@ -326,9 +325,9 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			}
 			
 			if (columnIndex == 1) {
-				String rss = ((IFileRevision) element).getURI().toString();
+				String rss = element.getURI().toString();
 				String rs = rss.substring(rss.length()-10);
-				String id = ((IFileRevision) element).getContentIdentifier();
+				String id = element.getContentIdentifier();
 				if (appliedPatches!=null) {
 					if (!id.equals("Workspace")) {
 						StGitPatch patch = (StGitPatch) appliedPatches.get(new ObjectId(id));
@@ -346,7 +345,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			}
 
 			if (columnIndex == 2) {
-				String id = ((IFileRevision)element).getContentIdentifier();
+				String id = element.getContentIdentifier();
 				if (id.equals("Workspace")) {
 					return "";
 				}
@@ -378,16 +377,16 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			}
 
 			if (columnIndex == 3) {
-				Date d = new Date(((IFileRevision) element).getTimestamp());
+				Date d = new Date(element.getTimestamp());
 				if (d.getTime() == -1)
 					return "";
 				return d.toString();
 			}
 			if (columnIndex == 4)
-				return ((IFileRevision) element).getAuthor();
+				return element.getAuthor();
 
 			if (columnIndex == 5) {
-				String comment = ((IFileRevision) element).getComment();
+				String comment = element.getComment();
 				if (comment == null)
 					return null;
 				int p = comment.indexOf('\n');
@@ -400,28 +399,26 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		}
 	}
 
-	private void createTree(Composite composite) {
-		tree = new Tree(composite, SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI
+	private void createTable(Composite composite) {
+		table = new Table(composite, SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI
 				| SWT.FULL_SELECTION | SWT.VIRTUAL);
-		tree.setHeaderVisible(true);
-		tree.setLinesVisible(true);
+		table.setHeaderVisible(true);
+		table.setLinesVisible(true);
 		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
-		tree.setLayoutData(data);
-		tree.setData("HEAD");
-		tree.addListener(SWT.SetData, new Listener() {
+		table.setLayoutData(data);
+		table.setData("HEAD");
+		table.addListener(SWT.SetData, new Listener() {
 			public void handleEvent(Event event) {
 				try {
-					TreeItem item = (TreeItem) event.item;
-					Tree parent = item.getParent();
+					System.out.println("handleEvent "+event.type+" "+event.index);
+					TableItem item = (TableItem) event.item;
+					Table parent = item.getParent();
 					if (parent == null) {
 						item.setText(new String[] { "hej", "san" });
 						item.setData("");
 					} else {
-						ITableLabelProvider p = (ITableLabelProvider) viewer
-								.getLabelProvider();
 						for (int i = 0; i < 6; ++i) {
-							String text = p.getColumnText(
-									fileRevisions[event.index], i);
+							String text = lp.getColumnText(event.index, i);
 							if (text != null)
 								item.setText(i, text);
 							else
@@ -435,15 +432,13 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			}
 		});
 		TableLayout layout = new TableLayout();
-		tree.setLayout(layout);
+		table.setLayout(layout);
 
-		viewer = new TreeViewer(tree, SWT.VIRTUAL | SWT.FULL_SELECTION);
+		viewer = new TableViewer(table, SWT.VIRTUAL | SWT.FULL_SELECTION);
 
 		viewer.setUseHashlookup(true);
 
 		createColumns();
-
-		viewer.setLabelProvider(new GitHistoryLabelProvider());
 
 		viewer.setContentProvider(new GitHistoryContentProvider());
 
@@ -453,6 +448,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 	private Map appliedPatches;
 	private Map<ObjectId,Tag[]> tags;
 	private Map<ObjectId, String[]> branches;
+	GitHistoryLabelProvider lp = new GitHistoryLabelProvider();
 
 	class HistoryRefreshJob extends Job {
 
@@ -533,13 +529,13 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			final Map fnewappliedPatches = newappliedPatches;
 			final Map<ObjectId,Tag[]> ftags = newtags;
 
-			tree.getDisplay().asyncExec(new Runnable() {
+			table.getDisplay().asyncExec(new Runnable() {
 			
 				public void run() {
-					tree.removeAll();
-					tree.setItemCount(fileRevisions.length);
-					tree.setData(fileRevisions);
-					tree.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,true));
+					table.removeAll();
+					table.setItemCount(fileRevisions.length);
+					table.setData(fileRevisions);
+					table.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,true));
 					System.out.println("inputchanged, invoking refresh");
 					appliedPatches = fnewappliedPatches;
 					tags = ftags;
@@ -555,8 +551,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	HistoryRefreshJob historyRefreshJob = new HistoryRefreshJob("Git history refresh");
 	
-	class GitHistoryContentProvider implements ITreeContentProvider,
-			ILazyTreeContentProvider {
+	class GitHistoryContentProvider implements ILazyContentProvider {
 
 		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 			if (newInput == null)
@@ -574,83 +569,58 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		public void dispose() {
 		}
 
-		public Object[] getElements(Object inputElement) {
-			System.out.println("getElements(" + inputElement + ")");
-			return fileRevisions;
-		}
-
-		public boolean hasChildren(Object element) {
-			// TODO Auto-generated method stub
-			return false;
-		}
-
-		public Object getParent(Object element) {
-			// System.out.println("getParent(" + element + ")");
-			return null;
-		}
-
-		public Object[] getChildren(Object parentElement) {
-			// System.out.println("getElements(" + parentElement + ")");
-			return fileRevisions;
-		}
-
-		public void updateChildCount(Object element, int currentChildCount) {
-			viewer.setChildCount(element, fileRevisions!=null ? fileRevisions.length : 0);
-		}
-
-		public void updateElement(Object parent, int index) {
-			System.out.println("updateElement("+parent+","+index);
-			viewer.replace(parent, index, fileRevisions!=null ? fileRevisions[index] : null);
+		public void updateElement(int index) {
+//			viewer.update(arg0, arg1)
 		}
 	}
 
 	private void createColumns() {
 		// X SelectionListener headerListener = getColumnListener(viewer);
 		// count from head
-		TreeColumn col = new TreeColumn(tree, SWT.NONE);
+		TableColumn col = new TableColumn(table, SWT.NONE);
 		col.setResizable(true);
 		col.setText("^");
 		// X col.addSelectionListener(headerListener);
-		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(15,
+		((TableLayout) table.getLayout()).addColumnData(new ColumnWeightData(15,
 				true));
 
 		// revision
-		col = new TreeColumn(tree, SWT.NONE);
+		col = new TableColumn(table, SWT.NONE);
 		col.setResizable(true);
 		col.setText(TeamUIMessages.GenericHistoryTableProvider_Revision);
 		// X col.addSelectionListener(headerListener);
-		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(15,
+		((TableLayout) table.getLayout()).addColumnData(new ColumnWeightData(15,
 				true));
 
 		// tags
-		col = new TreeColumn(tree, SWT.NONE);
+		col = new TableColumn(table, SWT.NONE);
 		col.setResizable(true);
 		col.setText("Tags");
 		// X col.addSelectionListener(headerListener);
-		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(15,
+		((TableLayout) table.getLayout()).addColumnData(new ColumnWeightData(15,
 				true));
 		// creation date
-		col = new TreeColumn(tree, SWT.NONE);
+		col = new TableColumn(table, SWT.NONE);
 		col.setResizable(true);
 		col.setText(TeamUIMessages.GenericHistoryTableProvider_RevisionTime);
 		// X col.addSelectionListener(headerListener);
-		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(30,
+		((TableLayout) table.getLayout()).addColumnData(new ColumnWeightData(30,
 				true));
 
 		// author
-		col = new TreeColumn(tree, SWT.NONE);
+		col = new TableColumn(table, SWT.NONE);
 		col.setResizable(true);
 		col.setText(TeamUIMessages.GenericHistoryTableProvider_Author);
 		// X col.addSelectionListener(headerListener);
-		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(20,
+		((TableLayout) table.getLayout()).addColumnData(new ColumnWeightData(20,
 				true));
 
 		// comment
-		col = new TreeColumn(tree, SWT.NONE);
+		col = new TableColumn(table, SWT.NONE);
 		col.setResizable(true);
 		col.setText(TeamUIMessages.GenericHistoryTableProvider_Comment);
 		// X col.addSelectionListener(headerListener);
-		((TableLayout) tree.getLayout()).addColumnData(new ColumnWeightData(35,
+		((TableLayout) table.getLayout()).addColumnData(new ColumnWeightData(35,
 				true));
 	}
 
