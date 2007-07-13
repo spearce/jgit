@@ -53,10 +53,12 @@ public class RepositoryConfig {
 		repo = null;
 		configFile = new File(System.getProperty("user.home"), ".gitconfig");
 		clear();
-		try {
-			load();
-		} catch (IOException e) {
-			e.printStackTrace();
+		if (configFile.exists()) {
+			try {
+				load();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
