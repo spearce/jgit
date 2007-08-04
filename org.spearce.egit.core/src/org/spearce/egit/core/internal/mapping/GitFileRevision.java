@@ -153,8 +153,7 @@ public class GitFileRevision extends FileRevision {
 				return tree;
 			if (resource.getType() == IResource.FILE)
 				return tree.findBlobMember(path);
-			else
-				return tree.findBlobMember(path);
+			return tree.findTreeMember(path);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
