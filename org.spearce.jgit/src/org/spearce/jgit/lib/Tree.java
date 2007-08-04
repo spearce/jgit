@@ -310,7 +310,7 @@ public class Tree extends TreeEntry implements Treeish {
 		p = binarySearch(contents, s, xlast, offset, slash);
 		if (p >= 0) {
 			final TreeEntry r = contents[p];
-			if (slash < s.length)
+			if (slash < s.length-1)
 				return r instanceof Tree ? ((Tree) r).findMember(s, slast, slash + 1)
 						: null;
 			return r;
