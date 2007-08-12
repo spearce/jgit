@@ -281,7 +281,128 @@ public class Repository {
 		return l.lock() ? l : null;
 	}
 
+	/** Parse a git revision string and return an object id.
+	 *
+	 *  It is not fully implemented, so it only deals with
+	 *  commits and to some extent tags. Reflogs are not
+	 *  supported yet.
+	 *  The plan is to implement it fully.
+	 * @param revstr A git object references expression
+	 * @return an ObjectId
+	 * @throws IOException on serious errors
+	 */
+	public ObjectId parse(String revstr) throws IOException {
+		char[] rev = revstr.toCharArray();
+		ObjectId ret = null;
+		Commit ref = null;
+		for (int i = 0; i < rev.length; ++i) {
+			switch (rev[i]) {
+			case '^':
+				if (ref == null) {
+					String refstr = new String(rev,0,i);
+					ObjectId refId = resolveSimple(refstr);
+					ref = mapCommit(refId);
+				}
+				if (i + 1 < rev.length) {
+					switch (rev[i + 1]) {
+					case '0':
+					case '1':
+					case '2':
+					case '3':
+					case '4':
+					case '5':
+					case '6':
+					case '7':
+					case '8':
+					case '9':
+						int j;
+						for (j=i+1; j<rev.length; ++j) {
+							if (!Character.isDigit(rev[j]))
+								break;
+						}
+						String parentnum = new String(rev, i+1, j-i-1);
+						int pnum = Integer.parseInt(parentnum);
+						if (pnum != 0)
+							ref = mapCommit(ref.getParentIds()[pnum - 1]);
+						i = j - 1;
+						break;
+					case '{':
+						int k;
+						String item = null;
+						for (k=i+2; k<rev.length; ++k) {
+							if (rev[k] == '}') {
+								item = new String(rev, i+2, k-i-2);
+								break;
+							}
+						}
+						i = k;
+						if (item != null)
+							if (item.equals("tree"))
+								ret = ref.getTreeId();
+							else if (item.equals("commit"))
+								; // just reference self
+							else
+								return null; // invalid
+						else
+							return null; // invalid
+						break;
+					default:
+						ref = mapCommit(ref.getParentIds()[0]);
+					}
+				} else {
+					ref = mapCommit(ref.getParentIds()[0]);
+				}
+				break;
+			case '~':
+				if (ref == null) {
+					String refstr = new String(rev,0,i);
+					ObjectId refId = resolveSimple(refstr);
+					ref = mapCommit(refId);
+				}
+				int l;
+				for (l = i + 1; l < rev.length; ++l) {
+					if (!Character.isDigit(rev[l]))
+						break;
+				}
+				String distnum = new String(rev, i+1, l-i-1);
+				int dist = Integer.parseInt(distnum);
+				while (dist >= 0) {
+					ref = mapCommit(ref.getParentIds()[0]);
+					--dist;
+				}
+				i = l - 1;
+				break;
+			case '@':
+				int m;
+				String time = null;
+				for (m=i+2; m<rev.length; ++m) {
+					if (rev[m] == '}') {
+						time = new String(rev, i+2, m-i-2);
+						break;
+					}
+				}
+				if (time != null)
+					throw new IllegalArgumentException("reflogs not yet supprted");
+				i = m - 1;
+				break;
+			default:
+				if (ref != null)
+					return null; // cannot parse, return null
+			}
+		}
+		if (ret == null)
+			if (ref != null)
+				ret = ref.getCommitId();
+			else
+				ret = resolveSimple(revstr);
+		return ret;
+	}
+
 	public ObjectId resolve(final String revstr) throws IOException {
+		return parse(revstr);
+	}
+
+	public ObjectId resolveSimple(final String revstr) throws IOException {
 		ObjectId id = null;
 
 		if (ObjectId.isId(revstr)) {
