@@ -49,8 +49,7 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 	public boolean deleteFile(final IResourceTree tree, final IFile file,
 			final int updateFlags, final IProgressMonitor monitor) {
 		try {
-			final GitProjectData d = GitProjectData.get(file.getProject());
-			RepositoryMapping map = d.getRepositoryMapping(file.getProject());
+			RepositoryMapping map = RepositoryMapping.getMapping(file);
 			if (map != null) {
 				Repository repository = map.getRepository();
 				GitIndex index = repository.getIndex();
@@ -90,9 +89,7 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 			final IFile destination, final int updateFlags,
 			final IProgressMonitor monitor) {
 		try {
-			final GitProjectData d1 = GitProjectData.get(source.getProject());
-			final RepositoryMapping map1 = d1.getRepositoryMapping(source
-					.getProject());
+			final RepositoryMapping map1 = RepositoryMapping.getMapping(source);
 			if (map1 == null) {
 				tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(),
 						0, "Not in a git versioned project", null));
@@ -100,10 +97,8 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 			}
 
 			final GitIndex index1 = map1.getRepository().getIndex();
-			final GitProjectData d2 = GitProjectData.get(destination
-					.getProject());
-			final RepositoryMapping map2 = d2.getRepositoryMapping(destination
-					.getProject());
+
+			final RepositoryMapping map2 = RepositoryMapping.getMapping(destination);
 			if (map2 == null) {
 				tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(),
 						0, "Not in a git versioned project", null));

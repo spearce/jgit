@@ -35,7 +35,6 @@ import org.eclipse.team.core.history.IFileRevision;
 import org.eclipse.team.core.history.provider.FileHistory;
 import org.spearce.egit.core.GitProvider;
 import org.spearce.egit.core.GitWorkspaceFileRevision;
-import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.ObjectId;
@@ -58,7 +57,7 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 	public GitFileHistory(IResource resource, int flags, IProgressMonitor monitor) {
 		this.resource = resource;
 		this.flags = flags;
-		String prefix = getRepositoryMapping().getSubset();
+		String prefix = RepositoryMapping.getMapping(resource).getSubset();
 		String[] prefixSegments = prefix!=null ? prefix.split("/") : new String[0];
 		String[] resourceSegments = resource.getProjectRelativePath().segments(); 
 		relativeResourceName = new String[prefixSegments.length + resourceSegments.length];
@@ -79,7 +78,7 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 		GitFileRevision grevision = (GitFileRevision) revision;
 		ObjectId[] parents = grevision.getCommit().getParentIds();
 		IFileRevision[] ret = new IFileRevision[parents.length];
-		Repository repository = getRepository();
+		Repository repository = RepositoryMapping.getMapping(resource).getRepository();
 		for (int i = 0; i < parents.length; ++i) {
 			try {
 				ret[i] = new GitFileRevision(repository
@@ -98,27 +97,13 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 			return new GitWorkspaceFileRevision(resource);
 		} else {
 			try {
-				Repository repository = getRepository();
+				Repository repository = RepositoryMapping.getMapping(resource).getRepository();
 				return new GitFileRevision(repository.mapCommit(id), resource, 0);
 			} catch (IOException e) {
 				e.printStackTrace();
 				return null;
 			}
 		}
-	}
-
-	private Repository getRepository() {
-		return getRepositoryMapping().getRepository();
-	}
-
-	private GitProjectData getData() {
-		GitProvider provider = (GitProvider) RepositoryProvider
-				.getProvider(resource.getProject());
-		return provider.getData();
-	}
-
-	private RepositoryMapping getRepositoryMapping() {
-		return getData().getRepositoryMapping(resource.getProject());
 	}
 
 static class EclipseWalker extends Walker {
@@ -155,7 +140,7 @@ static class EclipseWalker extends Walker {
 	 */
 	private void findSingleRevision(IProgressMonitor monitor) {
 		try {
-			Repository repository = getRepository();
+			Repository repository = RepositoryMapping.getMapping(resource).getRepository();
 			ObjectId id = repository.resolve("HEAD");
 			Commit current = repository.mapCommit(id);
 			if (repository.isStGitMode()) {
@@ -196,20 +181,22 @@ static class EclipseWalker extends Walker {
 			System.out.println("getting file history");
 			List ret = new ArrayList();
 			ObjectId activeDiffLeafId = null;
+			RepositoryMapping mapping = RepositoryMapping.getMapping(resource);
+			Repository repository = mapping.getRepository();
 			if (!(resource instanceof IContainer)) {
-				String relativeResourceNameString = getRepositoryMapping()
+				String relativeResourceNameString = mapping
 						.getRepoRelativePath(resource);
-				Entry entry = getRepository().getIndex().getEntry(
+				Entry entry = repository.getIndex().getEntry(
 						relativeResourceNameString);
 				activeDiffLeafId = entry != null ? entry.getObjectId() : null;
 			}
 
 			Collection<IFileRevision> githistory;
-			ObjectId head = getRepository().resolve("HEAD");
+			ObjectId head = repository.resolve("HEAD");
 			if (head != null) {
-				Commit start = getRepository().mapCommit(head);
+				Commit start = repository.mapCommit(head);
 				EclipseWalker walker = new EclipseWalker(
-						getRepository(),
+						repository,
 						start,
 						relativeResourceName,
 						resource.getType() == IResource.FILE,

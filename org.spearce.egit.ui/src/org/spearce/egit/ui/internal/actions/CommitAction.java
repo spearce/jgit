@@ -97,7 +97,7 @@ public class CommitAction implements IObjectActionDelegate {
 
 		Repository repo = null;
 		for (IProject proj : listProjects()) {
-			Repository repository = GitProjectData.get(proj).getRepositoryMapping(proj).getRepository();
+			Repository repository = RepositoryMapping.getMapping(proj).getRepository();
 			if (repo == null)
 				repo = repository;
 			else if (repo != repository) {
@@ -154,10 +154,8 @@ public class CommitAction implements IObjectActionDelegate {
 
 	private void loadPreviousCommit() {
 		IProject project = ((IResource) rsrcList.get(0)).getProject();
-		GitProjectData gitProjectData = GitProjectData.get(project);
 
-		Repository repo = gitProjectData.getRepositoryMapping(project)
-				.getRepository();
+		Repository repo = RepositoryMapping.getMapping(project).getRepository();
 		try {
 			ObjectId parentId = repo.resolve("HEAD");
 			previousCommit = repo.mapCommit(parentId);
@@ -175,7 +173,7 @@ public class CommitAction implements IObjectActionDelegate {
 
 		commitMessage = doCommits(commitDialog, commitMessage, treeMap);
 		for (IProject proj : listProjects()) {
-			GitProjectData.get(proj).getRepositoryMapping(proj).recomputeMerge();
+			RepositoryMapping.getMapping(proj).recomputeMerge();
 		}
 	}
 
@@ -245,8 +243,7 @@ public class CommitAction implements IObjectActionDelegate {
 		if (selectedItems.length == 0) {
 			// amending commit - need to put something into the map
 			for (IProject proj : listProjects()) {
-				Repository repo = GitProjectData.get(proj)
-				.getRepositoryMapping(proj).getRepository();
+				Repository repo = RepositoryMapping.getMapping(proj).getRepository();
 				if (!treeMap.containsKey(repo))
 					treeMap.put(repo, repo.mapTree("HEAD"));
 			}
@@ -256,10 +253,7 @@ public class CommitAction implements IObjectActionDelegate {
 			// System.out.println("\t" + file);
 
 			IProject project = file.getProject();
-			final GitProjectData projectData = GitProjectData.get(project);
-			RepositoryMapping repositoryMapping = projectData
-					.getRepositoryMapping(project);
-
+			RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
 			Repository repository = repositoryMapping.getRepository();
 			Tree projTree = treeMap.get(repository);
 			if (projTree == null) {
@@ -390,10 +384,8 @@ public class CommitAction implements IObjectActionDelegate {
 
 	private void buildIndexHeadDiffList() throws IOException {
 		for (IProject project : listProjects()) {
-			final GitProjectData projectData = GitProjectData.get(project);
-			if (projectData != null) {
-				RepositoryMapping repositoryMapping = projectData
-						.getRepositoryMapping(project);
+			RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
+			if (repositoryMapping != null) {
 				Repository repository = repositoryMapping.getRepository();
 				Tree head = repository.mapTree("HEAD");
 				GitIndex index = repository.getIndex();
@@ -409,7 +401,7 @@ public class CommitAction implements IObjectActionDelegate {
 	}
 
 	private boolean isRepositoryRootedInProject(IProject project) {
-		RepositoryMapping repositoryMapping = GitProjectData.get(project).getRepositoryMapping(project);
+		RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
 		File projectRoot = project.getLocation().toFile();
 		File workDir = repositoryMapping.getWorkDir();
 
@@ -459,10 +451,6 @@ public class CommitAction implements IObjectActionDelegate {
 			final GitProjectData projectData = GitProjectData.get(project);
 
 			if (projectData != null) {
-				// final RepositoryMapping repositoryMapping =
-				// projectData.getRepositoryMapping(project);
-				// final Repository repository =
-				// repositoryMapping.getRepository();
 
 				if (resource instanceof IFile) {
 					tryAddResource((IFile) resource, projectData, notIndexed);

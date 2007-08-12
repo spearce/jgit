@@ -71,7 +71,6 @@ import org.eclipse.team.internal.ui.history.DialogHistoryPageSite;
 import org.eclipse.team.ui.history.HistoryPage;
 import org.eclipse.team.ui.history.IHistoryCompareAdapter;
 import org.eclipse.team.ui.history.IHistoryPageSite;
-import org.spearce.egit.core.GitProvider;
 import org.spearce.egit.core.internal.mapping.GitFileRevision;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.internal.actions.GitCompareRevisionAction;
@@ -189,9 +188,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				compareAction.selectionChanged(new StructuredSelection(
 						selection2));
 				IProject project = ((IResource) getInput()).getProject();
-				GitProvider provider = (GitProvider)RepositoryProvider
-						.getProvider(project);
-				RepositoryMapping repositoryMapping = provider.getData().getRepositoryMapping(project);
+				RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
 				try {
 					if (selection2.length == 1 && hintShowDiffNow) {
 						ObjectId[] parentIds = ((GitFileRevision)selection2[0]).getCommit().getParentIds();
@@ -462,7 +459,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			IProject project = ((IResource) getInput()).getProject();
 			RepositoryProvider provider = RepositoryProvider
 					.getProvider(project);
-			RepositoryMapping repositoryMapping = ((GitProvider)provider).getData().getRepositoryMapping(project);
+			RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
 			Map newappliedPatches = null;
 			try {
 				newappliedPatches = repositoryMapping.getRepository().getAppliedPatches();

@@ -28,7 +28,6 @@ import org.eclipse.core.resources.IResourceStatus;
 import org.eclipse.core.resources.IStorage;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectLoader;
@@ -46,10 +45,7 @@ public class GitBlobStorage implements IStorage {
 		if (treeId == null)
 			return;
 
-		GitProvider provider = (GitProvider) RepositoryProvider
-				.getProvider(resource.getProject());
-		RepositoryMapping repositoryMapping = provider.getData()
-				.getRepositoryMapping(resource.getProject());
+		RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(resource);
 		Tree tree;
 		try {
 			tree = repositoryMapping.getRepository().mapTree(treeId);

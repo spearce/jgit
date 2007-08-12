@@ -23,11 +23,14 @@ import java.util.Properties;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
+import org.eclipse.team.core.RepositoryProvider;
+import org.spearce.egit.core.GitProvider;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.GitIndex;
@@ -239,5 +242,21 @@ public class RepositoryMapping {
 		else
 			repoRelativePath = projectRelativePath;
 		return repoRelativePath;
+	}
+
+	/**
+	 * Get the repository mappping for a resource
+	 *
+	 * @param resource
+	 * @return the RepositoryMapping for this resource
+	 */
+	public static RepositoryMapping getMapping(IResource resource) {
+		IProject project = resource.getProject();
+		RepositoryProvider provider = RepositoryProvider.getProvider(project);
+		if (!(provider instanceof GitProvider))
+			return null;
+		GitProvider gp = (GitProvider)provider;
+		RepositoryMapping repositoryMapping = gp.getData().getRepositoryMapping(project);
+		return repositoryMapping;
 	}
 }

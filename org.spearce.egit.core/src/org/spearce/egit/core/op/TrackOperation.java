@@ -24,7 +24,6 @@ import java.util.Iterator;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.resources.IWorkspaceRunnable;
@@ -34,7 +33,6 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.team.core.Team;
 import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
-import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.GitIndex;
 
@@ -78,9 +76,7 @@ public class TrackOperation implements IWorkspaceRunnable {
 				final Object obj = i.next();
 				if (obj instanceof IResource) {
 					final IResource toAdd = (IResource)obj;
-					final IProject p = toAdd.getProject();					
-					final GitProjectData pd = GitProjectData.get(toAdd.getProject());
-					final RepositoryMapping rm = pd.getRepositoryMapping(p);
+					final RepositoryMapping rm = RepositoryMapping.getMapping(toAdd);
 					final GitIndex index = rm.getRepository().getIndex();
 
 					if (obj instanceof IFile) {

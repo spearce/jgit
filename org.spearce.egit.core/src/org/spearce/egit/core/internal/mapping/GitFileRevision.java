@@ -26,11 +26,9 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IStorage;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.team.core.RepositoryProvider;
 import org.eclipse.team.core.history.IFileRevision;
 import org.eclipse.team.core.history.ITag;
 import org.eclipse.team.core.history.provider.FileRevision;
-import org.spearce.egit.core.GitProvider;
 import org.spearce.egit.core.GitStorage;
 import org.spearce.egit.core.GitTag;
 import org.spearce.egit.core.project.RepositoryMapping;
@@ -108,10 +106,7 @@ public class GitFileRevision extends FileRevision {
 	}
 
 	public ITag[] getTags() {
-		GitProvider provider = (GitProvider) RepositoryProvider
-				.getProvider(resource.getProject());
-		Repository repository = provider.getData().getRepositoryMapping(
-				resource.getProject()).getRepository();
+		Repository repository = RepositoryMapping.getMapping(resource).getRepository();
 		Collection allTags = repository.getTags();
 		Collection ret = new ArrayList();
 		ObjectId commitId = commit.getCommitId();
@@ -141,10 +136,7 @@ public class GitFileRevision extends FileRevision {
 	}
 
 	public TreeEntry getTreeEntry() {
-		GitProvider provider = (GitProvider) RepositoryProvider
-				.getProvider(resource.getProject());
-		RepositoryMapping repositoryMapping = provider.getData()
-				.getRepositoryMapping(resource.getProject());
+		RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(resource);
 		Tree tree;
 		try {
 			tree = repositoryMapping.getRepository().mapTree(getCommit().getTreeId());

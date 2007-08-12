@@ -23,7 +23,6 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 
 import org.eclipse.core.resources.IContainer;
-import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceProxy;
 import org.eclipse.core.resources.IResourceProxyVisitor;
@@ -36,7 +35,6 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
-import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.GitIndex.Entry;
@@ -83,9 +81,7 @@ public class UpdateJob extends Job {
 				for (Object obj : rsrcList) {
 					if (obj instanceof IResource) {
 						final IResource r = (IResource)obj;
-						final IProject p = r.getProject();					
-						final GitProjectData pd = GitProjectData.get(r.getProject());
-						final RepositoryMapping rm = pd.getRepositoryMapping(p);
+						final RepositoryMapping rm = RepositoryMapping.getMapping(r);
 						final GitIndex index = rm.getRepository().getIndex();
 						tomerge.put(rm, Boolean.TRUE);
 						if (r instanceof IContainer) {

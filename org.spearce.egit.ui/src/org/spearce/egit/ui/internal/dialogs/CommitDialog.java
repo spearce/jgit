@@ -54,7 +54,6 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
-import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.PersonIdent;
@@ -80,11 +79,8 @@ public class CommitDialog extends Dialog {
 			else if (columnIndex == 0) {
 				String prefix = "Unknown";
 
-				final GitProjectData projectData = GitProjectData.get(file
-						.getProject());
 				try {
-					RepositoryMapping repositoryMapping = projectData
-							.getRepositoryMapping(file.getProject());
+					RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(file.getProject());
 
 					Repository repo = repositoryMapping.getRepository();
 					GitIndex index = repo.getIndex();
@@ -281,8 +277,7 @@ public class CommitDialog extends Dialog {
 						IFile file = (IFile) it.next();
 
 						IProject project = file.getProject();
-						GitProjectData pd = GitProjectData.get(project);
-						RepositoryMapping map = pd.getRepositoryMapping(project);
+						RepositoryMapping map = RepositoryMapping.getMapping(project);
 
 						Repository repo = map.getRepository();
 						GitIndex index = null;

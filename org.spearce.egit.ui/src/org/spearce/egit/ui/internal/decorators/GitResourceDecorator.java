@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
@@ -193,9 +194,7 @@ public class GitResourceDecorator extends LabelProvider implements
 			if (rsrc.getType() == IResource.FILE && Team.isIgnored((IFile)rsrc))
 				return Boolean.FALSE;
 
-			final GitProjectData d = GitProjectData.get(rsrc.getProject());
-			RepositoryMapping mapped = d
-					.getRepositoryMapping(rsrc.getProject());
+			RepositoryMapping mapped = RepositoryMapping.getMapping(rsrc);
 			if (mapped != null) {
 				if (rsrc instanceof IContainer) {
 					for (IResource r : ((IContainer) rsrc)
@@ -225,14 +224,11 @@ public class GitResourceDecorator extends LabelProvider implements
 		if (rsrc == null)
 			return;
 
-		final GitProjectData d = GitProjectData.get(rsrc.getProject());
-		if (d == null)
-			return;
+		RepositoryMapping mapped = RepositoryMapping.getMapping(rsrc);
 
 		Activator.trace("decorate: " + element);
 
-		RepositoryMapping mapped = d.getRepositoryMapping(rsrc);
-		if (mapped != null) {
+		if (mapped != null && rsrc instanceof IProject) {
 			Repository repo = mapped.getRepository();
 			try {
 				String branch = repo.getBranch();
@@ -253,7 +249,6 @@ public class GitResourceDecorator extends LabelProvider implements
 		// TODO: How do I see a renamed resource?
 		// TODO: Even trickier: when a path change from being blob to tree?
 		try {
-			mapped = d.getRepositoryMapping(rsrc.getProject());
 			if (mapped != null) {
 				Repository repository = mapped.getRepository();
 				GitIndex index = repository.getIndex();
