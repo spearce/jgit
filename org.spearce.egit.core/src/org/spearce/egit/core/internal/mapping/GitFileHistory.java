@@ -125,8 +125,8 @@ static class EclipseWalker extends Walker {
 	IResource resource;
 	private final IProgressMonitor monitor;
 
-	EclipseWalker(Repository repository, Commit start, String[] relativeResourceName,boolean leafIsBlob,IResource resource,boolean followMainOnly, ObjectId lastActiveDiffId, IProgressMonitor monitor) {
-		super(repository, start, relativeResourceName, leafIsBlob, followMainOnly, lastActiveDiffId);
+	EclipseWalker(Repository repository, Commit start, String[] relativeResourceName,boolean leafIsBlob,IResource resource,boolean followMainOnly, Boolean merges, ObjectId lastActiveDiffId, IProgressMonitor monitor) {
+		super(repository, start, relativeResourceName, leafIsBlob, followMainOnly, merges, lastActiveDiffId);
 		this.resource = resource;
 		this.monitor = monitor;
 	}
@@ -215,6 +215,7 @@ static class EclipseWalker extends Walker {
 						resource.getType() == IResource.FILE,
 						resource,
 						(flags & IFileHistoryProvider.SINGLE_LINE_OF_DESCENT) == 0,
+						null,
 						activeDiffLeafId, monitor);
 				githistory = walker.collectHistory();
 			} else {

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2006  Robin Rosenberg <robin.rosenberg@dewire.com>
+ *  Copyright (C) 2006, 2007  Robin Rosenberg
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -16,49 +16,188 @@
  */
 package org.spearce.jgit.lib;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.TreeSet;
 
 import junit.textui.TestRunner;
 
-/**
- * A performance test like T0006_DeepSpeedTest, but more
- * realistic since it is smarter.
- */
-public class T0007_WalkerTest extends SpeedTestBase {
+public class T0007_WalkerTest extends RepositoryTestCase {
 
-	protected void setUp() throws Exception {
-		prepare(new String[] { "git", "log", "365bbe0d0caaf2ba74d56556827babf0bc66965d","--","net/netfilter/nf_queue.c" });
+	private static String[] parsePath(String path) {
+		String[] ret = path.split("/");
+		if (ret.length==1 && ret[0].equals(""))
+			return new String[0];
+		return ret;
 	}
 
-	public void testHistoryScan() throws IOException {
-//		long start = System.currentTimeMillis();
-		Repository db = new Repository(new File(kernelrepo));
-		String[] path = { "net", "netfilter", "nf_queue.c" };
-		Walker walker = new Walker(db,db.mapCommit(new ObjectId("365bbe0d0caaf2ba74d56556827babf0bc66965d")),path,true,true,null) {
+	class MyWalker extends Walker {
+		public MyWalker(String start, String path, boolean leafIsBlob,boolean followMainOnly, Boolean merges, ObjectId activeDiffLeafId) throws IOException {
+			super(db, db.mapCommit(start), parsePath(path), leafIsBlob, followMainOnly, merges, activeDiffLeafId);
+		}
 
-			protected void collect(Collection ret, Commit commit, int count) {
-				System.out.println("Got: "+count+" "+commit.getCommitId());
-				ret.add(commit);
-			}
+		protected void collect(Collection ret, Commit commit, int count) {
+			System.out.println("Got: "+count+" "+commit.getCommitId());
+			ObjectId commitId = commit.getCommitId();
+			if (commitId == null)
+				commitId = ObjectId.zeroId();
+			ret.add(commitId);
+		}
+		protected boolean isCancelled() {
+			return false;
+		}
+		
+		ObjectId[] collect() {
+			return (ObjectId[])collectHistory().toArray(new ObjectId[0]);
+		}
 
-			protected boolean isCancelled() {
-				return false;
-			}
-		
-		};
-		Commit[] history = (Commit[])walker.collectHistory().toArray(new Commit[0]);
-		assertEquals(8, history.length);
-		assertEquals("365bbe0d0caaf2ba74d56556827babf0bc66965d",history[0].getCommitId().toString());
-		assertEquals("a4c12d6c5dde48c69464baf7c703e425ee511433",history[1].getCommitId().toString());
-		assertEquals("761a126017e3f001d3f5a574787aa232a9cd5bb5",history[2].getCommitId().toString());
-		assertEquals("22a3e233ca08a2ddc949ba1ae8f6e16ec7ef1a13",history[3].getCommitId().toString());
-		assertEquals("460fbf82c0842cad3f3c744c4dcb81978b7829f3",history[4].getCommitId().toString());
-		assertEquals("272a5322d5219b00a1e541ad9d0d76824df1aa2a",history[5].getCommitId().toString());
-		assertEquals("8e33ba49765484bc6de3a2f8143733713fa93bc1",history[6].getCommitId().toString());
-		assertEquals("826509f8110049663799bc20f2b5b6170e2f78ca",history[7].getCommitId().toString());
-		
+	};
+
+	MyWalker newWalker(String start, String path, boolean leafIsBlob,boolean followMainOnly, Boolean merges, ObjectId activeDiffLeafId) {
+		try {
+			return new MyWalker(start,path,leafIsBlob,followMainOnly,merges,activeDiffLeafId);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/** These are simple case, but account for the <em>last</em> commit */
+	static final String FIRST_COMMIT_ON_MASTER = "6c8b137b1c652731597c89668f417b8695f28dd7";
+
+	/** We are using a path with no match */
+	public void testHistoryScanLast_1_nomatch() {
+		MyWalker walker = newWalker(FIRST_COMMIT_ON_MASTER,"master.x",true,true,null,null);
+		assertEquals(0, walker.collect().length);
+	}
+
+	/** We only want merges, but the path is valid so we do not get any */
+	public void testHistoryScanLast_2_onlymerges() {
+		MyWalker walker = newWalker(FIRST_COMMIT_ON_MASTER,"master.txt",true,true,Boolean.TRUE,null);
+		assertEquals(0, walker.collect().length);
+	}
+
+	/** We do not want merges, the path is valid so we get a null (which means that the commit itself
+	 *  introduces a change, plus the commit which introduces a change against nothing.
+	 */
+	public void testHistoryScanLast_2_nomerges() {
+		MyWalker walker = newWalker(FIRST_COMMIT_ON_MASTER,"master.txt",true,true,Boolean.FALSE,null);
+		ObjectId[] h = walker.collect();
+		assertEquals(2, h.length);
+		assertEquals("0000000000000000000000000000000000000000", h[0].toString());
+		assertEquals(FIRST_COMMIT_ON_MASTER, h[1].toString());
+	}
+
+	/** We accept merges and non-merges, the path is valid so we get a null (which means that the
+	 *  commit itself introduces a change, plus the commit which introduces a change against nothing.
+	 *  Since there are no merges here this means nothing on practice.
+	 */
+	public void testHistoryScanLast_2_any() {
+		MyWalker walker = newWalker(FIRST_COMMIT_ON_MASTER,"master.txt",true,true,null,null);
+		ObjectId[] h = walker.collect();
+		assertEquals(2, h.length);
+		assertEquals("0000000000000000000000000000000000000000", h[0].toString());
+		assertEquals(FIRST_COMMIT_ON_MASTER, h[1].toString());
+	}
+
+	/** We add a reference to compare with. In this case the data does not match the blob so the state
+	 *  after the commit is a change, as is the change introduced by the commit.
+	 */
+	public void testHistoryScanLast_2_any_with_change_from_reference() {
+		MyWalker walker = newWalker(FIRST_COMMIT_ON_MASTER,"master.txt",true,true,null,new ObjectId("82b1d08466e9505f8666b778744f9a3471a70c81"));
+		ObjectId[] h = walker.collect();
+		assertEquals(2, h.length);
+		assertEquals("0000000000000000000000000000000000000000", h[0].toString());
+		assertEquals(FIRST_COMMIT_ON_MASTER, h[1].toString());
+	}
+
+	/** We add a reference to compare with. In this case the reference SHA-1 matches the state in the commit
+	 *  so the commit doesn't change anything, but it does relative to nothing, i.e. log the commit.
+	 */
+	public void testHistoryScanLast_2_any_with_no_change_from_reference() {
+		MyWalker walker = newWalker(FIRST_COMMIT_ON_MASTER,"master.txt",true,true,null,new ObjectId("8230f48330e0055d9e0bc5a2a77718f6dd9324b8"));
+		ObjectId[] h = walker.collect();
+		assertEquals(1,h.length);
+		assertEquals(FIRST_COMMIT_ON_MASTER, h[0].toString());
+	}
+
+	/** Give the null id as a reference, which means the state of the commit vs "index" is a change as is
+	 *  the change vs nothing.
+	 */
+	public void testHistoryScanLast_2_any_file_dropped() {
+		MyWalker walker = newWalker(FIRST_COMMIT_ON_MASTER,"master.txt",true,true,null,ObjectId.zeroId());
+		ObjectId[] h = walker.collect();
+		assertEquals(2, h.length);
+		assertEquals("0000000000000000000000000000000000000000", h[0].toString());
+		assertEquals(FIRST_COMMIT_ON_MASTER, h[1].toString());
+	}
+
+	/** A simple first parent scan of all commits
+	 */
+	public void testSimpleScanFirstParentIncludingMerges() {
+		MyWalker walker = newWalker("master^1^2" /* Second b/b2 */, "", false, true, null, null);
+		ObjectId[] h = walker.collect();
+		assertEquals(8, h.length);
+		assertEquals("0000000000000000000000000000000000000000", h[0].toString());
+		assertEquals("7f822839a2fe9760f386cbbbcb3f92c5fe81def7", h[1].toString());
+		assertEquals("59706a11bde2b9899a278838ef20a97e8f8795d2", h[2].toString());
+		assertEquals("c070ad8c08840c8116da865b2d65593a6bb9cd2a", h[3].toString());
+		assertEquals("d31f5a60d406e831d056b8ac2538d515100c2df2", h[4].toString());
+		assertEquals("83d2f0431bcdc9c2fd2c17b828143be6ee4fbe80", h[5].toString());
+		assertEquals("58be4659bb571194ed4562d04b359d26216f526e", h[6].toString());
+		assertEquals("6c8b137b1c652731597c89668f417b8695f28dd7", h[7].toString());
+	}
+
+	/** A simple first parent scan of all commits, no merges
+	 */
+	public void testSimpleScanFirstParentExcludingMerges() {
+		MyWalker walker = newWalker("master^1^2" /* Second b/b2 */, "", false, true, Boolean.FALSE, null);
+		ObjectId[] h = walker.collect();
+		assertEquals(7, h.length);
+		assertEquals("0000000000000000000000000000000000000000", h[0].toString());
+		assertEquals("7f822839a2fe9760f386cbbbcb3f92c5fe81def7", h[1].toString());
+		assertEquals("59706a11bde2b9899a278838ef20a97e8f8795d2", h[2].toString());
+		assertEquals("d31f5a60d406e831d056b8ac2538d515100c2df2", h[3].toString());
+		assertEquals("83d2f0431bcdc9c2fd2c17b828143be6ee4fbe80", h[4].toString());
+		assertEquals("58be4659bb571194ed4562d04b359d26216f526e", h[5].toString());
+		assertEquals("6c8b137b1c652731597c89668f417b8695f28dd7", h[6].toString());
+	}
+
+	/** A simple first parent scan of all commits, only merges
+	 */
+	public void testSimpleScanFirstParentOnlyMerges() {
+		MyWalker walker = newWalker("master^1^2" /* Second b/b2 */, "", false, true, Boolean.TRUE, null);
+		ObjectId[] h = walker.collect();
+		assertEquals(1, h.length);
+		assertEquals("c070ad8c08840c8116da865b2d65593a6bb9cd2a", h[0].toString());
+	}
+
+	/** Select all commits from a point, starting at a merge
+	 */
+	public void testSimpleScanMultiplePaths() {
+		MyWalker walker = newWalker("a^^" /* 0966a434eb1a025db6b71485ab63a3bfbea520b6 */ , "", false, false, null, null);
+		ObjectId[] h = new TreeSet<ObjectId>(walker.collectHistory()).toArray(new ObjectId[0]);
+		assertEquals(6, h.length);
+		assertEquals("0000000000000000000000000000000000000000", h[0].toString());
+		assertEquals("0966a434eb1a025db6b71485ab63a3bfbea520b6", h[1].toString());
+		assertEquals("2c349335b7f797072cf729c4f3bb0914ecb6dec9", h[2].toString());
+		assertEquals("58be4659bb571194ed4562d04b359d26216f526e", h[3].toString());
+		assertEquals("6c8b137b1c652731597c89668f417b8695f28dd7", h[4].toString());
+		assertEquals("ac7e7e44c1885efb472ad54a78327d66bfc4ecef", h[5].toString());
+	}
+
+	/** Select all commits from a point, starting at a normal commit
+	 */
+	public void testSimpleScanMultiplePaths_2() {
+		MyWalker walker = newWalker("a^" /* d86a2aada2f5e7ccf6f11880bfb9ab404e8a8864 */ , "", false, false, null, null);
+		ObjectId[] h = new TreeSet<ObjectId>(walker.collectHistory()).toArray(new ObjectId[0]);
+		assertEquals(7, h.length);
+		assertEquals("0000000000000000000000000000000000000000", h[0].toString());
+		assertEquals("0966a434eb1a025db6b71485ab63a3bfbea520b6", h[1].toString());
+		assertEquals("2c349335b7f797072cf729c4f3bb0914ecb6dec9", h[2].toString());
+		assertEquals("58be4659bb571194ed4562d04b359d26216f526e", h[3].toString());
+		assertEquals("6c8b137b1c652731597c89668f417b8695f28dd7", h[4].toString());
+		assertEquals("ac7e7e44c1885efb472ad54a78327d66bfc4ecef", h[5].toString());
+		assertEquals("d86a2aada2f5e7ccf6f11880bfb9ab404e8a8864", h[6].toString());
 	}
 
 	public static void main(String[] args) {
