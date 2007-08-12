@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
@@ -53,13 +54,21 @@ public class TopologicalSorter<T> {
 
 	private Set<T> allNodes = new HashSet<T>();
 
-	private Map<T, List<Edge<T>>> allEdges = new HashMap<T, List<Edge<T>>>();
+	private Map<T, List<Edge<T>>> allEdges = new TreeMap<T, List<Edge<T>>>();
 
 	private Map<T, Integer> inCount = new HashMap<T, Integer>();
 
 	private Collection<T> zeroIn; // init later, when we know which comparator to use
 
 	private List<T> entries;
+
+	private Map<T, Integer> internalOrder = new HashMap<T, Integer>();
+
+	public List<Lane> currentLanes = new ArrayList<Lane>();
+
+	int lastLane = 0;
+
+	Map<T, Lane> lane = new HashMap<T, Lane>();
 
 	/**
 	 * Construct a topological sorter.
@@ -223,6 +232,23 @@ public class TopologicalSorter<T> {
 		if (fromEdges != null) {
 			for (Iterator<Edge<T>> i = fromEdges.iterator(); i.hasNext();) {
 				Edge<T> e = i.next();
+				Lane l = lane.get(e.to);
+				if (l == null) {
+					for (Lane m : currentLanes) {
+						if (m.endsAt == from) {
+							l = m;
+							break;
+						}
+					}
+					if (l == null) {
+						l = newLane();
+						l.startsAt = e.from;
+					}
+					l.endsAt = e.to;
+					lane.put(e.to, l);
+				} else {
+					l.endsAt = e.to;
+				}
 				Integer c = inCount.get(e.to);
 				if (c.intValue() == 1) {
 					zeroIn.add(e.to);
@@ -238,12 +264,69 @@ public class TopologicalSorter<T> {
 		}
 	}
 
+	public Lane getLane(T node) {
+		return lane.get(node);
+	}
+
+	Lane newLane() {
+		Lane ret = new Lane();
+		currentLanes.add(ret);
+		return ret;
+	}
+
+	public class Lane {
+		public T endsAt;
+
+		public T startsAt;
+
+		private int number = -1;
+
+		public int numbe1;
+
+		Lane() {
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			return number == ((Lane) obj).number;
+		}
+
+		@Override
+		public int hashCode() {
+			return number;
+		}
+
+		@Override
+		public String toString() {
+			return "L[" + number + "]("+startsAt+" to "+endsAt+")";
+		}
+
+		public List<Lane> getAllLanes() {
+			return currentLanes;
+		}
+
+		public int getNumber() {
+			if (number == -1)
+				number = lastLane++;
+			return number;
+		}
+
+		public TopologicalSorter<T> getSorter() {
+			return TopologicalSorter.this;
+		}
+	}
+
 	T nextZero() {
 		if (zeroIn == null) {
 			zeroIn = new TreeSet<T>(comparator);
 			for (T i : allNodes) {
-				if (inCount.get(i) == null)
+				if (inCount.get(i) == null) {
 					zeroIn.add(i);
+					Lane l = newLane();
+					lane.put(i, l);
+					l.startsAt = i;
+					l.endsAt = i;
+				}
 			}
 		}
 		T ret;
@@ -255,6 +338,7 @@ public class TopologicalSorter<T> {
 		}
 		Iterator<T> i = zeroIn.iterator();
 		ret = i.next();
+		internalOrder.put(ret, new Integer(internalOrder.size()));
 		i.remove();
 		removeallfrom(ret);
 		return ret;
@@ -281,6 +365,10 @@ public class TopologicalSorter<T> {
 		public void remove() {
 			throw new IllegalStateException("Cannot remove element from "
 					+ getClass().getName());
+		}
+
+		public TopologicalSorter<T> getSorter() {
+			return TopologicalSorter.this;
 		}
 	}
 
@@ -412,5 +500,17 @@ public class TopologicalSorter<T> {
 			};
 		}
 		return entries;
+	}
+
+	/**
+	 * Get the internal order, before filtering, of this node. Since the algorithm is
+	 * incremental a null can be returned to indicate the sorted position is not yet
+	 * known.
+	 *
+	 * @param node
+	 * @return The position of a particular node
+	 */
+	public Integer getInternalPosition(T node) {
+		return internalOrder.get(node);
 	}
 }
