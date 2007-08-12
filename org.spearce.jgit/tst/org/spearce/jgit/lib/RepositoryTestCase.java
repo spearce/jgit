@@ -101,7 +101,10 @@ public abstract class RepositoryTestCase extends TestCase {
 		db = new Repository(trash_git);
 		db.create();
 
-		final String[] packs = { "pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f" };
+		final String[] packs = {
+				"pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f",
+				"pack-df2982f284bbabb6bdb59ee3fcc6eb0983e20371"
+		};
 		final File tst = new File("tst");
 		final File packDir = new File(db.getObjectsDirectory(), "pack");
 		for (int k = 0; k < packs.length; k++) {
@@ -110,6 +113,8 @@ public abstract class RepositoryTestCase extends TestCase {
 			copyFile(new File(tst, packs[k] + ".idx"), new File(packDir,
 					packs[k] + ".idx"));
 		}
+
+		copyFile(new File(tst, "packed-refs"), new File(trash_git,"packed-refs"));
 
 		db.scanForPacks();
 	}
