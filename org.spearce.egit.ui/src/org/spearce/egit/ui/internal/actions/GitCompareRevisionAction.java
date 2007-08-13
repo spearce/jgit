@@ -101,14 +101,14 @@ public class GitCompareRevisionAction extends BaseSelectionListenerAction {
 			file1 = file2;
 			file2 = temp;
 		}
-		ITypedElement left;
+		ITypedElement right;
 		resource = getResource(file1);
 		if (resource != null) {
-			left = new LocalResourceTypedElement(resource);
+			right = new LocalResourceTypedElement(resource);
 		} else {
-			left = new GitResourceNode(file1);
+			right = new GitResourceNode(file1);
 		}
-		ITypedElement right = new GitResourceNode(file2);
+		ITypedElement left = new GitResourceNode(file2);
 
 	    openInCompare(left, right);
 	}
