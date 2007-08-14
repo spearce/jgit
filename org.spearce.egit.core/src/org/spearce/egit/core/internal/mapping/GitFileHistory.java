@@ -102,15 +102,18 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 		private final IProgressMonitor monitor;
 		private Map<ObjectId,IFileRevision> revisions = new HashMap<ObjectId, IFileRevision>();
 
-		EclipseWalker(Repository repository, Commit start, String[] relativeResourceName,boolean leafIsBlob,IResource resource,boolean followMainOnly, Boolean merges, ObjectId lastActiveDiffId, IProgressMonitor monitor) {
-			super(repository, start, relativeResourceName, leafIsBlob, followMainOnly, merges, lastActiveDiffId);
+		EclipseWalker(Repository repository, Commit[] starts, String[] relativeResourceName,boolean leafIsBlob,IResource resource,boolean followMainOnly, Boolean merges, ObjectId lastActiveDiffId, IProgressMonitor monitor) {
+			super(repository, starts, relativeResourceName, leafIsBlob, followMainOnly, merges, lastActiveDiffId);
 			this.resource = resource;
 			this.monitor = monitor;
 		}
 
 		protected void collect(ObjectId commitId, int count, int breadth) {
 			super.collect(commitId, count, breadth);
-			revisions.put(commitId, new GitFileRevision(commitId, resource, count));
+			if (commitId.equals(ObjectId.zeroId()))
+				revisions.put(commitId, new GitWorkspaceFileRevision(resource));
+			else
+				revisions.put(commitId, new GitFileRevision(commitId, resource, count));
 		}
 
 		public boolean isCancelled() {
@@ -209,10 +212,18 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 			Collection<IFileRevision> githistory;
 			ObjectId head = repository.resolve("HEAD");
 			if (head != null) {
-				Commit start = repository.mapCommit(head);
+				List<Commit> startList = new ArrayList<Commit>();
+
+				startList.add(repository.mapCommit(head));
+				for(String branch : repository.getBranches()) {
+					Commit commit = repository.mapCommit(branch);
+					if (commit != null)
+						startList.add(commit);
+				}
+				Commit[] starts = startList.toArray(new Commit[startList.size()]);
 				EclipseWalker walker = new EclipseWalker(
 						repository,
-						start,
+						starts,
 						relativeResourceName,
 						resource.getType() == IResource.FILE,
 						resource,
@@ -230,7 +241,6 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 						InputStream wsContents = new BufferedInputStream(wsrevision.getStorage(null).getContents());
 						InputStream headContents = ((IFileRevision)githistory.toArray()[0]).getStorage(null).getContents();
 						if (!streamsEqual(wsContents,headContents)) {
-							ret.add(wsrevision);
 							ret.addAll(githistory);
 						} else {
 							ret.addAll(githistory);

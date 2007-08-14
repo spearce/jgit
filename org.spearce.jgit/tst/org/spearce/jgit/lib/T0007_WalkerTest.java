@@ -29,10 +29,17 @@ public class T0007_WalkerTest extends RepositoryTestCase {
 		return ret;
 	}
 
+	Commit[] mapCommits(String[] name) throws IOException {
+		Commit[] ret = new Commit[name.length];
+		for (int i=0; i<name.length; ++i)
+			ret[i] = db.mapCommit(name[i]);
+		return ret;
+	}
+	
 	class MyWalker extends TopologicalWalker {
 
-		public MyWalker(String start, String path, boolean leafIsBlob,boolean followMainOnly, Boolean merges, ObjectId activeDiffLeafId) throws IOException {
-			super(db, db.mapCommit(start), parsePath(path), leafIsBlob, followMainOnly, merges, activeDiffLeafId);
+		public MyWalker(String[] starts, String path, boolean leafIsBlob,boolean followMainOnly, Boolean merges, ObjectId activeDiffLeafId) throws IOException {
+			super(db, mapCommits(starts), parsePath(path), leafIsBlob, followMainOnly, merges, activeDiffLeafId);
 		}
 
 		protected boolean isCancelled() {
@@ -54,12 +61,16 @@ public class T0007_WalkerTest extends RepositoryTestCase {
 		}
 	};
 
-	MyWalker newWalker(String start, String path, boolean leafIsBlob,boolean followMainOnly, Boolean merges, ObjectId activeDiffLeafId) {
+	MyWalker newWalker(String[] starts, String path, boolean leafIsBlob,boolean followMainOnly, Boolean merges, ObjectId activeDiffLeafId) {
 		try {
-			return new MyWalker(start,path,leafIsBlob,followMainOnly,merges,activeDiffLeafId);
+			return new MyWalker(starts,path,leafIsBlob,followMainOnly,merges,activeDiffLeafId);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	MyWalker newWalker(String start, String path, boolean leafIsBlob,boolean followMainOnly, Boolean merges, ObjectId activeDiffLeafId) {
+		return newWalker(new String[] { start }, path, leafIsBlob, followMainOnly, merges, activeDiffLeafId);
 	}
 
 	/** These are simple case, but account for the <em>last</em> commit */

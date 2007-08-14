@@ -34,10 +34,10 @@ public class TopologicalWalker extends Walker {
 			return topoSorter.lane.get(id);
 		}
 
-		protected TopologicalWalker(final Repository repostory, Commit start,
+		protected TopologicalWalker(final Repository repostory, Commit[] starts,
 				String[] relativeResourceName, boolean leafIsBlob,
 				boolean followMainOnly, Boolean merges, ObjectId activeDiffLeafId) {
-			super(repostory, start, relativeResourceName, leafIsBlob,
+			super(repostory, starts, relativeResourceName, leafIsBlob,
 					followMainOnly, merges, activeDiffLeafId);
 			topoSorter = new TopologicalSorter<ObjectId>() {;
 				@Override

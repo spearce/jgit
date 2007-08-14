@@ -16,7 +16,7 @@ public abstract class Walker {
 	private boolean followMainOnly;
 	protected Repository repository;
 	private ObjectId activeDiffLeafId;
-	private final Commit start;
+	private final Commit[] starts;
 	private final Boolean merges;
 	private Map donewith = new ObjectIdMap();
 	private Collection<Todo> todo = new ArrayList<Todo>(20000);
@@ -48,18 +48,18 @@ public abstract class Walker {
 	 * impleementation listes it as a null commit (without a commit id).
 	 *
 	 * @param repostory The repository to scan
-	 * @param start HEAD in this context
+	 * @param starts HEAD in this context
 	 * @param relativeResourceName The path to log, split by path components
 	 * @param leafIsBlob We refer to a CURRENT state which is a blob
 	 * @param followMainOnly Follow the first parent only
 	 * @param merges Include or eclude merges or both as a tristate Boolean.
 	 * @param activeDiffLeafId a SHA-1 or null to start comparing with.2
 	 */
-	protected Walker(Repository repostory, Commit start,
+	protected Walker(Repository repostory, Commit[] starts,
 			String[] relativeResourceName, boolean leafIsBlob,
 			boolean followMainOnly, Boolean merges, ObjectId activeDiffLeafId) {
 		this.repository = repostory;
-		this.start = start;
+		this.starts = starts;
 		this.relativeResourceName = relativeResourceName;
 		this.leafIsBlob = leafIsBlob;
 		this.followMainOnly = followMainOnly;
@@ -73,19 +73,21 @@ public abstract class Walker {
 	 * @return a Collection of Commit's (default), but subclasses could return another type.
 	 */
 	public Collection collectHistory() {
-		Commit commit = start;
-		ObjectId[] initialResourceHash = new ObjectId[relativeResourceName.length];
-		Arrays.fill(initialResourceHash, ObjectId.zeroId());
-		Commit initialPrevious;
-		if (activeDiffLeafId != null && initialResourceHash.length > 0) {
-			initialResourceHash[initialResourceHash.length-1] = activeDiffLeafId;
-			initialPrevious = new Commit(repository);
-			initialPrevious.setCommitId(ObjectId.zeroId());
-			record(null, initialPrevious.getCommitId());
-		} else {
-			initialPrevious = null;
+		for (int i=0; i<starts.length; ++i) {
+			ObjectId[] initialResourceHash = new ObjectId[relativeResourceName.length];
+			Arrays.fill(initialResourceHash, ObjectId.zeroId());
+			Commit initialPrevious;
+			// The first commit is special. We compare it with a reference
+			if (i == 0 && activeDiffLeafId != null && initialResourceHash.length > 0) {
+				initialResourceHash[initialResourceHash.length-1] = activeDiffLeafId;
+				initialPrevious = new Commit(repository);
+				initialPrevious.setCommitId(ObjectId.zeroId());
+				record(null, initialPrevious.getCommitId());
+			} else {
+				initialPrevious = null;
+			}
+			todo.add(new Todo(0, 0, initialResourceHash, null, starts[i], initialPrevious));
 		}
-		todo.add(new Todo(0, 0, initialResourceHash, null, commit, initialPrevious));
 		for (Iterator<Todo> ti = todo.iterator(); ti.hasNext(); ti=todo.iterator()) {
 			Todo next = ti.next();
 			try {
