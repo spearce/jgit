@@ -19,6 +19,7 @@ package org.spearce.egit.core.internal.mapping;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -36,6 +37,7 @@ import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.TopologicalSorter;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 
@@ -43,13 +45,15 @@ public class GitFileRevision extends FileRevision {
 
 	private final IResource resource;
 
-	private final Commit commit;
+	private final ObjectId commitId;
 
 	private final int count;
 
-	public GitFileRevision(Commit commit, IResource resource, int count) {
+	private TopologicalSorter<ObjectId>.Lane lane;
+
+	public GitFileRevision(ObjectId commitId, IResource resource, int count) {
 		this.count = count;
-		this.commit = commit;
+		this.commitId = commitId;
 		this.resource = resource;
 	}
 
@@ -58,7 +62,7 @@ public class GitFileRevision extends FileRevision {
 	}
 
 	public IStorage getStorage(IProgressMonitor monitor) throws CoreException {
-		return new GitStorage(commit.getTreeId(), resource);
+		return new GitStorage(getCommit().getTreeId(), resource);
 	}
 
 	public boolean isPropertyMissing() {
@@ -71,7 +75,7 @@ public class GitFileRevision extends FileRevision {
 	}
 
 	public long getTimestamp() {
-		PersonIdent author = commit.getAuthor();
+		PersonIdent author = getCommit().getAuthor();
 		if (author != null)
 			return author.getWhen().getTime();
 		else
@@ -79,11 +83,11 @@ public class GitFileRevision extends FileRevision {
 	}
 
 	public String getContentIdentifier() {
-		return commit.getCommitId().toString();
+		return commitId.toString();
 	}
 
 	public String getAuthor() {
-		PersonIdent author = commit.getAuthor();
+		PersonIdent author = getCommit().getAuthor();
 		if (author != null)
 			return author.getName();
 		else
@@ -91,14 +95,18 @@ public class GitFileRevision extends FileRevision {
 	}
 
 	public String getComment() {
-		return commit.getMessage();
+		return getCommit().getMessage();
 	}
 
 	public String toString() {
+		char[] indent = new char[lane.getNumber()];
+		Arrays.fill(indent,' ');
+		String indents = new String(indent);
+		Commit commit = getCommit();
 		if (commit == null)
 			return "WORKSPACE:" + resource.toString();
 		else
-			return commit.toString() + ":" + resource.toString();
+			return indents+commit.toString() + ":" + resource.toString();
 	}
 
 	public URI getURI() {
@@ -109,7 +117,6 @@ public class GitFileRevision extends FileRevision {
 		Repository repository = RepositoryMapping.getMapping(resource).getRepository();
 		Collection allTags = repository.getTags();
 		Collection ret = new ArrayList();
-		ObjectId commitId = commit.getCommitId();
 		for (Iterator i = allTags.iterator(); i.hasNext();) {
 			String tag = (String) i.next();
 			try {
@@ -124,7 +131,15 @@ public class GitFileRevision extends FileRevision {
 	}
 
 	public Commit getCommit() {
-		return commit;
+		try {
+			return RepositoryMapping.getMapping(resource).getRepository().mapCommit(commitId);
+		} catch (IOException e) {
+			throw new Error("Failed to get commit "+commitId, e);
+		}
+	}
+
+	public ObjectId getCommitId() {
+		return commitId;
 	}
 
 	public IResource getResource() {
@@ -133,6 +148,14 @@ public class GitFileRevision extends FileRevision {
 
 	public int getCount() {
 		return count;
+	}
+
+	public TopologicalSorter<ObjectId>.Lane getLane() {
+		return lane;
+	}
+
+	public void setLane(TopologicalSorter<ObjectId>.Lane lane) {
+		this.lane = lane;
 	}
 
 	public TreeEntry getTreeEntry() {
@@ -145,7 +168,8 @@ public class GitFileRevision extends FileRevision {
 				return tree;
 			if (resource.getType() == IResource.FILE)
 				return tree.findBlobMember(path);
-			return tree.findTreeMember(path);
+			else
+				return tree.findBlobMember(path);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

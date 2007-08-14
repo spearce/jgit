@@ -21,8 +21,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IResource;
@@ -36,12 +39,14 @@ import org.eclipse.team.core.history.provider.FileHistory;
 import org.spearce.egit.core.GitProvider;
 import org.spearce.egit.core.GitWorkspaceFileRevision;
 import org.spearce.egit.core.project.RepositoryMapping;
+import org.spearce.jgit.lib.SuperList;
 import org.spearce.jgit.lib.Commit;
+import org.spearce.jgit.lib.MappedList;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.TopologicalWalker;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
-import org.spearce.jgit.lib.Walker;
 import org.spearce.jgit.lib.GitIndex.Entry;
 
 public class GitFileHistory extends FileHistory implements IAdaptable {
@@ -52,7 +57,7 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 
 	private final int flags;
 
-	private IFileRevision[] revisions;
+	private List<IFileRevision> revisions;
 
 	public GitFileHistory(IResource resource, int flags, IProgressMonitor monitor) {
 		this.resource = resource;
@@ -78,54 +83,64 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 		GitFileRevision grevision = (GitFileRevision) revision;
 		ObjectId[] parents = grevision.getCommit().getParentIds();
 		IFileRevision[] ret = new IFileRevision[parents.length];
-		Repository repository = RepositoryMapping.getMapping(resource).getRepository();
 		for (int i = 0; i < parents.length; ++i) {
-			try {
-				ret[i] = new GitFileRevision(repository
-						.mapCommit(parents[i]), grevision
-				.getResource(), -1);
-			} catch (IOException e) {
-				e.printStackTrace();
-				return null;
-			}
+			ret[i] = new GitFileRevision(parents[i], grevision
+					.getResource(), -1);
 		}
 		return ret;
 	}
 
 	public IFileRevision getFileRevision(String id) {
-		if (id.equals("")) {
+		if (id.equals(""))
 			return new GitWorkspaceFileRevision(resource);
-		} else {
-			try {
-				Repository repository = RepositoryMapping.getMapping(resource).getRepository();
-				return new GitFileRevision(repository.mapCommit(id), resource, 0);
-			} catch (IOException e) {
-				e.printStackTrace();
-				return null;
-			}
+		return new GitFileRevision(new ObjectId(id), resource, 0);
+	}
+
+	static class EclipseWalker extends TopologicalWalker {
+
+		IResource resource;
+		private final IProgressMonitor monitor;
+		private Map<ObjectId,IFileRevision> revisions = new HashMap<ObjectId, IFileRevision>();
+
+		EclipseWalker(Repository repository, Commit start, String[] relativeResourceName,boolean leafIsBlob,IResource resource,boolean followMainOnly, Boolean merges, ObjectId lastActiveDiffId, IProgressMonitor monitor) {
+			super(repository, start, relativeResourceName, leafIsBlob, followMainOnly, merges, lastActiveDiffId);
+			this.resource = resource;
+			this.monitor = monitor;
+		}
+
+		protected void collect(ObjectId commitId, int count, int breadth) {
+			super.collect(commitId, count, breadth);
+			revisions.put(commitId, new GitFileRevision(commitId, resource, count));
+		}
+
+		public boolean isCancelled() {
+			return monitor.isCanceled();
+		}
+
+		@Override
+		public Collection collectHistory() {
+			Collection rawList = super.collectHistory();
+			List<IFileRevision> ret = new MappedList<ObjectId,IFileRevision>((List)rawList) {
+				public IFileRevision map(ObjectId in) {
+					GitFileRevision ret = (GitFileRevision)revisions.get(in);
+					ret.setLane(getLane(in));
+					return ret;
+				}
+			};
+			return ret;
+		}
+
+		@Override
+		protected void record(ObjectId pred, ObjectId succ) {
+			super.record(pred, succ);
 		}
 	}
 
-static class EclipseWalker extends Walker {
-	IResource resource;
-	private final IProgressMonitor monitor;
-
-	EclipseWalker(Repository repository, Commit start, String[] relativeResourceName,boolean leafIsBlob,IResource resource,boolean followMainOnly, Boolean merges, ObjectId lastActiveDiffId, IProgressMonitor monitor) {
-		super(repository, start, relativeResourceName, leafIsBlob, followMainOnly, merges, lastActiveDiffId);
-		this.resource = resource;
-		this.monitor = monitor;
-	}
-
-	protected void collect(Collection ret,Commit commit, int count) {
-		ret.add(new GitFileRevision(commit, resource, count));		
-	}
-
-	public boolean isCancelled() {
-		return monitor.isCanceled();
-	}
-}
-
 	public IFileRevision[] getFileRevisions() {
+		return revisions.toArray(new IFileRevision[revisions.size()]);
+	}
+
+	public List<IFileRevision> getFileRevisionsList() {
 		return revisions;
 	}
 
@@ -148,7 +163,7 @@ static class EclipseWalker extends Walker {
 				if (parentIds != null && parentIds.length > 0)
 					current = repository.mapCommit(parentIds[0]);
 				else {
-					revisions = new IFileRevision[0];
+					revisions = Collections.emptyList();
 					return;
 				}
 			}
@@ -160,14 +175,14 @@ static class EclipseWalker extends Walker {
 					((Tree)currentEntry).findTreeMember(relativeResourceName[i]);
 			}
 			if (currentEntry != null)
-				revisions = new IFileRevision[] { new GitFileRevision(current, resource,
-						-1) };
+				revisions = Collections.singletonList(
+						(IFileRevision)new GitFileRevision(current.getCommitId(), resource, -1));
 			else
-				revisions = new IFileRevision[0];
+				revisions = Collections.emptyList();
 
 		} catch (IOException e) {
 			e.printStackTrace();
-			revisions = new IFileRevision[0];
+			revisions = Collections.emptyList();
 		}
 	}
 
@@ -179,7 +194,7 @@ static class EclipseWalker extends Walker {
 
 			long time0 = new Date().getTime();
 			System.out.println("getting file history");
-			List ret = new ArrayList();
+			SuperList<IFileRevision> ret = new SuperList<IFileRevision>();
 			ObjectId activeDiffLeafId = null;
 			RepositoryMapping mapping = RepositoryMapping.getMapping(resource);
 			Repository repository = mapping.getRepository();
@@ -239,11 +254,10 @@ static class EclipseWalker extends Walker {
 			System.out.println("got file history in " + (time1 - time0)
 					/ 1000.0 + "s");
 
-			revisions = (IFileRevision[]) ret.toArray(new IFileRevision[ret
-					.size()]);
+			revisions = ret;
 
 		} else {
-			revisions = new IFileRevision[0];
+			revisions = Collections.emptyList();
 		}
 	}
 
@@ -264,18 +278,18 @@ static class EclipseWalker extends Walker {
 	public IFileRevision[] getTargets(IFileRevision revision) {
 		GitFileRevision grevision = (GitFileRevision) revision;
 		ObjectId targetCommitId = grevision.getCommit().getCommitId();
-		List ret = new ArrayList(4);
-		for (int i = 0; i < revisions.length; ++i) {
-			Commit ref = ((GitFileRevision) revisions[i]).getCommit();
+		List<IFileRevision> ret = new ArrayList<IFileRevision>(4);
+		for(IFileRevision r: revisions) {
+			Commit ref = ((GitFileRevision)r).getCommit();
 			ObjectId[] parentIds = ref.getParentIds();
 			for (int j = 0; j < parentIds.length; ++j) {
 				if (parentIds[j].equals(targetCommitId)) {
-					ret.add(revisions[i]);
+					ret.add(r);
 					break;
 				}
 			}
 		}
-		return (IFileRevision[]) ret.toArray(new IFileRevision[ret.size()]);
+		return ret.toArray(new IFileRevision[ret.size()]);
 	}
 
 	public Object getAdapter(Class adapter) {

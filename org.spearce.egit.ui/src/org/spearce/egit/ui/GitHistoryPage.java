@@ -19,6 +19,7 @@ package org.spearce.egit.ui;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.compare.CompareConfiguration;
@@ -63,7 +64,6 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.team.core.RepositoryProvider;
-import org.eclipse.team.core.history.IFileHistory;
 import org.eclipse.team.core.history.IFileHistoryProvider;
 import org.eclipse.team.core.history.IFileRevision;
 import org.eclipse.team.internal.ui.TeamUIMessages;
@@ -71,6 +71,7 @@ import org.eclipse.team.internal.ui.history.DialogHistoryPageSite;
 import org.eclipse.team.ui.history.HistoryPage;
 import org.eclipse.team.ui.history.IHistoryCompareAdapter;
 import org.eclipse.team.ui.history.IHistoryPageSite;
+import org.spearce.egit.core.internal.mapping.GitFileHistory;
 import org.spearce.egit.core.internal.mapping.GitFileRevision;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.internal.actions.GitCompareRevisionAction;
@@ -91,7 +92,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	private Table table;
 
-	private IFileRevision[] fileRevisions;
+	private List<IFileRevision> fileRevisions;
 
 	protected boolean hintShowDiffNow;
 
@@ -184,7 +185,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					selection2[i] = (IFileRevision) selection[i].getData();
 				}
 
-				compareAction.setCurrentFileRevision(fileRevisions[0]);
+				compareAction.setCurrentFileRevision(fileRevisions.get(0));
 				compareAction.selectionChanged(new StructuredSelection(
 						selection2));
 				IProject project = ((IResource) getInput()).getProject();
@@ -195,7 +196,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 						if (parentIds.length > 0) {
 							ObjectId parentId = parentIds[0];
 							Commit parent = repositoryMapping.getRepository().mapCommit(parentId);
-							IFileRevision previous = new GitFileRevision(parent,
+							IFileRevision previous = new GitFileRevision(parent.getCommitId(),
 									((GitFileRevision)selection2[0]).getResource(),
 									((GitFileRevision)selection2[0]).getCount()+1);
 							compareActionPrev.setCurrentFileRevision(null);
@@ -309,7 +310,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 	class GitHistoryLabelProvider {
 
 		public String getColumnText(int index, int columnIndex) {
-			GitFileRevision element = (GitFileRevision) fileRevisions[index];
+			GitFileRevision element = (GitFileRevision) fileRevisions.get(index);
 			if (columnIndex == 0) {
 				int count = element.getCount();
 				if (count < 0)
@@ -421,7 +422,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 							else
 								item.setText(i, "");
 						}
-						item.setData(fileRevisions[event.index]);
+						item.setData(fileRevisions.get(event.index));
 					}
 				} catch (Throwable b) {
 					b.printStackTrace();
@@ -517,11 +518,11 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					startingPoint = startingPoint.getParent();
 			if (isShowAllVersions())
 				startingPoint = startingPoint.getProject();
-			IFileHistory fileHistoryFor = fileHistoryProvider
+			GitFileHistory fileHistoryFor = (GitFileHistory) fileHistoryProvider
 					.getFileHistoryFor(startingPoint,
 							IFileHistoryProvider.SINGLE_LINE_OF_DESCENT,
 							monitor);
-			fileRevisions = fileHistoryFor.getFileRevisions();
+			fileRevisions = fileHistoryFor.getFileRevisionsList();
 			
 			final Map fnewappliedPatches = newappliedPatches;
 			final Map<ObjectId,Tag[]> ftags = newtags;
@@ -530,7 +531,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			
 				public void run() {
 					table.removeAll();
-					table.setItemCount(fileRevisions.length);
+					table.setItemCount(fileRevisions.size());
 					table.setData(fileRevisions);
 					table.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,true));
 					System.out.println("inputchanged, invoking refresh");
