@@ -40,6 +40,7 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.ILazyContentProvider;
 import org.eclipse.jface.viewers.StructuredSelection;
@@ -57,6 +58,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
@@ -75,10 +77,12 @@ import org.spearce.egit.core.internal.mapping.GitFileHistory;
 import org.spearce.egit.core.internal.mapping.GitFileRevision;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.internal.actions.GitCompareRevisionAction;
-import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Tag;
+import org.spearce.jgit.lib.TopologicalSorter;
 import org.spearce.jgit.lib.Repository.StGitPatch;
+import org.spearce.jgit.lib.TopologicalSorter.Edge;
+import org.spearce.jgit.lib.TopologicalSorter.Lane;
 
 public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		IHistoryCompareAdapter {
@@ -188,30 +192,15 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				compareAction.setCurrentFileRevision(fileRevisions.get(0));
 				compareAction.selectionChanged(new StructuredSelection(
 						selection2));
-				IProject project = ((IResource) getInput()).getProject();
-				RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
-				try {
-					if (selection2.length == 1 && hintShowDiffNow) {
-						ObjectId[] parentIds = ((GitFileRevision)selection2[0]).getCommit().getParentIds();
-						if (parentIds.length > 0) {
-							ObjectId parentId = parentIds[0];
-							Commit parent = repositoryMapping.getRepository().mapCommit(parentId);
-							IFileRevision previous = new GitFileRevision(parent.getCommitId(),
-									((GitFileRevision)selection2[0]).getResource(),
-									((GitFileRevision)selection2[0]).getCount()+1);
-							compareActionPrev.setCurrentFileRevision(null);
-							compareActionPrev.selectionChanged(new StructuredSelection(new IFileRevision[] {selection2[0], previous}));
-							System.out.println("detail="+e.detail);
-							table.getDisplay().asyncExec(new Runnable() {
-								public void run() {
-									if (GitCompareRevisionAction.findReusableCompareEditor(GitHistoryPage.this.getSite().getPage()) != null)
-										compareActionPrev.run();
-								}
-							});
-						}
-					} else {
+				if (selection2.length == 1 && hintShowDiffNow) {
+					ObjectId[] parentIds = ((GitFileRevision)selection2[0]).getCommit().getParentIds();
+					if (parentIds.length > 0) {
+						ObjectId parentId = parentIds[0];
+						IFileRevision previous = new GitFileRevision(parentId,
+								((GitFileRevision)selection2[0]).getResource(),
+								((GitFileRevision)selection2[0]).getCount()+1);
 						compareActionPrev.setCurrentFileRevision(null);
-						compareActionPrev.selectionChanged(new StructuredSelection(new IFileRevision[0]));
+						compareActionPrev.selectionChanged(new StructuredSelection(new IFileRevision[] {selection2[0], previous}));
 						System.out.println("detail="+e.detail);
 						table.getDisplay().asyncExec(new Runnable() {
 							public void run() {
@@ -220,9 +209,9 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 							}
 						});
 					}
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
+				} else {
+					compareActionPrev.setCurrentFileRevision(null);
+					compareActionPrev.selectionChanged(new StructuredSelection(new IFileRevision[0]));
 				}
 				hintShowDiffNow = false;
 			}
@@ -312,14 +301,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		public String getColumnText(int index, int columnIndex) {
 			GitFileRevision element = (GitFileRevision) fileRevisions.get(index);
 			if (columnIndex == 0) {
-				int count = element.getCount();
-				if (count < 0)
-					return "";
-				else
-					if (count == 0)
-						return "HEAD";
-					else
-						return "HEAD~"+count;
+				return "";
 			}
 			
 			if (columnIndex == 1) {
@@ -408,7 +390,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		table.addListener(SWT.SetData, new Listener() {
 			public void handleEvent(Event event) {
 				try {
-					System.out.println("handleEvent "+event.type+" "+event.index);
+//					System.out.println("handleEvent "+event.type+" "+event.index + "=> "+fileRevisions.get(event.index));
 					TableItem item = (TableItem) event.item;
 					Table parent = item.getParent();
 					if (parent == null) {
@@ -424,8 +406,107 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 						}
 						item.setData(fileRevisions.get(event.index));
 					}
+					item.setFont(0,JFaceResources.getBannerFont());
 				} catch (Throwable b) {
 					b.printStackTrace();
+				}
+			}
+		});
+
+		table.addListener(SWT.PaintItem, new Listener() {
+			public void handleEvent(Event event) {
+				TableItem item = (TableItem) event.item;
+				if (event.index == 0) {
+					System.out.println(event);
+					GitFileRevision element = (GitFileRevision)item.getData();
+					ObjectId xx = element.getCommitId();
+					int x = event.x;
+					int y = event.y;
+					int h = event.height;
+					event.gc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_BLUE));
+					event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_RED));
+					event.gc.setLineWidth(2);
+//					RepositoryMapping rm = RepositoryMapping.getMapping(element.getResource());
+					final int DOTRADIUS = 3;
+					final int INTERLANE = 10;
+
+					Lane lane = element.getLane();
+					TopologicalSorter<ObjectId> counter = lane.getSorter();
+					Integer io = counter.getInternalPosition(xx);
+					for (TopologicalSorter<ObjectId>.Lane li : counter.currentLanes) {
+						Integer iost = counter.getInternalPosition(li.startsAt);
+						Integer ioen = counter.getInternalPosition(li.endsAt);
+						List<Edge<ObjectId>> lif = counter.getEdgeFrom(li.endsAt);
+						if (lif != null) {
+							for(TopologicalSorter.Edge<ObjectId> ee : lif) {
+								Integer eio = counter.getInternalPosition(ee.getTo());
+								if (eio == null) { // not yet assigned (further down)
+									if (iost != null && io.intValue() > iost.intValue()) {
+										event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_RED));
+										event.gc.drawLine(x + li.getNumber()*INTERLANE, y, x + li.getNumber()*INTERLANE, y + h);
+									}
+								} else {
+//									System.out.println ("Looking at id "+li.endsAt+" at lane "+li.number+" ending on ="+ioen+" and it's parent "+ee.to+ " ends at "+eio);
+									if (io.intValue() < eio.intValue() && /*ECLIPSEBUG*/ iost!=null && /*ENDBUG*/ io.intValue() > iost.intValue()) {
+										if (io.intValue() >= ioen.intValue()) {
+											event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_MAGENTA));
+											event.gc.drawLine(x + li.getNumber()*INTERLANE, y, x + li.getNumber()*INTERLANE, y + h);
+										}
+									} else {
+										if (io.intValue() == eio.intValue()) {
+											// COPY
+											int fromn = lane.getNumber();
+											int ton = li.getNumber();
+											int x1 = x + fromn * INTERLANE;
+											int x2 = x + ton * INTERLANE;
+//											if (fromn < ton)
+//												x1 += DOTRADIUS;
+//											else
+//												x1 -= DOTRADIUS;
+											event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
+											// _|
+											if (x1 < x2)
+												event.gc.drawArc(x1 - (x2-x1), y-h/2, (x2-x1)*2, h, 270, 90);
+											else
+												event.gc.drawArc(x2, y-h/2, (x1-x2)*2, h, 180, 90);
+//											event.gc.drawLine(x1, y + h/2, x2, y + h/2);
+//											event.gc.drawLine(x2, y, x2, y + h/2);
+										}
+									}
+								}
+							}
+						}
+						if (li.startsAt == xx) {
+							// COPY
+							int fromn = lane.getNumber();
+							int ton = li.getNumber();
+							int x1 = x + fromn * INTERLANE;
+							int x2 = x + ton * INTERLANE;
+							if (fromn < ton)
+								x1 += DOTRADIUS;
+							else
+								x1 -= DOTRADIUS;
+							event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN));
+							if (x1 < x2)
+								event.gc.drawArc(x1 - (x2-x1), y+h/2, (x2-x1)*2, h, 0, 90);
+							else
+								event.gc.drawArc(x2, y+h/2, (x1-x2)*2, h, 180, 90);
+//							event.gc.drawLine(x1, y + h/2, x2, y + h/2);
+//							event.gc.drawLine(x2, y + h/2, x2, y + h);
+							// END COPY
+						}
+						if (iost!=null && io.intValue() > iost.intValue()) {
+							if (ioen == null || io.intValue() < ioen.intValue()) {
+								event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
+								event.gc.drawLine(x + li.getNumber()*INTERLANE, y, x + li.getNumber()*INTERLANE, y + h);
+							}
+							if (ioen == null || io.intValue() == ioen.intValue()) {
+								event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
+								event.gc.drawLine(x + li.getNumber()*INTERLANE, y, x + li.getNumber()*INTERLANE, y + h/2);
+							}
+						}
+					}
+					event.gc.fillOval(x + lane.getNumber() *  INTERLANE - DOTRADIUS, y + h/2 - DOTRADIUS, DOTRADIUS*2, DOTRADIUS*2);
 				}
 			}
 		});
@@ -518,12 +599,11 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					startingPoint = startingPoint.getParent();
 			if (isShowAllVersions())
 				startingPoint = startingPoint.getProject();
-			GitFileHistory fileHistoryFor = (GitFileHistory) fileHistoryProvider
+			GitFileHistory fileHistoryFor = (GitFileHistory)fileHistoryProvider
 					.getFileHistoryFor(startingPoint,
-							IFileHistoryProvider.SINGLE_LINE_OF_DESCENT,
+							-1,
 							monitor);
 			fileRevisions = fileHistoryFor.getFileRevisionsList();
-			
 			final Map fnewappliedPatches = newappliedPatches;
 			final Map<ObjectId,Tag[]> ftags = newtags;
 
@@ -532,12 +612,15 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				public void run() {
 					table.removeAll();
 					table.setItemCount(fileRevisions.size());
-					table.setData(fileRevisions);
+					table.setData("X");
 					table.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,true));
 					System.out.println("inputchanged, invoking refresh");
 					appliedPatches = fnewappliedPatches;
 					tags = ftags;
+					long t0 = System.currentTimeMillis();
 					viewer.refresh();
+					long t1 = System.currentTimeMillis();
+					System.out.println("refresh in "+(t1-t0)/1000.0+"s");
 					done(Status.OK_STATUS);
 				}
 			
