@@ -414,6 +414,24 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		});
 
 		table.addListener(SWT.PaintItem, new Listener() {
+
+			final int[] colors = {
+				SWT.COLOR_BLACK,
+				SWT.COLOR_BLUE,
+				SWT.COLOR_CYAN,
+				SWT.COLOR_DARK_BLUE,
+				SWT.COLOR_DARK_CYAN,
+				SWT.COLOR_DARK_GREEN,
+				SWT.COLOR_DARK_MAGENTA,
+				SWT.COLOR_DARK_RED,
+				SWT.COLOR_DARK_YELLOW,
+				SWT.COLOR_GRAY,
+				SWT.COLOR_GREEN,
+				SWT.COLOR_MAGENTA,
+				SWT.COLOR_RED,
+//				SWT.COLOR_WHITE,
+				SWT.COLOR_YELLOW
+			};
 			public void handleEvent(Event event) {
 				TableItem item = (TableItem) event.item;
 				if (event.index == 0) {
@@ -423,8 +441,6 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					int x = event.x;
 					int y = event.y;
 					int h = event.height;
-					event.gc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_BLUE));
-					event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_RED));
 					event.gc.setLineWidth(2);
 //					RepositoryMapping rm = RepositoryMapping.getMapping(element.getResource());
 					final int DOTRADIUS = 3;
@@ -442,14 +458,16 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 								Integer eio = counter.getInternalPosition(ee.getTo());
 								if (eio == null) { // not yet assigned (further down)
 									if (iost != null && io.intValue() > iost.intValue()) {
-										event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_RED));
+										event.gc.setForeground(Display.getCurrent().getSystemColor(colors[li.getNumber()%colors.length]));
+//										event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_RED));
 										event.gc.drawLine(x + li.getNumber()*INTERLANE, y, x + li.getNumber()*INTERLANE, y + h);
 									}
 								} else {
 //									System.out.println ("Looking at id "+li.endsAt+" at lane "+li.number+" ending on ="+ioen+" and it's parent "+ee.to+ " ends at "+eio);
 									if (io.intValue() < eio.intValue() && /*ECLIPSEBUG*/ iost!=null && /*ENDBUG*/ io.intValue() > iost.intValue()) {
 										if (io.intValue() >= ioen.intValue()) {
-											event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_MAGENTA));
+											event.gc.setForeground(Display.getCurrent().getSystemColor(colors[li.getNumber()%colors.length]));
+//											event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_MAGENTA));
 											event.gc.drawLine(x + li.getNumber()*INTERLANE, y, x + li.getNumber()*INTERLANE, y + h);
 										}
 									} else {
@@ -463,7 +481,8 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 //												x1 += DOTRADIUS;
 //											else
 //												x1 -= DOTRADIUS;
-											event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
+											event.gc.setForeground(Display.getCurrent().getSystemColor(colors[li.getNumber()%colors.length]));
+//											event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
 											// _|
 											if (x1 < x2)
 												event.gc.drawArc(x1 - (x2-x1), y-h/2, (x2-x1)*2, h, 270, 90);
@@ -486,7 +505,8 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 								x1 += DOTRADIUS;
 							else
 								x1 -= DOTRADIUS;
-							event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN));
+//							event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN));
+							event.gc.setForeground(Display.getCurrent().getSystemColor(colors[li.getNumber()%colors.length]));
 							if (x1 < x2)
 								event.gc.drawArc(x1 - (x2-x1), y+h/2, (x2-x1)*2, h, 0, 90);
 							else
@@ -497,15 +517,18 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 						}
 						if (iost!=null && io.intValue() > iost.intValue()) {
 							if (ioen == null || io.intValue() < ioen.intValue()) {
-								event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
+//								event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
+								event.gc.setForeground(Display.getCurrent().getSystemColor(colors[li.getNumber()%colors.length]));
 								event.gc.drawLine(x + li.getNumber()*INTERLANE, y, x + li.getNumber()*INTERLANE, y + h);
 							}
 							if (ioen == null || io.intValue() == ioen.intValue()) {
-								event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
+//								event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
+								event.gc.setForeground(Display.getCurrent().getSystemColor(colors[li.getNumber()%colors.length]));
 								event.gc.drawLine(x + li.getNumber()*INTERLANE, y, x + li.getNumber()*INTERLANE, y + h/2);
 							}
 						}
 					}
+					event.gc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
 					event.gc.fillOval(x + lane.getNumber() *  INTERLANE - DOTRADIUS, y + h/2 - DOTRADIUS, DOTRADIUS*2, DOTRADIUS*2);
 				}
 			}
