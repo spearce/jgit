@@ -160,7 +160,7 @@ public class Tree extends TreeEntry implements Treeish {
 	}
 
 	public FileTreeEntry addFile(final String name) throws IOException {
-		return addFile(name.getBytes(Constants.CHARACTER_ENCODING), 0);
+		return addFile(Repository.gitInternalSlash(name.getBytes(Constants.CHARACTER_ENCODING)), 0);
 	}
 
 	public FileTreeEntry addFile(final byte[] s, final int offset)
@@ -195,7 +195,7 @@ public class Tree extends TreeEntry implements Treeish {
 	}
 
 	public Tree addTree(final String name) throws IOException {
-		return addTree(name.getBytes(Constants.CHARACTER_ENCODING), 0);
+		return addTree(Repository.gitInternalSlash(name.getBytes(Constants.CHARACTER_ENCODING)), 0);
 	}
 
 	public Tree addTree(final byte[] s, final int offset) throws IOException {
@@ -293,7 +293,7 @@ public class Tree extends TreeEntry implements Treeish {
 	}
 
 	public TreeEntry findMember(final String s, byte slast) throws IOException {
-		return findMember(s.getBytes(Constants.CHARACTER_ENCODING), slast, 0);
+		return findMember(Repository.gitInternalSlash(s.getBytes(Constants.CHARACTER_ENCODING)), slast, 0);
 	}
 
 	public TreeEntry findMember(final byte[] s, final byte slast, final int offset)

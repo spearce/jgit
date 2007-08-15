@@ -211,9 +211,8 @@ public class GitIndex {
 		static byte[] makeKey(File wd, File f) {
 			if (!f.getPath().startsWith(wd.getPath()))
 				throw new Error("Path is not in working dir");
-			String relName = f.getPath().substring(wd.getPath().length() + 1)
-					.replace(File.separatorChar, '/');
-			return relName.getBytes();
+			String relName = f.getPath().substring(wd.getPath().length() + 1);
+			return Repository.gitInternalSlash(relName.getBytes());
 		}
 
 		public Entry(byte[] key, File f, int stage, GitIndex index)
@@ -633,7 +632,7 @@ public class GitIndex {
 	}
 
 	public Entry getEntry(String path) throws UnsupportedEncodingException {
-		return (Entry) entries.get(path.getBytes("ISO-8859-1"));
+		return (Entry) entries.get(Repository.gitInternalSlash(path.getBytes("ISO-8859-1")));
 	}
 
 	public Repository getRepository() {
