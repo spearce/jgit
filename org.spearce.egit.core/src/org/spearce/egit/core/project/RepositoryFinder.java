@@ -110,7 +110,7 @@ public class RepositoryFinder {
 							register(c, pCfg.getParentFile(), s);
 							break;
 						}
-						s = fsLoc.getName() + "/" + s;
+						s = p.getName() + "/" + s;
 						p = p.getParentFile();
 					}
 				}
