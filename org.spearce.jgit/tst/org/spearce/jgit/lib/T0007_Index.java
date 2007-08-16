@@ -67,6 +67,10 @@ public class T0007_Index extends RepositoryTestCase {
 		index.write();
 // native git doesn't like an empty index
 // assertEquals(0,system(trash,"git status"));
+
+		GitIndex indexr = new GitIndex(db);
+		indexr.read();
+		assertEquals(0, indexr.getMembers().length);
 	}
 
 	public void testCreateSimpleSortTestIndex() throws Exception {
@@ -205,6 +209,18 @@ public class T0007_Index extends RepositoryTestCase {
 		assertEquals("a/c/c", members[3].getName());
 		assertEquals("a/d", members[4].getName());
 		assertEquals("a:b", members[5].getName());
+
+		// reread and test
+		GitIndex indexr = new GitIndex(db);
+		indexr.read();
+		Entry[] membersr = indexr.getMembers();
+		assertEquals(6, membersr.length);
+		assertEquals("a.b", membersr[0].getName());
+		assertEquals("a/a/a/a", membersr[1].getName());
+		assertEquals("a/b", membersr[2].getName());
+		assertEquals("a/c/c", membersr[3].getName());
+		assertEquals("a/d", membersr[4].getName());
+		assertEquals("a:b", membersr[5].getName());
 	}
 
 	public void testDelete() throws Exception {
