@@ -9,7 +9,18 @@ import org.spearce.jgit.lib.GitIndex.Entry;
 
 public class T0007_Index extends RepositoryTestCase {
 
-	private int system(File dir, String cmd) throws IOException,
+	static boolean canrungitstatus;
+	static {
+		try {
+			canrungitstatus = system(new File("."),"git --version") == 0;
+		} catch (IOException e) {
+			System.out.println("Warning: cannot invvoke native git to validate index");
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static int system(File dir, String cmd) throws IOException,
 			InterruptedException {
 		final Process process = Runtime.getRuntime().exec(cmd, null, dir);
 		new Thread() {
@@ -68,12 +79,22 @@ public class T0007_Index extends RepositoryTestCase {
 		index.add(trash, new File(trash, "a:b"));
 		index.add(trash, new File(trash, "a.b"));
 		index.write();
-		assertEquals(0, system(trash, "git status"));
 
 		assertEquals("a/b", index.getEntry("a/b").getName());
 		assertEquals("a:b", index.getEntry("a:b").getName());
 		assertEquals("a.b", index.getEntry("a.b").getName());
 		assertNull(index.getEntry("a*b"));
+
+		// Repeat test for re-read index
+		GitIndex indexr = new GitIndex(db);
+		indexr.read();
+		assertEquals("a/b", indexr.getEntry("a/b").getName());
+		assertEquals("a:b", indexr.getEntry("a:b").getName());
+		assertEquals("a.b", indexr.getEntry("a.b").getName());
+		assertNull(indexr.getEntry("a*b"));
+
+		if (canrungitstatus)
+			assertEquals(0, system(trash, "git status"));
 	}
 
 	public void testUpdateSimpleSortTestIndex() throws Exception {
@@ -88,7 +109,8 @@ public class T0007_Index extends RepositoryTestCase {
 		writeTrashFile("a/b", "data:a/b modified");
 		index.add(trash, new File(trash, "a/b"));
 		index.write();
-		assertEquals(0, system(trash, "git status"));
+		if (canrungitstatus)
+			assertEquals(0, system(trash, "git status"));
 	}
 
 	public void testWriteTree() throws Exception {
@@ -101,12 +123,15 @@ public class T0007_Index extends RepositoryTestCase {
 		index.add(trash, new File(trash, "a:b"));
 		index.add(trash, new File(trash, "a.b"));
 		index.write();
-		assertEquals(0, system(trash, "git status"));
+
 		ObjectId id = index.writeTree();
 		assertEquals("c696abc3ab8e091c665f49d00eb8919690b3aec3", id.toString());
 		
 		writeTrashFile("a/b", "data:a/b");
 		index.add(trash, new File(trash, "a/b"));
+
+		if (canrungitstatus)
+			assertEquals(0, system(trash, "git status"));
 	}
 
 	public void testReadTree() throws Exception {
@@ -120,7 +145,7 @@ public class T0007_Index extends RepositoryTestCase {
 		index.add(trash, new File(trash, "a:b"));
 		index.add(trash, new File(trash, "a.b"));
 		index.write();
-		assertEquals(0, system(trash, "git status"));
+
 		ObjectId id = index.writeTree();
 		System.out.println("wrote id " + id);
 		assertEquals("c696abc3ab8e091c665f49d00eb8919690b3aec3", id.toString());
@@ -135,6 +160,17 @@ public class T0007_Index extends RepositoryTestCase {
 		assertEquals("a:b", members[2].getName());
 		assertEquals(3, members.length);
 
+		GitIndex indexr = new GitIndex(db);
+		indexr.read();
+		Entry[] membersr = indexr.getMembers();
+		assertEquals(3, membersr.length);
+		assertEquals("a.b", membersr[0].getName());
+		assertEquals("a/b", membersr[1].getName());
+		assertEquals("a:b", membersr[2].getName());
+		assertEquals(3, membersr.length);
+
+		if (canrungitstatus)
+			assertEquals(0, system(trash, "git status"));
 	}
 
 	public void testReadTree2() throws Exception {
@@ -181,12 +217,19 @@ public class T0007_Index extends RepositoryTestCase {
 		index.add(trash, new File(trash, "a:b"));
 		index.add(trash, new File(trash, "a.b"));
 		index.write();
-		assertEquals(0, system(trash, "git status"));
 		index.writeTree();
 		index.remove(trash, new File(trash, "a:b"));
 		index.write();
 		assertEquals("a.b", index.getMembers()[0].getName());
 		assertEquals("a/b", index.getMembers()[1].getName());
+
+		GitIndex indexr = new GitIndex(db);
+		indexr.read();
+		assertEquals("a.b", indexr.getMembers()[0].getName());
+		assertEquals("a/b", indexr.getMembers()[1].getName());
+
+		if (canrungitstatus)
+			assertEquals(0, system(trash, "git status"));
 	}
 
 	public void testCheckout() throws Exception {
@@ -200,7 +243,6 @@ public class T0007_Index extends RepositoryTestCase {
 		index.add(trash, acolonb);
 		index.add(trash, adotb);
 		index.write();
-		assertEquals(0, system(trash, "git status"));
 		index.writeTree();
 		delete(aslashb);
 		delete(acolonb);
@@ -217,6 +259,9 @@ public class T0007_Index extends RepositoryTestCase {
 		assertEquals("data:a/b", content(aslashb));
 		assertEquals("data:a:b", content(acolonb));
 		assertEquals("data:a.b", content(adotb));
+
+		if (canrungitstatus)
+			assertEquals(0, system(trash, "git status"));
 	}
 
 	private String content(File f) throws IOException {

@@ -26,9 +26,9 @@ import java.util.Arrays;
 import junit.framework.TestCase;
 
 public abstract class RepositoryTestCase extends TestCase {
-	protected static final File trash = new File("trash");
+	protected File trash;
 
-	protected static final File trash_git = new File(trash, ".git");
+	protected File trash_git;
 
 	protected static final PersonIdent jauthor;
 
@@ -53,7 +53,7 @@ public abstract class RepositoryTestCase extends TestCase {
 		}
 		dir.delete();
 		if (dir.exists()) {
-			throw new IllegalStateException("Failed to delete " + dir);
+			System.out.println("Warning: Failed to delete " + dir);
 		}
 	}
 
@@ -70,7 +70,7 @@ public abstract class RepositoryTestCase extends TestCase {
 		fos.close();
 	}
 
-	protected static File writeTrashFile(final String name, final String data)
+	protected File writeTrashFile(final String name, final String data)
 			throws IOException {
 		File tf = new File(trash, name);
 		File tfp = tf.getParentFile();
@@ -97,7 +97,17 @@ public abstract class RepositoryTestCase extends TestCase {
 
 	public void setUp() throws Exception {
 		super.setUp();
+		trash = new File("trash"+System.currentTimeMillis());
+		trash_git = new File(trash, ".git");
 		recursiveDelete(trash);
+
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+				recursiveDelete(trash);
+			}
+		});
+
 		db = new Repository(trash_git);
 		db.create();
 
