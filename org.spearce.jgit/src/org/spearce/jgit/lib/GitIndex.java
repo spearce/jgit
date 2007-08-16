@@ -12,9 +12,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.channels.FileChannel.MapMode;
 import java.security.MessageDigest;
 import java.util.Comparator;
 import java.util.Date;
@@ -100,13 +98,17 @@ public class GitIndex {
 		statDirty = false;
 		cache = new RandomAccessFile(cacheFile, "r");
 		try {
-			MappedByteBuffer map = cache.getChannel().map(MapMode.READ_ONLY, 0,
-					cacheFile.length());
-			map.order(ByteOrder.BIG_ENDIAN);
-			header = new Header(map);
+			FileChannel channel = cache.getChannel();
+			ByteBuffer buffer = ByteBuffer.allocateDirect((int) cacheFile.length());
+			buffer.order(ByteOrder.BIG_ENDIAN);
+			int j = channel.read(buffer);
+			if (j != buffer.capacity())
+				throw new IOException("Could not read index in one go, only "+j+" out of "+buffer.capacity()+" read");
+			buffer.flip();
+			header = new Header(buffer);
 			entries.clear();
 			for (int i = 0; i < header.entries; ++i) {
-				Entry entry = new Entry(this, map);
+				Entry entry = new Entry(this, buffer);
 				entries.put(entry.name, entry);
 			}
 			long t1 = System.currentTimeMillis();
