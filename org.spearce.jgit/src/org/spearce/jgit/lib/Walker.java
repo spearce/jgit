@@ -4,12 +4,11 @@
 package org.spearce.jgit.lib;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 public abstract class Walker {
 	private String[] relativeResourceName;
@@ -20,7 +19,7 @@ public abstract class Walker {
 	private final Commit start;
 	private final Boolean merges;
 	private Map donewith = new ObjectIdMap();
-	private Set<Todo> todo = new HashSet<Todo>(20000);
+	private Collection<Todo> todo = new ArrayList<Todo>(20000);
 
 	protected abstract boolean isCancelled();
 	
@@ -212,8 +211,10 @@ class Todo {
 						Commit mergeParent;
 						try {
 							mergeParent = repository.mapCommit(mergeParentId);
-							todo.add(new Todo(0, breadth + 1, lastResourceHash,
-									currentEntry, mergeParent, previous));
+							Todo newTodo = new Todo(0, breadth + 1, lastResourceHash,
+									currentEntry, mergeParent, previous);
+							if (!todo.contains(todo))
+								todo.add(newTodo);
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
