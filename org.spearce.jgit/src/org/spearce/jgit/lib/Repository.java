@@ -371,13 +371,17 @@ public class Repository {
 	private Ref readRefBasic(String name) throws IOException {
 		int depth = 0;
 		REF_READING: do {
-			ObjectId id = packedRefs.get(name);
-			if (id != null)
-				return new Ref(null, id);
-
+			// prefer unpacked ref to packed ref
 			final File f = new File(getDirectory(), name);
-			if (!f.isFile())
+			if (!f.isFile()) {
+				// look for packed ref, since this one doesn't exist
+				ObjectId id = packedRefs.get(name);
+				if (id != null)
+					return new Ref(null, id);
+				
+				// no packed ref found, return blank one
 				return new Ref(name, null);
+			}
 
 			final BufferedReader br = new BufferedReader(new FileReader(f));
 			try {
