@@ -660,6 +660,13 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 			if (newInput == null)
 				return;
+			if (newInput == oldInput)
+				return;
+			IProject project = ((IResource) getInput()).getProject();
+			RepositoryProvider provider = RepositoryProvider.getProvider(project);
+			if (!(provider instanceof GitProvider))
+				return;
+
 			System.out.println(new Date()+"inputChanged(" + viewer + "," + oldInput + ","
 					+ newInput);
 			if (historyRefreshJob.cancel()) {
