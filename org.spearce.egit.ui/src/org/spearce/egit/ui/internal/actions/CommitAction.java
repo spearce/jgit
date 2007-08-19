@@ -281,7 +281,7 @@ public class CommitAction implements IObjectActionDelegate {
 					System.out.println("Phantom file, so removing from index");
 					continue;
 				} else {
-					if (idxEntry.update(thisfile, repository))
+					if (idxEntry.update(thisfile))
 						index.write();
 				}
 			}

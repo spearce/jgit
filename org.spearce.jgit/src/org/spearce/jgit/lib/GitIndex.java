@@ -77,18 +77,18 @@ public class GitIndex {
 	}
 
 	public void add(File wd, File f) throws IOException {
-		byte[] key = Entry.makeKey(wd, f);
+		byte[] key = makeKey(wd, f);
 		Entry e = (Entry) entries.get(key);
 		if (e == null) {
-			e = new Entry(key, f, 0, this);
+			e = new Entry(key, f, 0);
 			entries.put(key, e);
 		} else {
-			e.update(f, db);
+			e.update(f);
 		}
 	}
 
 	public boolean remove(File wd, File f) {
-		byte[] key = Entry.makeKey(wd, f);
+		byte[] key = makeKey(wd, f);
 		return entries.remove(key) != null;
 	}
 
@@ -108,7 +108,7 @@ public class GitIndex {
 			header = new Header(buffer);
 			entries.clear();
 			for (int i = 0; i < header.entries; ++i) {
-				Entry entry = new Entry(this, buffer);
+				Entry entry = new Entry(buffer);
 				entries.put(entry.name, entry);
 			}
 			long t1 = System.currentTimeMillis();
@@ -181,7 +181,48 @@ public class GitIndex {
 		}
 	}
 
-	public static class Entry {
+	static Method canExecute;
+	static {
+		try {
+			canExecute = File.class.getMethod("canExecute", (Class[]) null);
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			System.out.println("This vm cannot handle execute file permission. Feature disabled");
+		}
+	}
+
+	/*
+	 * JDK1.6 has file.canExecute
+	 *
+	 * if (file.canExecute() != FileMode.EXECUTABLE_FILE.equals(mode))
+	 * return true;
+	 */
+	boolean File_canExecute(File f) {
+		if (canExecute != null) {
+			try {
+				return ((Boolean) canExecute.invoke(f, (Object[]) null))
+						.booleanValue();
+			} catch (IllegalArgumentException e) {
+				throw new Error(e);
+			} catch (IllegalAccessException e) {
+				throw new Error(e);
+			} catch (InvocationTargetException e) {
+				throw new Error(e);
+			}
+		} else
+			return false;
+	}
+
+	static byte[] makeKey(File wd, File f) {
+		if (!f.getPath().startsWith(wd.getPath()))
+			throw new Error("Path is not in working dir");
+		String relName = f.getPath().substring(wd.getPath().length() + 1)
+				.replace(File.separatorChar, '/');
+		return relName.getBytes();
+	}
+
+	public class Entry {
 		private long ctime;
 
 		private long mtime;
@@ -206,18 +247,8 @@ public class GitIndex {
 
 		private int stage;
 
-		private GitIndex theIndex;
-
-		static byte[] makeKey(File wd, File f) {
-			if (!f.getPath().startsWith(wd.getPath()))
-				throw new Error("Path is not in working dir");
-			String relName = f.getPath().substring(wd.getPath().length() + 1);
-			return Repository.gitInternalSlash(relName.getBytes());
-		}
-
-		public Entry(byte[] key, File f, int stage, GitIndex index)
+		public Entry(byte[] key, File f, int stage)
 				throws IOException {
-			theIndex = index;
 			ctime = f.lastModified() * 1000000L;
 			mtime = ctime; // we use same here
 			dev = -1;
@@ -226,15 +257,14 @@ public class GitIndex {
 			uid = -1;
 			gid = -1;
 			size = (int) f.length();
-			ObjectWriter writer = new ObjectWriter(theIndex.db);
+			ObjectWriter writer = new ObjectWriter(db);
 			sha1 = writer.writeBlob(f);
 			name = key;
 			flags = (short) ((stage << 12) | name.length); // TODO: fix flags
 		}
 
-		public Entry(TreeEntry f, int stage, GitIndex index)
+		public Entry(TreeEntry f, int stage)
 				throws UnsupportedEncodingException {
-			theIndex = index;
 			ctime = -1; // hmm
 			mtime = -1;
 			dev = -1;
@@ -248,8 +278,7 @@ public class GitIndex {
 			flags = (short) ((stage << 12) | name.length); // TODO: fix flags
 		}
 
-		Entry(GitIndex index, ByteBuffer b) {
-			theIndex = index;
+		Entry(ByteBuffer b) {
 			int startposition = b.position();
 			ctime = b.getInt() * 1000000000L + (b.getInt() % 1000000000L);
 			mtime = b.getInt() * 1000000000L + (b.getInt() % 1000000000L);
@@ -272,7 +301,7 @@ public class GitIndex {
 									+ name.length + 8) & ~7));
 		}
 
-		public boolean update(File f, Repository db) throws IOException {
+		public boolean update(File f) throws IOException {
 			boolean modified = false;
 			long lm = f.lastModified() * 1000000L;
 			if (mtime != lm)
@@ -317,47 +346,6 @@ public class GitIndex {
 				buf.put((byte) 0);
 		}
 
-		static Method canExecute;
-		static {
-			try {
-				canExecute = File.class.getMethod("canExecute", (Class[]) null);
-			} catch (SecurityException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (NoSuchMethodException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-		/*
-		 * JDK1.6 has file.canExecute
-		 * 
-		 * if (file.canExecute() != FileMode.EXECUTABLE_FILE.equals(mode))
-		 * return true;
-		 */
-		boolean File_canExecute(File f) {
-			if (canExecute != null) {
-				try {
-					return ((Boolean) canExecute.invoke(f, (Object[]) null))
-							.booleanValue();
-				} catch (IllegalArgumentException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					return false;
-				} catch (IllegalAccessException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					return false;
-				} catch (InvocationTargetException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					return false;
-				}
-			} else
-				return false;
-		}
-
 		/**
 		 * Check if an entry's content is different from the cache, 
 		 * 
@@ -395,11 +383,14 @@ public class GitIndex {
 			// JDK1.6 has file.canExecute
 			// if (file.canExecute() != FileMode.EXECUTABLE_FILE.equals(mode))
 			// return true;
+			final int exebits = FileMode.EXECUTABLE_FILE.getBits()
+					^ FileMode.REGULAR_FILE.getBits();
+
 			if (FileMode.EXECUTABLE_FILE.equals(mode)) {
 				if (!File_canExecute(file)&& canExecute != null)
 					return true;
 			} else {
-				if (FileMode.REGULAR_FILE.equals(mode)) {
+				if (FileMode.REGULAR_FILE.equals(mode&~exebits)) {
 					if (!file.isFile())
 						return true;
 					if (File_canExecute(file) && canExecute != null)
@@ -429,12 +420,11 @@ public class GitIndex {
 
 				try {
 					InputStream is = new FileInputStream(file);
-					ObjectWriter objectWriter = new ObjectWriter(theIndex.db);
+					ObjectWriter objectWriter = new ObjectWriter(db);
 					try {
 						ObjectId newId = objectWriter.computeBlobSha1(file
 								.length(), is);
 						boolean ret = !newId.equals(sha1);
-						theIndex.statDirty = true;
 						return ret;
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -533,7 +523,7 @@ public class GitIndex {
 			if (te instanceof Tree) {
 				readTree(name, (Tree) te);
 			} else {
-				Entry e = new Entry(te, 0, this);
+				Entry e = new Entry(te, 0);
 				entries.put(name.getBytes("UTF-8"), e);
 			}
 		}

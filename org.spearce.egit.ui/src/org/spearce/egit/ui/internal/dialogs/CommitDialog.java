@@ -284,7 +284,7 @@ public class CommitDialog extends Dialog {
 						index = repo.getIndex();
 						Entry entry = index.getEntry(map.getRepoRelativePath(file));
 						if (entry != null && entry.isModified(map.getWorkDir())) {
-							entry.update(new File(map.getWorkDir(), entry.getName()), repo);
+							entry.update(new File(map.getWorkDir(), entry.getName()));
 							if (!changedIndexes.contains(index))
 								changedIndexes.add(index);
 						}

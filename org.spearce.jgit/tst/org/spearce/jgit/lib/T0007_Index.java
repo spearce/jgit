@@ -62,7 +62,6 @@ public class T0007_Index extends RepositoryTestCase {
 	}
 
 	public void testCreateEmptyIndex() throws Exception {
-		Repository db = new Repository(trash_git);
 		GitIndex index = new GitIndex(db);
 		index.write();
 // native git doesn't like an empty index
@@ -74,7 +73,6 @@ public class T0007_Index extends RepositoryTestCase {
 	}
 
 	public void testCreateSimpleSortTestIndex() throws Exception {
-		Repository db = new Repository(trash_git);
 		GitIndex index = new GitIndex(db);
 		writeTrashFile("a/b", "data:a/b");
 		writeTrashFile("a:b", "data:a:b");
@@ -102,7 +100,6 @@ public class T0007_Index extends RepositoryTestCase {
 	}
 
 	public void testUpdateSimpleSortTestIndex() throws Exception {
-		Repository db = new Repository(trash_git);
 		GitIndex index = new GitIndex(db);
 		writeTrashFile("a/b", "data:a/b");
 		writeTrashFile("a:b", "data:a:b");
@@ -118,7 +115,6 @@ public class T0007_Index extends RepositoryTestCase {
 	}
 
 	public void testWriteTree() throws Exception {
-		Repository db = new Repository(trash_git);
 		GitIndex index = new GitIndex(db);
 		writeTrashFile("a/b", "data:a/b");
 		writeTrashFile("a:b", "data:a:b");
@@ -140,7 +136,6 @@ public class T0007_Index extends RepositoryTestCase {
 
 	public void testReadTree() throws Exception {
 		// Prepare tree
-		Repository db = new Repository(trash_git);
 		GitIndex index = new GitIndex(db);
 		writeTrashFile("a/b", "data:a/b");
 		writeTrashFile("a:b", "data:a:b");
@@ -179,7 +174,6 @@ public class T0007_Index extends RepositoryTestCase {
 
 	public void testReadTree2() throws Exception {
 		// Prepare a larger tree to test some odd cases in tree writing
-		Repository db = new Repository(trash_git);
 		GitIndex index = new GitIndex(db);
 		File f1 = writeTrashFile("a/a/a/a", "data:a/a/a/a");
 		File f2 = writeTrashFile("a/c/c", "data:a/c/c");
@@ -224,7 +218,6 @@ public class T0007_Index extends RepositoryTestCase {
 	}
 
 	public void testDelete() throws Exception {
-		Repository db = new Repository(trash_git);
 		GitIndex index = new GitIndex(db);
 		writeTrashFile("a/b", "data:a/b");
 		writeTrashFile("a:b", "data:a:b");
@@ -250,7 +243,6 @@ public class T0007_Index extends RepositoryTestCase {
 
 	public void testCheckout() throws Exception {
 		// Prepare tree, remote it and checkout
-		Repository db = new Repository(trash_git);
 		GitIndex index = new GitIndex(db);
 		File aslashb = writeTrashFile("a/b", "data:a/b");
 		File acolonb = writeTrashFile("a:b", "data:a:b");

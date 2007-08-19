@@ -92,7 +92,7 @@ public class UpdateJob extends Job {
 											String path = rm.getRepoRelativePath(resource);
 											Entry entry = index.getEntry(path);
 											if (entry != null) {
-												entry.update(new File(rm.getWorkDir(),path), rm.getRepository());
+												entry.update(new File(rm.getWorkDir(),path));
 											}
 											fm.worked(1);
 										}
@@ -107,7 +107,7 @@ public class UpdateJob extends Job {
 							String path = rm.getRepoRelativePath(r);
 							Entry entry = index.getEntry(path);
 							if (entry != null) {
-								entry.update(new File(rm.getWorkDir(),path), rm.getRepository());
+								entry.update(new File(rm.getWorkDir(),path));
 							}
 							m.worked(1);
 						}

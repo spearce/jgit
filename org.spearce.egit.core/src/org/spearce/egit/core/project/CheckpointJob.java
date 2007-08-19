@@ -63,7 +63,7 @@ public class CheckpointJob extends Job {
 				if (i % 100 == 0)
 					monitor.worked(i);
 				indexEntries[i].update(new File(rm.getWorkDir(),
-						indexEntries[i].getName()), rm.getRepository());
+						indexEntries[i].getName()));
 			}
 			index.write();
 			GitProjectData.fireRepositoryChanged(rm);
