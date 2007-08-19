@@ -237,7 +237,12 @@ public class GitIndex {
 			mode = f.getMode().getBits();
 			uid = -1;
 			gid = -1;
-			size = -1;
+			try {
+				size = (int) index.db.openBlob(f.getId()).getSize();
+			} catch (IOException e) {
+				e.printStackTrace();
+				size = -1;
+			}
 			sha1 = f.getId();
 			name = f.getFullName().getBytes("UTF-8");
 			flags = (short) ((stage << 12) | name.length); // TODO: fix flags
