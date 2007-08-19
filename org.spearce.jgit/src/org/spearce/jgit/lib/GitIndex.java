@@ -151,6 +151,10 @@ public class GitIndex {
 			fc.write(buf);
 			fc.close();
 			fileOutputStream.close();
+			if (cacheFile.exists())
+				if (!cacheFile.delete())
+					throw new IOException(
+						"Could not rename delete old index");
 			if (!tmpIndex.renameTo(cacheFile))
 				throw new IOException(
 						"Could not rename temporary index file to index");
