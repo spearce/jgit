@@ -53,8 +53,8 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 			if (map != null) {
 				Repository repository = map.getRepository();
 				GitIndex index = repository.getIndex();
-				index.remove(map.getWorkDir(), file.getLocation().toFile());
-				index.write();
+				if (index.remove(map.getWorkDir(), file.getLocation().toFile()))
+					index.write();
 			}
 			return FINISH_FOR_ME;
 		} catch (IOException e) {
