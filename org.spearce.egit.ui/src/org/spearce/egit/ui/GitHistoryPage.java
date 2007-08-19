@@ -175,7 +175,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					}
 					if (commitStr == null)
 						commitStr = "Commit: "+rev.getContentIdentifier();
-					table.setToolTipText(commitStr+"\nAuthor:\t"+rev.getAuthor()+"\nDate:\t"+new Date(rev.getTimestamp())+"\n\n"+rev.getComment());
+					table.setToolTipText(commitStr+"\nAuthor: "+rev.getAuthor()+"\nDate: "+new Date(rev.getTimestamp())+"\n\n"+rev.getComment());
 				}
 				lastItem = item;
 			}
