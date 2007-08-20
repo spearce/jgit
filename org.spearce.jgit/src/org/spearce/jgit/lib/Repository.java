@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
@@ -437,14 +438,34 @@ public class Repository {
 	}
 
 	public Collection<String> getBranches() {
-		return listFilesRecursively(new File(refsDir, "heads"), null);
+		return listRefs("heads");
+	}
+	
+	public Collection<String> getAllRefs() {
+		return listRefs("");
+	}
+	
+	private Collection<String> listRefs(String refSubDir) {
+		// add / to end, unless empty
+		if (refSubDir.length() > 0 && refSubDir.charAt(refSubDir.length() -1 ) != '/')
+			refSubDir += "/";
+		
+		Collection<String> branchesRaw = listFilesRecursively(new File(refsDir, refSubDir), null);
+		ArrayList<String> branches = new ArrayList<String>();
+		for (String b : branchesRaw) {
+			branches.add("refs/" + refSubDir + b);
+		}
+		
+		refreshPackredRefsCache();
+		Set<String> keySet = packedRefs.keySet();
+		for (String s : keySet)
+			if (s.startsWith("refs/" + refSubDir) && !branches.contains(s))
+				branches.add(s);
+		return branches;
 	}
 
 	public Collection<String> getTags() {
-		Collection<String> tags = listFilesRecursively(new File(refsDir, "tags"), null);
-		refreshPackredRefsCache();
-		tags.addAll(packedRefs.keySet());
-		return tags;
+		return listRefs("tags");
 	}
 
 	private Map<String,ObjectId> packedRefs = new HashMap<String,ObjectId>();
