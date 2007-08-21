@@ -452,12 +452,14 @@ public class Repository {
 						&& idx.canRead();
 			}
 		});
-		for (int k = 0; k < list.length; k++) {
-			try {
-				packList.add(new PackFile(this, list[k]));
-			} catch (IOException ioe) {
-				// Whoops. That's not a pack!
-				//
+		if (list != null) {
+			for (int k = 0; k < list.length; k++) {
+				try {
+					packList.add(new PackFile(this, list[k]));
+				} catch (IOException ioe) {
+					// Whoops. That's not a pack!
+					//
+				}
 			}
 		}
 	}
