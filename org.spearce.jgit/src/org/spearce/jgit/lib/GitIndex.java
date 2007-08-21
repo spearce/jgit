@@ -22,6 +22,7 @@ import java.util.Stack;
 import java.util.TreeMap;
 
 import org.spearce.jgit.errors.CorruptObjectException;
+import org.spearce.jgit.errors.NotSupportedException;
 
 public class GitIndex {
 
@@ -176,7 +177,7 @@ public class GitIndex {
 		for (Iterator i = entries.values().iterator(); i.hasNext();) {
 			Entry e = (Entry) i.next();
 			if (e.stage != 0) {
-				throw new IOException("Cannot work with other stages than zero right now. Won't write corrupt index.");
+				throw new NotSupportedException("Cannot work with other stages than zero right now. Won't write corrupt index.");
 			}
 		}
 	}

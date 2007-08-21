@@ -36,6 +36,7 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
 import org.spearce.egit.core.project.RepositoryMapping;
+import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.GitIndex.Entry;
 
@@ -117,6 +118,8 @@ public class UpdateJob extends Job {
 					m.setTaskName("Writing index for "+rm.getRepository().getDirectory());
 					rm.getRepository().getIndex().write();
 				}
+			} catch (NotSupportedException e) {
+				return Activator.error(e.getMessage(),e).getStatus();
 			} catch (RuntimeException e) {
 				e.printStackTrace();
 				return Activator.error(CoreText.UpdateOperation_failed, e).getStatus();
