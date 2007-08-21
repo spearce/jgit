@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import org.spearce.jgit.lib.GitIndex.Entry;
 
@@ -270,6 +272,109 @@ public class T0007_Index extends RepositoryTestCase {
 
 		if (canrungitstatus)
 			assertEquals(0, system(trash, "git status"));
+	}
+
+	public void test030_executeBit_coreModeTrue() throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, Error, Exception {
+		try {
+			// coremode true is the default, typically set to false
+			// by git init (but not jgit!)
+			Method canExecute = File.class.getMethod("canExecute", (Class[])null);
+			Method setExecute = File.class.getMethod("setExecutable", new Class[] { Boolean.TYPE });
+			File execFile = writeTrashFile("exec","exec");
+			if (!((Boolean)setExecute.invoke(execFile, new Object[] { Boolean.TRUE })).booleanValue())
+				throw new Error("could not set execute bit on "+execFile.getAbsolutePath()+"for test");
+			File nonexecFile = writeTrashFile("nonexec","nonexec");
+			if (!((Boolean)setExecute.invoke(nonexecFile, new Object[] { Boolean.FALSE })).booleanValue())
+				throw new Error("could not clear execute bit on "+nonexecFile.getAbsolutePath()+"for test");
+
+			GitIndex index = new GitIndex(db);
+			index.filemode = Boolean.TRUE; // TODO: we need a way to set this using config
+			index.add(trash, execFile);
+			index.add(trash, nonexecFile);
+			Tree tree = db.mapTree(index.writeTree());
+			assertEquals(FileMode.EXECUTABLE_FILE, tree.findBlobMember(execFile.getName()).getMode());
+			assertEquals(FileMode.REGULAR_FILE, tree.findBlobMember(nonexecFile.getName()).getMode());
+
+			index.write();
+
+			if (!execFile.delete())
+				throw new Error("Problem in test, cannot delete test file "+execFile.getAbsolutePath());
+			if (!nonexecFile.delete())
+				throw new Error("Problem in test, cannot delete test file "+nonexecFile.getAbsolutePath());
+			GitIndex index2 = new GitIndex(db);
+			index2.filemode = Boolean.TRUE; // TODO: we need a way to set this using config
+			index2.read();
+			index2.checkout(trash);
+			assertTrue(((Boolean)canExecute.invoke(execFile,(Object[])null)).booleanValue());
+			assertFalse(((Boolean)canExecute.invoke(nonexecFile,(Object[])null)).booleanValue());
+
+			assertFalse(index2.getEntry(execFile.getName()).isModified(trash));
+			assertFalse(index2.getEntry(nonexecFile.getName()).isModified(trash));
+
+			if (!((Boolean)setExecute.invoke(execFile, new Object[] { Boolean.FALSE })).booleanValue())
+				throw new Error("could not clear set execute bit on "+execFile.getAbsolutePath()+"for test");
+			if (!((Boolean)setExecute.invoke(nonexecFile, new Object[] { Boolean.TRUE })).booleanValue())
+				throw new Error("could set execute bit on "+nonexecFile.getAbsolutePath()+"for test");
+
+			assertTrue(index2.getEntry(execFile.getName()).isModified(trash));
+			assertTrue(index2.getEntry(nonexecFile.getName()).isModified(trash));
+
+		} catch (NoSuchMethodException e) {
+			System.err.println("Test ignored when running under JDk < 1.6");
+			return;
+		}
+	}
+
+	public void test031_executeBit_coreModeFalse() throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, Error, Exception {
+		try {
+			// coremode true is the default, typically set to false
+			// by git init (but not jgit!)
+			Method canExecute = File.class.getMethod("canExecute", (Class[])null);
+			Method setExecute = File.class.getMethod("setExecutable", new Class[] { Boolean.TYPE });
+			File execFile = writeTrashFile("exec","exec");
+			if (!((Boolean)setExecute.invoke(execFile, new Object[] { Boolean.TRUE })).booleanValue())
+				throw new Error("could not set execute bit on "+execFile.getAbsolutePath()+"for test");
+			File nonexecFile = writeTrashFile("nonexec","nonexec");
+			if (!((Boolean)setExecute.invoke(nonexecFile, new Object[] { Boolean.FALSE })).booleanValue())
+				throw new Error("could not clear execute bit on "+nonexecFile.getAbsolutePath()+"for test");
+
+			GitIndex index = new GitIndex(db);
+			index.filemode = Boolean.FALSE; // TODO: we need a way to set this using config
+			index.add(trash, execFile);
+			index.add(trash, nonexecFile);
+			Tree tree = db.mapTree(index.writeTree());
+			assertEquals(FileMode.REGULAR_FILE, tree.findBlobMember(execFile.getName()).getMode());
+			assertEquals(FileMode.REGULAR_FILE, tree.findBlobMember(nonexecFile.getName()).getMode());
+
+			index.write();
+
+			if (!execFile.delete())
+				throw new Error("Problem in test, cannot delete test file "+execFile.getAbsolutePath());
+			if (!nonexecFile.delete())
+				throw new Error("Problem in test, cannot delete test file "+nonexecFile.getAbsolutePath());
+			GitIndex index2 = new GitIndex(db);
+			index2.filemode = Boolean.FALSE; // TODO: we need a way to set this using config
+			index2.read();
+			index2.checkout(trash);
+			assertFalse(((Boolean)canExecute.invoke(execFile,(Object[])null)).booleanValue());
+			assertFalse(((Boolean)canExecute.invoke(nonexecFile,(Object[])null)).booleanValue());
+
+			assertFalse(index2.getEntry(execFile.getName()).isModified(trash));
+			assertFalse(index2.getEntry(nonexecFile.getName()).isModified(trash));
+
+			if (!((Boolean)setExecute.invoke(execFile, new Object[] { Boolean.FALSE })).booleanValue())
+				throw new Error("could not clear set execute bit on "+execFile.getAbsolutePath()+"for test");
+			if (!((Boolean)setExecute.invoke(nonexecFile, new Object[] { Boolean.TRUE })).booleanValue())
+				throw new Error("could set execute bit on "+nonexecFile.getAbsolutePath()+"for test");
+
+			// no change since we ignore the execute bit
+			assertFalse(index2.getEntry(execFile.getName()).isModified(trash));
+			assertFalse(index2.getEntry(nonexecFile.getName()).isModified(trash));
+
+		} catch (NoSuchMethodException e) {
+			System.err.println("Test ignored when running under JDk < 1.6");
+			return;
+		}
 	}
 
 	private String content(File f) throws IOException {

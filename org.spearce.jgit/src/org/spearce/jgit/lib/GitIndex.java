@@ -182,9 +182,11 @@ public class GitIndex {
 	}
 
 	static Method canExecute;
+	static Method setExecute;
 	static {
 		try {
 			canExecute = File.class.getMethod("canExecute", (Class[]) null);
+			setExecute = File.class.getMethod("setExecutable", new Class[] { Boolean.TYPE });
 		} catch (SecurityException e) {
 			e.printStackTrace();
 		} catch (NoSuchMethodException e) {
@@ -214,12 +216,41 @@ public class GitIndex {
 			return false;
 	}
 
+	/*
+	 * JDK1.6 has file.setExecute
+	 */
+	boolean File_setExecute(File f,boolean value) {
+		if (setExecute != null) {
+			try {
+				return ((Boolean) setExecute.invoke(f,
+						new Object[] { new Boolean(value) })).booleanValue();
+			} catch (IllegalArgumentException e) {
+				throw new Error(e);
+			} catch (IllegalAccessException e) {
+				throw new Error(e);
+			} catch (InvocationTargetException e) {
+				throw new Error(e);
+			}
+		} else
+			return false;
+	}
+
 	static byte[] makeKey(File wd, File f) {
 		if (!f.getPath().startsWith(wd.getPath()))
 			throw new Error("Path is not in working dir");
 		String relName = f.getPath().substring(wd.getPath().length() + 1)
 				.replace(File.separatorChar, '/');
 		return relName.getBytes();
+	}
+
+	Boolean filemode;
+	private boolean config_filemode() {
+		// temporary til we can actually set parameters. We need to be able
+		// to change this for testing.
+		if (filemode != null)
+			return filemode.booleanValue();
+		RepositoryConfig config = db.getConfig();
+		return config.getBoolean("core", "filemode", true);
 	}
 
 	public class Entry {
@@ -253,7 +284,10 @@ public class GitIndex {
 			mtime = ctime; // we use same here
 			dev = -1;
 			ino = -1;
-			mode = FileMode.REGULAR_FILE.getBits();
+			if (config_filemode() && File_canExecute(f))
+				mode = FileMode.EXECUTABLE_FILE.getBits();
+			else
+				mode = FileMode.REGULAR_FILE.getBits();
 			uid = -1;
 			gid = -1;
 			size = (int) f.length();
@@ -309,9 +343,11 @@ public class GitIndex {
 			mtime = f.lastModified() * 1000000L;
 			if (size != f.length())
 				modified = true;
-			if (File_canExecute(f) != FileMode.EXECUTABLE_FILE.equals(mode)) {
-				mode = FileMode.EXECUTABLE_FILE.getBits();
-				modified = true;
+			if (config_filemode()) {
+				if (File_canExecute(f) != FileMode.EXECUTABLE_FILE.equals(mode)) {
+					mode = FileMode.EXECUTABLE_FILE.getBits();
+					modified = true;
+				}
 			}
 			if (modified) {
 				size = (int) f.length();
@@ -386,14 +422,14 @@ public class GitIndex {
 			final int exebits = FileMode.EXECUTABLE_FILE.getBits()
 					^ FileMode.REGULAR_FILE.getBits();
 
-			if (FileMode.EXECUTABLE_FILE.equals(mode)) {
+			if (config_filemode() && FileMode.EXECUTABLE_FILE.equals(mode)) {
 				if (!File_canExecute(file)&& canExecute != null)
 					return true;
 			} else {
 				if (FileMode.REGULAR_FILE.equals(mode&~exebits)) {
 					if (!file.isFile())
 						return true;
-					if (File_canExecute(file) && canExecute != null)
+					if (config_filemode() && File_canExecute(file) && canExecute != null)
 						return true;
 				} else {
 					if (FileMode.SYMLINK.equals(mode)) {
@@ -545,6 +581,17 @@ public class GitIndex {
 			if (j != bytes.length)
 				throw new IOException("Could not write file " + file);
 			channel.close();
+			if (config_filemode() && canExecute != null) {
+				if (FileMode.EXECUTABLE_FILE.equals(e.mode)) {
+					if (!File_canExecute(file))
+						File_setExecute(file, true);
+				} else {
+					if (File_canExecute(file))
+						File_setExecute(file, false);
+				}
+			}
+			e.mtime = file.lastModified() * 1000000L;
+			e.ctime = e.mtime;
 		}
 	}
 
