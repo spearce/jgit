@@ -501,7 +501,7 @@ public class Repository {
 				// look for packed ref, since this one doesn't exist
 				ObjectId id = packedRefs.get(name);
 				if (id != null)
-					return new Ref(null, id);
+					return new Ref(name, id);
 				
 				// no packed ref found, return blank one
 				return new Ref(name, null);

@@ -580,4 +580,20 @@ public class T0003_Basic extends RepositoryTestCase {
 		ObjectId resolved = db.resolve("refs/heads/a");
 		assertEquals(unpackedId, resolved.toString());
 	}
+
+	public void test028_LockPackedRef() throws IOException {
+		writeTrashFile(".git/packed-refs", "7f822839a2fe9760f386cbbbcb3f92c5fe81def7 refs/heads/foobar");
+		writeTrashFile(".git/HEAD", "ref: refs/heads/foobar\n");
+
+		ObjectId resolve = db.resolve("HEAD");
+		assertEquals("7f822839a2fe9760f386cbbbcb3f92c5fe81def7", resolve.toString());
+
+		RefLock lockRef = db.lockRef("HEAD");
+		ObjectId newId = new ObjectId("07f822839a2fe9760f386cbbbcb3f92c5fe81def");
+		lockRef.write(newId);
+		assertTrue(lockRef.commit());
+
+		assertTrue(new File(db.getDirectory(), "refs/heads/foobar").exists());
+		assertEquals(newId, db.resolve("refs/heads/foobar"));
+	}
 }
