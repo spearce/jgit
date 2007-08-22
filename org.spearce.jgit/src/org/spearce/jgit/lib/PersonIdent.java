@@ -16,6 +16,7 @@
  */
 package org.spearce.jgit.lib;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -27,6 +28,37 @@ public class PersonIdent {
 	private final Long when;
 
 	private final int tzOffset;
+
+	private static String getHostName() {
+		try {
+			java.net.InetAddress addr = java.net.InetAddress.getLocalHost();
+			String hostname = addr.getCanonicalHostName();
+			return hostname;
+		} catch (java.net.UnknownHostException e) {
+			return "localhost";
+		}
+	}
+
+	/**
+	 * Creates new PersonIdent from config info in repository, with current time
+	 * @param repo
+	 */
+	public PersonIdent(final Repository repo) {
+		RepositoryConfig config = repo.getConfig();
+		String username = config.getString("user", "name");
+		if (username == null)
+			username = System.getProperty("user.name");
+
+		String email = config.getString("user", "email");
+		if (email == null)
+			email = System.getProperty("user.name") + "@" + getHostName();
+
+		name = username;
+		emailAddress = email;
+		when = Calendar.getInstance().getTimeInMillis();
+		tzOffset = TimeZone.getDefault().getOffset(when.longValue())
+				/ (60 * 1000);
+	}
 
 	public PersonIdent(final PersonIdent pi) {
 		this(pi.getName(), pi.getEmailAddress());
@@ -94,7 +126,8 @@ public class PersonIdent {
 				tzHours = Integer.parseInt(tzHoursStr);
 			}
 			final int tzMins = Integer.parseInt(in.substring(sp + 4).trim());
-			when = new Long(Long.parseLong(in.substring(gt + 1, sp).trim()) * 1000);
+			when = new Long(
+					Long.parseLong(in.substring(gt + 1, sp).trim()) * 1000);
 			tzOffset = tzHours * 60 + tzMins;
 		}
 
@@ -125,7 +158,7 @@ public class PersonIdent {
 			final PersonIdent p = (PersonIdent) o;
 			return getName().equals(p.getName())
 					&& getEmailAddress().equals(p.getEmailAddress())
-					&& (when == p.when || when!=null && when.equals(p.when));
+					&& (when == p.when || when != null && when.equals(p.when));
 		}
 		return false;
 	}
