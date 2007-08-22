@@ -596,7 +596,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			Map<ObjectId, String[]> newBranches = new HashMap<ObjectId, String[]>();
 			try {
 				for (String branch : repositoryMapping.getRepository().getBranches()) {
-					ObjectId id = repositoryMapping.getRepository().resolve("refs/heads/"+branch);
+					ObjectId id = repositoryMapping.getRepository().resolve(branch);
 					String[] samecommit = newBranches.get(id);
 					if (samecommit == null) {
 						samecommit = new String[] { branch };

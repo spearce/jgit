@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
@@ -494,13 +495,17 @@ public class Repository {
 	private Ref readRefBasic(String name) throws IOException {
 		int depth = 0;
 		REF_READING: do {
-			ObjectId id = packedRefs.get(name);
-			if (id != null)
-				return new Ref(null, id);
-
+			// prefer unpacked ref to packed ref
 			final File f = new File(getDirectory(), name);
-			if (!f.isFile())
+			if (!f.isFile()) {
+				// look for packed ref, since this one doesn't exist
+				ObjectId id = packedRefs.get(name);
+				if (id != null)
+					return new Ref(null, id);
+				
+				// no packed ref found, return blank one
 				return new Ref(name, null);
+			}
 
 			final BufferedReader br = new BufferedReader(new FileReader(f));
 			try {
@@ -556,14 +561,34 @@ public class Repository {
 	}
 
 	public Collection<String> getBranches() {
-		return listFilesRecursively(new File(refsDir, "heads"), null);
+		return listRefs("heads");
+	}
+	
+	public Collection<String> getAllRefs() {
+		return listRefs("");
+	}
+	
+	private Collection<String> listRefs(String refSubDir) {
+		// add / to end, unless empty
+		if (refSubDir.length() > 0 && refSubDir.charAt(refSubDir.length() -1 ) != '/')
+			refSubDir += "/";
+		
+		Collection<String> branchesRaw = listFilesRecursively(new File(refsDir, refSubDir), null);
+		ArrayList<String> branches = new ArrayList<String>();
+		for (String b : branchesRaw) {
+			branches.add("refs/" + refSubDir + b);
+		}
+		
+		refreshPackredRefsCache();
+		Set<String> keySet = packedRefs.keySet();
+		for (String s : keySet)
+			if (s.startsWith("refs/" + refSubDir) && !branches.contains(s))
+				branches.add(s);
+		return branches;
 	}
 
 	public Collection<String> getTags() {
-		Collection<String> tags = listFilesRecursively(new File(refsDir, "tags"), null);
-		refreshPackredRefsCache();
-		tags.addAll(packedRefs.keySet());
-		return tags;
+		return listRefs("tags");
 	}
 
 	private Map<String,ObjectId> packedRefs = new HashMap<String,ObjectId>();

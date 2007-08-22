@@ -570,4 +570,14 @@ public class T0003_Basic extends RepositoryTestCase {
 		assertEquals(c2.getCommitId(), rm4.getParentIds()[1]);
 		assertEquals(c3.getCommitId(), rm4.getParentIds()[2]);
 	}
+	
+	public void test027_UnpackedRefHigherPriorityThanPacked() throws IOException {
+		PrintWriter writer = new PrintWriter(new FileWriter(new File(db.getDirectory(), "refs/heads/a"))); 
+		String unpackedId = "7f822839a2fe9760f386cbbbcb3f92c5fe81def7";
+		writer.println(unpackedId);
+		writer.close();
+
+		ObjectId resolved = db.resolve("refs/heads/a");
+		assertEquals(unpackedId, resolved.toString());
+	}
 }
