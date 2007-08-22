@@ -604,8 +604,10 @@ public class Repository {
 		if (file.lastModified() == packedrefstime)
 			return;
 		Map<String,ObjectId> newPackedRefs = new HashMap<String,ObjectId>();
+		FileReader fileReader = null;
 		try {
-			BufferedReader b=new BufferedReader(new FileReader(file));
+			fileReader = new FileReader(file);
+			BufferedReader b=new BufferedReader(fileReader);
 			String p;
 			while ((p = b.readLine()) != null) {
 				if (p.charAt(0) == '#')
@@ -619,7 +621,16 @@ public class Repository {
 				newPackedRefs.put(name, id);
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			throw new Error("Cannot read packed refs",e);
+		} finally {
+			if (fileReader != null) {
+				try {
+					fileReader.close();
+				} catch (IOException e) {
+					// Cannot do anything more here
+					e.printStackTrace();
+				}
+			}
 		}
 		packedRefs = newPackedRefs;
 	}
