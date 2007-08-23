@@ -17,13 +17,8 @@
 
 package org.spearce.egit.ui.internal.actions;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -46,6 +41,8 @@ import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.team.core.TeamException;
+import org.eclipse.team.internal.ui.Utils;
 import org.eclipse.ui.IObjectActionDelegate;
 import org.eclipse.ui.IWorkbenchPart;
 import org.spearce.egit.core.project.GitProjectData;
@@ -58,6 +55,7 @@ import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.RefLock;
+import org.spearce.jgit.lib.RefLogWriter;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
@@ -137,8 +135,8 @@ public class CommitAction implements IObjectActionDelegate {
 		amending = commitDialog.isAmending();
 		try {
 			performCommit(commitDialog, commitMessage);
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (TeamException e) {
+			Utils.handleError(wp.getSite().getShell(), e, "Error during commit", "Error occurred while committing");
 		}
 	}
 
@@ -163,21 +161,29 @@ public class CommitAction implements IObjectActionDelegate {
 	}
 
 	private void performCommit(CommitDialog commitDialog, String commitMessage)
-			throws IOException {
+			throws TeamException {
 		// System.out.println("Commit Message: " + commitMessage);
 		IFile[] selectedItems = commitDialog.getSelectedItems();
 
 		HashMap<Repository, Tree> treeMap = new HashMap<Repository, Tree>();
-		prepareTrees(selectedItems, treeMap);
+		try {
+			prepareTrees(selectedItems, treeMap);
+		} catch (IOException e) {
+			throw new TeamException("Preparing trees", e);
+		}
 
-		commitMessage = doCommits(commitDialog, commitMessage, treeMap);
+		try {
+			commitMessage = doCommits(commitDialog, commitMessage, treeMap);
+		} catch (IOException e) {
+			throw new TeamException("Committing changes", e);
+		}
 		for (IProject proj : listProjects()) {
 			RepositoryMapping.getMapping(proj).recomputeMerge();
 		}
 	}
 
 	private String doCommits(CommitDialog commitDialog, String commitMessage,
-			HashMap<Repository, Tree> treeMap) throws IOException {
+			HashMap<Repository, Tree> treeMap) throws IOException, TeamException {
 		for (java.util.Map.Entry<Repository, Tree> entry : treeMap.entrySet()) {
 			Tree tree = entry.getValue();
 			Repository repo = tree.getRepository();
@@ -289,53 +295,26 @@ public class CommitAction implements IObjectActionDelegate {
 		}
 	}
 
-	private void updateReflog(Repository repo, String commitMessage,
-			ObjectId parentId, ObjectId commitId, PersonIdent committer) {
-		File headLog = new File(repo.getDirectory(), "logs/HEAD");
-		writeReflog(commitMessage, parentId, commitId, committer, headLog);
-		
-		
+	private void updateReflog(Repository repo, String fullCommitMessage,
+			ObjectId parentId, ObjectId commitId, PersonIdent committer) throws TeamException {
+		String reflogMessage = buildReflogMessage(fullCommitMessage);
 		try {
-			final File ptr = new File(repo.getDirectory(),"HEAD");
-			final BufferedReader br = new BufferedReader(new FileReader(ptr));
-			String ref;
-			try {
-				ref = br.readLine();
-			} finally {
-				br.close();
-			}
-			if (ref != null) {
-				if (ref.startsWith("ref: "))
-					ref = ref.substring(5);
-				
-				File branchLog = new File(repo.getDirectory(), "logs/" + ref);
-				writeReflog(commitMessage, parentId, commitId, committer, branchLog);
-			}
+			RefLogWriter.writeReflog(repo, parentId, commitId, reflogMessage, "HEAD");
+			RefLogWriter.writeReflog(repo, parentId, commitId, reflogMessage, repo.getFullBranch());
 		} catch (IOException e) {
-			e.printStackTrace();
+			throw new TeamException("Writing reflogs", e);
 		}
 	}
 
-	private void writeReflog(String commitMessage, ObjectId parentId,
-			ObjectId commitId, PersonIdent committer, File file) {
+	private String buildReflogMessage(String commitMessage) {
 		String firstLine = commitMessage;
 		int newlineIndex = commitMessage.indexOf("\n");
 		if (newlineIndex > 0) {
 			firstLine = commitMessage.substring(0, newlineIndex);
 		}
-		PrintWriter out = null;
-		try {
-			out = new PrintWriter(new FileOutputStream(file, true));
-			String commitStr = amending ? "\tcommit (amend):" : "\tcommit: ";
-			out.println(parentId + " " + commitId + " "
-					+ committer.toExternalString() + commitStr + firstLine);
-
-		} catch (FileNotFoundException e) {
-			System.out.println("Couldn't write reflog!");
-		} finally {
-			if (out != null)
-				out.close();
-		}
+		String commitStr = amending ? "\tcommit (amend):" : "\tcommit: ";
+		String message = commitStr + firstLine;
+		return message;
 	}
 
 	private void writeTreeWithSubTrees(Tree tree) {
