@@ -59,7 +59,6 @@ import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.RefLock;
 import org.spearce.jgit.lib.Repository;
-import org.spearce.jgit.lib.RepositoryConfig;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 import org.spearce.jgit.lib.GitIndex.Entry;
@@ -193,14 +192,9 @@ public class CommitAction implements IObjectActionDelegate {
 			commit.setTree(tree);
 			commitMessage = commitMessage.replaceAll("\r", "\n");
 
-			RepositoryConfig config = repo.getConfig();
-			String username = config.getString("user", "name");
-			if (username == null)
-				username = System.getProperty("user.name");
-
-			String email = config.getString("user", "email");
-			if (email == null)
-				email = System.getProperty("user.name") + "@" + getHostName();
+			PersonIdent personIdent = new PersonIdent(repo);
+			String username = personIdent.getName();
+			String email = personIdent.getEmailAddress();
 
 			if (commitDialog.isSignedOff()) {
 				commitMessage += "\n\nSigned-off-by: " + username + " <"
@@ -209,18 +203,14 @@ public class CommitAction implements IObjectActionDelegate {
 			commit.setMessage(commitMessage);
 
 			if (commitDialog.getAuthor() == null) {
-				commit.setAuthor(new PersonIdent(username, email, new Date(
-						Calendar.getInstance().getTimeInMillis()), TimeZone
-						.getDefault()));
+				commit.setAuthor(personIdent);
 			} else {
 				PersonIdent author = new PersonIdent(commitDialog.getAuthor());
 				commit.setAuthor(new PersonIdent(author, new Date(Calendar
 						.getInstance().getTimeInMillis()), TimeZone
 						.getDefault()));
 			}
-			commit.setCommitter(new PersonIdent(username, email, new Date(
-					Calendar.getInstance().getTimeInMillis()), TimeZone
-					.getDefault()));
+			commit.setCommitter(personIdent);
 
 			ObjectWriter writer = new ObjectWriter(repo);
 			commit.setCommitId(writer.writeCommit(commit));
@@ -296,16 +286,6 @@ public class CommitAction implements IObjectActionDelegate {
 						+ ": " + newMember.getId() + " idx id: "
 						+ idxEntry.getObjectId());
 			}
-		}
-	}
-
-	private String getHostName() {
-		try {
-			java.net.InetAddress addr = java.net.InetAddress.getLocalHost();
-			String hostname = addr.getCanonicalHostName();
-			return hostname;
-		} catch (java.net.UnknownHostException e) {
-			return "localhost";
 		}
 	}
 
