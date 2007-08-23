@@ -268,6 +268,22 @@ public class Tree extends TreeEntry implements Treeish {
 		return contents.length;
 	}
 
+	/**
+	 * Return all members of the tree sorted in Git order.
+	 *
+	 * Entries are sorted by the numberical unsigned byte
+	 * values with (sub)trees having an implicit '/'. An
+	 * example of a tree with three entries. a:b is an
+	 * actual file name here.
+	 *
+	 * <p>
+	 * 100644 blob e69de29bb2d1d6434b8b29ae775ad8c2e48c5391    a.b
+	 * 040000 tree 4277b6e69d25e5efa77c455340557b384a4c018a    a
+	 * 100644 blob e69de29bb2d1d6434b8b29ae775ad8c2e48c5391    a:b
+	 *
+	 * @return all entries in this Tree, sorted.
+	 * @throws IOException
+	 */
 	public TreeEntry[] members() throws IOException {
 		ensureLoaded();
 		final TreeEntry[] c = contents;

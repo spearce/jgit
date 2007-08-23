@@ -676,6 +676,17 @@ public class GitIndex {
 		return i;
 	}
 
+	/**
+	 * Return the members of the index sorted by the unsigned byte
+	 * values of the path names.
+	 *
+	 * Small beware: Unaccounted for are unmerged entries. You may want
+	 * to abort if members with stage != 0 are found if you are doing
+	 * any updating operations. All stages will be found after one another
+	 * here later. Currenly only one stage per name is returned.
+	 *
+	 * @return The index entries sorted
+	 */
 	public Entry[] getMembers() {
 		return (Entry[]) entries.values().toArray(new Entry[entries.size()]);
 	}
