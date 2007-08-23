@@ -163,10 +163,10 @@ public class CommitDialog extends Dialog {
 
 		Label label = new Label(container, SWT.LEFT);
 		label.setText("Commit Message:");
-		label.setLayoutData(GridDataFactory.fillDefaults().span(2, 1).create());
+		label.setLayoutData(GridDataFactory.fillDefaults().span(2, 1).grab(true, false).create());
 
 		commitText = new Text(container, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL);
-		commitText.setLayoutData(GridDataFactory.fillDefaults().span(2, 1)
+		commitText.setLayoutData(GridDataFactory.fillDefaults().span(2, 1).grab(true, true)
 				.hint(600, 200).create());
 
 		// allow to commit with ctrl-enter
@@ -226,7 +226,7 @@ public class CommitDialog extends Dialog {
 		Table resourcesTable = new Table(container, SWT.H_SCROLL | SWT.V_SCROLL
 				| SWT.FULL_SELECTION | SWT.MULTI | SWT.CHECK | SWT.BORDER);
 		resourcesTable.setLayoutData(GridDataFactory.fillDefaults().hint(600,
-				200).span(2,1).create());
+				200).span(2,1).grab(true, true).create());
 
 		resourcesTable.setHeaderVisible(true);
 		TableColumn statCol = new TableColumn(resourcesTable, SWT.LEFT);
@@ -408,5 +408,10 @@ public class CommitDialog extends Dialog {
 
 	public void setAmendAllowed(boolean amendAllowed) {
 		this.amendAllowed = amendAllowed;
+	}
+
+	@Override
+	protected int getShellStyle() {
+		return super.getShellStyle() | SWT.RESIZE;
 	}
 }
