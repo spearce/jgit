@@ -439,13 +439,13 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					System.out.println(event);
 					GitFileRevision element = (GitFileRevision)item.getData();
 					ObjectId xx = element.getCommitId();
-					int x = event.x;
+					final int DOTRADIUS = 3;
+					final int INTERLANE = 8;
+					int x = event.x + INTERLANE/2 + 2;
 					int y = event.y;
 					int h = event.height;
 					event.gc.setLineWidth(2);
 //					RepositoryMapping rm = RepositoryMapping.getMapping(element.getResource());
-					final int DOTRADIUS = 3;
-					final int INTERLANE = 10;
 
 					Lane lane = element.getLane();
 					TopologicalSorter<ObjectId> counter = lane.getSorter();
@@ -529,8 +529,12 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 							}
 						}
 					}
-					event.gc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
-					event.gc.fillOval(x + lane.getNumber() *  INTERLANE - DOTRADIUS, y + h/2 - DOTRADIUS, DOTRADIUS*2, DOTRADIUS*2);
+					if (xx.equals(currentHead)) {
+						event.gc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_RED));
+						event.gc.fillOval(x + lane.getNumber() *  INTERLANE - DOTRADIUS*2, y + h/2 - DOTRADIUS*2, DOTRADIUS*4, DOTRADIUS*4);
+					} else
+						event.gc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
+						event.gc.fillOval(x + lane.getNumber() *  INTERLANE - DOTRADIUS, y + h/2 - DOTRADIUS, DOTRADIUS*2, DOTRADIUS*2);
 				}
 			}
 		});
@@ -549,6 +553,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 	}
 
 	private Map appliedPatches;
+	ObjectId currentHead;
 	private Map<ObjectId,Tag[]> tags;
 	private Map<ObjectId, String[]> branches;
 	GitHistoryLabelProvider lp = new GitHistoryLabelProvider();
@@ -593,6 +598,12 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			try {
+				currentHead = repositoryMapping.getRepository().resolve("HEAD");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			Map<ObjectId, String[]> newBranches = new HashMap<ObjectId, String[]>();
 			try {
 				for (String branch : repositoryMapping.getRepository().getBranches()) {
@@ -609,12 +620,22 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					}
 					newBranches.put(id, samecommit);
 				}
+				String[] samecommit = newBranches.get(currentHead);
+				if (samecommit == null) {
+					samecommit = new String[] { "HEAD" };
+				} else {
+					String[] n=new String[samecommit.length + 1];
+					for (int j=0; j<samecommit.length; ++j)
+						n[j] = samecommit[j];
+					n[n.length-1] = "HEAD";
+					samecommit = n;
+				}
+				newBranches.put(currentHead, samecommit);
 				branches = newBranches;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
 			IFileHistoryProvider fileHistoryProvider = provider
 					.getFileHistoryProvider();
 			IResource startingPoint = (IResource) getInput();
