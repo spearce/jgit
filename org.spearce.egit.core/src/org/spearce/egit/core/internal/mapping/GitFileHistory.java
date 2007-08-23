@@ -108,12 +108,12 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 			this.monitor = monitor;
 		}
 
-		protected void collect(ObjectId commitId, int count, int breadth) {
-			super.collect(commitId, count, breadth);
-			if (commitId.equals(ObjectId.zeroId()))
-				revisions.put(commitId, new GitWorkspaceFileRevision(resource));
+		protected void collect(Commit commit, int count, int breadth) {
+			super.collect(commit, count, breadth);
+			if (commit.equals(ObjectId.zeroId()))
+				revisions.put(commit.getCommitId(), new GitWorkspaceFileRevision(resource));
 			else
-				revisions.put(commitId, new GitFileRevision(commitId, resource, count));
+				revisions.put(commit.getCommitId(), new GitFileRevision(commit.getCommitId(), resource, count));
 		}
 
 		public boolean isCancelled() {

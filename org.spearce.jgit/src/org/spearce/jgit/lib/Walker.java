@@ -23,7 +23,7 @@ public abstract class Walker {
 
 	protected abstract boolean isCancelled();
 	
-	protected abstract void collect(ObjectId commitId, int count,int breadth);
+	protected abstract void collect(Commit commit, int count,int breadth);
 	protected abstract void record(ObjectId pred, ObjectId succ);
 
 	/**
@@ -187,7 +187,7 @@ class Todo {
 						if (merges == null
 								|| merges.booleanValue() && pparents.length > 1
 								|| !merges.booleanValue() && pparents.length <= 1) {
-							collect(previous.getCommitId(), count, breadth);
+							collect(previous, count, breadth);
 						}
 					}
 				}

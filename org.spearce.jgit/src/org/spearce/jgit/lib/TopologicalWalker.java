@@ -70,7 +70,7 @@ public class TopologicalWalker extends Walker {
 					if (when2 == null)
 						return i1.compareTo(i2);
 
-					int c = when1.compareTo(when2);
+					int c = when2.compareTo(when1);
 					if (c == 0)
 						return -1;
 					return c;
@@ -88,16 +88,13 @@ public class TopologicalWalker extends Walker {
 				topoSorter.put(succ);
 		}
 
-		protected void collect(ObjectId commitId, int count, int breadth) {
+		protected void collect(Commit commit, int count, int breadth) {
 //			System.out.println("Got: "+count+" "+commit.getCommitId());
+			ObjectId commitId = commit.getCommitId();
 			if (commitId == null)
 				commitId = ObjectId.zeroId();
 			collected.put(commitId, commitId);
-		}
-
-		protected void recordRelevantMerge(Commit commit) {
-			collected.put(commit.getCommitId(), commit.getCommitId());
-			commitTime.put(commit.getCommitId(), commit.getAuthor().getWhen());
+			commitTime.put(commitId, commit.getAuthor().getWhen());
 		}
 
 		protected boolean isCancelled() {

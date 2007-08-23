@@ -47,10 +47,11 @@ public class T0007_WalkerTest extends RepositoryTestCase {
 		}
 
 		@Override
-		protected void collect(ObjectId commitId, int count, int breadth) {
+		protected void collect(Commit commit, int count, int breadth) {
+			ObjectId commitId = commit.getCommitId();
 			if (commitId == null)
 				commitId = ObjectId.zeroId();
-			super.collect(commitId, count, breadth);
+			super.collect(commit, count, breadth);
 		}
 		
 		ObjectId[] collect() {
