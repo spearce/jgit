@@ -37,12 +37,11 @@ This package is actually composed of three major components:
     Portions of this package are covered under the LGPL and others
     under the EPL.  Refer to individual file headers for details.
 
+  org.spearce.egit.core.test
+
+    Unit tests for org.spearce.egit.core.
 
             == WARNINGS / CAVEATS              ==
-
-- The Eclipse plugin doesn't always save the workbench state when
-  projects get closed or the workbench is shutdown.  This means
-  the current state of files may be lost.
 
 - The plugin could lockup your Eclipse workbench.  I've tried to
   make it stable and function in such a way that it can't crash
@@ -53,14 +52,8 @@ This package is actually composed of three major components:
   with the canonical C based implementation, but that doesn't mean
   it won't generate a corrupt object.
 
-- This package cannot read the new loose object format header
-  just added to canonical GIT in mid-July 2006 by Linus Torvalds.
-  Support for that will be coming soon.
-
-- This package won't damage an existing symlink stored within a
-  repository but it can't create a new symlink from the filesystem,
-  nor can it extract a symlink from the repository to the filesystem.
-  This is due to Java's lack of symlink support.
+- Symbolic links are not supported because java does not support it.
+  Such links could be damaged.
 
 - It may take a long time to connect the GIT team provider to an
   existing project full of files as the cache tree needs to be
@@ -68,6 +61,15 @@ This package is actually composed of three major components:
   implementations are not exactly the fastest SHA1 implementations
   available.
 
+- Only the timestamp of the index is used by jgit check if  the index
+  is dirty.
+
+- Don't try the plugin with a JDK other than 1.6 (Java 6) unless you
+  are prepared to investigate problems yourself. JDK 1.5.0_11 and later
+  Java 5 versions *may* work. Earlier versions do not. JDK 1.4 is *not*
+  supported. Apple's Java 1.5.0_07 is reported to work acceptably. We
+  have no information about other vendors. Please report your findings
+  if you try.
 
             == Package Features                ==
 
@@ -84,9 +86,6 @@ This package is actually composed of three major components:
 
     * Copy trees to local directory, or local directory to a tree.
 
-    * Create an N-way structual difference between N trees
-      (minimum of 2, maximum is limited only by available memory).
-
     * Lazily loads trees as necessary.
 
     * Read and write .git/config files.
@@ -94,6 +93,8 @@ This package is actually composed of three major components:
     * Create a new repository.
 
     * Read and write refs, including walking through symrefs.
+
+    * Read, update and write the Git index.
 
   org.spearce.egit.core/
 
@@ -119,6 +120,9 @@ This package is actually composed of three major components:
 
     * Resolves through linked containers.
 
+    * Walk a the history from a given set of commits looking for commits
+      introducing changed in a path.
+
   org.spearce.egit.ui/
 
     * Connect team provider wizard panels.
@@ -128,18 +132,18 @@ This package is actually composed of three major components:
     * Connect to GIT team provider by searching local filesystem
       for existing repository directories.
 
-    * Team actions: track (add), untrack (remove), disconnect.
+    * Team actions: track (add), untrack (remove), disconnect, show
+      history, compare version, show history.
 
     * Resource director shows file/directory state in the explorer
       various views (e.g. Navigator and Package Explorer).
 
+    * Creating new commits or amending commits.
+
+    * Graphical history viewer with the ability to compare versions
+      using eclipse built-in compare editor.
 
             == Missing Features                ==
-
-- Commit from within the Eclipse UI.
-
-- Difference work file against historical version and display
-  the difference in the Eclipse difference viewer.
 
 - GIT network protocol to pull objects from a remote repository or
   push objects to a remote repository.
@@ -151,6 +155,39 @@ This package is actually composed of three major components:
 - Apply a GIT format patch.
 
 - Documentation.  :-)
+
+- Windows support is new and very little tested. Do not blame us if
+  it blows, but tell us about it and what you did. Double check
+  everything.
+
+- gitattributes support
+  In particular CRLF conversion is not implemented. Files are treated
+  as byte sequences.
+
+- Speed in some areas
+  Java is "slooow", they say. Not true as a general statement. A lot of Java
+  code is slow because it it not optimized (to some extent due to this
+  belief). Java has quite good performance although it cannot compete with
+  C code written by good hackers simply because C can be optimized more than
+  Java when you actually do it and have the skills to do it. Some areas of
+  the plugin have been optimized but not all and not conclusively. In general
+  however Java almost always needs more memory than an application written in 
+  e.g. C. In particular there is an overhead from the rather large standard
+  libraries that a normal Java installations comes with. See the ACM report:
+
+	Prechelt, L. 1999. Technical opinion: comparing Java vs. C/C++ efficiency
+	differences to interpersonal differences. Commun. ACM 42, 10 (Oct. 1999),
+	109-112. DOI= http://doi.acm.org/10.1145/317665.317683  
+
+  for an interesting comparison of C, C++ and Java. It is somewhat dated so
+  the comparison involved Java 1.2, i.e. without hotspot in 1.3 and the shared
+  runtime in 1.4. Those features made common Java applications many times faster 
+  than with JDK 1.2.
+
+  The conclusion from having about 30 programmers write a program to the same
+  specification using their own choice of language (from C,C++ and Java) is
+  that the skills  of the programmer is what determines the performance of the
+  code rather than choice  of programming language.
 
 
             == About GIT                       ==
