@@ -33,8 +33,6 @@ import java.util.TimeZone;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IResourceVisitor;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -77,7 +75,7 @@ public class CommitAction implements IObjectActionDelegate {
 
 	private Commit previousCommit;
 
-	private boolean amendAllowed ;
+	private boolean amendAllowed;
 	private boolean amending;
 
 
@@ -85,9 +83,6 @@ public class CommitAction implements IObjectActionDelegate {
 		resetState();
 		try {
 			buildIndexHeadDiffList();
-			buildFilesystemList();
-		} catch (CoreException e) {
-			return;
 		} catch (IOException e) {
 			return;
 		}
@@ -355,6 +350,7 @@ public class CommitAction implements IObjectActionDelegate {
 				includeList(project, indexDiff.getChanged(), indexChanges);
 				includeList(project, indexDiff.getRemoved(), indexChanges);
 				includeList(project, indexDiff.getMissing(), notIndexed);
+				includeList(project, indexDiff.getModified(), notIndexed);
 			}
 		}
 	}
@@ -404,33 +400,7 @@ public class CommitAction implements IObjectActionDelegate {
 		return projects;
 	}
 
-	private void buildFilesystemList() throws CoreException {
-		for (final Iterator i = rsrcList.iterator(); i.hasNext();) {
-			IResource resource = (IResource) i.next();
-			final IProject project = resource.getProject();
-			final GitProjectData projectData = GitProjectData.get(project);
-
-			if (projectData != null) {
-
-				if (resource instanceof IFile) {
-					tryAddResource((IFile) resource, projectData, notIndexed);
-				} else {
-					resource.accept(new IResourceVisitor() {
-						public boolean visit(IResource rsrc)
-								throws CoreException {
-							if (rsrc instanceof IFile) {
-								tryAddResource((IFile) rsrc, projectData, notIndexed);
-								return false;
-							}
-							return true;
-						}
-					});
-				}
-			}
-		}
-	}
-
-	public boolean tryAddResource(IFile resource, GitProjectData projectData, ArrayList<IFile> category) {
+	boolean tryAddResource(IFile resource, GitProjectData projectData, ArrayList<IFile> category) {
 		if (files.contains(resource))
 			return false;
 
