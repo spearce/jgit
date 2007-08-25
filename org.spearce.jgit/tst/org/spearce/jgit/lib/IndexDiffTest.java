@@ -53,19 +53,22 @@ public class IndexDiffTest extends RepositoryTestCase {
 
 	public void testModified() throws IOException {
 		GitIndex index = new GitIndex(db);
-		writeTrashFile("file2", "file2");
-		writeTrashFile("dir/file3", "dir/file3");
-		index.add(trash, new File(trash, "file2"));
-		index.add(trash, new File(trash, "dir/file3"));
+		
+		
+		index.add(trash, writeTrashFile("file2", "file2"));
+		index.add(trash, writeTrashFile("dir/file3", "dir/file3"));
+		
+		writeTrashFile("dir/file3", "changed");
 
 		Tree tree = new Tree(db);
-		tree.addFile("file2");
-		tree.addFile("dir/file3");
+		tree.addFile("file2").setId(new ObjectId("0123456789012345678901234567890123456789"));
+		tree.addFile("dir/file3").setId(new ObjectId("0123456789012345678901234567890123456789"));
 		assertEquals(2, tree.memberCount());
 
 		IndexDiff diff = new IndexDiff(tree, index);
 		diff.diff();
 		assertTrue(diff.getChanged().contains("file2"));
 		assertTrue(diff.getChanged().contains("dir/file3"));
+		assertTrue(diff.getModified().contains("dir/file3"));
 	}
 }

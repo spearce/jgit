@@ -10,7 +10,7 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  Lesser General Public License for more details.
  *
- *  You should have received a copy of the GNU Lesser General Public
+ *  You should have received a copy of the GNU General Public
  *  License along with this library; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  */
@@ -23,81 +23,106 @@ import java.util.HashSet;
 
 import org.spearce.jgit.lib.GitIndex.Entry;
 
+/**
+ * Compares the Index, a Tree, and the working directory
+ *
+ */
 public class IndexDiff {
 	private GitIndex index;
 	private Tree tree;
+	
+	public IndexDiff(Repository repository) throws IOException {
+		this.tree = repository.mapTree("HEAD");
+		this.index = repository.getIndex();
+	}
 
 	public IndexDiff(Tree tree, GitIndex index) {
 		this.tree = tree;
 		this.index = index;
 	}
-
-	public void diff() throws IOException {
-		for (Entry entry : index.getMembers()) {
-			String filename = entry.getName();
-//			if (checked.contains(filename))
-//				continue;
-
-			TreeEntry treeBlob = tree.findBlobMember(filename);
-			if (treeBlob == null) {
-				added.add(filename);
-			} else if (entry.getObjectId() != null && !entry.getObjectId().equals(treeBlob.getId())) {
-				changed.add(filename);
-			} else {
-				File file = new File(index.getRepository().getDirectory().getParentFile(), filename);
-				if (!file.isFile()) {
-					System.out.println("Missing file: " + file);
-					missing.add(filename);
+	
+	boolean anyChanges = false;
+	
+	/**
+	 * Run the diff operation. Until this is called, all lists will be empty
+	 * @return if anything is different between index, tree, and workdir
+	 * @throws IOException
+	 */
+	public boolean diff() throws IOException {
+		final File root = index.getRepository().getDirectory().getParentFile();
+		new IndexTreeWalker(index, tree, root, new IndexTreeVisitor() {
+			public void visitEntry(TreeEntry treeEntry, Entry indexEntry, File file) {
+				if (treeEntry == null) {
+					added.add(indexEntry.getName());
+					anyChanges = true;
+				} else if (indexEntry == null) {
+					removed.add(treeEntry.getFullName());
+					anyChanges = true;
+				} else {
+					if (!treeEntry.getId().equals(indexEntry.getObjectId())) {
+						changed.add(indexEntry.getName());
+						anyChanges = true;
+					}
+				}
+				
+				if (indexEntry != null) {
+					if (!file.exists()) {
+						missing.add(indexEntry.getName());
+						anyChanges = true;
+					} else {
+						if (indexEntry.isModified(root, true)) {
+							modified.add(indexEntry.getName());
+							anyChanges = true;
+						}
+					}
 				}
 			}
-
-			checked.add(filename);
-		}
-
-		tree.accept(new TreeVisitor() {
-
-			public void visitSymlink(SymlinkTreeEntry s) throws IOException {
+		
+			public void finishVisitTree(Tree ignoredTree, int indexItems, File directory) {
 			}
-
-			public void visitFile(FileTreeEntry f) throws IOException {
-				if (checked.contains(f.getFullName()))
-					return;
-				removed.add(f.getFullName());
-			}
-
-			public void startVisitTree(Tree t) throws IOException {
-				// TODO Auto-generated method stub
-
-			}
-
-			public void endVisitTree(Tree t) throws IOException {
-				// TODO Auto-generated method stub
-
-			}
-
-		});
+		}).walk();
+		
+		return anyChanges;
 	}
 
-	private HashSet<String> checked = new HashSet<String>();
-	private HashSet<String> added = new HashSet<String>();
-	private HashSet<String> changed = new HashSet<String>();
-	private HashSet<String> removed = new HashSet<String>();
-	private HashSet<String> missing = new HashSet<String>();
+	HashSet<String> added = new HashSet<String>();
+	HashSet<String> changed = new HashSet<String>();
+	HashSet<String> removed = new HashSet<String>();
+	HashSet<String> missing = new HashSet<String>();
+	HashSet<String> modified = new HashSet<String>();
 
+	/**
+	 * @return list of files added to the index, not in the tree
+	 */
 	public HashSet<String> getAdded() {
 		return added;
 	}
 
+	/**
+	 * @return list of files changed from tree to index
+	 */
 	public HashSet<String> getChanged() {
 		return changed;
 	}
 
+	/**
+	 * @return list of files removed from index, but in tree
+	 */
 	public HashSet<String> getRemoved() {
 		return removed;
 	}
 
-	
+	/**
+	 * @return list of files in index, but not filesystem
+	 */
 	public HashSet<String> getMissing() {
 		return missing;
+	}
+	
+	/**
+	 * @return list of files on modified on disk relative to the index
+	 */
+	public HashSet<String> getModified() {
+		return modified;
 	}
 }
