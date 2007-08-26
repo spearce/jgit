@@ -388,6 +388,37 @@ public class LaneTest extends TestCase {
 				, road);
 	}
 
+	public void testAllDirections() {
+		Data a = new Data("a",1);
+		Data b = new Data("b",2);
+		Data c = new Data("c",5);
+		Data d = new Data("d",4);
+		Data e = new Data("e",3);
+		Data f = new Data("f",6);
+		Data g = new Data("g",7);
+		counter.put(new TopologicalSorter.Edge<Data>(a,b));
+		counter.put(new TopologicalSorter.Edge<Data>(b,c));
+		counter.put(new TopologicalSorter.Edge<Data>(a,d));
+		counter.put(new TopologicalSorter.Edge<Data>(b,d));
+		counter.put(new TopologicalSorter.Edge<Data>(d,c));
+		counter.put(new TopologicalSorter.Edge<Data>(e,d));
+		counter.put(new TopologicalSorter.Edge<Data>(e,g));
+		counter.put(new TopologicalSorter.Edge<Data>(d,g));
+		counter.put(new TopologicalSorter.Edge<Data>(d,f));
+		String road = drawAsAscii(counter);
+		String road2 = drawAsAscii(counter);
+		assertEquals(road,road2);
+		assertEquals(
+"a>>>>>>>\\\n"+
+"b>>>>>>>\\\n"+
+"|       /<<<<<<<e\n"+
+"/<<<<<<<d>>>>>>>\\\n"+
+"c       |       |\n"+
+"        f       |\n"+
+"                g\n"
+				, road);
+	}
+
 	public void testAllPossibleWithFour() {
 		Data a = new Data("a", 1);
 		Data b = new Data("b", 2);
