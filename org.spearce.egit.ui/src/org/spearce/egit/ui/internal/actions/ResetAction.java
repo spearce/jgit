@@ -23,6 +23,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.spearce.egit.core.op.ResetOperation;
 import org.spearce.egit.core.op.ResetOperation.ResetType;
@@ -31,9 +32,13 @@ import org.spearce.egit.ui.internal.dialogs.BranchSelectionDialog;
 import org.spearce.jgit.lib.Repository;
 
 public class ResetAction extends RepositoryAction {
+
+	public void execute(IAction action) {
+		run(action);
+	}
+
 	@Override
-	protected void execute(IAction action) throws InvocationTargetException,
-			InterruptedException {
+	public void run(IAction action) {
 		final Repository repository = getRepository();
 		if (repository == null)
 			return;
@@ -43,20 +48,31 @@ public class ResetAction extends RepositoryAction {
 			final String refName = branchSelectionDialog.getRefName();
 			final ResetType type = branchSelectionDialog.getResetType();
 
-			getTargetPart().getSite().getWorkbenchWindow().run(true, false,
-					new IRunnableWithProgress() {
-				public void run(final IProgressMonitor monitor)
-				throws InvocationTargetException {
-					try {
-						new ResetOperation(repository, refName, type).run(monitor);
-						GitResourceDecorator.refresh();
-					} catch (CoreException ce) {
-						ce.printStackTrace();
-						throw new InvocationTargetException(ce);
+			try {
+				getTargetPart().getSite().getWorkbenchWindow().run(true, false,
+						new IRunnableWithProgress() {
+					public void run(final IProgressMonitor monitor)
+					throws InvocationTargetException {
+						try {
+							new ResetOperation(repository, refName, type).run(monitor);
+							GitResourceDecorator.refresh();
+						} catch (CoreException ce) {
+							ce.printStackTrace();
+							throw new InvocationTargetException(ce);
+						}
 					}
-				}
-			});
+				});
+			} catch (InvocationTargetException e) {
+				MessageDialog.openError(getShell(),"Reset failed", e.getMessage());
+			} catch (InterruptedException e) {
+				MessageDialog.openError(getShell(),"Reset failed", e.getMessage());
+			}
 		}
 		
+	}
+
+	@Override
+	public boolean isEnabled() {
+		return !getSelection().isEmpty();
 	}
 }

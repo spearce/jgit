@@ -35,7 +35,6 @@ public class BranchAction extends RepositoryAction {
 	public void execute(IAction action) {
 		run(action);
 	}
-
 	
 	@Override
 	public void run(IAction action) {
@@ -73,5 +72,10 @@ public class BranchAction extends RepositoryAction {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+	}
+
+	@Override
+	public boolean isEnabled() {
+		return !getSelection().isEmpty();
 	}
 }
