@@ -39,6 +39,7 @@ public abstract class RepositoryAction extends TeamAction {
 		}
 		if (mapping == null) {
 			MessageDialog.openError(getShell(), "Cannot Find Repository", "Could not find a repository associated with this project");
+			return null;
 		}
 		
 		final Repository repository = mapping.getRepository();
