@@ -422,7 +422,8 @@ public class CommitAction implements IObjectActionDelegate {
 				}
 
 				if (member != null && member instanceof IFile) {
-					files.add((IFile) member);
+					if (!files.contains(member))
+						files.add((IFile) member);
 					category.add((IFile) member);
 				} else {
 					System.out.println("Couldn't find " + filename);
