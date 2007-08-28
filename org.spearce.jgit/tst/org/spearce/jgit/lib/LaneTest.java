@@ -170,20 +170,20 @@ public class LaneTest extends TestCase {
 				"|       k\n" +
 				"|       l>>>>>>>\\\n" +
 				"c       |       |\n" +
-				"d       |       |\n" +
-				"|       m>>>>>>>|>>>>>>>\\\n" +
-				"|       n       |       |\n" +
-				"|       o       |       |\n" +
-				"|       |       |       x\n" +
-				"|       |       |       y\n" +
-				"|       |       |       z\n" +
-				"|       p<<<<<<<|<<<<<<</\n" +
-				"|       q       |\n" +
-				"\\>>>>>>>|>>>>>>>e\n" +
+				"d>>>>>>>|>>>>>>>\\\n" +
+				"        m>>>>>>>|>>>>>>>\\\n" +
+				"        n       |       |\n" +
+				"        o       |       |\n" +
+				"        |       |       x\n" +
+				"        |       |       y\n" +
+				"        /<<<<<<<|<<<<<<<z\n" +
+				"        p       |\n" +
+				"        q       |\n" +
+				"        |       e\n" +
 				"        |       f\n" +
 				"        |       g\n" +
-				"        |       h\n" +
-				"        i<<<<<<</\n" +
+				"        /<<<<<<<h\n" +
+				"        i\n" +
 				"        j\n",
 				road);
 
@@ -286,8 +286,8 @@ public class LaneTest extends TestCase {
 		assertEquals(road,road2);
 		assertEquals(
 				"c\n"+
-				"|       b\n" +
-				"a<<<<<<</\n"
+				"/<<<<<<<b\n" +
+				"a\n"
 				, road);
 	}
 
@@ -383,8 +383,8 @@ public class LaneTest extends TestCase {
 		assertEquals(
 				"a>>>>>>>\\\n"+
 				"|       c\n"+
-				"b       |\n"+
-				"\\>>>>>>>d\n"
+				"b>>>>>>>\\\n"+
+				"        d\n"
 				, road);
 	}
 
@@ -436,9 +436,9 @@ public class LaneTest extends TestCase {
 		assertEquals(road,road2);
 		assertEquals(
 				"a>>>>>>>\\>>>>>>>\\\n"+
-				"b       |       |\n"+
-				"|>>>>>>>c       |\n"+
-				"\\>>>>>>>\\>>>>>>>d\n"
+				"b>>>>>>>\\>>>>>>>\\\n"+
+				"        c>>>>>>>\\\n"+
+				"                d\n"
 				, road);
 	}
 
@@ -464,10 +464,10 @@ public class LaneTest extends TestCase {
 		assertEquals(road,road2);
 		assertEquals(
 				"a>>>>>>>\\>>>>>>>\\>>>>>>>\\\n"+
-				"b       |       |       |\n"+
-				"|>>>>>>>c       |       |\n"+
-				"|>>>>>>>|>>>>>>>d       |\n"+
-				"\\>>>>>>>\\>>>>>>>\\>>>>>>>e\n"
+				"b>>>>>>>\\>>>>>>>\\>>>>>>>\\\n"+
+				"        c>>>>>>>\\>>>>>>>\\\n"+
+				"                d>>>>>>>\\\n"+
+				"                        e\n"
 				, road);
 	}
 
@@ -491,79 +491,63 @@ public class LaneTest extends TestCase {
 		assertEquals(road,road2);
 		assertEquals(
 				"a>>>>>>>\\>>>>>>>\\>>>>>>>\\\n"+
-				"b       |       |       |\n"+
-				"|>>>>>>>c       |       |\n"+
-				"|       \\>>>>>>>d       |\n"+
-				"\\>>>>>>> >>>>>>>\\>>>>>>>e\n"
+				"b>>>>>>>\\>>>>>>>|>>>>>>>\\\n"+
+				"        c>>>>>>>\\       |\n"+
+				"                d>>>>>>>\\\n"+
+				"                        e\n"
 				, road);
 	}
 
 	private String drawAsAscii(TopologicalSorter<Data> counter) {
 		StringWriter w = new StringWriter();
-		for(Data xx : counter.getEntries()) {
+		List<Data> entries = counter.getEntries();
+		for (int i=0; i<entries.size(); ++i) {
+			Data xx = entries.get(i);
 			Integer io = counter.getInternalPosition(xx);
 //			System.out.print("Now at item "+xx+ " at "+io);
 			Lane lane = counter.lane.get(xx);
+//			lane.getNumber();
 			char[] points = new char[counter.currentLanes.size()];
 			char[] horiz = new char[counter.currentLanes.size()-1];
 			Arrays.fill(points,' ');
+
+			List<Edge<Data>> px = counter.getEdgeFrom(xx);
 			for (TopologicalSorter<Data>.Lane li : counter.currentLanes) {
 				Integer iost = counter.getInternalPosition(li.startsAt);
 				Integer ioen = counter.getInternalPosition(li.endsAt);
-				List<Edge<Data>> lif = counter.getEdgeFrom(li.endsAt);
-				if (lif != null) {
-					for(TopologicalSorter.Edge<Data> ee : lif) {
-						Integer eio = counter.getInternalPosition(ee.to);
-						if (eio == null) { // not yet assigned (further down)
-							if (iost != null && io.intValue() > iost.intValue())
-								points[li.getNumber()] = '|';
-						} else {
-//							System.out.println ("Looking at id "+li.endsAt+" at lane "+li.number+" ending on ="+ioen+" and it's parent "+ee.to+ " ends at "+eio);
-							if (io.intValue() < eio.intValue() && io.intValue() > iost.intValue()) {
-								if (io.intValue() >= ioen.intValue())
-									points[li.getNumber()] = '|';
+
+				// Middle of lane
+				//	 o
+				//	 |
+				//	 o
+				if (iost != null && io > iost && (ioen == null || io < ioen)) {
+					points[li.getNumber()] = '|';
+				}
+				// branch out to parent
+				//   o						 o
+				//   \>>>>>>>>>>o o<<<<<<<<<</
+				if (px != null) {
+					for (int j=0; j<px.size(); ++j) {
+						Data p = px.get(j).to;
+						Lane pl = counter.getLane(p);
+						if (li == pl && lane != li) {
+							int fromn = lane.getNumber();
+							int ton = pl.getNumber();
+							if (fromn < ton) {
+								points[ton] = '\\';
+								for (int k=fromn; k<ton; ++k) {
+									horiz[k] = '>';
+								}
 							} else {
-								if (io.intValue() == eio.intValue()) {
-									int fromn = lane.getNumber();
-									int ton = li.getNumber();
-									if (fromn < ton) {
-										for (int ii=fromn; ii<ton; ++ii)
-											horiz[ii] = '<';
-										points[ton] = '/';
-									} else {
-										for (int ii=fromn-1; ii>=ton; --ii)
-											horiz[ii] = '>';
-										points[ton] = '\\';
-									}
+								points[ton] = '/';
+								for (int k=fromn-1; k>=ton; --k) {
+									horiz[k] = '<';
 								}
 							}
 						}
 					}
 				}
-				if (li.startsAt == xx) {
-					int fromn = lane.getNumber();
-					int ton = li.getNumber();
-					if (fromn < ton) {
-						for (int ii=fromn; ii<ton; ++ii)
-							horiz[ii] = '>';
-						points[ton] = '\\';
-					} else {
-						for (int ii=fromn-1; ii>=ton; --ii)
-							horiz[ii] = '<';
-						points[ton] = '/';
-					}
-				}
-				if (iost!=null && io.intValue() > iost.intValue()) {
-					if (ioen == null || io.intValue() < ioen.intValue()) {
-//						if (points[li.number] == ' ')
-							points[li.getNumber()] = '|';
-//						else
-//							if (points[li.number] == '|')
-//								points[li.number] = '!';
-//							else
-//								points[li.number] = '+';
-					}
-				}
+				// merge, SAME (unless we get really smart)
 			}
 			points[lane.getNumber()] = xx.name.charAt(0);
 			int m = points.length;

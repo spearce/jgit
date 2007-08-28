@@ -445,90 +445,55 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					int y = event.y;
 					int h = event.height;
 					event.gc.setLineWidth(2);
-//					RepositoryMapping rm = RepositoryMapping.getMapping(element.getResource());
 
 					Lane lane = element.getLane();
 					TopologicalSorter<ObjectId> counter = lane.getSorter();
 					Integer io = counter.getInternalPosition(xx);
+					List<Edge<ObjectId>> px = counter.getEdgeFrom(xx);
 					for (TopologicalSorter<ObjectId>.Lane li : counter.currentLanes) {
 						Integer iost = counter.getInternalPosition(li.startsAt);
 						Integer ioen = counter.getInternalPosition(li.endsAt);
-						List<Edge<ObjectId>> lif = counter.getEdgeFrom(li.endsAt);
-						if (lif != null) {
-							for(TopologicalSorter.Edge<ObjectId> ee : lif) {
-								Integer eio = counter.getInternalPosition(ee.getTo());
-								if (eio == null) { // not yet assigned (further down)
-									if (iost != null && io.intValue() > iost.intValue()) {
-										event.gc.setForeground(Display.getCurrent().getSystemColor(colors[li.getNumber()%colors.length]));
-//										event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_RED));
-										event.gc.drawLine(x + li.getNumber()*INTERLANE, y, x + li.getNumber()*INTERLANE, y + h);
-									}
-								} else {
-//									System.out.println ("Looking at id "+li.endsAt+" at lane "+li.number+" ending on ="+ioen+" and it's parent "+ee.to+ " ends at "+eio);
-									if (io.intValue() < eio.intValue() && /*ECLIPSEBUG*/ iost!=null && /*ENDBUG*/ io.intValue() > iost.intValue()) {
-										if (io.intValue() >= ioen.intValue()) {
-											event.gc.setForeground(Display.getCurrent().getSystemColor(colors[li.getNumber()%colors.length]));
-//											event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_MAGENTA));
-											event.gc.drawLine(x + li.getNumber()*INTERLANE, y, x + li.getNumber()*INTERLANE, y + h);
-										}
-									} else {
-										if (io.intValue() == eio.intValue()) {
-											// COPY
-											int fromn = lane.getNumber();
-											int ton = li.getNumber();
-											int x1 = x + fromn * INTERLANE;
-											int x2 = x + ton * INTERLANE;
-//											if (fromn < ton)
-//												x1 += DOTRADIUS;
-//											else
-//												x1 -= DOTRADIUS;
-											event.gc.setForeground(Display.getCurrent().getSystemColor(colors[li.getNumber()%colors.length]));
-//											event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
-											// _|
-											if (x1 < x2)
-												event.gc.drawArc(x1 - (x2-x1), y-h/2, (x2-x1)*2, h, 270, 90);
-											else
-												event.gc.drawArc(x2, y-h/2, (x1-x2)*2, h, 180, 90);
-//											event.gc.drawLine(x1, y + h/2, x2, y + h/2);
-//											event.gc.drawLine(x2, y, x2, y + h/2);
-										}
-									}
-								}
-							}
-						}
-						if (li.startsAt == xx) {
-							// COPY
-							int fromn = lane.getNumber();
-							int ton = li.getNumber();
-							int x1 = x + fromn * INTERLANE;
-							int x2 = x + ton * INTERLANE;
-							if (fromn < ton)
-								x1 += DOTRADIUS;
-							else
-								x1 -= DOTRADIUS;
-//							event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN));
+						// Middle of lane
+						//	 o
+						//	 |
+						//	 o
+						if (iost != null && io > iost && (ioen == null || io < ioen)) {
 							event.gc.setForeground(Display.getCurrent().getSystemColor(colors[li.getNumber()%colors.length]));
-							if (x1 < x2)
-								event.gc.drawArc(x1 - (x2-x1), y+h/2, (x2-x1)*2, h, 0, 90);
-							else
-								event.gc.drawArc(x2, y+h/2, (x1-x2)*2, h, 180, 90);
-//							event.gc.drawLine(x1, y + h/2, x2, y + h/2);
-//							event.gc.drawLine(x2, y + h/2, x2, y + h);
-							// END COPY
+							event.gc.drawLine(x + li.getNumber()*INTERLANE, y, x + li.getNumber()*INTERLANE, y + h);
 						}
-						if (iost!=null && io.intValue() > iost.intValue()) {
-							if (ioen == null || io.intValue() < ioen.intValue()) {
-//								event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
-								event.gc.setForeground(Display.getCurrent().getSystemColor(colors[li.getNumber()%colors.length]));
-								event.gc.drawLine(x + li.getNumber()*INTERLANE, y, x + li.getNumber()*INTERLANE, y + h);
-							}
-							if (ioen == null || io.intValue() == ioen.intValue()) {
-//								event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
+						if (li == lane) {
+							if (iost != null && io > iost && (ioen == null || io <= ioen)) {
 								event.gc.setForeground(Display.getCurrent().getSystemColor(colors[li.getNumber()%colors.length]));
 								event.gc.drawLine(x + li.getNumber()*INTERLANE, y, x + li.getNumber()*INTERLANE, y + h/2);
 							}
+							if (iost != null && io >= iost && (ioen == null || io < ioen)) {
+								event.gc.setForeground(Display.getCurrent().getSystemColor(colors[li.getNumber()%colors.length]));
+								event.gc.drawLine(x + li.getNumber()*INTERLANE, y + h/2, x + li.getNumber()*INTERLANE, y + h);
+							}
 						}
+						// branch out to parent
+						//   o						 o
+						//   \>>>>>>>>>>o o<<<<<<<<<</
+						if (px != null) {
+							for (int j=0; j<px.size(); ++j) {
+								ObjectId p = px.get(j).getTo();
+								Lane pl = counter.getLane(p);
+								if (li == pl && lane != li) {
+									int fromn = lane.getNumber();
+									int ton = pl.getNumber();
+									int x1 = x + fromn * INTERLANE;
+									int x2 = x + ton * INTERLANE;
+									event.gc.setForeground(Display.getCurrent().getSystemColor(colors[pl.getNumber()%colors.length]));
+									if (x1 < x2)
+										event.gc.drawArc(x1 - (x2-x1), y+h/2, (x2-x1)*2, h, 0, 90);
+									else
+										event.gc.drawArc(x2, y+h/2, (x1-x2)*2, h, 90, 90);
+								}
+							}
+						}
+						// merge, SAME (unless we get really smart)
 					}
+					// Draw dot
 					if (xx.equals(currentHead)) {
 						event.gc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_RED));
 						event.gc.fillOval(x + lane.getNumber() *  INTERLANE - DOTRADIUS*2, y + h/2 - DOTRADIUS*2, DOTRADIUS*4, DOTRADIUS*4);
