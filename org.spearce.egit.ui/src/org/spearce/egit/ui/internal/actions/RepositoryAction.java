@@ -27,9 +27,7 @@ public abstract class RepositoryAction extends TeamAction {
 		
 		RepositoryMapping mapping = null;
 		for (IProject project : projects) {
-			GitProjectData tmpData = GitProjectData.get(project);
-			
-			RepositoryMapping repositoryMapping = tmpData.getRepositoryMapping(project);
+			RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
 			if (mapping == null) 
 				mapping = repositoryMapping;
 			else if (mapping.getRepository() != repositoryMapping.getRepository()) {
