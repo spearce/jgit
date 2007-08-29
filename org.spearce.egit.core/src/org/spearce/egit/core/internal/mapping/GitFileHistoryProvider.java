@@ -31,7 +31,7 @@ public class GitFileHistoryProvider extends FileHistoryProvider implements
 	public IFileHistory getFileHistoryFor(IResource resource, int flags,
 			IProgressMonitor monitor) {
 		// TODO: implement flags
-		return new GitFileHistory(resource, flags, monitor); // TODO: implement flags
+		return new GitFileHistory(resource, flags, monitor, false); // TODO: implement flags
 	}
 
 	public IFileRevision getWorkspaceFileRevision(IResource resource) {
@@ -42,6 +42,10 @@ public class GitFileHistoryProvider extends FileHistoryProvider implements
 			IProgressMonitor monitor) {
 		// TODO: implement flags and monitor
 		return null;
+	}
+
+	public GitFileHistory getHistoryFor(IResource resource, int flags, IProgressMonitor monitor, boolean returnAll) {
+		return new GitFileHistory(resource, flags, monitor, returnAll); // TODO: implement flags
 	}
 
 }

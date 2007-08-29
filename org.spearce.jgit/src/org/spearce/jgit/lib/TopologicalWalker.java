@@ -29,6 +29,11 @@ public class TopologicalWalker extends Walker {
 		Map<ObjectId, Date> commitTime = new ObjectIdMap(new HashMap<ObjectId,ObjectId>());
 
 		TopologicalSorter<ObjectId> topoSorter;
+		final boolean returnAll;
+		
+		public boolean isReturnAll() {
+			return returnAll;
+		}
 
 		protected TopologicalSorter<ObjectId>.Lane getLane(ObjectId id) {
 			return topoSorter.lane.get(id);
@@ -36,18 +41,19 @@ public class TopologicalWalker extends Walker {
 
 		protected TopologicalWalker(final Repository repostory, Commit[] starts,
 				String[] relativeResourceName, boolean leafIsBlob,
-				boolean followMainOnly, Boolean merges, ObjectId activeDiffLeafId) {
+				boolean followMainOnly, Boolean merges, ObjectId activeDiffLeafId, final boolean returnAll) {
 			super(repostory, starts, relativeResourceName, leafIsBlob,
 					followMainOnly, merges, activeDiffLeafId);
+			this.returnAll = returnAll;
 			topoSorter = new TopologicalSorter<ObjectId>() {;
 				@Override
 				protected boolean filter(ObjectId element) {
-					return collected.containsKey(element);
+					return returnAll ? true : collected.containsKey(element);
 				}
 
 				@Override
 				public int size() {
-					return collected.size();
+					return returnAll ? super.size() : collected.size();
 				}
 			};
 			topoSorter.setComparator(new Comparator<ObjectId>() {

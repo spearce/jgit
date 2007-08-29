@@ -59,9 +59,12 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 
 	private List<IFileRevision> revisions;
 
-	public GitFileHistory(IResource resource, int flags, IProgressMonitor monitor) {
+	private final boolean returnAll;
+
+	public GitFileHistory(IResource resource, int flags, IProgressMonitor monitor, boolean returnAll) {
 		this.resource = resource;
 		this.flags = flags;
+		this.returnAll = returnAll;
 		String prefix = RepositoryMapping.getMapping(resource).getSubset();
 		String[] prefixSegments = prefix!=null ? prefix.split("/") : new String[0];
 		String[] resourceSegments = resource.getProjectRelativePath().segments(); 
@@ -102,8 +105,8 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 		private final IProgressMonitor monitor;
 		private Map<ObjectId,IFileRevision> revisions = new HashMap<ObjectId, IFileRevision>();
 
-		EclipseWalker(Repository repository, Commit[] starts, String[] relativeResourceName,boolean leafIsBlob,IResource resource,boolean followMainOnly, Boolean merges, ObjectId lastActiveDiffId, IProgressMonitor monitor) {
-			super(repository, starts, relativeResourceName, leafIsBlob, followMainOnly, merges, lastActiveDiffId);
+		EclipseWalker(Repository repository, Commit[] starts, String[] relativeResourceName,boolean leafIsBlob,IResource resource,boolean followMainOnly, Boolean merges, ObjectId lastActiveDiffId, boolean returnAll, IProgressMonitor monitor) {
+			super(repository, starts, relativeResourceName, leafIsBlob, followMainOnly, merges, lastActiveDiffId, returnAll);
 			this.resource = resource;
 			this.monitor = monitor;
 		}
@@ -126,7 +129,10 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 			List<IFileRevision> ret = new MappedList<ObjectId,IFileRevision>((List)rawList) {
 				public IFileRevision map(ObjectId in) {
 					GitFileRevision ret = (GitFileRevision)revisions.get(in);
-					ret.setLane(getLane(in));
+					if (ret == null && isReturnAll())
+						ret = new GitFileRevision(in, resource, 0);
+					if (ret != null)
+						ret.setLane(getLane(in));
 					return ret;
 				}
 			};
@@ -229,7 +235,9 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 						resource,
 						(flags & IFileHistoryProvider.SINGLE_LINE_OF_DESCENT) == 0,
 						null,
-						activeDiffLeafId, monitor);
+						activeDiffLeafId,
+						returnAll,
+						monitor);
 				githistory = walker.collectHistory();
 			} else {
 				githistory = new ArrayList<IFileRevision>();

@@ -39,7 +39,7 @@ public class T0007_WalkerTest extends RepositoryTestCase {
 	class MyWalker extends TopologicalWalker {
 
 		public MyWalker(String[] starts, String path, boolean leafIsBlob,boolean followMainOnly, Boolean merges, ObjectId activeDiffLeafId) throws IOException {
-			super(db, mapCommits(starts), parsePath(path), leafIsBlob, followMainOnly, merges, activeDiffLeafId);
+			super(db, mapCommits(starts), parsePath(path), leafIsBlob, followMainOnly, merges, activeDiffLeafId, false);
 		}
 
 		protected boolean isCancelled() {

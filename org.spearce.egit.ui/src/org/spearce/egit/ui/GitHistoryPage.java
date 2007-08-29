@@ -66,7 +66,6 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.team.core.RepositoryProvider;
-import org.eclipse.team.core.history.IFileHistoryProvider;
 import org.eclipse.team.core.history.IFileRevision;
 import org.eclipse.team.internal.ui.TeamUIMessages;
 import org.eclipse.team.internal.ui.history.DialogHistoryPageSite;
@@ -75,6 +74,7 @@ import org.eclipse.team.ui.history.IHistoryCompareAdapter;
 import org.eclipse.team.ui.history.IHistoryPageSite;
 import org.spearce.egit.core.GitProvider;
 import org.spearce.egit.core.internal.mapping.GitFileHistory;
+import org.spearce.egit.core.internal.mapping.GitFileHistoryProvider;
 import org.spearce.egit.core.internal.mapping.GitFileRevision;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.internal.actions.GitCompareRevisionAction;
@@ -88,6 +88,7 @@ import org.spearce.jgit.lib.TopologicalSorter.Lane;
 public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		IHistoryCompareAdapter {
 
+	private static final String PREF_SHOWALLREPOVERSIONS = "org.spearce.egit.ui.githistorypage.showallrepoversions";
 	private static final String PREF_SHOWALLPROJECTVERSIONS = "org.spearce.egit.ui.githistorypage.showallprojectversions";
 	private static final String PREF_SHOWALLFOLDERVERSIONS = "org.spearce.egit.ui.githistorypage.showallfolderversions";
 
@@ -101,16 +102,20 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	protected boolean hintShowDiffNow;
 
-	private boolean showAllVersions;
+	private boolean showAllProjectVersions;
 
 	private boolean showAllFolderVersions;
 
+	private boolean showAllRepoVersions;
+
 	public GitHistoryPage(Object object) {
 		setInput(object);
-		showAllVersions = Activator.getDefault().getPreferenceStore()
+		showAllProjectVersions = Activator.getDefault().getPreferenceStore()
 				.getBoolean(PREF_SHOWALLPROJECTVERSIONS);
 		showAllFolderVersions = Activator.getDefault().getPreferenceStore()
 				.getBoolean(PREF_SHOWALLFOLDERVERSIONS);
+		showAllRepoVersions = Activator.getDefault().getPreferenceStore()
+				.getBoolean(PREF_SHOWALLREPOVERSIONS);
 	}
 
 	public boolean inputSet() {
@@ -234,9 +239,9 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(
 				resourceListener, IResourceChangeEvent.POST_CHANGE);
 
-		Action showAllVersionsAction = new Action("\u2200" /* unicode: FOR ALL */) {
+		Action showAllRepoVersionsAction = new Action("R") {
 			public void run() {
-				setShowAllVersions(isChecked());
+				setShowAllRepoVersions(isChecked());
 				if (historyRefreshJob.cancel()) {
 					System.out.println("rescheduling");
 					historyRefreshJob.schedule();
@@ -245,11 +250,28 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				}
 			}
 		};
-		showAllVersionsAction
-				.setToolTipText("Show all versions for the project containing the resource");
-		showAllVersionsAction.setChecked(isShowAllVersions());
+		showAllRepoVersionsAction
+				.setToolTipText("Show all versions for the repository containing the resource");
+		showAllRepoVersionsAction.setChecked(isShowAllRepoVersions());
 		getSite().getActionBars().getToolBarManager()
-				.add(showAllVersionsAction);
+				.add(showAllRepoVersionsAction);
+
+		Action showAllProjectVersionsAction = new Action("P") {
+			public void run() {
+				setShowAllProjectVersions(isChecked());
+				if (historyRefreshJob.cancel()) {
+					System.out.println("rescheduling");
+					historyRefreshJob.schedule();
+				} else {
+					System.out.println("failed to cancel?");
+				}
+			}
+		};
+		showAllProjectVersionsAction
+				.setToolTipText("Show all versions for the project containing the resource");
+		showAllProjectVersionsAction.setChecked(isShowAllProjectVersions());
+		getSite().getActionBars().getToolBarManager()
+				.add(showAllProjectVersionsAction);
 
 		Action showAllFolderVersionsAction = new Action("F") {
 			public void run() {
@@ -269,14 +291,24 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				showAllFolderVersionsAction);
 	}
 
-	private boolean isShowAllVersions() {
-		return showAllVersions;
+	private boolean isShowAllRepoVersions() {
+		return showAllRepoVersions;
 	}
 
-	protected void setShowAllVersions(boolean showAllVersions) {
-		this.showAllVersions = showAllVersions;
+	protected void setShowAllRepoVersions(boolean showAllRepoVersions) {
+		this.showAllRepoVersions = showAllRepoVersions;
 		Activator.getDefault().getPreferenceStore().setValue(
-				PREF_SHOWALLPROJECTVERSIONS, showAllVersions);
+				PREF_SHOWALLREPOVERSIONS, showAllRepoVersions);
+	}
+
+	private boolean isShowAllProjectVersions() {
+		return showAllProjectVersions;
+	}
+
+	protected void setShowAllProjectVersions(boolean showAllProjectVersions) {
+		this.showAllProjectVersions = showAllProjectVersions;
+		Activator.getDefault().getPreferenceStore().setValue(
+				PREF_SHOWALLPROJECTVERSIONS, showAllProjectVersions);
 	}
 
 	private boolean isShowAllFolderVersions() {
@@ -405,7 +437,12 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 							else
 								item.setText(i, "");
 						}
-						item.setData(fileRevisions.get(event.index));
+						GitFileRevision revision = (GitFileRevision) fileRevisions.get(event.index);
+						item.setData(revision);
+						if (revision.getCount() == 0)
+							item.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
+						else
+							item.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GRAY));
 					}
 					item.setFont(0,JFaceResources.getBannerFont());
 				} catch (Throwable b) {
@@ -601,18 +638,20 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			IFileHistoryProvider fileHistoryProvider = provider
+			GitFileHistoryProvider fileHistoryProvider = (GitFileHistoryProvider) provider
 					.getFileHistoryProvider();
 			IResource startingPoint = (IResource) getInput();
 			if (isShowAllFolderVersions())
 				if (!(startingPoint instanceof IContainer))
 					startingPoint = startingPoint.getParent();
-			if (isShowAllVersions())
+			if (isShowAllProjectVersions())
 				startingPoint = startingPoint.getProject();
-			GitFileHistory fileHistoryFor = (GitFileHistory)fileHistoryProvider
-					.getFileHistoryFor(startingPoint,
+
+			GitFileHistory fileHistoryFor = fileHistoryProvider
+					.getHistoryFor(startingPoint,
 							-1,
-							monitor);
+							monitor,
+							isShowAllRepoVersions());
 			fileRevisions = fileHistoryFor.getFileRevisionsList();
 			final Map fnewappliedPatches = newappliedPatches;
 			final Map<ObjectId,Tag[]> ftags = newtags;
