@@ -188,8 +188,8 @@ public class T0007_WalkerTest extends RepositoryTestCase {
 		assertEquals(5, h.length);
 		assertEquals("0966a434eb1a025db6b71485ab63a3bfbea520b6", h[0].toString());
 		assertEquals("2c349335b7f797072cf729c4f3bb0914ecb6dec9", h[1].toString());
-		assertEquals("58be4659bb571194ed4562d04b359d26216f526e", h[2].toString());
-		assertEquals("ac7e7e44c1885efb472ad54a78327d66bfc4ecef", h[3].toString());
+		assertEquals("ac7e7e44c1885efb472ad54a78327d66bfc4ecef", h[2].toString());
+		assertEquals("58be4659bb571194ed4562d04b359d26216f526e", h[3].toString());
 		assertEquals("6c8b137b1c652731597c89668f417b8695f28dd7", h[4].toString());
 	}
 
@@ -202,8 +202,8 @@ public class T0007_WalkerTest extends RepositoryTestCase {
 		assertEquals("d86a2aada2f5e7ccf6f11880bfb9ab404e8a8864", h[0].toString());
 		assertEquals("0966a434eb1a025db6b71485ab63a3bfbea520b6", h[1].toString());
 		assertEquals("2c349335b7f797072cf729c4f3bb0914ecb6dec9", h[2].toString());
-		assertEquals("58be4659bb571194ed4562d04b359d26216f526e", h[3].toString());
-		assertEquals("ac7e7e44c1885efb472ad54a78327d66bfc4ecef", h[4].toString());
+		assertEquals("ac7e7e44c1885efb472ad54a78327d66bfc4ecef", h[3].toString());
+		assertEquals("58be4659bb571194ed4562d04b359d26216f526e", h[4].toString());
 		assertEquals("6c8b137b1c652731597c89668f417b8695f28dd7", h[5].toString());
 	}
 
