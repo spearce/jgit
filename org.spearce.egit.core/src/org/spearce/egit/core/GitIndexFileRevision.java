@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2006  Robin Rosenberg
+ *  Copyright (C) 2007  Robin Rosenberg
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -22,16 +22,17 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.team.core.history.IFileRevision;
 import org.spearce.egit.core.internal.mapping.GitFileRevision;
+import org.spearce.jgit.lib.ObjectId;
 
-public class GitWorkspaceFileRevision extends GitFileRevision implements
+public class GitIndexFileRevision extends GitFileRevision implements
 		IFileRevision {
 
-	public GitWorkspaceFileRevision(IResource resource, int count) {
+	public GitIndexFileRevision(IResource resource, int count) {
 		super(resource, count);
 	}
 
 	public IStorage getStorage(IProgressMonitor monitor) throws CoreException {
-		return new GitStorage(null, getResource());
+		return new GitStorage(ObjectId.zeroId(), getResource());
 	}
 
 	public boolean isPropertyMissing() {
@@ -52,10 +53,10 @@ public class GitWorkspaceFileRevision extends GitFileRevision implements
 	}
 
 	public String getComment() {
-		return "";
+		return null;
 	}
 
 	public String getContentIdentifier() {
-		return "Workspace";
+		return "Index";
 	}
 }

@@ -29,16 +29,18 @@ import org.eclipse.core.resources.IStorage;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.spearce.egit.core.project.RepositoryMapping;
+import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
+import org.spearce.jgit.lib.GitIndex.Entry;
 
 public class GitStorage implements IStorage {
 
 	private final IResource resource;
 
-	private TreeEntry entry;
+	private ObjectId entry;
 
 	private ObjectId treeId;
 
@@ -49,14 +51,23 @@ public class GitStorage implements IStorage {
 			return;
 
 		RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(resource);
-		Tree tree;
+		String name = repositoryMapping.getRepoRelativePath(resource);
 		try {
-			tree = repositoryMapping.getRepository().mapTree(treeId);
-			String name = repositoryMapping.getRepoRelativePath(resource);
-			if (resource.getType() == IResource.FILE)
-				entry = tree.findBlobMember(name);
-			else
-				entry = tree.findTreeMember(name);
+			if (treeId.equals(ObjectId.zeroId())) {
+				GitIndex index = repositoryMapping.getRepository().getIndex();
+				Entry indexEntry = index.getEntry(name);
+				if (indexEntry != null)
+					entry = indexEntry.getObjectId();
+			} else {
+				Tree tree = repositoryMapping.getRepository().mapTree(treeId);
+				TreeEntry treeEntry;
+				if (resource.getType() == IResource.FILE)
+					treeEntry = tree.findBlobMember(name);
+				else
+					treeEntry = tree.findTreeMember(name);
+				if (treeEntry != null)
+					entry = treeEntry.getId();
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -71,8 +82,9 @@ public class GitStorage implements IStorage {
 				if (entry == null)
 					return new ByteArrayInputStream(new byte[0]);
 				else {
-					ObjectId id = entry.getId();
-					ObjectLoader reader = entry.getRepository().openBlob(id);
+					ObjectLoader reader = RepositoryMapping.getMapping(
+							resource.getProject()).getRepository().openBlob(
+							entry);
 					byte[] bytes = reader.getBytes();
 					return new ByteArrayInputStream(bytes);
 				}

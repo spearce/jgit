@@ -78,11 +78,16 @@ public abstract class Walker {
 			Arrays.fill(initialResourceHash, ObjectId.zeroId());
 			Commit initialPrevious;
 			// The first commit is special. We compare it with a reference
-			if (i == 0 && activeDiffLeafId != null && initialResourceHash.length > 0) {
-				initialResourceHash[initialResourceHash.length-1] = activeDiffLeafId;
-				initialPrevious = new Commit(repository);
-				initialPrevious.setCommitId(ObjectId.zeroId());
-				record(null, initialPrevious.getCommitId());
+			if (i == 0) {
+				if (activeDiffLeafId != null && initialResourceHash.length > 0) {
+					initialResourceHash[initialResourceHash.length-1] = activeDiffLeafId;
+					initialPrevious = new Commit(repository);
+					initialPrevious.setCommitId(ObjectId.zeroId());
+					record(null, initialPrevious.getCommitId());
+				} else {
+					record(ObjectId.zeroId(), starts[i].getCommitId());
+					initialPrevious = null;
+				}
 			} else {
 				initialPrevious = null;
 			}

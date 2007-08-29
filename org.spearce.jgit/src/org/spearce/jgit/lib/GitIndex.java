@@ -516,6 +516,10 @@ public class GitIndex {
 		public int getStage() {
 			return stage;
 		}
+
+		public int getSize() {
+			return size;
+		}
 	}
 
 	static class Header {

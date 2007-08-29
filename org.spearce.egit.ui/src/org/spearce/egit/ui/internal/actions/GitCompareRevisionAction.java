@@ -31,8 +31,9 @@ import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.IReusableEditor;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.actions.BaseSelectionListenerAction;
+import org.spearce.egit.core.GitIndexFileRevision;
 import org.spearce.egit.core.GitWorkspaceFileRevision;
-import org.spearce.egit.core.internal.mapping.GitFileRevision;
+import org.spearce.egit.core.internal.mapping.GitCommitFileRevision;
 import org.spearce.egit.ui.internal.GitCompareFileRevisionEditorInput;
 import org.spearce.egit.ui.internal.GitResourceNode;
 import org.spearce.jgit.lib.ObjectId;
@@ -193,9 +194,9 @@ public class GitCompareRevisionAction extends BaseSelectionListenerAction {
 			IFileRevision rev1=(IFileRevision)selection.toArray()[0];
 			IFileRevision rev2=(IFileRevision)selection.toArray()[1];
 			System.out.println("Compare "+rev1.getContentIdentifier()+" with "+rev2.getContentIdentifier());
-			if (rev1 instanceof GitFileRevision && rev2 instanceof GitFileRevision) {
-				ObjectId pid = ((GitFileRevision)rev1).getCommit().getParentIds()[0];
-				if (pid.equals(((GitFileRevision)rev2).getCommit().getCommitId())) {
+			if (rev1 instanceof GitCommitFileRevision && rev2 instanceof GitCommitFileRevision) {
+				ObjectId pid = ((GitCommitFileRevision)rev1).getCommit().getParentIds()[0];
+				if (pid.equals(((GitCommitFileRevision)rev2).getCommit().getCommitId())) {
 					this.setText("Show commit diff");
 				} else {
 					this.setText(TeamUIMessages.CompareRevisionAction_CompareWithOther);
@@ -221,6 +222,8 @@ public class GitCompareRevisionAction extends BaseSelectionListenerAction {
 
 		// Comparing the workspace revision with itself is just stupid
 		if (objArray.length == 1 && objArray[0] instanceof GitWorkspaceFileRevision)
+			return false;
+		if (objArray.length == 1 && objArray[0] instanceof GitIndexFileRevision)
 			return false;
 
 		for (int i = 0; i < objArray.length; i++) {

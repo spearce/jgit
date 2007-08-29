@@ -35,7 +35,7 @@ public class GitFileHistoryProvider extends FileHistoryProvider implements
 	}
 
 	public IFileRevision getWorkspaceFileRevision(IResource resource) {
-		return new GitWorkspaceFileRevision(resource);
+		return new GitWorkspaceFileRevision(resource, -1);
 	}
 
 	public IFileHistory getFileHistoryFor(IFileStore store, int flags,

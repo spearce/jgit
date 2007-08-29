@@ -73,6 +73,7 @@ import org.eclipse.team.ui.history.HistoryPage;
 import org.eclipse.team.ui.history.IHistoryCompareAdapter;
 import org.eclipse.team.ui.history.IHistoryPageSite;
 import org.spearce.egit.core.GitProvider;
+import org.spearce.egit.core.internal.mapping.GitCommitFileRevision;
 import org.spearce.egit.core.internal.mapping.GitFileHistory;
 import org.spearce.egit.core.internal.mapping.GitFileHistoryProvider;
 import org.spearce.egit.core.internal.mapping.GitFileRevision;
@@ -170,12 +171,12 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					String commitStr=null;
 					if (appliedPatches!=null) {
 						String id = rev.getContentIdentifier();
-						if (!id.equals("Workspace")) {
+						if (!id.equals("Workspace") && !id.equals("Index")) {
 							StGitPatch patch = (StGitPatch) appliedPatches.get(new ObjectId(id));
 							if (patch!=null)
 								commitStr = "Patch: "+patch.getName();
 						} else {
-							commitStr = "Workspace:";
+							commitStr = id.toString();
 						}
 					}
 					if (commitStr == null)
@@ -199,21 +200,23 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				compareAction.selectionChanged(new StructuredSelection(
 						selection2));
 				if (selection2.length == 1 && hintShowDiffNow) {
-					ObjectId[] parentIds = ((GitFileRevision)selection2[0]).getCommit().getParentIds();
-					if (parentIds.length > 0) {
-						ObjectId parentId = parentIds[0];
-						IFileRevision previous = new GitFileRevision(parentId,
-								((GitFileRevision)selection2[0]).getResource(),
-								((GitFileRevision)selection2[0]).getCount()+1);
-						compareActionPrev.setCurrentFileRevision(null);
-						compareActionPrev.selectionChanged(new StructuredSelection(new IFileRevision[] {selection2[0], previous}));
-						System.out.println("detail="+e.detail);
-						table.getDisplay().asyncExec(new Runnable() {
-							public void run() {
-								if (GitCompareRevisionAction.findReusableCompareEditor(GitHistoryPage.this.getSite().getPage()) != null)
-									compareActionPrev.run();
-							}
-						});
+					if (selection2[0] instanceof GitCommitFileRevision) {
+						ObjectId[] parentIds = ((GitCommitFileRevision)selection2[0]).getCommit().getParentIds();
+						if (parentIds.length > 0) {
+							ObjectId parentId = parentIds[0];
+							IFileRevision previous = new GitCommitFileRevision(parentId,
+									((GitFileRevision)selection2[0]).getResource(),
+									((GitFileRevision)selection2[0]).getCount()+1);
+							compareActionPrev.setCurrentFileRevision(null);
+							compareActionPrev.selectionChanged(new StructuredSelection(new IFileRevision[] {selection2[0], previous}));
+							System.out.println("detail="+e.detail);
+							table.getDisplay().asyncExec(new Runnable() {
+								public void run() {
+									if (GitCompareRevisionAction.findReusableCompareEditor(GitHistoryPage.this.getSite().getPage()) != null)
+										compareActionPrev.run();
+								}
+							});
+						}
 					}
 				} else {
 					compareActionPrev.setCurrentFileRevision(null);
@@ -342,7 +345,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				String rs = rss.substring(rss.length()-10);
 				String id = element.getContentIdentifier();
 				if (appliedPatches!=null) {
-					if (!id.equals("Workspace")) {
+					if (!id.equals("Workspace") && !id.equals("Index")) {
 						StGitPatch patch = (StGitPatch) appliedPatches.get(new ObjectId(id));
 						if (patch!=null)
 							return patch.getName();
@@ -360,6 +363,9 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			if (columnIndex == 2) {
 				String id = element.getContentIdentifier();
 				if (id.equals("Workspace")) {
+					return "";
+				}
+				if (id.equals("Index")) {
 					return "";
 				}
 				ObjectId oid = new ObjectId(id);
@@ -439,7 +445,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 						}
 						GitFileRevision revision = (GitFileRevision) fileRevisions.get(event.index);
 						item.setData(revision);
-						if (revision.getCount() == 0)
+						if (revision.getCount() >= 0)
 							item.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
 						else
 							item.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GRAY));
@@ -474,7 +480,9 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				TableItem item = (TableItem) event.item;
 				if (event.index == 0) {
 					System.out.println(event);
-					GitFileRevision element = (GitFileRevision)item.getData();
+					if (!(item.getData() instanceof GitCommitFileRevision))
+						return;
+					GitCommitFileRevision element = (GitCommitFileRevision)item.getData();
 					ObjectId xx = element.getCommitId();
 					final int DOTRADIUS = 3;
 					final int INTERLANE = 8;
