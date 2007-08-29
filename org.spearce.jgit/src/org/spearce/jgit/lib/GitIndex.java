@@ -493,6 +493,11 @@ public class GitIndex {
 			return false;
 		}
 
+		// for testing
+		void forceRecheck() {
+			mtime = -1;
+		}
+
 		private File getFile(File wd) {
 			return new File(wd, getName());
 		}
