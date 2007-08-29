@@ -77,7 +77,7 @@ public class GitIndex {
 		}
 	}
 
-	public void add(File wd, File f) throws IOException {
+	public Entry add(File wd, File f) throws IOException {
 		byte[] key = makeKey(wd, f);
 		Entry e = (Entry) entries.get(key);
 		if (e == null) {
@@ -86,6 +86,7 @@ public class GitIndex {
 		} else {
 			e.update(f);
 		}
+		return e;
 	}
 
 	public boolean remove(File wd, File f) {
