@@ -26,6 +26,9 @@ import java.util.Arrays;
 import junit.framework.TestCase;
 
 public abstract class RepositoryTestCase extends TestCase {
+
+	final File trashParent = new File("trash");
+
 	protected File trash;
 
 	protected File trash_git;
@@ -97,14 +100,14 @@ public abstract class RepositoryTestCase extends TestCase {
 
 	public void setUp() throws Exception {
 		super.setUp();
-		trash = new File("trash"+System.currentTimeMillis());
+		recursiveDelete(trashParent);
+		trash = new File(trashParent,"trash"+System.currentTimeMillis());
 		trash_git = new File(trash, ".git");
-		recursiveDelete(trash);
 
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
-				recursiveDelete(trash);
+				recursiveDelete(trashParent);
 			}
 		});
 
