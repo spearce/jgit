@@ -26,7 +26,7 @@ import junit.textui.TestRunner;
 
 public class ObjectIdMapTest extends TestCase {
 
-	ObjectId[] ids = new ObjectId[1000000];
+	ObjectId[] ids = new ObjectId[500000];
 	
 	protected void setUp() throws Exception {
 		int b=0;
@@ -150,7 +150,7 @@ public class ObjectIdMapTest extends TestCase {
 		System.out.println("Partitioned HashMap                  ="+d4);
 		System.out.println("Partitioned TreeMap enhanced compare ="+d5);
 		System.out.println("Partitioned TreeMap dummy    compare ="+d6);
-		assertEquals(d5*10/10000, d2*8/10000); // d5 is ~20% better
+		assertEquals(d5*2/10000, d2/10000); // d5 is twice as fast
 	}
 
 	public void testFunc() {
