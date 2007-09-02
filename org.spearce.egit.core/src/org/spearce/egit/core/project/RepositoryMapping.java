@@ -201,9 +201,12 @@ public class RepositoryMapping {
 		String prefix = getSubset();
 		String projectRelativePath = rsrc.getProjectRelativePath().toString();
 		String repoRelativePath;
-		if (prefix != null)
-			repoRelativePath = prefix + "/" + projectRelativePath;
-		else
+		if (prefix != null) {
+			if (projectRelativePath.length() == 0)
+				repoRelativePath = prefix;
+			else
+				repoRelativePath = prefix + "/" + projectRelativePath;
+		} else
 			repoRelativePath = projectRelativePath;
 		return repoRelativePath;
 	}

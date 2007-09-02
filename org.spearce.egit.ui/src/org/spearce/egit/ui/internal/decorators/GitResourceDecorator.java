@@ -228,24 +228,6 @@ public class GitResourceDecorator extends LabelProvider implements
 
 		Activator.trace("decorate: " + element);
 
-		if (mapped != null && rsrc instanceof IProject) {
-			Repository repo = mapped.getRepository();
-			try {
-				String branch = repo.getBranch();
-				if (repo.isStGitMode()) {
-					String patch = repo.getPatch();
-					decoration.addSuffix(" [StGit " + patch + "@" + branch
-							+ "]");
-				} else {
-					decoration.addSuffix(" [Git @ " + branch + "]");
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-				decoration.addSuffix(" [Git ?]");
-			}
-			decoration.addOverlay(UIIcons.OVR_SHARED);
-		}
-
 		// TODO: How do I see a renamed resource?
 		// TODO: Even trickier: when a path change from being blob to tree?
 		try {
@@ -275,6 +257,25 @@ public class GitResourceDecorator extends LabelProvider implements
 							} else {
 								decoration.addSuffix(" ?* ");
 							}
+
+							if (rsrc instanceof IProject) {
+								Repository repo = mapped.getRepository();
+								try {
+									String branch = repo.getBranch();
+									if (repo.isStGitMode()) {
+										String patch = repo.getPatch();
+										decoration.addSuffix(" [StGit " + patch + "@" + branch
+												+ "]");
+									} else {
+										decoration.addSuffix(" [Git @ " + branch + "]");
+									}
+								} catch (IOException e) {
+									e.printStackTrace();
+									decoration.addSuffix(" [Git ?]");
+								}
+								decoration.addOverlay(UIIcons.OVR_SHARED);
+							}
+
 						} else {
 							if (rsrc.getType() == IResource.FILE
 									&& Team.isIgnored((IFile) rsrc)) {
@@ -286,10 +287,12 @@ public class GitResourceDecorator extends LabelProvider implements
 							}
 						}
 					} else {
-						decoration.addSuffix("(deprecated)"); // Will drop on
-						// commit
-						decoration.addOverlay(UIIcons.OVR_PENDING_REMOVE);
-						orState(rsrc.getParent(), CHANGED);
+						if (!(rsrc instanceof IContainer)) {
+							decoration.addSuffix("(deprecated)"); // Will drop on
+							// commit
+							decoration.addOverlay(UIIcons.OVR_PENDING_REMOVE);
+							orState(rsrc.getParent(), CHANGED);
+						}
 					}
 				} else {
 					if (entry.getStage() != GitIndex.STAGE_0) {
