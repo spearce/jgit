@@ -100,7 +100,7 @@ public class TopologicalWalker extends Walker {
 			if (commitId == null)
 				commitId = ObjectId.zeroId();
 			collected.put(commitId, commitId);
-			if (commitId.equals(ObjectId.zeroId()))
+			if (commitId.equals(ObjectId.zeroId()) || commitId.equals(starts[0].getCommitId()))
 				commitTime.put(commitId, new Date(Long.MAX_VALUE));
 			else
 				commitTime.put(commitId, commit.getAuthor().getWhen());

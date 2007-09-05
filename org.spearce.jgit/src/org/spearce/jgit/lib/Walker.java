@@ -16,7 +16,7 @@ public abstract class Walker {
 	private boolean followMainOnly;
 	protected Repository repository;
 	private ObjectId activeDiffLeafId;
-	private final Commit[] starts;
+	protected final Commit[] starts;
 	private final Boolean merges;
 	private Map donewith = new ObjectIdMap();
 	private Collection<Todo> todo = new ArrayList<Todo>(20000);
