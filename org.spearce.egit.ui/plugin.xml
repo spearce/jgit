@@ -30,6 +30,13 @@
                menubarPath="team.main/group1"
                id="org.spearce.egit.ui.internal.actions.CheckpointAction">
          </action>
+         <action
+               class="org.spearce.egit.ui.internal.actions.ResetAction"
+               id="org.spearce.egit.ui.internal.actions.ResetAction"
+               label="%ResetAction_label"
+               menubarPath="team.main/projectGroup"
+               tooltip="%ResetAction_tooltip">
+         </action>
      </objectContribution>
      <objectContribution
             adaptable="true"
@@ -68,7 +75,7 @@
                label="%CommitAction_label"
                menubarPath="team.main/group1"
                tooltip="%CommitAction_tooltip"/>
- 	  </objectContribution>
+	  </objectContribution>
       <objectContribution
             objectClass="org.eclipse.core.resources.IFile"
             adaptable="true"
