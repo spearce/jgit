@@ -16,6 +16,7 @@
 */
 package org.spearce.jgit.lib;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
@@ -91,8 +92,15 @@ public class TopologicalWalker extends Walker {
 				if (succ != null)
 					topoSorter.put(new TopologicalSorter.Edge<ObjectId>(pred, succ));
 				// else topoSorter.put(pred);
-			} else
+			} else {
 				topoSorter.put(succ);
+				try {
+					collectSortOrder(succ, repository.mapCommit(succ));
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 			if (pred != null)
 				collectSortOrder(pred, null);
 			if (succ != null)
