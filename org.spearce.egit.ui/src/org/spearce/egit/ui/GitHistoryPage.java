@@ -376,7 +376,8 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 						for (Tag t : matching) {
 							if (b.length() > 0)
 								b.append(' ');
-							b.append(t.getTag());
+							String tag = t.getTag();
+							b.append(tag);
 						}
 					}
 				}
@@ -388,6 +389,10 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 						for (String t : matching) {
 							if (b.length() > 0)
 								b.append(' ');
+							if (t.startsWith("refs/heads/"))
+								t = t.substring(11);
+							else if (t.startsWith("refs/remotes/"))
+								t = t.substring(13);
 							b.append(t);
 						}
 					}
