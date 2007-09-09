@@ -491,10 +491,11 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					ObjectId xx = element.getCommitId();
 					final int DOTRADIUS = 3;
 					final int INTERLANE = 8;
+					final int LINEWIDTH = 2;
 					int x = event.x + INTERLANE/2 + 2;
 					int y = event.y;
 					int h = event.height;
-					event.gc.setLineWidth(2);
+					event.gc.setLineWidth(LINEWIDTH);
 
 					Lane lane = element.getLane();
 					TopologicalSorter<ObjectId> counter = lane.getSorter();
@@ -546,10 +547,10 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					// Draw dot
 					if (xx.equals(currentHead)) {
 						event.gc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_RED));
-						event.gc.fillOval(x + lane.getNumber() *  INTERLANE - DOTRADIUS*2, y + h/2 - DOTRADIUS*2, DOTRADIUS*4, DOTRADIUS*4);
+						event.gc.fillOval((int) (x + lane.getNumber() *  INTERLANE - LINEWIDTH/2.0+0.5 - DOTRADIUS*3.0/2), y + h/2 - DOTRADIUS*3/2, DOTRADIUS*3, DOTRADIUS*3);
 					} else
 						event.gc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
-						event.gc.fillOval(x + lane.getNumber() *  INTERLANE - DOTRADIUS, y + h/2 - DOTRADIUS, DOTRADIUS*2, DOTRADIUS*2);
+						event.gc.fillOval((int) (x + lane.getNumber() *  INTERLANE - LINEWIDTH/2.0+0.5 - DOTRADIUS), y + h/2 - DOTRADIUS, DOTRADIUS*2, DOTRADIUS*2);
 				}
 			}
 		});
