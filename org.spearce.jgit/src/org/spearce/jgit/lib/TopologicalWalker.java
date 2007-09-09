@@ -69,16 +69,17 @@ public class TopologicalWalker extends Walker {
 						return 0;
 
 					Date when1 = commitTime.get(i1);
-					if (when1 == null)
-						return i1.compareTo(i2);
-
 					Date when2 = commitTime.get(i2);
+					if (when1 == null) {
+						if (when2 == null)
+							return i1.compareTo(i2);
+						return 1;
+					}
 					if (when2 == null)
-						return i1.compareTo(i2);
-
+						return -1;
 					int c = when2.compareTo(when1);
 					if (c == 0)
-						return -1;
+						return i1.compareTo(i2);
 					return c;
 				}
 			});
@@ -92,6 +93,10 @@ public class TopologicalWalker extends Walker {
 				// else topoSorter.put(pred);
 			} else
 				topoSorter.put(succ);
+			if (pred != null)
+				collectSortOrder(pred, null);
+			if (succ != null)
+				collectSortOrder(succ, null);
 		}
 
 		protected void collect(Commit commit, int count, int breadth) {
@@ -100,10 +105,18 @@ public class TopologicalWalker extends Walker {
 			if (commitId == null)
 				commitId = ObjectId.zeroId();
 			collected.put(commitId, commitId);
-			if (commitId.equals(ObjectId.zeroId()) || commitId.equals(starts[0].getCommitId()))
+			collectSortOrder(commitId, commit);
+		}
+
+		private void collectSortOrder(ObjectId commitId, Commit commit) {
+			if (commitId.equals(ObjectId.zeroId()))
 				commitTime.put(commitId, new Date(Long.MAX_VALUE));
 			else
-				commitTime.put(commitId, commit.getAuthor().getWhen());
+				if (commitId.equals(starts[0].getCommitId()))
+					commitTime.put(commitId, new Date(Long.MAX_VALUE-1));
+				else
+					if (commit != null)
+						commitTime.put(commitId, commit.getAuthor().getWhen());
 		}
 
 		protected boolean isCancelled() {
