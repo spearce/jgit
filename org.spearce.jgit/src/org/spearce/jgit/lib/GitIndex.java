@@ -586,35 +586,46 @@ public class GitIndex {
 			}
 		}
 	}
+	
+	public Entry addEntry(TreeEntry te) throws IOException {
+		byte[] key = te.getFullName().getBytes("UTF-8");
+		Entry e = new Entry(te, 0);
+		entries.put(key, e);
+		return e;
+	}
 
 	public void checkout(File wd) throws IOException {
 		for (Iterator i = entries.values().iterator(); i.hasNext();) {
 			Entry e = (Entry) i.next();
 			if (e.stage != 0)
 				continue;
-			ObjectLoader ol = db.openBlob(e.sha1);
-			byte[] bytes = ol.getBytes();
-			File file = new File(wd, e.getName());
-			file.delete();
-			file.getParentFile().mkdirs();
-			FileChannel channel = new FileOutputStream(file).getChannel();
-			ByteBuffer buffer = ByteBuffer.wrap(bytes);
-			int j = channel.write(buffer);
-			if (j != bytes.length)
-				throw new IOException("Could not write file " + file);
-			channel.close();
-			if (config_filemode() && canExecute != null) {
-				if (FileMode.EXECUTABLE_FILE.equals(e.mode)) {
-					if (!File_canExecute(file))
-						File_setExecute(file, true);
-				} else {
-					if (File_canExecute(file))
-						File_setExecute(file, false);
-				}
-			}
-			e.mtime = file.lastModified() * 1000000L;
-			e.ctime = e.mtime;
+			checkoutEntry(wd, e);
 		}
+	}
+	
+	public void checkoutEntry(File wd, Entry e) throws IOException {
+		ObjectLoader ol = db.openBlob(e.sha1);
+		byte[] bytes = ol.getBytes();
+		File file = new File(wd, e.getName());
+		file.delete();
+		file.getParentFile().mkdirs();
+		FileChannel channel = new FileOutputStream(file).getChannel();
+		ByteBuffer buffer = ByteBuffer.wrap(bytes);
+		int j = channel.write(buffer);
+		if (j != bytes.length)
+			throw new IOException("Could not write file " + file);
+		channel.close();
+		if (config_filemode() && canExecute != null) {
+			if (FileMode.EXECUTABLE_FILE.equals(e.mode)) {
+				if (!File_canExecute(file))
+					File_setExecute(file, true);
+			} else {
+				if (File_canExecute(file))
+					File_setExecute(file, false);
+			}
+		}
+		e.mtime = file.lastModified() * 1000000L;
+		e.ctime = e.mtime;
 	}
 
 	public ObjectId writeTree() throws IOException {
