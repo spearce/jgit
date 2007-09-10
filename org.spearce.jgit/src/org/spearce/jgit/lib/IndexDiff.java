@@ -50,7 +50,7 @@ public class IndexDiff {
 	 */
 	public boolean diff() throws IOException {
 		final File root = index.getRepository().getDirectory().getParentFile();
-		new IndexTreeWalker(index, tree, root, new IndexTreeVisitor() {
+		new IndexTreeWalker(index, tree, root, new AbstractIndexTreeVisitor() {
 			public void visitEntry(TreeEntry treeEntry, Entry indexEntry, File file) {
 				if (treeEntry == null) {
 					added.add(indexEntry.getName());
@@ -76,9 +76,6 @@ public class IndexDiff {
 						}
 					}
 				}
-			}
-		
-			public void finishVisitTree(Tree ignoredTree, int indexItems, File directory) {
 			}
 		}).walk();
 		
