@@ -37,6 +37,12 @@
                menubarPath="team.main/projectGroup"
                tooltip="%ResetAction_tooltip">
          </action>
+         <action
+               class="org.spearce.egit.ui.internal.actions.BranchAction"
+               id="org.spearce.egit.ui.internal.actions.BranchAction"
+               label="%BranchAction_label"
+               menubarPath="team.main/projectGroup"
+               tooltip="%BranchAction_tooltip"/>
      </objectContribution>
      <objectContribution
             adaptable="true"
