@@ -595,5 +595,14 @@ public class T0003_Basic extends RepositoryTestCase {
 
 		assertTrue(new File(db.getDirectory(), "refs/heads/foobar").exists());
 		assertEquals(newId, db.resolve("refs/heads/foobar"));
+
+		// Again. The ref already exists
+		RefLock lockRef2 = db.lockRef("HEAD");
+		ObjectId newId2 = new ObjectId("7f822839a2fe9760f386cbbbcb3f92c5fe81def7");
+		lockRef2.write(newId2);
+		assertTrue(lockRef2.commit());
+
+		assertTrue(new File(db.getDirectory(), "refs/heads/foobar").exists());
+		assertEquals(newId2, db.resolve("refs/heads/foobar"));
 	}
 }

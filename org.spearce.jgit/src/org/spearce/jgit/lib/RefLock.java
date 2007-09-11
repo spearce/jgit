@@ -169,6 +169,9 @@ public class RefLock {
 	public boolean commit() {
 		if (lck.renameTo(ref))
 			return true;
+		if (!ref.exists() || ref.delete())
+			if (lck.renameTo(ref))
+				return true;
 		unlock();
 		return false;
 	}
