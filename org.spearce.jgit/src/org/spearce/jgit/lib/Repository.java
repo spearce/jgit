@@ -722,6 +722,8 @@ public class Repository {
 			else if (files[i].length() == 41) {
 				String name = files[i].toString().substring(
 						root.toString().length() + 1);
+				if (File.separatorChar != '/')
+					name = name.replace(File.separatorChar, '/');
 				ret.add(name);
 			}
 		}
