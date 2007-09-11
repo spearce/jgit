@@ -223,6 +223,9 @@ public class CommitAction implements IObjectActionDelegate {
 				System.out.println("Success!!!!");
 				updateReflog(repo, commitMessage, currentHeadId, commit
 						.getCommitId(), commit.getCommitter());
+			} else {
+				throw new TeamException("Failed to update HEAD to commit "
+						+ commit.getCommitId());
 			}
 		}
 		return commitMessage;
