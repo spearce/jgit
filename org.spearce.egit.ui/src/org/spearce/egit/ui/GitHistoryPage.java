@@ -484,7 +484,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			public void handleEvent(Event event) {
 				TableItem item = (TableItem) event.item;
 				if (event.index == 0) {
-					System.out.println(event);
+//					System.out.println(event);
 					if (!(item.getData() instanceof GitCommitFileRevision))
 						return;
 					GitCommitFileRevision element = (GitCommitFileRevision)item.getData();

@@ -217,7 +217,7 @@ public class Repository {
 			Commit ret = retr.get();
 			if (ret != null)
 				return ret;
-			System.out.println("Found a null id, size was "+commitCache.size());
+//			System.out.println("Found a null id, size was "+commitCache.size());
 		}
 
 		final ObjectLoader or = openObject(id);
