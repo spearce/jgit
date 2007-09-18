@@ -1155,6 +1155,13 @@ That&apos;s all there is to it!
          unpack="false"/>
 
    <plugin
+         id="org.spearce.egit"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
          id="org.spearce.jgit"
          download-size="0"
          install-size="0"
