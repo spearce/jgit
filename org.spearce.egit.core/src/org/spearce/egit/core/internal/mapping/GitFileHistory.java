@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IResource;
@@ -148,6 +149,10 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 		@Override
 		protected void record(ObjectId pred, ObjectId succ) {
 			super.record(pred, succ);
+			if (monitor.isCanceled()) {
+				System.out.println("Cancelled");
+				throw new CancellationException("history refresh cancelled");
+			}
 		}
 	}
 

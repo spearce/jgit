@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 
 import org.eclipse.compare.CompareConfiguration;
 import org.eclipse.compare.structuremergeviewer.ICompareInput;
@@ -33,7 +34,6 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.action.Action;
@@ -581,116 +581,130 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		}
 
 		protected IStatus run(IProgressMonitor monitor) {
-			monitor = new NullProgressMonitor();
-			monitor.beginTask("UpdateHistory", IProgressMonitor.UNKNOWN);
-			IProject project = ((IResource) getInput()).getProject();
-			RepositoryProvider provider = RepositoryProvider
-					.getProvider(project);
-			RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
-			Map newappliedPatches = null;
 			try {
-				newappliedPatches = repositoryMapping.getRepository().getAppliedPatches();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			Map<ObjectId,Tag[]> newtags = new HashMap<ObjectId,Tag[]>();
-			try {
-				for (String name : repositoryMapping.getRepository().getTags()) {
-					Tag t = repositoryMapping.getRepository().mapTag(name);
-					Tag[] samecommit = newtags.get(t.getObjId());
-					if (samecommit==null) { 
-						samecommit = new Tag[] { t };
-					} else {
-						Tag[] n=new Tag[samecommit.length+1];
-						for (int j=0; j<samecommit.length; ++j)
-							n[j] = samecommit[j];
-						n[n.length-1] = t;
-						samecommit = n;
-					}
-					newtags.put(t.getObjId(), samecommit);
+				System.out.println("Job started @"+new Date());
+				monitor.beginTask("UpdateHistory", IProgressMonitor.UNKNOWN);
+				IProject project = ((IResource) getInput()).getProject();
+				RepositoryProvider provider = RepositoryProvider
+						.getProvider(project);
+				RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
+				Map newappliedPatches = null;
+				try {
+					newappliedPatches = repositoryMapping.getRepository().getAppliedPatches();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			try {
-				currentHead = repositoryMapping.getRepository().resolve("HEAD");
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			Map<ObjectId, String[]> newBranches = new HashMap<ObjectId, String[]>();
-			try {
-				for (String branch : repositoryMapping.getRepository().getBranches()) {
-					ObjectId id = repositoryMapping.getRepository().resolve(branch);
-					String[] samecommit = newBranches.get(id);
+				Map<ObjectId,Tag[]> newtags = new HashMap<ObjectId,Tag[]>();
+				try {
+					for (String name : repositoryMapping.getRepository().getTags()) {
+						Tag t = repositoryMapping.getRepository().mapTag(name);
+						Tag[] samecommit = newtags.get(t.getObjId());
+						if (samecommit==null) { 
+							samecommit = new Tag[] { t };
+						} else {
+							Tag[] n=new Tag[samecommit.length+1];
+							for (int j=0; j<samecommit.length; ++j)
+								n[j] = samecommit[j];
+							n[n.length-1] = t;
+							samecommit = n;
+						}
+						newtags.put(t.getObjId(), samecommit);
+					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				try {
+					currentHead = repositoryMapping.getRepository().resolve("HEAD");
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				Map<ObjectId, String[]> newBranches = new HashMap<ObjectId, String[]>();
+				try {
+					for (String branch : repositoryMapping.getRepository().getBranches()) {
+						ObjectId id = repositoryMapping.getRepository().resolve(branch);
+						String[] samecommit = newBranches.get(id);
+						if (samecommit == null) {
+							samecommit = new String[] { branch };
+						} else {
+							String[] n=new String[samecommit.length + 1];
+							for (int j=0; j<samecommit.length; ++j)
+								n[j] = samecommit[j];
+							n[n.length-1] = branch;
+							samecommit = n;
+						}
+						newBranches.put(id, samecommit);
+					}
+					String[] samecommit = newBranches.get(currentHead);
 					if (samecommit == null) {
-						samecommit = new String[] { branch };
+						samecommit = new String[] { "HEAD" };
 					} else {
 						String[] n=new String[samecommit.length + 1];
 						for (int j=0; j<samecommit.length; ++j)
 							n[j] = samecommit[j];
-						n[n.length-1] = branch;
+						n[n.length-1] = "HEAD";
 						samecommit = n;
 					}
-					newBranches.put(id, samecommit);
+					newBranches.put(currentHead, samecommit);
+					branches = newBranches;
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-				String[] samecommit = newBranches.get(currentHead);
-				if (samecommit == null) {
-					samecommit = new String[] { "HEAD" };
-				} else {
-					String[] n=new String[samecommit.length + 1];
-					for (int j=0; j<samecommit.length; ++j)
-						n[j] = samecommit[j];
-					n[n.length-1] = "HEAD";
-					samecommit = n;
-				}
-				newBranches.put(currentHead, samecommit);
-				branches = newBranches;
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			GitFileHistoryProvider fileHistoryProvider = (GitFileHistoryProvider) provider
-					.getFileHistoryProvider();
-			IResource startingPoint = (IResource) getInput();
-			if (isShowAllFolderVersions())
-				if (!(startingPoint instanceof IContainer))
-					startingPoint = startingPoint.getParent();
-			if (isShowAllProjectVersions())
-				startingPoint = startingPoint.getProject();
+				GitFileHistoryProvider fileHistoryProvider = (GitFileHistoryProvider) provider
+						.getFileHistoryProvider();
+				IResource startingPoint = (IResource) getInput();
+				if (isShowAllFolderVersions())
+					if (!(startingPoint instanceof IContainer))
+						startingPoint = startingPoint.getParent();
+				if (isShowAllProjectVersions())
+					startingPoint = startingPoint.getProject();
 
-			GitFileHistory fileHistoryFor = fileHistoryProvider
-					.getHistoryFor(startingPoint,
-							-1,
-							monitor,
-							isShowAllRepoVersions());
-			fileRevisions = fileHistoryFor.getFileRevisionsList();
-			final Map fnewappliedPatches = newappliedPatches;
-			final Map<ObjectId,Tag[]> ftags = newtags;
+				GitFileHistory fileHistoryFor = fileHistoryProvider
+						.getHistoryFor(startingPoint,
+								-1,
+								monitor,
+								isShowAllRepoVersions());
+				fileRevisions = fileHistoryFor.getFileRevisionsList();
+				final Map fnewappliedPatches = newappliedPatches;
+				final Map<ObjectId,Tag[]> ftags = newtags;
+	
+				table.getDisplay().asyncExec(new Runnable() {
+				
+					public void run() {
+						table.removeAll();
+						table.setItemCount(fileRevisions.size());
+						table.setData("X");
+						table.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,true));
+						System.out.println("inputchanged, invoking refresh");
+						appliedPatches = fnewappliedPatches;
+						tags = ftags;
+						long t0 = System.currentTimeMillis();
+						viewer.refresh();
+						long t1 = System.currentTimeMillis();
+						System.out.println("refresh in "+(t1-t0)/1000.0+"s");
+						done(Status.OK_STATUS);
+						System.out.println("History refresh at "+new Date());
+					}
+				
+				});
+				done(Status.OK_STATUS);
 
-			table.getDisplay().asyncExec(new Runnable() {
-			
-				public void run() {
-					table.removeAll();
-					table.setItemCount(fileRevisions.size());
-					table.setData("X");
-					table.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,true));
-					System.out.println("inputchanged, invoking refresh");
-					appliedPatches = fnewappliedPatches;
-					tags = ftags;
-					long t0 = System.currentTimeMillis();
-					viewer.refresh();
-					long t1 = System.currentTimeMillis();
-					System.out.println("refresh in "+(t1-t0)/1000.0+"s");
-					done(Status.OK_STATUS);
+			} catch (CancellationException e) {
+				System.out.println("Job cancelled");
+				done(Status.CANCEL_STATUS);
+				return Status.CANCEL_STATUS;
+
+			} finally {
+				if (getState() == Job.RUNNING) {
+					System.out.println("Job aborted for unknow reason");
+					done(Status.CANCEL_STATUS);
 				}
-			
-			});
+		  	}
 			return Status.OK_STATUS;
 		}
-		
 	}
 
 	HistoryRefreshJob historyRefreshJob = new HistoryRefreshJob("Git history refresh");
