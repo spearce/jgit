@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2006  Robin Rosenberg <robin.rosenberg@dewire.com>
+ *  Copyright (C) 2006,2007  Robin Rosenberg
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -106,7 +106,8 @@ public class T0002_history extends GitTestCase {
 		IFileHistoryProvider fileHistoryProvider = provider.getFileHistoryProvider();
 		IFileHistory fileHistory = fileHistoryProvider.getFileHistoryFor(project.getProject().getWorkspace().getRoot().findMember("Project-1/A.txt"), IFileHistoryProvider.SINGLE_LINE_OF_DESCENT, new NullProgressMonitor());
 		IFileRevision[] fileRevisions = fileHistory.getFileRevisions();
-		assertEquals(1, fileRevisions.length);
-		assertEquals("e2eadee5e6de7315df91cf03a75a8b2194a69af2", fileRevisions[0].getContentIdentifier());
+		assertEquals(2, fileRevisions.length);
+		assertEquals("Index", fileRevisions[0].getContentIdentifier());
+		assertEquals("e2eadee5e6de7315df91cf03a75a8b2194a69af2", fileRevisions[1].getContentIdentifier());
 	}
 }
