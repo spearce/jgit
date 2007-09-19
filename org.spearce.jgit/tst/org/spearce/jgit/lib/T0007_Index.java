@@ -74,6 +74,12 @@ public class T0007_Index extends RepositoryTestCase {
 		assertEquals(0, indexr.getMembers().length);
 	}
 
+	public void testReadWithNoIndex() throws Exception {
+		GitIndex index = new GitIndex(db);
+		index.read();
+		assertEquals(0, index.getMembers().length);
+	}
+
 	public void testCreateSimpleSortTestIndex() throws Exception {
 		GitIndex index = new GitIndex(db);
 		writeTrashFile("a/b", "data:a/b");

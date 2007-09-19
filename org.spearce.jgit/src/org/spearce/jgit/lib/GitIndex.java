@@ -98,6 +98,12 @@ public class GitIndex {
 		long t0 = System.currentTimeMillis();
 		changed = false;
 		statDirty = false;
+		if (!cacheFile.exists()) {
+			header = null;
+			entries.clear();
+			lastCacheTime = 0;
+			return;
+		}
 		cache = new RandomAccessFile(cacheFile, "r");
 		try {
 			FileChannel channel = cache.getChannel();
