@@ -4,7 +4,7 @@ Bundle-Name: %plugin_name
 Bundle-SymbolicName: org.spearce.egit.ui; singleton:=true
 Bundle-Version: 0.2.99.qualifier
 Bundle-Activator: org.spearce.egit.ui.Activator
-Bundle-Vendor: %plugin_provider
+Bundle-Vendor: %provider_name
 Bundle-Localization: plugin
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources,
