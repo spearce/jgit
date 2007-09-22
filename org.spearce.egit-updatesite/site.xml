@@ -3,7 +3,7 @@
    <description url="Eclipse Git Plugin">
       This is a pure Java implementation of the Git version control system. The native Git version is also required in this version,
    </description>
-   <feature url="features/org.spearce.egit_0.2.99.qualifier.jar" id="org.spearce.egit" version="0.2.99.qualifier">
+   <feature url="features/org.spearce.egit_0.2.99.qualifier.jar" id="org.spearce.egit" version="0.2.99.qualifier" patch="true">
       <category name="Eclipse Git Plugin"/>
    </feature>
    <category-def name="Eclipse Git Plugin" label="Eclipse Git Plugin">
