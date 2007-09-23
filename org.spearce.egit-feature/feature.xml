@@ -2,7 +2,7 @@
 <feature
       id="org.spearce.egit"
       label="Eclipse Git Feature"
-      version="0.2.99.qualifier"
+      version="0.3.0"
       provider-name="spearce.org"
       plugin="org.spearce.egit">
 
