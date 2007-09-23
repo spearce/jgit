@@ -33,7 +33,6 @@ import java.util.TimeZone;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -358,27 +357,14 @@ public class CommitAction implements IObjectActionDelegate {
 		}
 	}
 
-	private boolean isRepositoryRootedInProject(IProject project) {
-		RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
-		File projectRoot = project.getLocation().toFile();
-		File workDir = repositoryMapping.getWorkDir();
-
-		return workDir.equals(projectRoot);
-	}
-	
 	private void includeList(IProject project, HashSet<String> added, ArrayList<IFile> category) {
+		String repoRelativePath = RepositoryMapping.getMapping(project).getRepoRelativePath(project) + "/";
 		for (String filename : added) {
-			Path path = new Path(filename);
 			try {
-				IResource member;
-				if (isRepositoryRootedInProject(project)) {
-					member = project.getFile(path);
-				} else {
-					if (filename.startsWith(project.getFullPath().toFile().getName()))
-						member = project.getWorkspace().getRoot().getFile(path);
-					else continue;
-				}
-
+				if (!filename.startsWith(repoRelativePath))
+					continue;
+				String projectRelativePath = filename.substring(repoRelativePath.length());
+				IResource member = project.getFile(projectRelativePath);
 				if (member != null && member instanceof IFile) {
 					if (!files.contains(member))
 						files.add((IFile) member);
