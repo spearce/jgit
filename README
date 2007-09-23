@@ -7,7 +7,8 @@ and please refer to the individual source file header to determine
 which license covers it.
 
 
-This package is actually composed of three major components:
+This package is actually composed of three major components plus
+three for packaging.
 
   org.spearce.jgit/
 
@@ -37,9 +38,24 @@ This package is actually composed of three major components:
     Portions of this package are covered under the LGPL and others
     under the EPL.  Refer to individual file headers for details.
 
-  org.spearce.egit.core.test
+  org.spearce.egit.core.test/
 
     Unit tests for org.spearce.egit.core.
+
+  org.spearce.egit/
+
+    A plugin for packaging
+
+  org.spearce.egit-feature
+
+    Also packaging. This project is for building an Eclipse "feature"
+    out of the plugins above.
+
+  org.spearce.egit-updatesite/
+
+    This package is for producing and update site, i.e. a web site
+    you can point your eclipse at and just upgrade.
+
 
             == WARNINGS / CAVEATS              ==
 
@@ -55,12 +71,6 @@ This package is actually composed of three major components:
 - Symbolic links are not supported because java does not support it.
   Such links could be damaged.
 
-- It may take a long time to connect the GIT team provider to an
-  existing project full of files as the cache tree needs to be
-  generated from scratch.  This can take a while as most Java SHA1
-  implementations are not exactly the fastest SHA1 implementations
-  available.
-
 - Only the timestamp of the index is used by jgit check if  the index
   is dirty.
 
@@ -71,12 +81,28 @@ This package is actually composed of three major components:
   have no information about other vendors. Please report your findings
   if you try.
 
+- Do not trust this plugin to always do the right thing (yet). Please
+  check with the real Git and report any problems.
+
+
+            == COMPATIBILITY                   ==
+
+- Eclipse 3.2.1 is the minimum Eclipse version. Expect this to change
+  in future versions.
+
+- Newer version of EGit/JGit may implement new functionality, remove
+  existing functios and change others without other notice than what
+  is written in the commit log and source files themselves.
+
+
             == Package Features                ==
 
   org.spearce.jgit/
 
     * Read loose and packed commits, trees, blobs, including
       deltafied objects.
+
+    * Read objects from shared repositories
 
     * Write loose commits, trees, blobs.
 
@@ -86,7 +112,7 @@ This package is actually composed of three major components:
 
     * Copy trees to local directory, or local directory to a tree.
 
-    * Lazily loads trees as necessary.
+    * Lazily loads objects as necessary.
 
     * Read and write .git/config files.
 
@@ -95,6 +121,11 @@ This package is actually composed of three major components:
     * Read and write refs, including walking through symrefs.
 
     * Read, update and write the Git index.
+
+    * Checkout in dirty working directory if trivial.
+
+    * Walk a the history from a given set of commits looking for commits
+      introducing changed in a path.
 
   org.spearce.egit.core/
 
@@ -108,20 +139,10 @@ This package is actually composed of three major components:
     * Store which repositories are tied to which containers in the
       Eclipse workspace.
 
-    * Maintains a cache tree holding a snapshot of the workspace.
-      The cache tree is diff'd against the current `HEAD` to show
-      file status in the decorator.
-
-    * Runs a checkpoint job to flush the cache tree to the repository
-      on a periodic basis.
-
     * Tracks moves/renames/deletes and reflects them in the cache
       tree.
 
     * Resolves through linked containers.
-
-    * Walk a the history from a given set of commits looking for commits
-      introducing changed in a path.
 
   org.spearce.egit.ui/
 
@@ -135,8 +156,8 @@ This package is actually composed of three major components:
     * Team actions: track (add), untrack (remove), disconnect, show
       history, compare version, show history.
 
-    * Resource director shows file/directory state in the explorer
-      various views (e.g. Navigator and Package Explorer).
+    * Resource decorator shows file/directory state in the package
+      explorer and other views.
 
     * Creating new commits or amending commits.
 
@@ -145,10 +166,17 @@ This package is actually composed of three major components:
 
             == Missing Features                ==
 
+There are a lot of missig features. You need the real Git for this.
+For some operations it may just be the preferred solution also. There
+are not just a command line, there is e.g. git-gui that makes committing
+partial files simple.
+
 - GIT network protocol to pull objects from a remote repository or
   push objects to a remote repository.
 
-- Common base computation for a merge base.
+- Merging. 
+
+- Repacking from withine the plugin.
 
 - Generate a GIT format patch.
 
@@ -164,7 +192,14 @@ This package is actually composed of three major components:
   In particular CRLF conversion is not implemented. Files are treated
   as byte sequences.
 
+- submodule support
+  Submodules are not supported or even recognized.
+
+- The Eclipse plygin cannot handle files outside any Eclipse project. You
+  need commit changes to such files outside of Eclipse.
+
 - Speed in some areas
+
   Java is "slooow", they say. Not true as a general statement. A lot of Java
   code is slow because it it not optimized (to some extent due to this
   belief). Java has quite good performance although it cannot compete with
@@ -175,19 +210,33 @@ This package is actually composed of three major components:
   e.g. C. In particular there is an overhead from the rather large standard
   libraries that a normal Java installations comes with. See the ACM report:
 
-	Prechelt, L. 1999. Technical opinion: comparing Java vs. C/C++ efficiency
-	differences to interpersonal differences. Commun. ACM 42, 10 (Oct. 1999),
-	109-112. DOI= http://doi.acm.org/10.1145/317665.317683  
+	Prechelt, L. 1999. Technical opinion: comparing Java vs. C/C++
+        efficiency differences to interpersonal differences. Commun. ACM 42, 
+        10 (Oct. 1999), 109-112. DOI= http://doi.acm.org/10.1145/317665.317683
 
-  for an interesting comparison of C, C++ and Java. It is somewhat dated so
-  the comparison involved Java 1.2, i.e. without hotspot in 1.3 and the shared
-  runtime in 1.4. Those features made common Java applications many times faster 
-  than with JDK 1.2.
+  for an interesting comparison of C, C++ and Java. It is somewhat dated so 
+  the comparison involved Java 1.2, i.e. without hotspot that appeared in Java 
+  1.3 and the shared runtime in 1.4. Those features made common Java
+  applications many times faster than with Java 1.2
 
   The conclusion from having about 30 programmers write a program to the same
   specification using their own choice of language (from C,C++ and Java) is
-  that the skills  of the programmer is what determines the performance of the
+  that the skills of the programmer is what determines the performance of the
   code rather than choice  of programming language.
+
+  JGit is much slower (measured up to eight times for some random cases), but
+  then the real Git is ridicilously fast.
+
+
+            == Support                         ==
+
+  Post question, comments patches to the git@vger.kernel.org mailing list.
+
+
+            == Contributing                    ==
+
+  See SUBMITTING_PATCHES in this directory. However, feedback and bug reports
+  are also contributions.
 
 
             == About GIT                       ==
