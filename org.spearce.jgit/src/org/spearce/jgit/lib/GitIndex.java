@@ -183,7 +183,7 @@ public class GitIndex {
 	private void checkWriteOk() throws IOException {
 		for (Iterator i = entries.values().iterator(); i.hasNext();) {
 			Entry e = (Entry) i.next();
-			if (e.stage != 0) {
+			if (e.getStage() != 0) {
 				throw new NotSupportedException("Cannot work with other stages than zero right now. Won't write corrupt index.");
 			}
 		}
@@ -284,8 +284,6 @@ public class GitIndex {
 
 		private byte[] name;
 
-		private int stage;
-
 		public Entry(byte[] key, File f, int stage)
 				throws IOException {
 			ctime = f.lastModified() * 1000000L;
@@ -339,7 +337,6 @@ public class GitIndex {
 			b.get(sha1bytes);
 			sha1 = new ObjectId(sha1bytes);
 			flags = b.getShort();
-			stage = (flags & 0x3000) >> 12;
 			name = new byte[flags & 0xFFF];
 			b.get(name);
 			b
@@ -514,7 +511,7 @@ public class GitIndex {
 					+ new Date(ctime / 1000000L) + "/C:"
 					+ new Date(mtime / 1000000L) + "/d" + dev + "/i" + ino
 					+ "/m" + Integer.toString(mode, 8) + "/u" + uid + "/g"
-					+ gid + "/s" + size + "/f" + flags + "/@" + stage;
+					+ gid + "/s" + size + "/f" + flags + "/@" + getStage();
 		}
 
 		public String getName() {
@@ -525,8 +522,11 @@ public class GitIndex {
 			return sha1;
 		}
 
+		/**
+		 * @return the stage this entry is in
+		 */
 		public int getStage() {
-			return stage;
+			return (flags & 0x3000) >> 12;
 		}
 
 		public int getSize() {
@@ -603,7 +603,7 @@ public class GitIndex {
 	public void checkout(File wd) throws IOException {
 		for (Iterator i = entries.values().iterator(); i.hasNext();) {
 			Entry e = (Entry) i.next();
-			if (e.stage != 0)
+			if (e.getStage() != 0)
 				continue;
 			checkoutEntry(wd, e);
 		}
@@ -643,7 +643,7 @@ public class GitIndex {
 		String[] prevName = new String[0];
 		for (Iterator i = entries.values().iterator(); i.hasNext();) {
 			Entry e = (Entry) i.next();
-			if (e.stage != 0)
+			if (e.getStage() != 0)
 				continue;
 			String[] newName = splitDirPath(e.getName());
 			int c = longestCommonPath(prevName, newName);
