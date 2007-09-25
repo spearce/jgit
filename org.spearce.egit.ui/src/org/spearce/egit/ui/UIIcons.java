@@ -30,6 +30,8 @@ public class UIIcons {
 
 	public static final ImageDescriptor OVR_CONFLICT;
 
+	public static final ImageDescriptor OVR_ASSUMEVALID;
+
 	private static final URL base;
 
 	static {
@@ -38,6 +40,7 @@ public class UIIcons {
 		OVR_PENDING_REMOVE = map("ovr/pending_remove.gif");
 		OVR_SHARED = map("ovr/shared.gif");
 		OVR_CONFLICT = map("ovr/conflict.gif");
+		OVR_ASSUMEVALID = map("ovr/assumevalid.gif");
 	}
 
 	private static ImageDescriptor map(final String icon) {

@@ -313,6 +313,12 @@ public class GitResourceDecorator extends LabelProvider implements
 						decoration.addOverlay(UIIcons.OVR_PENDING_ADD);
 						orState(rsrc.getParent(), CHANGED);
 					} else {
+
+						if (entry.isAssumedValid()) {
+							decoration.addOverlay(UIIcons.OVR_ASSUMEVALID);
+							return;
+						}
+
 						decoration.addOverlay(UIIcons.OVR_SHARED);
 
 						if (entry.isModified(mapped.getWorkDir())) {
