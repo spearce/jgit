@@ -422,6 +422,13 @@ public class GitIndex {
 		 * @return true if content is most likely different.
 		 */
 		public boolean isModified(File wd, boolean forceContentCheck) {
+
+			if (isAssumedValid())
+				return false;
+
+			if (isUpdateNeeded())
+				return true;
+
 			File file = getFile(wd);
 			if (!file.exists())
 				return true;
