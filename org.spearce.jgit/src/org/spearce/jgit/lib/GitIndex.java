@@ -532,6 +532,44 @@ public class GitIndex {
 		public int getSize() {
 			return size;
 		}
+
+		/**
+		 * @return true if this entry shall be assumed valid
+		 */
+		public boolean isAssumedValid() {
+			return (flags & 0x8000) != 0;
+		}
+
+		/**
+		 * @return true if this entry should be checked for changes
+		 */
+		public boolean isUpdateNeeded() {
+			return (flags & 0x4000) != 0;
+		}
+
+		/**
+		 * Set whether to always assume this entry valid
+		 *
+		 * @param assumeValid true to ignore changes
+		 */
+		public void setAssumeValid(boolean assumeValid) {
+			if (assumeValid)
+				flags |= 0x8000;
+			else
+				flags &= ~0x8000;
+		}
+
+		/**
+		 * Set whether this entry must be checked
+		 *
+		 * @param updateNeeded
+		 */
+		public void setUpdateNeeded(boolean updateNeeded) {
+			if (updateNeeded)
+				flags |= 0x4000;
+			else
+				flags &= ~0x4000;;
+		}
 	}
 
 	static class Header {
