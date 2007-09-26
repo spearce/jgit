@@ -35,6 +35,7 @@ import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.GitIndex;
+import org.spearce.jgit.lib.GitIndex.Entry;
 
 /**
  * Add one or more new files/folders to the Git repository.
@@ -81,9 +82,12 @@ public class TrackOperation implements IWorkspaceRunnable {
 
 					if (obj instanceof IFile) {
 						String repoPath = rm.getRepoRelativePath((IResource) obj);
-						if (index.getEntry(repoPath) != null) {
-							System.out.println("Already tracked - skipping");
-							continue;
+						Entry entry = index.getEntry(repoPath);
+						if (entry != null) {
+							if (!entry.isAssumedValid()) {
+								System.out.println("Already tracked - skipping");
+								continue;
+							}
 						}
 					}
 
@@ -92,9 +96,13 @@ public class TrackOperation implements IWorkspaceRunnable {
 						((IContainer)toAdd).accept(new IResourceVisitor() {
 							public boolean visit(IResource resource) throws CoreException {
 								try {
+									String repoPath = rm.getRepoRelativePath(resource);
 									if (resource.getType() == IResource.FILE) {
-										if (!Team.isIgnored((IFile)resource))
-											index.add(rm.getWorkDir(), new File(rm.getWorkDir(),rm.getRepoRelativePath(resource)));
+										Entry entry = index.getEntry(repoPath);
+										if (!Team.isIgnored((IFile)resource) || entry != null && entry.isAssumedValid()) {
+											entry = index.add(rm.getWorkDir(), new File(rm.getWorkDir(), repoPath));
+											entry.setAssumeValid(false);
+										}
 									}
 								} catch (IOException e) {
 									e.printStackTrace();
@@ -104,7 +112,8 @@ public class TrackOperation implements IWorkspaceRunnable {
 							}
 						},IResource.DEPTH_INFINITE, IContainer.EXCLUDE_DERIVED);
 					} else {
-						index.add(rm.getWorkDir(), new File(rm.getWorkDir(),rm.getRepoRelativePath(toAdd)));
+						Entry entry = index.add(rm.getWorkDir(), new File(rm.getWorkDir(),rm.getRepoRelativePath(toAdd)));
+						entry.setAssumeValid(false);
 						
 					}
 				}
