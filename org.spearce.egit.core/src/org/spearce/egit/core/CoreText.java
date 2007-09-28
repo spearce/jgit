@@ -19,6 +19,10 @@ package org.spearce.egit.core;
 import org.eclipse.osgi.util.NLS;
 
 public class CoreText extends NLS {
+	public static String AssumeUnchangedOperation_failed;
+
+	public static String AssumeUnchangedOperation_adding;
+
 	public static String UpdateOperation_updating;
 
 	public static String UpdateOperation_failed;

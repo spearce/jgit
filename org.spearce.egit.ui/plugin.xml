@@ -64,6 +64,12 @@
                menubarPath="team.main/group1"
                id="org.spearce.egit.ui.internal.actions.Track"/>
          <action
+               label="%AssumeUnchangedAction_label"
+               class="org.spearce.egit.ui.internal.actions.AssumeUnchanged"
+               tooltip="%AssumeUnchangedAction_tooltip"
+               menubarPath="team.main/group1"
+               id="org.spearce.egit.ui.internal.actions.AssumeUnchanged"/>
+         <action
                class="org.spearce.egit.ui.internal.actions.ShowResourceInHistoryAction"
                id="org.spearce.egit.ui.internal.actions.ShowResourceInHistoryAction"
                label="%ShowResourceInHistoryAction_label"
