@@ -358,7 +358,11 @@ public class CommitAction implements IObjectActionDelegate {
 	}
 
 	private void includeList(IProject project, HashSet<String> added, ArrayList<IFile> category) {
-		String repoRelativePath = RepositoryMapping.getMapping(project).getRepoRelativePath(project) + "/";
+		String repoRelativePath = RepositoryMapping.getMapping(project).getRepoRelativePath(project);
+		if (repoRelativePath.length() > 0) {
+			repoRelativePath += "/";
+		}
+
 		for (String filename : added) {
 			try {
 				if (!filename.startsWith(repoRelativePath))
