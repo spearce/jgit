@@ -168,20 +168,8 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 					IFileRevision rev = (IFileRevision) item.getData();
 					if (rev == null)
 						return;
-					String commitStr=null;
-					if (appliedPatches!=null) {
-						String id = rev.getContentIdentifier();
-						if (!id.equals("Workspace") && !id.equals("Index")) {
-							StGitPatch patch = (StGitPatch) appliedPatches.get(new ObjectId(id));
-							if (patch!=null)
-								commitStr = "Patch: "+patch.getName();
-						} else {
-							commitStr = id.toString();
-						}
-					}
-					if (commitStr == null)
-						commitStr = "Commit: "+rev.getContentIdentifier();
-					table.setToolTipText(commitStr+"\nAuthor: "+rev.getAuthor()+"\nDate: "+new Date(rev.getTimestamp())+"\n\n"+rev.getComment());
+					String toolTipText = formatRevisionToolTipText(rev);
+					table.setToolTipText(toolTipText);
 				}
 				lastItem = item;
 			}
@@ -831,6 +819,63 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			CompareConfiguration configuration, IProgressMonitor monitor) {
 		System.out.println("prepareInput()");
 		// TODO Auto-generated method stub
+	}
+
+	/**
+	 * Formats the revision description to be displayed in the tooltip.
+	 *
+	 * @param rev
+	 *            the revision to be displayed
+	 * @return formatted description
+	 */
+	protected String formatRevisionToolTipText(IFileRevision rev) {
+		String commitStr = null;
+		if (appliedPatches != null) {
+			String id = rev.getContentIdentifier();
+			if (!id.equals("Workspace") && !id.equals("Index")) {
+				StGitPatch patch = (StGitPatch) appliedPatches
+						.get(new ObjectId(id));
+				if (patch != null)
+					commitStr = "Patch: " + patch.getName();
+			} else {
+				commitStr = id.toString();
+			}
+		}
+		if (commitStr == null)
+			commitStr = "Commit: " + rev.getContentIdentifier();
+
+		// The tooltip window is usually
+		// narrower
+		// than the comment. Remove soft returns
+		// to
+		// avoid short lines like in
+		// this
+		// example
+		String niceComment = unwrapComment(rev.getComment());
+		String toolTipText = commitStr + "\nAuthor: " + rev.getAuthor()
+				+ "\nDate: " + new Date(rev.getTimestamp()) + "\n\n"
+				+ niceComment;
+		return toolTipText;
+	}
+
+	/**
+	 * Remove soft returns (single \n) from the string. Keep hard returns
+	 * between paragraphs (two \n).
+	 *
+	 * @param origComment
+	 * @return reformated comment
+	 */
+	private static String unwrapComment(String origComment) {
+		if (origComment == null)
+			return null;
+		String paragraphs[] = origComment.split("\n\\s*\n");
+		StringBuffer result = new StringBuffer();
+		for (int i = 0; i < paragraphs.length; i++) {
+			result.append(paragraphs[i].replaceAll("\n", " "));
+			if (i < paragraphs.length - 1)
+				result.append("\n\n");
+		}
+		return result.toString();
 	}
 
 }
