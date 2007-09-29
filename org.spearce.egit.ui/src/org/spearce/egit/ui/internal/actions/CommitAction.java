@@ -97,6 +97,14 @@ public class CommitAction implements IObjectActionDelegate {
 			}
 		}
 
+		// repo cannot really be null because this action cannot be invoked on a
+		// non-git managed project.
+		if (repo != null && !repo.getRepositoryState().canCommit()) {
+			MessageDialog.openError(wp.getSite().getShell(),
+					"Cannot commit now", "Respository state:"
+							+ repo.getRepositoryState().getDescription());
+			return;
+		}
 		
 		if (files.isEmpty()) {
 			if (amendAllowed) {

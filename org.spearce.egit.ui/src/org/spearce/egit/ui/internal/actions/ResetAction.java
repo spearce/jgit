@@ -43,6 +43,13 @@ public class ResetAction extends RepositoryAction {
 		if (repository == null)
 			return;
 		
+		if (!repository.getRepositoryState().canResetHead()) {
+			MessageDialog.openError(getShell(), "Cannot reset HEAD now",
+					"Respository state:"
+							+ repository.getRepositoryState().getDescription());
+			return;
+		}
+
 		BranchSelectionDialog branchSelectionDialog = new BranchSelectionDialog(getShell(), repository);
 		if (branchSelectionDialog.open() == IDialogConstants.OK_ID) {
 			final String refName = branchSelectionDialog.getRefName();

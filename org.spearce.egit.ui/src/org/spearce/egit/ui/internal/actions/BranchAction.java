@@ -22,6 +22,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.swt.widgets.Display;
 import org.spearce.egit.core.op.BranchOperation;
@@ -41,6 +42,13 @@ public class BranchAction extends RepositoryAction {
 		final Repository repository = getRepository();
 		if (repository == null)
 			return;
+
+		if (!repository.getRepositoryState().canCheckout()) {
+			MessageDialog.openError(getShell(), "Cannot checkout now",
+					"Respository state:"
+							+ repository.getRepositoryState().getDescription());
+			return;
+		}
 
 		BranchSelectionDialog dialog = new BranchSelectionDialog(getShell(), repository);
 		dialog.setShowResetType(false);
