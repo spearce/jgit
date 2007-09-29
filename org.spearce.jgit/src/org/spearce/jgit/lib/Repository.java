@@ -559,19 +559,31 @@ public class Repository {
 	}
 	
 	public String getBranch() throws IOException {
-		final File ptr = new File(getDirectory(),"HEAD");
-		final BufferedReader br = new BufferedReader(new FileReader(ptr));
-		String ref;
 		try {
-			ref = br.readLine();
-		} finally {
-			br.close();
+			final File ptr = new File(getDirectory(),"HEAD");
+			final BufferedReader br = new BufferedReader(new FileReader(ptr));
+			String ref;
+			try {
+				ref = br.readLine();
+			} finally {
+				br.close();
+			}
+			if (ref.startsWith("ref: "))
+				ref = ref.substring(5);
+			if (ref.startsWith("refs/heads/"))
+				ref = ref.substring(11);
+			return ref;
+		} catch (FileNotFoundException e) {
+			final File ptr = new File(getDirectory(),"head-name");
+			final BufferedReader br = new BufferedReader(new FileReader(ptr));
+			String ref;
+			try {
+				ref = br.readLine();
+			} finally {
+				br.close();
+			}
+			return ref;
 		}
-		if (ref.startsWith("ref: "))
-			ref = ref.substring(5);
-		if (ref.startsWith("refs/heads/"))
-			ref = ref.substring(11);
-		return ref;
 	}
 
 	public Collection<String> getBranches() {
@@ -754,4 +766,119 @@ public class Repository {
 		return bytes;
 	}
 
+	public enum Operation {
+		  PLUS   { double eval(double x, double y) { return x + y; } },
+		  MINUS  { double eval(double x, double y) { return x - y; } },
+		  TIMES  { double eval(double x, double y) { return x * y; } },
+		  DIVIDE { double eval(double x, double y) { return x / y; } };
+
+		  // Do arithmetic op represented by this constant
+		  abstract double eval(double x, double y);
+		}
+
+	/**
+	 * Important state of the repository that affects what can and cannot bed
+	 * done. This is things like unhandles conflicted merges and unfinished rebase.
+	 */
+	public static enum RepositoryState {
+		/**
+		 * A safe state for working normally
+		 * */
+		SAFE {
+			public boolean canCheckout() { return true; }
+			public boolean canResetHead() { return true; }
+			public boolean canCommit() { return true; }
+			public String getDescription() { return "Normal"; }
+		},
+
+		/** An unfinished merge. Must resole or reset before continuing normally
+		 */
+		MERGING {
+			public boolean canCheckout() { return false; }
+			public boolean canResetHead() { return false; }
+			public boolean canCommit() { return false; }
+			public String getDescription() { return "Conflicts"; }
+		},
+
+		/**
+		 * An unfinished rebase. Must resolve, skip or abort befor normal work can take place
+		 */
+		REBASING {
+			public boolean canCheckout() { return false; }
+			public boolean canResetHead() { return false; }
+			public boolean canCommit() { return true; }
+			public String getDescription() { return "Rebase/Apply mailbox"; }
+		},
+
+		/**
+		 * An unfinished rebase with merge. Must resolve, skip or abort befor normal work can take place
+		 */
+		REBASING_MERGE {
+			public boolean canCheckout() { return false; }
+			public boolean canResetHead() { return false; }
+			public boolean canCommit() { return true; }
+			public String getDescription() { return "Rebase w/merge"; }
+		},
+
+		/**
+		 * An unfinished interactive rebase. Must resolve, skip or abort befor normal work can take place
+		 */
+		REBASING_INTERACTIVE {
+			public boolean canCheckout() { return false; }
+			public boolean canResetHead() { return false; }
+			public boolean canCommit() { return true; }
+			public String getDescription() { return "Rebase interactive"; }
+		},
+
+		/**
+		 * Bisecting being done. Normal work may continue but is discouranged
+		 */
+		BISECTING {
+			/* Changing head is a normal operation when bisecting */
+			public boolean canCheckout() { return true; }
+
+			/* Do not reset, checkout instead */
+			public boolean canResetHead() { return false; }
+
+			/* Actually it may make sense, but for now we err on the side of caution */
+			public boolean canCommit() { return false; }
+
+			public String getDescription() { return "Bisecting"; }
+		};
+
+		/**
+		 * @return true if changing HEAD is sane.
+		 */
+		public abstract boolean canCheckout();
+
+		/**
+		 * @return true if we can commit
+		 */
+		public abstract boolean canCommit();
+
+		/**
+		 * @return true if reset to another HEAD is considered SAFE
+		 */
+		public abstract boolean canResetHead();
+
+		/**
+		 * @return a human readable description of the state.
+		 */
+		public abstract String getDescription();
+	}
+
+	/**
+	 * @return an important state
+	 */
+	public RepositoryState getRepositoryState() {
+		if (new File(gitDir.getParentFile(), ".dotest").exists())
+			return RepositoryState.REBASING;
+		if (new File(gitDir,".dotest-merge").exists())
+			return RepositoryState.REBASING_INTERACTIVE;
+		if (new File(gitDir,"MERGE_HEAD").exists())
+			return RepositoryState.MERGING;
+		if (new File(gitDir,"BISECT_LOG").exists())
+			return RepositoryState.BISECTING;
+		return RepositoryState.SAFE;
+	}
 }
