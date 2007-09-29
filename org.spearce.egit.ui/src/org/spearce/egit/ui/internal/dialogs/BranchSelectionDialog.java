@@ -43,16 +43,29 @@ import org.eclipse.swt.widgets.TreeItem;
 import org.spearce.egit.core.op.ResetOperation.ResetType;
 import org.spearce.jgit.lib.Repository;
 
+/**
+ * The branch and reset selection dialog
+ *
+ */
 public class BranchSelectionDialog extends Dialog {
 	private final Repository repo;
 
 	private boolean showResetType = true;
 	
+	/**
+	 * Construct a dilog to select a branch to reset to or check out
+	 * @param parentShell
+	 * @param repo
+	 */
 	public BranchSelectionDialog(Shell parentShell, Repository repo) {
 		super(parentShell);
 		this.repo = repo;
 	}
-	
+
+	/**
+	 * Pre-set whether or present a reset or checkout dialog
+	 * @param show
+	 */
 	public void setShowResetType(boolean show) {
 		this.showResetType = show;
 	}
@@ -195,12 +208,18 @@ public class BranchSelectionDialog extends Dialog {
 	
 	private String refName = null;
 	
+	/**
+	 * @return Selected ref
+	 */
 	public String getRefName() {
 		return refName;
 	}
 
 	private ResetType resetType = ResetType.MIXED;
 	
+	/**
+	 * @return Type of Reset
+	 */
 	public ResetType getResetType() {
 		return resetType;
 	}

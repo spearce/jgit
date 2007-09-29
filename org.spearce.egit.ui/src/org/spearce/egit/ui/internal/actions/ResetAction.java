@@ -31,8 +31,20 @@ import org.spearce.egit.ui.internal.decorators.GitResourceDecorator;
 import org.spearce.egit.ui.internal.dialogs.BranchSelectionDialog;
 import org.spearce.jgit.lib.Repository;
 
+/**
+ * An acton to reset the current branch to a specific revision.
+ *
+ * @see ResetOperation
+ */
 public class ResetAction extends RepositoryAction {
 
+	// There are changes in Eclipse 3.3 requiring that execute be implemented
+	// for it to compile. while 3.2 requires that run is implemented instead.
+	/**
+	 * See {@link #run}
+	 *
+	 * @param action
+	 */
 	public void execute(IAction action) {
 		run(action);
 	}

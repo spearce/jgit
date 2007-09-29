@@ -21,15 +21,23 @@ import java.net.URL;
 
 import org.eclipse.jface.resource.ImageDescriptor;
 
+/**
+ * Icons for the the Eclipse plugin. Mostly decorations.
+ */
 public class UIIcons {
+	/** Decoration for resource added to index but not yet committed. */
 	public static final ImageDescriptor OVR_PENDING_ADD;
 
+	/** Decoratoin for resource removed from the index but not commit. */
 	public static final ImageDescriptor OVR_PENDING_REMOVE;
 
+	/** Decoration for resource tracked and commited in git. */
 	public static final ImageDescriptor OVR_SHARED;
 
+	/** Decoration for tracked resource with a merge conflict.  */
 	public static final ImageDescriptor OVR_CONFLICT;
 
+	/** Decoration for tracked resources that we want to ignore changes in. */
 	public static final ImageDescriptor OVR_ASSUMEVALID;
 
 	private static final URL base;

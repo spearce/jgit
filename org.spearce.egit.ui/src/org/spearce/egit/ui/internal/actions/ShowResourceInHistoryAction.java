@@ -22,11 +22,20 @@ import org.eclipse.team.internal.ui.actions.TeamAction;
 import org.eclipse.team.ui.TeamUI;
 import org.eclipse.team.ui.history.HistoryPageSaveablePart;
 
+/**
+ * An action to update the history view for the selected
+ * resource. If the history view is not visible it will be
+ * shown.
+ */
 public class ShowResourceInHistoryAction extends TeamAction {
 
 	// There are changes in Eclipse 3.3 requiring that execute be implemented
 	// for it to compile. while 3.2 requires that run is implemented instead.
-
+	/**
+	 * See {@link #run}
+	 *
+	 * @param action
+	 */
 	public void execute(IAction action) {
 		run(action);
 	}
@@ -36,7 +45,7 @@ public class ShowResourceInHistoryAction extends TeamAction {
 		TeamUI.getHistoryView().showHistoryFor(getSelectedResources()[0]);
 	}
 
-	protected void showCompareInDialog(Shell shell, Object object) {
+	void showCompareInDialog(Shell shell, Object object) {
 		HistoryPageSaveablePart.showHistoryInDialog(shell, object);
 	}
 

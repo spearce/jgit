@@ -17,9 +17,13 @@
 package org.spearce.egit.ui;
 
 import org.eclipse.core.resources.IResource;
+import org.eclipse.team.ui.history.HistoryPage;
 import org.eclipse.team.ui.history.HistoryPageSource;
 import org.eclipse.ui.part.Page;
 
+/**
+ * A helper class for constructing the {@link HistoryPage}.
+ */
 public class GitHistoryPageSource extends HistoryPageSource {
 
 	public Page createPage(Object object) {

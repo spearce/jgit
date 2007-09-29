@@ -26,9 +26,23 @@ import org.eclipse.team.internal.ui.actions.TeamAction;
 import org.eclipse.team.ui.TeamUI;
 import org.eclipse.team.ui.history.HistoryPageSaveablePart;
 
+/**
+ *	Compare the resources filtered in the history view with the current
+ *	revision.
+ */
 public class CompareWithRevisionAction extends TeamAction {
 
+	// There are changes in Eclipse 3.3 requiring that execute be implemented
+	// for it to compile. while 3.2 requires that run is implemented instead.
+	/** See {@link #run}
+	 * @param action
+	 */
 	public void execute(IAction action) {
+		run(action);
+	}
+
+	@Override
+	public void run(IAction action) {
 		super.run(action);
 		System.out.println("Run:" + action);
 		System.out.println("Selection resources:"
@@ -40,7 +54,7 @@ public class CompareWithRevisionAction extends TeamAction {
 
 	}
 
-	protected void showCompareInDialog(Shell shell, Object object) {
+	void showCompareInDialog(Shell shell, Object object) {
 		HistoryPageSaveablePart.showHistoryInDialog(shell, object);
 	}
 

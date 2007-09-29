@@ -39,6 +39,9 @@ import org.eclipse.ui.texteditor.quickdiff.IQuickDiffReferenceProvider;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
 
+/**
+ * This class provides input for the Eclipse Quick Diff feature.
+ */
 public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 
 	private String id;

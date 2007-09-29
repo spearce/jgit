@@ -33,6 +33,10 @@ import org.spearce.egit.core.op.ConnectProviderOperation;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
 
+/**
+ * The dialog used for activating Team>Share, i.e. to create a new
+ * Git repository or associate a project with one.
+ */
 public class SharingWizard extends Wizard implements IConfigurationWizard {
 	private IProject project;
 
@@ -40,6 +44,9 @@ public class SharingWizard extends Wizard implements IConfigurationWizard {
 
 	private File newGitDir;
 
+	/**
+	 * Construct the Git Sharing Wizard for connecting Git project to Eclipse
+	 */
 	public SharingWizard() {
 		setWindowTitle(UIText.SharingWizard_windowTitle);
 		setNeedsProgressMonitor(true);

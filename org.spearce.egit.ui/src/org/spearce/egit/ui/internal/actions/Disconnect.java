@@ -23,6 +23,11 @@ import org.eclipse.jface.action.IAction;
 import org.spearce.egit.core.op.DisconnectProviderOperation;
 import org.spearce.egit.ui.internal.decorators.GitResourceDecorator;
 
+/**
+ *	Action to disassociate a project from its Git repository.
+ *
+ *  @see DisconnectProviderOperation
+ */
 public class Disconnect extends AbstractOperationAction {
 	protected IWorkspaceRunnable createOperation(final IAction act,
 			final List sel) {

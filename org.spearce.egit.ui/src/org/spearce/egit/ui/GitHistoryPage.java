@@ -55,8 +55,8 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.MouseMoveListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -95,6 +95,12 @@ import org.spearce.jgit.lib.Repository.StGitPatch;
 import org.spearce.jgit.lib.TopologicalSorter.Edge;
 import org.spearce.jgit.lib.TopologicalSorter.Lane;
 
+/**
+ * The Git history page, i.e. the history view.
+ *
+ * This class extendes the build in history page with Git features, such
+ * as a graphical view and operations and options specific to egit.
+ */
 public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		IHistoryCompareAdapter {
 
@@ -122,7 +128,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	/* private */List<IFileRevision> fileRevisions;
 
-	protected boolean hintShowDiffNow;
+	private boolean hintShowDiffNow;
 
 	private boolean showAllProjectVersions;
 
@@ -130,6 +136,12 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	private boolean showAllRepoVersions;
 
+	/**
+	 * Construct the history page object and focus it
+	 * on a resource
+	 *
+	 * @param object Initial resource to focus on or null
+	 */
 	public GitHistoryPage(Object object) {
 		setInput(object);
 		showAllProjectVersions = Activator.getDefault().getPreferenceStore()
@@ -172,18 +184,12 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				"Compare");
 		final GitCompareRevisionAction compareActionPrev = new GitCompareRevisionAction(
 				"Show commit");
-		table.addMouseListener(new MouseListener() {
-		
-			public void mouseUp(MouseEvent e) {
-			}
+		table.addMouseListener(new MouseAdapter() {
 		
 			public void mouseDown(MouseEvent e) {
 				hintShowDiffNow = e.button==1;
 			}
-		
-			public void mouseDoubleClick(MouseEvent e) {
-			}
-		
+
 		});
 
 		tableMouseMoveListener = new MouseMoveListener() {
@@ -415,7 +421,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		return showAllRepoVersions;
 	}
 
-	protected void setShowAllRepoVersions(boolean showAllRepoVersions) {
+	void setShowAllRepoVersions(boolean showAllRepoVersions) {
 		this.showAllRepoVersions = showAllRepoVersions;
 		Activator.getDefault().getPreferenceStore().setValue(
 				PREF_SHOWALLREPOVERSIONS, showAllRepoVersions);
@@ -425,7 +431,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		return showAllProjectVersions;
 	}
 
-	protected void setShowAllProjectVersions(boolean showAllProjectVersions) {
+	void setShowAllProjectVersions(boolean showAllProjectVersions) {
 		this.showAllProjectVersions = showAllProjectVersions;
 		Activator.getDefault().getPreferenceStore().setValue(
 				PREF_SHOWALLPROJECTVERSIONS, showAllProjectVersions);
@@ -435,7 +441,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		return showAllFolderVersions;
 	}
 
-	protected void setShowAllFolderVersion(boolean showAllFolderVersions) {
+	void setShowAllFolderVersion(boolean showAllFolderVersions) {
 		this.showAllFolderVersions = showAllFolderVersions;
 		Activator.getDefault().getPreferenceStore().setValue(
 				PREF_SHOWALLFOLDERVERSIONS, showAllFolderVersions);
@@ -451,7 +457,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	class GitHistoryLabelProvider {
 
-		public String getColumnText(int index, int columnIndex) {
+		String getColumnText(int index, int columnIndex) {
 			GitFileRevision element = (GitFileRevision) fileRevisions.get(index);
 			if (columnIndex == 0) {
 				return "";
@@ -853,7 +859,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 	class HistoryRefreshJob extends Job {
 
-		public HistoryRefreshJob(String name) {
+		HistoryRefreshJob(String name) {
 			super(name);
 		}
 

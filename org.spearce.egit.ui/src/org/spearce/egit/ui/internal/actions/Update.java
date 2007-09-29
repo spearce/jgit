@@ -22,6 +22,11 @@ import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.jface.action.IAction;
 import org.spearce.egit.core.op.UpdateOperation;
 
+/**
+ * Action to update index for selected resources with content from workdir.
+ *
+ * @see UpdateOperation
+ */
 public class Update extends AbstractOperationAction {
 	protected IWorkspaceRunnable createOperation(final IAction act,
 			final List sel) {

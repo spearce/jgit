@@ -22,6 +22,11 @@ import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.jface.action.IAction;
 import org.spearce.egit.core.op.TrackOperation;
 
+/**
+ * An action to add resources to the Git repository.
+ *
+ * @see TrackOperation
+ */
 public class Track extends AbstractOperationAction {
 	protected IWorkspaceRunnable createOperation(final IAction act,
 			final List sel) {

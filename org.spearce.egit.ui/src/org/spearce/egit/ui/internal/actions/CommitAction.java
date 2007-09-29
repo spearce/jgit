@@ -58,6 +58,9 @@ import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 import org.spearce.jgit.lib.GitIndex.Entry;
 
+/**
+ * Scan for modified resources in the same project as the selected resources.
+ */
 public class CommitAction implements IObjectActionDelegate {
 
 	private IWorkbenchPart wp;

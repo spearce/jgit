@@ -9,6 +9,9 @@ import org.eclipse.team.internal.ui.actions.TeamAction;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.Repository;
 
+/**
+ * A helper class for Team Actions on Git controlled projects
+ */
 public abstract class RepositoryAction extends TeamAction {
 	/**
 	 * @return repository for current project, or null

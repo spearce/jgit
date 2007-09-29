@@ -21,6 +21,11 @@ import org.eclipse.core.runtime.IAdapterFactory;
 import org.eclipse.team.ui.history.IHistoryPageSource;
 import org.spearce.egit.ui.GitHistoryPageSource;
 
+/**
+ * This class is an intellgest "cast" operation for getting
+ * an instance of a suitable object from another for a specific
+ * purpose.
+ */
 public class GitAdapterFactory implements IAdapterFactory {
 
 	private Object historyPageSource = new GitHistoryPageSource();

@@ -22,6 +22,12 @@ import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.jface.action.IAction;
 import org.spearce.egit.core.op.UntrackOperation;
 
+/**
+ * An action to remove files from a Git repository. The removal does not alter
+ * history, only future commits on the same branch will be affected.
+ *
+ * @see UntrackOperation
+ */
 public class Untrack extends AbstractOperationAction {
 	protected IWorkspaceRunnable createOperation(final IAction act,
 			final List sel) {

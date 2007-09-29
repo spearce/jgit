@@ -18,15 +18,27 @@ import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 
+/**
+ * A resource node is for letting Eclipse access data in the git repo in a hierachical
+ * fashion, e.g. for the compare editor.
+ */
 public class GitResourceNode extends BufferedContent implements IStructureComparator, ITypedElement {
 	TreeEntry entry;
 	GitResourceNode[] children;
 	String contentIdentifier;
 
+	/**
+	 * Construct a resource not for a {@link TreeEntry}
+	 * @param e The {@link TreeEntry}
+	 */
 	public GitResourceNode(TreeEntry e) {
 		entry = e;
 	}
 
+	/**
+	 * Construct a {@link GitResourceNode} for a resource ties a specific historical version
+	 * @param file
+	 */
 	public GitResourceNode(IFileRevision file) {
 		this(file instanceof GitCommitFileRevision ? ((GitCommitFileRevision)file).getTreeEntry() : null);
 		contentIdentifier = ((GitCommitFileRevision)file).getContentIdentifier();
@@ -102,6 +114,9 @@ public class GitResourceNode extends BufferedContent implements IStructureCompar
 		}
 	}
 
+	/**
+	 * @return a user friendly version identification of the resource
+	 */
 	public String getContentIdentifier() {
 		return contentIdentifier;
 	}

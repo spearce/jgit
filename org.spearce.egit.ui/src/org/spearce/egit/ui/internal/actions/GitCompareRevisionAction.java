@@ -50,10 +50,20 @@ public class GitCompareRevisionAction extends BaseSelectionListenerAction {
 	IStructuredSelection selection;
 	IFileRevision currentFileRevision;
 
+	/**
+	 * Construct an compare revisions action item for the history view with a
+	 * specific label
+	 *
+	 * @param text
+	 *            The label to set
+	 */
 	public GitCompareRevisionAction(String text) {
 		super(text);
 	}
 
+	/**
+	 * Construct a compare revisions action item with default label
+	 */
 	public GitCompareRevisionAction() {
 		this(TeamUIMessages.LocalHistoryPage_CompareAction);
 	}
@@ -134,7 +144,7 @@ public class GitCompareRevisionAction extends BaseSelectionListenerAction {
 		}
 	}
 
-	protected GitCompareFileRevisionEditorInput createCompareEditorInput(
+	GitCompareFileRevisionEditorInput createCompareEditorInput(
 			ITypedElement left, ITypedElement right, IWorkbenchPage page) {
 		return new GitCompareFileRevisionEditorInput(left, right, page);
 	}
@@ -151,6 +161,10 @@ public class GitCompareRevisionAction extends BaseSelectionListenerAction {
 		return currentFileRevision;
 	}
 
+	/**
+	 * Set which revision is current for this compare action item
+	 * @param fileRevision
+	 */
 	public void setCurrentFileRevision(IFileRevision fileRevision){
 		this.currentFileRevision = fileRevision;
 	}
@@ -209,6 +223,10 @@ public class GitCompareRevisionAction extends BaseSelectionListenerAction {
 		return false;
 	}
 
+	/**
+	 * Set the page this action is associated with
+	 * @param page
+	 */
 	public void setPage(HistoryPage page) {
 		this.page = page;
 	}

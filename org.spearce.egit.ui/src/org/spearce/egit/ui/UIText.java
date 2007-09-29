@@ -18,25 +18,39 @@ package org.spearce.egit.ui;
 
 import org.eclipse.osgi.util.NLS;
 
+/**
+ * Text resources for the plugin. Strings here can be i18n-ed simpler and avoid
+ * duplicating strings.
+ */
 public class UIText extends NLS {
+	/** */
 	public static String SharingWizard_windowTitle;
 
+	/** */
 	public static String SharingWizard_failed;
 
+	/** */
 	public static String GenericOperationFailed;
 
+	/** */
 	public static String ExistingOrNewPage_title;
 
+	/** */
 	public static String ExistingOrNewPage_description;
 
+	/** */
 	public static String ExistingOrNewPage_groupHeader;
 
+	/** */
 	public static String ExistingOrNewPage_useExisting;
 
+	/** */
 	public static String ExistingOrNewPage_createNew;
 
+	/** */
 	public static String Decorator_failedLazyLoading;
 
+	/** */
 	public static String QuickDiff_failedLoading;
 
 	/** */

@@ -146,7 +146,7 @@ public class GitResourceDecorator extends LabelProvider implements
 		}
 	}
 
-	public static void clearDecorationState(IResource r) throws CoreException {
+	static void clearDecorationState(IResource r) throws CoreException {
 		if (r.isAccessible())
 			r.setSessionProperty(GITFOLDERDIRTYSTATEPROPERTY, null);
 	}

@@ -39,6 +39,10 @@ import org.eclipse.team.internal.ui.history.FileRevisionTypedElement;
 import org.eclipse.team.internal.ui.synchronize.LocalResourceTypedElement;
 import org.eclipse.ui.IWorkbenchPage;
 
+/**
+ * The input provider for the compare editor when working on resources
+ * under Git control.
+ */
 public class GitCompareFileRevisionEditorInput extends CompareEditorInput {
 
 	private ITypedElement left;
@@ -56,14 +60,14 @@ public class GitCompareFileRevisionEditorInput extends CompareEditorInput {
 		this.right = right;
 	}
 
-	protected FileRevisionTypedElement getRightRevision() {
+	FileRevisionTypedElement getRightRevision() {
 		if (right instanceof FileRevisionTypedElement) {
 			return (FileRevisionTypedElement) right;
 		}
 		return null;
 	}
 
-	protected FileRevisionTypedElement getLeftRevision() {
+	FileRevisionTypedElement getLeftRevision() {
 		if (left instanceof FileRevisionTypedElement) {
 			return (FileRevisionTypedElement) left;
 		}
@@ -294,15 +298,11 @@ public class GitCompareFileRevisionEditorInput extends CompareEditorInput {
 //		}
 //	}
 //
-	public LocalResourceTypedElement getLocalElement() {
+	private LocalResourceTypedElement getLocalElement() {
 		if (left instanceof LocalResourceTypedElement) {
 			return (LocalResourceTypedElement) left;
 		}
 		return null;
-	}
-
-	public ITypedElement getLeft() {
-		return left;
 	}
 
 	protected Object prepareInput(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {

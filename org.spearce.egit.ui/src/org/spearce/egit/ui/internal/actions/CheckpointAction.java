@@ -22,6 +22,11 @@ import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.jface.action.IAction;
 import org.spearce.egit.core.op.CheckpointOperation;
 
+/**
+ * Refresh (update index) for all items in the selected project.
+ *
+ * @see CheckpointOperation
+ */
 public class CheckpointAction extends AbstractOperationAction {
 	protected IWorkspaceRunnable createOperation(final IAction act,
 			final List sel) {

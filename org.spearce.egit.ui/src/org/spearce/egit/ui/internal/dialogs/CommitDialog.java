@@ -63,8 +63,8 @@ import org.spearce.jgit.lib.TreeEntry;
 import org.spearce.jgit.lib.GitIndex.Entry;
 
 /**
- * @author dwatson Dialog is shown to user when they request to commit files.
- *         Changes in the selected portion of the tree are shown.
+ * Dialog is shown to user when they request to commit files. Changes in the
+ * selected portion of the tree are shown.
  */
 public class CommitDialog extends Dialog {
 
@@ -305,10 +305,17 @@ public class CommitDialog extends Dialog {
 		return menu;
 	}
 
+	/**
+	 * @return The message the user entered
+	 */
 	public String getCommitMessage() {
 		return commitMessage;
 	}
 
+	/**
+	 * Preset a commit message. This might be for ammending a commit.
+	 * @param s the commit message
+	 */
 	public void setCommitMessage(String s) {
 		this.commitMessage = s;
 	}
@@ -322,10 +329,18 @@ public class CommitDialog extends Dialog {
 	private ArrayList<IFile> selectedItems = new ArrayList<IFile>();
 	private String previousCommitMessage = "";
 
+	/**
+	 * Pre-select suggested set of resources to commit
+	 *
+	 * @param items
+	 */
 	public void setSelectedItems(IFile[] items) {
 		Collections.addAll(selectedItems, items);
 	}
 
+	/**
+	 * @return the resources selected by the user to commit.
+	 */
 	public IFile[] getSelectedItems() {
 		return selectedItems.toArray(new IFile[0]);
 	}
@@ -363,6 +378,12 @@ public class CommitDialog extends Dialog {
 		super.okPressed();
 	}
 
+	/**
+	 * Set the total list of changed resourcess, including additions and
+	 * removals
+	 *
+	 * @param files potentially affected by a new commit
+	 */
 	public void setFileList(ArrayList<IFile> files) {
 		this.files = files;
 	}
@@ -378,34 +399,69 @@ public class CommitDialog extends Dialog {
 		super.buttonPressed(buttonId);
 	}
 
+	/**
+	 * @return The author to set for the commit
+	 */
 	public String getAuthor() {
 		return author;
 	}
 
+	/**
+	 * Pre-set author for the commit
+	 *
+	 * @param author
+	 */
 	public void setAuthor(String author) {
 		this.author = author;
 	}
 
+	/**
+	 * @return whether to auto-add a signed-off line to the message
+	 */
 	public boolean isSignedOff() {
 		return signedOff;
 	}
 
+	/**
+	 * Pre-set whether a signed-off line should be included in the commit
+	 * message.
+	 *
+	 * @param signedOff
+	 */
 	public void setSignedOff(boolean signedOff) {
 		this.signedOff = signedOff;
 	}
 
+	/**
+	 * @return whether the last commit is to be ammended
+	 */
 	public boolean isAmending() {
 		return amending;
 	}
 
+	/**
+	 * Pre-set whether the last commit is going to be ammended
+	 *
+	 * @param amending
+	 */
 	public void setAmending(boolean amending) {
 		this.amending = amending;
 	}
 
+	/**
+	 * Set the message from the previous commit for ammending.
+	 *
+	 * @param string
+	 */
 	public void setPreviousCommitMessage(String string) {
 		this.previousCommitMessage = string;
 	}
 
+	/**
+	 * Set whether the previous commit may be ammended
+	 *
+	 * @param amendAllowed
+	 */
 	public void setAmendAllowed(boolean amendAllowed) {
 		this.amendAllowed = amendAllowed;
 	}

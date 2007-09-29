@@ -36,6 +36,9 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
 
+/**
+ * Common functionality for EGit operations.
+ */
 public abstract class AbstractOperationAction implements IObjectActionDelegate {
 	private IWorkbenchPart wp;
 
@@ -56,9 +59,19 @@ public abstract class AbstractOperationAction implements IObjectActionDelegate {
 		wp = part;
 	}
 
+	/**
+	 * Instantiate an operation on an action on provided objects.
+	 *
+	 * @param act
+	 * @param selection
+	 * @return a {@link IWorkspaceRunnable} for invoking this operation later on
+	 */
 	protected abstract IWorkspaceRunnable createOperation(final IAction act,
 			final List selection);
 
+	/**
+	 * A method to invoke when the operation is finished.
+	 */
 	protected void postOperation() {
 	}
 

@@ -23,33 +23,62 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
+/**
+ * This is a plugin singleton mostly controlling logging.
+ */
 public class Activator extends AbstractUIPlugin {
 	private static Activator plugin;
 
+	/**
+	 * @return the {@link Activator} singleton.
+	 */
 	public static Activator getDefault() {
 		return plugin;
 	}
 
+	/**
+	 * @return the id of the egit ui plugin
+	 */
 	public static String getPluginId() {
 		return getDefault().getBundle().getSymbolicName();
 	}
 
+	/**
+	 * Instatiate an error exception.
+	 *
+	 * @param message description of the error
+	 * @param thr cause of the error or null
+	 * @return an initialized {@link CoreException}
+	 */
 	public static CoreException error(final String message, final Throwable thr) {
 		return new CoreException(new Status(IStatus.ERROR, getPluginId(), 0,
 				message, thr));
 	}
 
+	/**
+	 * Log an error via the Eclipse logging routines.
+	 * @param message
+	 * @param thr cause of error
+	 */
 	public static void logError(final String message, final Throwable thr) {
 		getDefault().getLog().log(
 				new Status(IStatus.ERROR, getPluginId(), 0, message, thr));
 	}
 
+	/**
+	 * @param optionId name of debug option
+	 * @return whether a named debug option is set
+	 */
 	private static boolean isOptionSet(final String optionId) {
 		final String option = getPluginId() + optionId;
 		final String value = Platform.getDebugOption(option);
 		return value != null && value.equals("true");
 	}
 
+	/**
+	 * Log a dbeug message
+	 * @param what message to log
+	 */
 	public static void trace(final String what) {
 		if (getDefault().traceVerbose) {
 			System.out.println("[" + getPluginId() + "] " + what);
@@ -58,6 +87,9 @@ public class Activator extends AbstractUIPlugin {
 
 	private boolean traceVerbose;
 
+	/**
+	 * Constructor for the egit ui plugin singleton
+	 */
 	public Activator() {
 		plugin = this;
 	}
