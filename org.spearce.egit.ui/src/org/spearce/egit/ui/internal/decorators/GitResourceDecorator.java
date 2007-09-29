@@ -50,6 +50,7 @@ import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 import org.spearce.jgit.lib.GitIndex.Entry;
+import org.spearce.jgit.lib.Repository.RepositoryState;
 
 /**
  * Supplies annotations for displayed resources.
@@ -267,7 +268,13 @@ public class GitResourceDecorator extends LabelProvider implements
 										decoration.addSuffix(" [StGit " + patch + "@" + branch
 												+ "]");
 									} else {
-										decoration.addSuffix(" [Git @ " + branch + "]");
+										RepositoryState repositoryState = repo.getRepositoryState();
+										String statename;
+										if (repositoryState.equals(RepositoryState.SAFE))
+											statename = "";
+										else
+											statename = repositoryState.getDescription() + " ";
+										decoration.addSuffix(" [Git " + statename + "@ " + branch + "]");
 									}
 								} catch (IOException e) {
 									e.printStackTrace();
