@@ -18,36 +18,45 @@ package org.spearce.jgit.lib;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-/** Very much like a map, but specialized
- *  to partition the data on the first byte
- *  of the key. This is MUCH faster. See test
- *  class for how these numbers were derived.
- *  
- *	TreeMap=            2968
- *	HashMap=            1689
- *	Partitioned TreeMap=1499
- *	Partitioned HashMap=1782
+/**
+ * Very much like a map, but specialized to partition the data on the first byte
+ * of the key. This is about twice as fast. See test class.
  *
- *  Inspiration from Git pack file format which uses this technique.
- *  
+ * Inspiration is taken from the Git pack file format which uses this technique
+ * to improve lookup performance.
+ *
+ * @param <V>
+ *            The value we map ObjectId's to.
+ *
  */
-public class ObjectIdMap implements Map {
+public class ObjectIdMap<V> extends AbstractMap<ObjectId, V> {
 
-	Map[] level0 = new Map[256];
+	@SuppressWarnings("unchecked")
+	private Map<ObjectId, V>[] level0 = new Map[256];
 	
+	/**
+	 * Construct an ObjectIdMap with an underlying TreeMap implementation
+	 */
 	public ObjectIdMap() {
 		this(new TreeMap());
 	}
 
+	/**
+	 * Construct an ObjectIdMap with the same underlying map implementation as
+	 * the provided example.
+	 *
+	 * @param sample
+	 */
+	@SuppressWarnings("unchecked")
 	public ObjectIdMap(Map sample) {
 		try {
 			Method m=sample.getClass().getMethod("clone", (Class[])null);
@@ -73,11 +82,11 @@ public class ObjectIdMap implements Map {
 	}
 
 	public boolean containsKey(Object key) {
-		return submap(key).containsKey(key);
+		return submap((ObjectId)key).containsKey(key);
 	}
 
-	private final Map submap(Object key) {
-		return level0[((ObjectId)key).getFirstByte()];
+	private final Map<ObjectId, V> submap(ObjectId key) {
+		return level0[key.getFirstByte()];
 	}
 
 	public boolean containsValue(Object value) {
@@ -87,15 +96,15 @@ public class ObjectIdMap implements Map {
 		return false;
 	}
 
-	public Set entrySet() {
-		Set ret = new HashSet();
+	public Set<Map.Entry<ObjectId, V>> entrySet() {
+		Set<Map.Entry<ObjectId, V>> ret = new HashSet<Map.Entry<ObjectId, V>>();
 		for (int i=0; i<256; ++i)
 			ret.addAll(level0[i].entrySet());
 		return ret;
 	}
 
-	public Object get(Object key) {
-		return submap(key).get(key);
+	public V get(Object key) {
+		return submap((ObjectId)key).get(key);
 	}
 
 	public boolean isEmpty() {
@@ -105,27 +114,27 @@ public class ObjectIdMap implements Map {
 		return true;
 	}
 
-	public Set keySet() {
-		Set ret = new HashSet();
+	public Set<ObjectId> keySet() {
+		Set<ObjectId> ret = new HashSet<ObjectId>();
 		for (int i=0; i<256; ++i)
 			ret.addAll(level0[i].keySet());
 		return ret;
 	}
 
-	public Object put(Object key, Object value) {
+	@SuppressWarnings("unchecked")
+	public V put(ObjectId key, V value) {
 		return submap(key).put(key, value);
 	}
 
-	public void putAll(Map arg0) {
-		for (Iterator i=arg0.keySet().iterator(); i.hasNext(); ) {
-			Object k=i.next();
-			Object v=arg0.get(k);
+	public void putAll(Map<? extends ObjectId, ? extends V> arg0) {
+		for (ObjectId k : arg0.keySet()) {
+			V v=arg0.get(k);
 			put(k,v);
 		}
 	}
 
-	public Object remove(Object key) {
-		return submap(key).remove(key);
+	public V remove(Object key) {
+		return submap((ObjectId) key).remove(key);
 	}
 
 	public int size() {
@@ -135,8 +144,8 @@ public class ObjectIdMap implements Map {
 		return ret;
 	}
 
-	public Collection values() {
-		List ret=new ArrayList(size());
+	public Collection<V> values() {
+		List<V> ret=new ArrayList<V>(size());
 		for (int i=0; i<256; ++i)
 			ret.addAll(level0[i].values());
 		return ret;
