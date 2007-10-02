@@ -16,14 +16,22 @@
  */
 package org.spearce.jgit.lib;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
 import junit.framework.TestCase;
-import junit.textui.TestRunner;
 
+/**
+ * Test functionality and performance.
+ *
+ * Performance is included because that is the very reason that
+ * {@link ObjectIdMap} exists.
+ *
+ */
 public class ObjectIdMapTest extends TestCase {
 
 	ObjectId[] ids = new ObjectId[500000];
@@ -153,6 +161,10 @@ public class ObjectIdMapTest extends TestCase {
 		assertEquals(d5*2/10000, d2/10000); // d5 is twice as fast
 	}
 
+	/**
+	 * Verify that ObjectIdMap and TreeMap functionally are equivalent.
+	 */
+	@SuppressWarnings("unchecked")
 	public void testFunc() {
 		Map treeMap = new TreeMap();
 		for (int i=0; i<ids.length/100; ++i)
@@ -162,9 +174,22 @@ public class ObjectIdMapTest extends TestCase {
 			levelMapWithTree.put(ids[i],ids[i]);
 		
 		assertEquals(treeMap, levelMapWithTree);
+		assertEquals(treeMap.values(), levelMapWithTree.values());
+		assertEquals(treeMap.keySet(), levelMapWithTree.keySet());
+
+		treeMap.remove(ids[30]);
+		levelMapWithTree.remove(ids[30]);
+		assertFalse(treeMap.containsKey(ids[30]));
+		assertFalse(levelMapWithTree.containsKey(ids[30]));
+		assertEquals(treeMap.values(), levelMapWithTree.values());
+		assertEquals(treeMap.keySet(), levelMapWithTree.keySet());
 	}
 
-	public static void main(String[] args) {
-		TestRunner.run(ObjectIdMapTest.class);
+	void assertEquals(Collection a, Collection b) {
+		Object[] aa = a.toArray();
+		Object[] ba = b.toArray();
+		Arrays.sort(aa);
+		Arrays.sort(ba);
+		assertTrue(Arrays.equals(aa, ba));
 	}
 }
