@@ -485,7 +485,7 @@ public class ObjectIdMapTest extends TestCase {
 		for (int i=0; i<ids.length; ++i)
 			levelMapWithTreeAndSpecialCompare2.put(ids[i],ids[i]);
 
-		for (int j=0; j<2048; ++j) {
+		for (int j=0; j<8192; ++j) {
 			int x =
 				((j & 1)!=0  ? 1 : 0) |
 				((j & 2)!=0  ? 2 : 0) |
@@ -561,7 +561,7 @@ public class ObjectIdMapTest extends TestCase {
 		System.out.println("Partitioned HashMap                  ="+d4);
 		System.out.println("Partitioned TreeMap enhanced compare ="+d5);
 		System.out.println("Partitioned TreeMap dummy    compare ="+d6);
-		assertSlower(500f, 3000f, d5, d2);
+		assertFaster(1.5f, 3f, d5, d2);
 	}
 
 	/**

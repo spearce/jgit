@@ -19,10 +19,8 @@ package org.spearce.jgit.lib;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+import java.util.AbstractSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -41,7 +39,7 @@ import java.util.TreeMap;
 public class ObjectIdMap<V> extends AbstractMap<ObjectId, V> {
 
 	@SuppressWarnings("unchecked")
-	private Map<ObjectId, V>[] level0 = new Map[256];
+	final Map<ObjectId, V>[] level0 = new Map[256];
 	
 	/**
 	 * Construct an ObjectIdMap with an underlying TreeMap implementation
@@ -96,11 +94,56 @@ public class ObjectIdMap<V> extends AbstractMap<ObjectId, V> {
 		return false;
 	}
 
+	private Set<Map.Entry<ObjectId, V>> entrySet =
+		new AbstractSet<Map.Entry<ObjectId, V>>() {
+
+			@Override
+			final public Iterator<Map.Entry<ObjectId, V>> iterator() {
+				return new Iterator<Entry<ObjectId,V>>() {
+					private int levelIndex;
+					private boolean hasNext;
+					private Iterator<Map.Entry<ObjectId, V>> levelIterator;
+					private Iterator<Map.Entry<ObjectId, V>> lastIterator;
+					{
+						step();
+					}
+					public boolean hasNext() {
+						return hasNext;
+					}
+					public java.util.Map.Entry<ObjectId, V> next() {
+						Entry<ObjectId, V> ret = levelIterator.next();
+						step();
+						return ret;
+					}
+					public void remove() {
+						lastIterator.remove();
+					}
+
+					private void step() {
+						hasNext = false;
+						lastIterator = levelIterator;
+						while ((levelIterator==null || !(hasNext=levelIterator.hasNext()))) {
+							if (levelIndex < level0.length)
+								levelIterator = level0[levelIndex++].entrySet().iterator();
+							else
+								break;
+						}
+					}
+				};
+			}
+
+			@Override
+			public int size() {
+				int ret=0;
+				for (int i=0; i<256; ++i)
+					ret += level0[i].size();
+				return ret;
+			}
+	};
+
+
 	public Set<Map.Entry<ObjectId, V>> entrySet() {
-		Set<Map.Entry<ObjectId, V>> ret = new HashSet<Map.Entry<ObjectId, V>>();
-		for (int i=0; i<256; ++i)
-			ret.addAll(level0[i].entrySet());
-		return ret;
+		return entrySet;
 	}
 
 	public V get(Object key) {
@@ -112,13 +155,6 @@ public class ObjectIdMap<V> extends AbstractMap<ObjectId, V> {
 			if (!level0[i].isEmpty())
 				return false;
 		return true;
-	}
-
-	public Set<ObjectId> keySet() {
-		Set<ObjectId> ret = new HashSet<ObjectId>();
-		for (int i=0; i<256; ++i)
-			ret.addAll(level0[i].keySet());
-		return ret;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -138,17 +174,7 @@ public class ObjectIdMap<V> extends AbstractMap<ObjectId, V> {
 	}
 
 	public int size() {
-		int ret=0;
-		for (int i=0; i<256; ++i)
-			ret += level0[i].size();
-		return ret;
-	}
-
-	public Collection<V> values() {
-		List<V> ret=new ArrayList<V>(size());
-		for (int i=0; i<256; ++i)
-			ret.addAll(level0[i].values());
-		return ret;
+		return entrySet().size();
 	}
 
 }
