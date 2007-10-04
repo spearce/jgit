@@ -48,8 +48,12 @@ public class RefLogWriter {
 		String entry = buildReflogString(repo, oldCommit, commit, message);
 
 		File directory = repo.getDirectory();
-		PrintWriter writer = new PrintWriter(new FileOutputStream(new File(
-				directory, "logs/" + refName), true));
+		File reflogfile = new File(directory, "logs/" + refName);
+		File reflogdir = reflogfile.getParentFile();
+		if (!reflogdir.exists())
+			if (!reflogdir.mkdirs())
+				throw new IOException("Cannot create directory "+reflogdir);
+		PrintWriter writer = new PrintWriter(new FileOutputStream(reflogfile, true));
 		writer.println(entry);
 		writer.close();
 	}
@@ -57,8 +61,13 @@ public class RefLogWriter {
 	private static String buildReflogString(Repository repo,
 			ObjectId oldCommit, ObjectId commit, String message) {
 		PersonIdent me = new PersonIdent(repo);
+		String initial = "";
+		if (oldCommit == null) {
+			oldCommit = ObjectId.zeroId();
+			initial = " (initial)";
+		}
 		String s = oldCommit.toString() + " " + commit.toString() + " "
-				+ me.toExternalString() + "\t" + message;
+				+ me.toExternalString() + "\t" + message + initial;
 		return s;
 	}
 

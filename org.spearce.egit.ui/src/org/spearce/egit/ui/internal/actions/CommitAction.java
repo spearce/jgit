@@ -83,6 +83,7 @@ public class CommitAction implements IObjectActionDelegate {
 		try {
 			buildIndexHeadDiffList();
 		} catch (IOException e) {
+			Utils.handleError(wp.getSite().getShell(), e, "Error during commit", "Error occurred computing diffs");
 			return;
 		}
 
@@ -157,8 +158,10 @@ public class CommitAction implements IObjectActionDelegate {
 		Repository repo = RepositoryMapping.getMapping(project).getRepository();
 		try {
 			ObjectId parentId = repo.resolve("HEAD");
-			previousCommit = repo.mapCommit(parentId);
+			if (parentId != null)
+				previousCommit = repo.mapCommit(parentId);
 		} catch (IOException e) {
+			Utils.handleError(wp.getSite().getShell(), e, "Error during commit", "Error occurred retreiving last commit");
 		}
 	}
 
@@ -192,9 +195,14 @@ public class CommitAction implements IObjectActionDelegate {
 			writeTreeWithSubTrees(tree);
 
 			ObjectId currentHeadId = repo.resolve("HEAD");
-			ObjectId[] parentIds = new ObjectId[] { currentHeadId };
+			ObjectId[] parentIds;
 			if (amending) {
 				parentIds = previousCommit.getParentIds();
+			} else {
+				if (currentHeadId != null)
+					parentIds = new ObjectId[] { currentHeadId };
+				else
+					parentIds = new ObjectId[0];
 			}
 			Commit commit = new Commit(repo, parentIds);
 			commit.setTree(tree);
@@ -259,6 +267,8 @@ public class CommitAction implements IObjectActionDelegate {
 			Tree projTree = treeMap.get(repository);
 			if (projTree == null) {
 				projTree = repository.mapTree("HEAD");
+				if (projTree == null)
+					projTree = new Tree(repository);
 				treeMap.put(repository, projTree);
 				System.out.println("Orig tree id: " + projTree.getId());
 			}
@@ -322,7 +332,7 @@ public class CommitAction implements IObjectActionDelegate {
 		return message;
 	}
 
-	private void writeTreeWithSubTrees(Tree tree) {
+	private void writeTreeWithSubTrees(Tree tree) throws TeamException {
 		if (tree.getId() == null) {
 			System.out.println("writing tree for: " + tree.getFullName());
 			try {
@@ -341,7 +351,7 @@ public class CommitAction implements IObjectActionDelegate {
 				ObjectWriter writer = new ObjectWriter(tree.getRepository());
 				tree.setId(writer.writeTree(tree));
 			} catch (IOException e) {
-				e.printStackTrace();
+				throw new TeamException("Writing trees", e);
 			}
 		}
 	}
@@ -385,6 +395,7 @@ public class CommitAction implements IObjectActionDelegate {
 					System.out.println("Couldn't find " + filename);
 				}
 			} catch (Exception t) {
+				t.printStackTrace();
 				continue;
 			} // if it's outside the workspace, bad things happen
 		}
