@@ -224,7 +224,7 @@ public class ObjectId implements Comparable {
 	}
 
 	public int compareTo(final Object o) {
-		if (o.getClass() == ObjectId.class)
+		if (o instanceof ObjectId)
 			return compare(id, ((ObjectId) o).id);
 		if (o.getClass().getComponentType() == Byte.TYPE)
 			return compare(id, (byte[]) o);
