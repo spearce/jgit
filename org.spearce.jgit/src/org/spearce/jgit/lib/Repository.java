@@ -493,6 +493,8 @@ public class Repository {
 				if (ref == null) {
 					String refstr = new String(rev,0,i);
 					ObjectId refId = resolveSimple(refstr);
+					if (refId == null)
+						return null;
 					ref = mapCommit(refId);
 				}
 				if (i + 1 < rev.length) {
