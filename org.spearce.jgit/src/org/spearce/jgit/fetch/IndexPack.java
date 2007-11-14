@@ -578,4 +578,35 @@ public class IndexPack {
 			position = headerOffset;
 		}
 	}
+
+	/**
+	 * Rename the temporary pack to it's final name and location.
+	 *
+	 * @param db
+	 * @throws IOException
+	 */
+	public void renamePack(Repository db) throws IOException {
+		final MessageDigest d = Constants.newMessageDigest();
+		for (int i = 0; i < entryCount; i++) {
+			final ObjectEntry oe = entries[i];
+			d.update(oe.getBytes());
+		}
+		ObjectId name = new ObjectId(d.digest());
+		System.out.println("name pack "+name);
+		File packDir = new File(db.getObjectsDirectory(),"pack");
+		File finalPack = new File(packDir, "pack-"+name+".pack");
+		File finalIdx = new File(packDir, "pack-"+name+".idx");
+		if (!dstIdx.renameTo(finalIdx)) {
+			if (!dstIdx.delete())
+				dstIdx.deleteOnExit();
+			throw new IOException("Cannot rename final pack index");
+		}
+		if (!dstPack.renameTo(finalPack)) {
+			if (!finalIdx.delete())
+				finalIdx.deleteOnExit();
+			if (!dstPack.delete())
+				dstPack.deleteOnExit();
+			throw new IOException("Cannot rename final pack");
+		}
+	}
 }
