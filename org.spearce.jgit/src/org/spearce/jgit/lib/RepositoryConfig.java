@@ -31,6 +31,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * An object representing the Git config file.
+ *
+ * This can be either the repository specific file or the user global
+ * file depending on how it is instantiated.
+ */
 public class RepositoryConfig {
 	private final Repository repo;
 
@@ -64,22 +70,34 @@ public class RepositoryConfig {
 	
 	private static RepositoryConfig globalConfig = null;
 	
+	/**
+	 * @return a RepositoryConfig representing the user global config
+	 */
 	public static RepositoryConfig getGlobalConfig() {
 		if (globalConfig == null) 
 			globalConfig = new RepositoryConfig();
 		return globalConfig;
 	}
 	
-	protected RepositoryConfig(final Repository r) {
+	RepositoryConfig(final Repository r) {
 		repo = r;
 		configFile = new File(repo.getDirectory(), "config");
 		clear();
 	}
 
+	/**
+	 * @return Core configuration values
+	 */
 	public CoreConfig getCore() {
 		return core;
 	}
 
+	/**
+	 * @param group
+	 * @param name
+	 * @param defaultValue
+	 * @return an integer value from the git config
+	 */
 	public int getInt(final String group, final String name,
 			final int defaultValue) {
 		final String n = getString(group, name);
@@ -97,6 +115,15 @@ public class RepositoryConfig {
 		}
 	}
 
+	/**
+	 * Get a boolean value from the git config
+	 *
+	 * @param group
+	 * @param name
+	 * @param defaultValue
+	 * @return true if any value or defaultValue is true, false for missing or
+	 *         explicit fallse
+	 */
 	public boolean getBoolean(final String group, final String name,
 			final boolean defaultValue) {
 		String n = getRawString(group, name);
@@ -117,6 +144,11 @@ public class RepositoryConfig {
 		}
 	}
 
+	/**
+	 * @param group
+	 * @param name
+	 * @return a String value from git config.
+	 */
 	public String getString(final String group, final String name) {
 		String val = getRawString(group, name);
 		if (MAGIC_EMPTY_VALUE.equals(val)) {
@@ -139,6 +171,9 @@ public class RepositoryConfig {
 		}
 	}
 
+	/**
+	 * Create a new default config
+	 */
 	public void create() {
 		Entry e;
 
@@ -163,6 +198,11 @@ public class RepositoryConfig {
 		core = new CoreConfig(this);
 	}
 
+	/**
+	 * Save config data to the git config file
+	 *
+	 * @throws IOException
+	 */
 	public void save() throws IOException {
 		final File tmp = new File(configFile.getParentFile(), configFile
 				.getName()
@@ -217,6 +257,10 @@ public class RepositoryConfig {
 		}
 	}
 
+	/**
+	 * Read the config file
+	 * @throws IOException
+	 */
 	public void load() throws IOException {
 		clear();
 		final BufferedReader r = new BufferedReader(new InputStreamReader(
