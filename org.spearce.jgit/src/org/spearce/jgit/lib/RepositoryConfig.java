@@ -93,44 +93,46 @@ public class RepositoryConfig {
 	}
 
 	/**
-	 * @param group
+	 * @param section
+	 * @param subsection
 	 * @param name
 	 * @param defaultValue
 	 * @return an integer value from the git config
 	 */
-	public int getInt(final String group, final String name,
-			final int defaultValue) {
-		final String n = getString(group, name);
+	public int getInt(final String section, String subsection,
+			final String name, final int defaultValue) {
+		final String n = getString(section, subsection, name);
 		if (n == null) {
 			if (repo == null)
 				return defaultValue;
-			return getGlobalConfig().getInt(group, name, defaultValue);
+			return getGlobalConfig().getInt(section, subsection, name, defaultValue);
 		}
 
 		try {
 			return Integer.parseInt(n);
 		} catch (NumberFormatException nfe) {
 			throw new IllegalArgumentException("Invalid integer value: "
-					+ group + "." + name + "=" + n);
+					+ section + "." + name + "=" + n);
 		}
 	}
 
 	/**
 	 * Get a boolean value from the git config
 	 *
-	 * @param group
+	 * @param section
+	 * @param subsection
 	 * @param name
 	 * @param defaultValue
 	 * @return true if any value or defaultValue is true, false for missing or
 	 *         explicit fallse
 	 */
-	public boolean getBoolean(final String group, final String name,
-			final boolean defaultValue) {
-		String n = getRawString(group, name);
+	protected boolean getBoolean(final String section, String subsection,
+			final String name, final boolean defaultValue) {
+		String n = getRawString(section, subsection, name);
 		if (n == null) {
 			if (repo == null)
 				return defaultValue;
-			return getGlobalConfig().getBoolean(group, name, defaultValue);
+			return getGlobalConfig().getBoolean(section, subsection, name, defaultValue);
 		}
 
 		n = n.toLowerCase();
@@ -140,26 +142,32 @@ public class RepositoryConfig {
 			return false;
 		} else {
 			throw new IllegalArgumentException("Invalid boolean value: "
-					+ group + "." + name + "=" + n);
+					+ section + "." + name + "=" + n);
 		}
 	}
 
 	/**
-	 * @param group
+	 * @param section
+	 * @param subsection
 	 * @param name
 	 * @return a String value from git config.
 	 */
-	public String getString(final String group, final String name) {
-		String val = getRawString(group, name);
+	public String getString(final String section, String subsection, final String name) {
+		String val = getRawString(section, subsection, name);
 		if (MAGIC_EMPTY_VALUE.equals(val)) {
 			return "";
 		}
 		return val;
 	}
 	
-	private String getRawString(final String group, final String name) {
+	private String getRawString(final String section, String subsection, final String name) {
+		String ss;
+		if (subsection != null)
+			ss = "."+subsection.toLowerCase();
+		else
+			ss = "";
 		final Object o;
-		o = byName.get(group.toLowerCase() + "." + name.toLowerCase());
+		o = byName.get(section.toLowerCase() + ss + "." + name.toLowerCase());
 		if (o instanceof List) {
 			return ((Entry) ((List) o).get(0)).value;
 		} else if (o instanceof Entry) {
@@ -167,7 +175,7 @@ public class RepositoryConfig {
 		} else {
 			if (repo == null)
 				return null;
-			return getGlobalConfig().getString(group, name);
+			return getGlobalConfig().getString(section, subsection, name);
 		}
 	}
 

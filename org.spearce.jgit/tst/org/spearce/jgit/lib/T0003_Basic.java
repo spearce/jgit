@@ -100,11 +100,11 @@ public class T0003_Basic extends RepositoryTestCase {
 	public void test004_CheckNewConfig() throws IOException {
 		final RepositoryConfig c = db.getConfig();
 		assertNotNull(c);
-		assertEquals("0", c.getString("core", "repositoryformatversion"));
-		assertEquals("0", c.getString("CoRe", "REPOSITORYFoRmAtVeRsIoN"));
-		assertEquals("true", c.getString("core", "filemode"));
-		assertEquals("true", c.getString("cOrE", "fIlEModE"));
-		assertNull(c.getString("notavalue", "reallyNotAValue"));
+		assertEquals("0", c.getString("core", null, "repositoryformatversion"));
+		assertEquals("0", c.getString("CoRe", null, "REPOSITORYFoRmAtVeRsIoN"));
+		assertEquals("true", c.getString("core", null, "filemode"));
+		assertEquals("true", c.getString("cOrE", null, "fIlEModE"));
+		assertNull(c.getString("notavalue", null, "reallyNotAValue"));
 		c.load();
 	}
 
@@ -112,11 +112,11 @@ public class T0003_Basic extends RepositoryTestCase {
 		final RepositoryConfig c = db.getConfig();
 		assertNotNull(c);
 		c.load();
-		assertEquals("0", c.getString("core", "repositoryformatversion"));
-		assertEquals("0", c.getString("CoRe", "REPOSITORYFoRmAtVeRsIoN"));
-		assertEquals("true", c.getString("core", "filemode"));
-		assertEquals("true", c.getString("cOrE", "fIlEModE"));
-		assertNull(c.getString("notavalue", "reallyNotAValue"));
+		assertEquals("0", c.getString("core", null, "repositoryformatversion"));
+		assertEquals("0", c.getString("CoRe", null, "REPOSITORYFoRmAtVeRsIoN"));
+		assertEquals("true", c.getString("core", null, "filemode"));
+		assertEquals("true", c.getString("cOrE", null, "fIlEModE"));
+		assertNull(c.getString("notavalue", null, "reallyNotAValue"));
 	}
 
 	public void test006_ReadUglyConfig() throws IOException {
@@ -132,12 +132,12 @@ public class T0003_Basic extends RepositoryTestCase {
 		pw.write(configStr);
 		pw.close();
 		c.load();
-		assertEquals("yes", c.getString("core", "filemode"));
+		assertEquals("yes", c.getString("core", null, "filemode"));
 		assertEquals("A U Thor <thor@example.com>", c
-				.getString("user", "email"));
-		assertEquals("A  Thor \\ \"\t ", c.getString("user", "name"));
+				.getString("user", null, "email"));
+		assertEquals("A  Thor \\ \"\t ", c.getString("user", null, "name"));
 		assertEquals("a many line\ncomment\n to test", c.getString("user",
-				"defaultCheckInComment"));
+				null, "defaultCheckInComment"));
 		c.save();
 		final FileReader fr = new FileReader(cfg);
 		final char[] cbuf = new char[configStr.length()];
@@ -401,7 +401,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		assertEquals("b5d3b45a96b340441f5abb9080411705c51cc86c", mapTag.getObjId().toString());
 	}
 	
-	public void test023_createCommitNonAscii() throws IOException {
+	public void test023_createCommitNonAnullii() throws IOException {
 		final ObjectId emptyId = new ObjectWriter(db).writeBlob(new byte[0]);
 		final Tree almostEmptyTree = new Tree(db);
 		almostEmptyTree.addEntry(new FileTreeEntry(almostEmptyTree, emptyId, "empty".getBytes(), false));

@@ -70,7 +70,7 @@ public class Repository {
 		if (objectsDirs[0].exists()) {
 			getConfig().load();
 			final String repositoryFormatVersion = getConfig().getString(
-					"core", "repositoryFormatVersion");
+					"core", null, "repositoryFormatVersion");
 			if (!"0".equals(repositoryFormatVersion)) {
 				throw new IOException("Unknown repository format \""
 						+ repositoryFormatVersion + "\"; expected \"0\".");

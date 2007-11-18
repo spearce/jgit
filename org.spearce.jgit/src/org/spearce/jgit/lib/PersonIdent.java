@@ -45,11 +45,11 @@ public class PersonIdent {
 	 */
 	public PersonIdent(final Repository repo) {
 		RepositoryConfig config = repo.getConfig();
-		String username = config.getString("user", "name");
+		String username = config.getString("user", null, "name");
 		if (username == null)
 			username = System.getProperty("user.name");
 
-		String email = config.getString("user", "email");
+		String email = config.getString("user", null, "email");
 		if (email == null)
 			email = System.getProperty("user.name") + "@" + getHostName();
 
