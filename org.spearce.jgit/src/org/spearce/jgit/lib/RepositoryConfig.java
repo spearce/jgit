@@ -257,9 +257,7 @@ public class RepositoryConfig {
 						e.extendedBase = readValue(r, true, '"');
 						input = r.read();
 					}
-					if (']' == input) {
-						e.extendedBase = null;
-					} else {
+					if (']' != input) {
 						throw new IOException("Bad group header.");
 					}
 					e.suffix = "";
