@@ -44,13 +44,13 @@ public class RepositoryConfig {
 
 	private CoreConfig core;
 
-	private List entries;
+	private List<Entry> entries;
 
-	private Map byName;
+	private Map<String, Object> byName;
 
-	private Map lastInEntry;
+	private Map<String, Entry> lastInEntry;
 
-	private Map lastInGroup;
+	private Map<String, Entry> lastInGroup;
 	
 	private static final String MAGIC_EMPTY_VALUE = "%%magic%%empty%%";
 
@@ -212,9 +212,9 @@ public class RepositoryConfig {
 						Constants.CHARACTER_ENCODING)));
 		boolean ok = false;
 		try {
-			final Iterator i = entries.iterator();
+			final Iterator<Entry> i = entries.iterator();
 			while (i.hasNext()) {
-				final Entry e = (Entry) i.next();
+				final Entry e = i.next();
 				if (e.prefix != null) {
 					r.print(e.prefix);
 				}
@@ -328,12 +328,13 @@ public class RepositoryConfig {
 	}
 
 	private void clear() {
-		entries = new ArrayList();
-		byName = new HashMap();
-		lastInEntry = new HashMap();
-		lastInGroup = new HashMap();
+		entries = new ArrayList<Entry>();
+		byName = new HashMap<String, Object>();
+		lastInEntry = new HashMap<String, Entry>();
+		lastInGroup = new HashMap<String, Entry>();
 	}
 
+	@SuppressWarnings("unchecked")
 	private void add(final Entry e) {
 		entries.add(e);
 		if (e.base != null) {
@@ -351,12 +352,12 @@ public class RepositoryConfig {
 				if (o == null) {
 					byName.put(key, e);
 				} else if (o instanceof Entry) {
-					final ArrayList l = new ArrayList();
+					final ArrayList<Object> l = new ArrayList<Object>();
 					l.add(o);
 					l.add(e);
 					byName.put(key, l);
 				} else if (o instanceof List) {
-					((List) o).add(e);
+					((List<Entry>) o).add(e);
 				}
 				lastInEntry.put(key, e);
 			}
