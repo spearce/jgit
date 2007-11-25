@@ -25,6 +25,7 @@ import org.spearce.jgit.fetch.IndexPack;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.PackFile;
 import org.spearce.jgit.lib.RepositoryTestCase;
+import org.spearce.jgit.lib.TextProgressMonitor;
 
 /**
  * Test indexing of git packs. A pack is read from a stream, copied
@@ -44,7 +45,7 @@ public class IndexPackTest extends RepositoryTestCase {
 		final InputStream is = new FileInputStream(packFile);
 		try {
 			IndexPack pack = new IndexPack(is, new File("tmp_pack1"));
-			pack.index();
+			pack.index(new TextProgressMonitor());
 			PackFile file = new PackFile(db, new File("tmp_pack1.pack"));
 			assertTrue(file.hasObject(new ObjectId("4b825dc642cb6eb9a060e54bf8d69288fbee4904")));
 			assertTrue(file.hasObject(new ObjectId("540a36d136cf413e4b064c2b0e0a4db60f77feab")));
@@ -70,7 +71,7 @@ public class IndexPackTest extends RepositoryTestCase {
 		final InputStream is = new FileInputStream(packFile);
 		try {
 			IndexPack pack = new IndexPack(is, new File("tmp_pack2"));
-			pack.index();
+			pack.index(new TextProgressMonitor());
 			PackFile file = new PackFile(db, new File("tmp_pack2.pack"));
 			assertTrue(file.hasObject(new ObjectId("02ba32d3649e510002c21651936b7077aa75ffa9")));
 			assertTrue(file.hasObject(new ObjectId("0966a434eb1a025db6b71485ab63a3bfbea520b6")));

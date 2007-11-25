@@ -49,9 +49,9 @@ import org.spearce.jgit.lib.Tree;
 public class FetchClient {
 	private final BufferedOutputStream toServer;
 	private final BufferedInputStream fromServer;
-	private final Repository repository;
+	final Repository repository;
 	private final String initialCommand;
-	private final OutputStream os;
+	protected OutputStream os;
 
 	/**
 	 * Construct a FetchClient working on two streams connected to a server

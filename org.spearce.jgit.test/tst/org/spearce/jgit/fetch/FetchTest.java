@@ -9,6 +9,7 @@ import java.io.PipedOutputStream;
 
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.RepositoryTestCase;
+import org.spearce.jgit.lib.TextProgressMonitor;
 
 public class FetchTest extends RepositoryTestCase {
 	public void testSimpleFullClone() throws IOException, InterruptedException {
@@ -35,7 +36,7 @@ public class FetchTest extends RepositoryTestCase {
 				IndexPack pack;
 				try {
 					pack = new IndexPack(pi, new File("tmp_pack1"));
-					pack.index();
+					pack.index(new TextProgressMonitor());
 					pack.renamePack(newRepo);
 				} catch (Throwable e) {
 					// TODO Auto-generated catch block

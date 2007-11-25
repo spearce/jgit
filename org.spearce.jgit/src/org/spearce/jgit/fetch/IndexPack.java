@@ -35,6 +35,7 @@ import org.spearce.jgit.lib.BinaryDelta;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdMap;
+import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Repository;
 
 /** Indexes Git pack files for local use. */
@@ -128,27 +129,32 @@ public class IndexPack {
 
 	/**
 	 * Consume data from the input stream until the packfile is indexed.
+	 * @param progress progress feedback
 	 *
 	 * @throws IOException
 	 */
-	public void index() throws IOException {
+	public void index(final ProgressMonitor progress) throws IOException {
 		try {
 			try {
 				readPackHeader();
+				progress.beginTask("Downloading / Indexing", (int) objectCount*2); // < 2G objects
 
 				entries = new ObjectEntry[(int) objectCount];
 				baseById = new ObjectIdMap<ArrayList<UnresolvedDelta>>();
 				baseByPos = new HashMap<Long, ArrayList<UnresolvedDelta>>();
 
-				for (int done = 0; done < objectCount; done++)
+				for (int done = 0; done < objectCount; done++) {
 					indexOneObject();
+					progress.worked(1);
+					if (progress.isCancelled())
+						throw new IOException("Download cancelled");
+				}
 				readPackFooter();
 				endInput();
-
 				if (deltaCount > 0) {
 					if (packOut == null)
 						throw new IOException("need packOut");
-					resolveDeltas();
+					resolveDeltas(progress);
 					if (entryCount < objectCount)
 						throw new IOException("thin packs aren't supported");
 				}
@@ -157,6 +163,8 @@ public class IndexPack {
 
 				if (dstIdx != null)
 					writeIdx();
+
+				progress.done();
 
 			} finally {
 				if (packOut != null)
@@ -172,10 +180,15 @@ public class IndexPack {
 		}
 	}
 
-	private void resolveDeltas() throws IOException {
+	private void resolveDeltas(final ProgressMonitor progress) throws IOException {
+		progress.setMessage("Resolving deltas");
 		final int last = entryCount;
-		for (int i = 0; i < last; i++)
+		for (int i = 0; i < last; i++) {
 			resolveDeltas(entries[i]);
+			progress.worked(1);
+			if (progress.isCancelled())
+				throw new IOException("Download cancelled during indexing");
+		}
 	}
 
 	private void resolveDeltas(final ObjectEntry oe) throws IOException {
