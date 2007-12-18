@@ -292,7 +292,7 @@ public class Repository {
 	 * @return an ObjectId
 	 * @throws IOException on serious errors
 	 */
-	public ObjectId parse(String revstr) throws IOException {
+	public ObjectId resolve(final String revstr) throws IOException {
 		char[] rev = revstr.toCharArray();
 		ObjectId ret = null;
 		Commit ref = null;
@@ -399,11 +399,7 @@ public class Repository {
 		return ret;
 	}
 
-	public ObjectId resolve(final String revstr) throws IOException {
-		return parse(revstr);
-	}
-
-	public ObjectId resolveSimple(final String revstr) throws IOException {
+	private ObjectId resolveSimple(final String revstr) throws IOException {
 		ObjectId id = null;
 
 		if (ObjectId.isId(revstr)) {
@@ -424,7 +420,7 @@ public class Repository {
 		closePacks();
 	}
 
-	public void closePacks() throws IOException {
+	void closePacks() throws IOException {
 		for (int k = packs.length - 1; k >= 0; k--) {
 			packs[k].close();
 		}
@@ -440,7 +436,7 @@ public class Repository {
 		packs = arr;
 	}
 
-	public void scanForPacks(final File packDir, Collection<PackFile> packList) {
+	private void scanForPacks(final File packDir, Collection<PackFile> packList) {
 		final File[] list = packDir.listFiles(new FileFilter() {
 			public boolean accept(final File f) {
 				final String n = f.getName();
@@ -697,6 +693,7 @@ public class Repository {
 		public String getName() {
 			return name;
 		}
+
 		private String name;
 		private ObjectId gitId;
 	}
@@ -757,7 +754,7 @@ public class Repository {
 		return index;
 	}
 
-	public static byte[] gitInternalSlash(byte[] bytes) {
+	static byte[] gitInternalSlash(byte[] bytes) {
 		if (File.separatorChar == '/')
 			return bytes;
 		for (int i=0; i<bytes.length; ++i)

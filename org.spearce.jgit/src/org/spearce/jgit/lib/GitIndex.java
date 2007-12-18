@@ -284,7 +284,7 @@ public class GitIndex {
 
 		private byte[] name;
 
-		public Entry(byte[] key, File f, int stage)
+		Entry(byte[] key, File f, int stage)
 				throws IOException {
 			ctime = f.lastModified() * 1000000L;
 			mtime = ctime; // we use same here
@@ -303,7 +303,7 @@ public class GitIndex {
 			flags = (short) ((stage << 12) | name.length); // TODO: fix flags
 		}
 
-		public Entry(TreeEntry f, int stage)
+		Entry(TreeEntry f, int stage)
 				throws UnsupportedEncodingException {
 			ctime = -1; // hmm
 			mtime = -1;
@@ -370,7 +370,7 @@ public class GitIndex {
 			return modified;
 		}
 
-		public void write(ByteBuffer buf) {
+		void write(ByteBuffer buf) {
 			int startposition = buf.position();
 			buf.putInt((int) (ctime / 1000000000L));
 			buf.putInt((int) (ctime % 1000000000L));
@@ -586,7 +586,7 @@ public class GitIndex {
 
 		int entries;
 
-		public Header(ByteBuffer map) throws CorruptObjectException {
+		Header(ByteBuffer map) throws CorruptObjectException {
 			read(map);
 		}
 
@@ -602,25 +602,25 @@ public class GitIndex {
 						"Unknow index version (or corrupt index):" + version);
 		}
 
-		public void write(ByteBuffer buf) {
+		void write(ByteBuffer buf) {
 			buf.order(ByteOrder.BIG_ENDIAN);
 			buf.putInt(signature);
 			buf.putInt(version);
 			buf.putInt(entries);
 		}
 
-		public Header(Map entryset) {
+		Header(Map entryset) {
 			signature = 0x44495243;
 			version = 2;
 			entries = entryset.size();
 		}
 	}
 
-	public void readTree(Tree t) throws IOException {
+	void readTree(Tree t) throws IOException {
 		readTree("", t);
 	}
 
-	public void readTree(String prefix, Tree t) throws IOException {
+	void readTree(String prefix, Tree t) throws IOException {
 		TreeEntry[] members = t.members();
 		for (int i = 0; i < members.length; ++i) {
 			TreeEntry te = members[i];

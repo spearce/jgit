@@ -8,10 +8,29 @@ import java.io.InputStream;
 
 import junit.framework.TestCase;
 
+/**
+ * Base class for performance unit test.
+ */
 public abstract class SpeedTestBase extends TestCase {
+
+	/**
+	 * The time used by native git as this is our reference.
+	 */
 	protected long nativeTime;
+
+	/**
+	 * Reference to the location of the Linux kernel repo.
+	 */
 	protected String kernelrepo;
 
+	/**
+	 * Prepare test by running a test against the Linux kernel repo first.
+	 *
+	 * @param refcmd
+	 *            git command to execute
+	 *
+	 * @throws Exception
+	 */
 	protected void prepare(String[] refcmd) throws Exception {
 		try {
 			BufferedReader bufferedReader = new BufferedReader(new FileReader("kernel.ref"));

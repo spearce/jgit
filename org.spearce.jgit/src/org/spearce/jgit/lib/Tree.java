@@ -29,7 +29,7 @@ public class Tree extends TreeEntry implements Treeish {
 		return compareNames(a, b, 0, b.length, lasta, lastb);
 	}
 
-	public static final int compareNames(final byte[] a, final byte[] nameUTF8,
+	private static final int compareNames(final byte[] a, final byte[] nameUTF8,
 			final int nameStart, final int nameEnd, final int lasta, int lastb) {
 		int j,k;
 		for (j = 0, k = nameStart; j < a.length && k < nameEnd; j++, k++) {
@@ -296,7 +296,7 @@ public class Tree extends TreeEntry implements Treeish {
 			return c;
 	}
 
-	public boolean exists(final String s, byte slast) throws IOException {
+	private boolean exists(final String s, byte slast) throws IOException {
 		return findMember(s, slast) != null;
 	}
 
@@ -308,11 +308,11 @@ public class Tree extends TreeEntry implements Treeish {
 		return exists(path,(byte)0);
 	}
 
-	public TreeEntry findMember(final String s, byte slast) throws IOException {
+	private TreeEntry findMember(final String s, byte slast) throws IOException {
 		return findMember(Repository.gitInternalSlash(s.getBytes(Constants.CHARACTER_ENCODING)), slast, 0);
 	}
 
-	public TreeEntry findMember(final byte[] s, final byte slast, final int offset)
+	private TreeEntry findMember(final byte[] s, final byte slast, final int offset)
 			throws IOException {
 		int slash;
 		int p;

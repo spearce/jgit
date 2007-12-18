@@ -211,7 +211,7 @@ public class WindowedFile {
 			throw new EOFException();
 	}
 
-	public void readCompressed(final long position, final byte[] dstbuf)
+	void readCompressed(final long position, final byte[] dstbuf)
 			throws IOException, DataFormatException {
 		final Inflater inf = cache.borrowInflater();
 		try {
@@ -222,7 +222,7 @@ public class WindowedFile {
 		}
 	}
 
-	public void readCompressed(long pos, final byte[] dstbuf, final Inflater inf)
+	void readCompressed(long pos, final byte[] dstbuf, final Inflater inf)
 			throws IOException, DataFormatException {
 		int dstoff = 0;
 		dstoff = cache.get(wp, (int) (pos >> szb)).inflate(((int) pos) & szm,

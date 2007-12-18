@@ -23,7 +23,7 @@ public class CoreConfig {
 
 	private final boolean legacyHeaders;
 
-	protected CoreConfig(final RepositoryConfig rc) {
+	CoreConfig(final RepositoryConfig rc) {
 		compression = rc.getInt("core", null,
 				"compression", Deflater.DEFAULT_COMPRESSION);
 		legacyHeaders = rc.getBoolean("core", null, "legacyHeaders", false);

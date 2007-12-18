@@ -100,11 +100,11 @@ public class ObjectWriter {
 		return writeTree(o.toByteArray());
 	}
 
-	public ObjectId writeTree(final byte[] b) throws IOException {
+	private ObjectId writeTree(final byte[] b) throws IOException {
 		return writeTree(b.length, new ByteArrayInputStream(b));
 	}
 
-	public ObjectId writeTree(final long len, final InputStream is)
+	private ObjectId writeTree(final long len, final InputStream is)
 			throws IOException {
 		return writeObject(Constants.OBJ_TREE, Constants.TYPE_TREE, len, is,
 				true);
@@ -156,7 +156,7 @@ public class ObjectWriter {
 		return writeCommit(os.toByteArray());
 	}
 
-	public ObjectId writeTag(final byte[] b) throws IOException {
+	private ObjectId writeTag(final byte[] b) throws IOException {
 		return writeTag(b.length, new ByteArrayInputStream(b));
 	}
 
@@ -188,17 +188,17 @@ public class ObjectWriter {
 		return writeTag(os.toByteArray());
 	}
 
-	public ObjectId writeCommit(final byte[] b) throws IOException {
+	private ObjectId writeCommit(final byte[] b) throws IOException {
 		return writeCommit(b.length, new ByteArrayInputStream(b));
 	}
 
-	public ObjectId writeCommit(final long len, final InputStream is)
+	private ObjectId writeCommit(final long len, final InputStream is)
 			throws IOException {
 		return writeObject(Constants.OBJ_COMMIT, Constants.TYPE_COMMIT, len,
 				is, true);
 	}
 
-	public ObjectId writeTag(final long len, final InputStream is)
+	private ObjectId writeTag(final long len, final InputStream is)
 		throws IOException {
 		return writeObject(Constants.OBJ_TAG, Constants.TYPE_TAG, len, is, true);
 	}
@@ -210,7 +210,7 @@ public class ObjectWriter {
 	}
 
 	@SuppressWarnings("null")
-	public ObjectId writeObject(final int typeCode, final String type,
+	ObjectId writeObject(final int typeCode, final String type,
 			long len, final InputStream is, boolean store) throws IOException {
 		final File t;
 		final DeflaterOutputStream deflateStream;

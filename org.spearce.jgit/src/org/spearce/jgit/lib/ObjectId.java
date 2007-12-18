@@ -153,7 +153,7 @@ public class ObjectId implements Comparable {
 		id = i;
 	}
 
-	public int getFirstByte() {
+	int getFirstByte() {
 		return id[0] & 0xff;
 	}
 
