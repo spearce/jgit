@@ -198,13 +198,6 @@ public class WorkDirCheckout {
 		return removed;
 	}
 
-	public void prescan() throws IOException {
-		if (head == null)
-			prescanOneTree();
-		else
-			prescanTwoTrees();
-	}
-
 	void prescanTwoTrees() throws IOException {
 		new IndexTreeWalker(index, head, merge, root, new AbstractIndexTreeVisitor() {
 			public void visitEntry(TreeEntry treeEntry, TreeEntry auxEntry,

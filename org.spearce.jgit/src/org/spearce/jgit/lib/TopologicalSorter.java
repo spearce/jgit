@@ -281,8 +281,6 @@ public class TopologicalSorter<T> {
 
 		private int number = -1;
 
-		public int numbe1;
-
 		Lane() {
 		}
 
