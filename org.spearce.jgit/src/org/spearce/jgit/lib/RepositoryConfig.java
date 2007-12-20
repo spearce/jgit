@@ -124,7 +124,7 @@ public class RepositoryConfig {
 	 * @param name
 	 * @param defaultValue
 	 * @return true if any value or defaultValue is true, false for missing or
-	 *         explicit fallse
+	 *         explicit false
 	 */
 	protected boolean getBoolean(final String section, String subsection,
 			final String name, final boolean defaultValue) {

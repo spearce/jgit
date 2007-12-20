@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.spearce.jgit.errors.MissingObjectException;
 
-/** Reads a deltaified object which uses an {@link ObjectId} to find its base. */
+/** Reads a deltified object which uses an {@link ObjectId} to find its base. */
 class DeltaRefPackedObjectLoader extends DeltaPackedObjectLoader {
 	private final ObjectId deltaBase;
 

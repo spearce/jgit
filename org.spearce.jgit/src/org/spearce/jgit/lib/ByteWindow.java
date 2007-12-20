@@ -35,6 +35,15 @@ public abstract class ByteWindow {
 
 	int lastAccessed;
 
+	/**
+	 * Constructor for ByteWindow.
+	 *
+	 * @param o
+	 *            the WindowProvider providing data access
+	 * @param d
+	 *            an id provided by the WindowProvider. See
+	 *            {@link WindowCache#get(WindowProvider, int)}.
+	 */
 	protected ByteWindow(final WindowProvider o, final int d) {
 		provider = o;
 		id = d;
@@ -80,7 +89,7 @@ public abstract class ByteWindow {
 	 *         another window's data must still be supplied as input to finish
 	 *         decompression.
 	 * @throws DataFormatException
-	 *             the inflater encounted an invalid chunk of data. Data stream
+	 *             the inflater encountered an invalid chunk of data. Data stream
 	 *             corruption is likely.
 	 */
 	public abstract int inflate(int pos, byte[] dstbuf, int dstoff, Inflater inf)

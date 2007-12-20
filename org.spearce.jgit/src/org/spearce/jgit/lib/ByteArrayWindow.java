@@ -19,9 +19,23 @@ package org.spearce.jgit.lib;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
+/**
+ * A {@link ByteWindow} with an underlying byte array for storage.
+ */
 public final class ByteArrayWindow extends ByteWindow {
 	private final byte[] array;
 
+	/**
+	 * Constructor for ByteWindow.
+	 *
+	 * @param o
+	 *            the WindowProvider providing data access
+	 * @param d
+	 *            an id provided by the WindowProvider. See
+	 *            {@link WindowCache#get(WindowProvider, int)}.
+	 * @param b
+	 *            byte array for storage
+	 */
 	public ByteArrayWindow(final WindowProvider o, final int d, final byte[] b) {
 		super(o, d);
 		array = b;

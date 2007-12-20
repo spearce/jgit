@@ -18,6 +18,10 @@ package org.spearce.jgit.lib;
 
 import java.io.IOException;
 
+/**
+ * Base class for a set of object loader classes for packed
+ * objects.
+ */
 abstract class PackedObjectLoader extends ObjectLoader {
 	protected final PackFile pack;
 
@@ -27,6 +31,12 @@ abstract class PackedObjectLoader extends ObjectLoader {
 
 	protected int objectSize;
 
+	/**
+	 * Constructor for a packed object loader in the specified pack file
+	 * at an offset
+	 * @param pr pack file
+	 * @param offset offset of object within pack file
+	 */
 	protected PackedObjectLoader(final PackFile pr, final long offset) {
 		pack = pr;
 		dataOffset = offset;
@@ -40,6 +50,9 @@ abstract class PackedObjectLoader extends ObjectLoader {
 		return objectSize;
 	}
 
+	/**
+	 * @return offset of object data within pack file
+	 */
 	public long getDataOffset() {
 		return dataOffset;
 	}

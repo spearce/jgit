@@ -25,17 +25,30 @@ import org.spearce.jgit.lib.GitIndex.Entry;
 
 /**
  * Compares the Index, a Tree, and the working directory
- *
  */
 public class IndexDiff {
 	private GitIndex index;
 	private Tree tree;
 	
+	/**
+	 * Construct an indexdiff for diffing the workdir against
+	 * the index.
+	 *
+	 * @param repository
+	 * @throws IOException
+	 */
 	public IndexDiff(Repository repository) throws IOException {
 		this.tree = repository.mapTree("HEAD");
 		this.index = repository.getIndex();
 	}
 
+	/**
+	 * Construct an indexdiff for diffing the workdir against both
+	 * the index and a tree.
+	 *
+	 * @param tree
+	 * @param index
+	 */
 	public IndexDiff(Tree tree, GitIndex index) {
 		this.tree = tree;
 		this.index = index;

@@ -22,9 +22,27 @@ import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.EntryExistsException;
 import org.spearce.jgit.errors.MissingObjectException;
 
+/**
+ * A representation of a Git tree entry. A Tree is a directory in Git.
+ */
 public class Tree extends TreeEntry implements Treeish {
-	public static final TreeEntry[] EMPTY_TREE = {};
+	private static final TreeEntry[] EMPTY_TREE = {};
 
+	/**
+	 * Compare two names represented as bytes. Since git treats names of trees and
+	 * blobs differently we have one parameter that represents a '/' for trees. For
+	 * other objects the value should be NUL. The names are compare by their positive
+	 * byte value (0..255).
+	 *
+	 * A blob and a tree with the same name will not compare equal.
+	 *
+	 * @param a name
+	 * @param b name
+	 * @param lasta '/' if a is a tree, else NUL
+	 * @param lastb '/' if b is a tree, else NUL
+	 *
+	 * @return < 0 if a is sorted before b, 0 if they are the same, else b
+	 */
 	public static final int compareNames(final byte[] a, final byte[] b, final int lasta,final int lastb) {
 		return compareNames(a, b, 0, b.length, lasta, lastb);
 	}
@@ -105,12 +123,25 @@ public class Tree extends TreeEntry implements Treeish {
 
 	private TreeEntry[] contents;
 
+	/**
+	 * Constructor for a new Tree
+	 *
+	 * @param repo The repository that owns the Tree.
+	 */
 	public Tree(final Repository repo) {
 		super(null, null, null);
 		db = repo;
 		contents = EMPTY_TREE;
 	}
 
+	/**
+	 * Construct a Tree object with known content and hash value
+	 *
+	 * @param repo
+	 * @param myId
+	 * @param raw
+	 * @throws IOException
+	 */
 	public Tree(final Repository repo, final ObjectId myId, final byte[] raw)
 			throws IOException {
 		super(null, myId, null);
@@ -118,12 +149,26 @@ public class Tree extends TreeEntry implements Treeish {
 		readTree(raw);
 	}
 
+	/**
+	 * Construct a new Tree under another Tree
+	 *
+	 * @param parent
+	 * @param nameUTF8
+	 */
 	public Tree(final Tree parent, final byte[] nameUTF8) {
 		super(parent, null, nameUTF8);
 		db = parent.getRepository();
 		contents = EMPTY_TREE;
 	}
 
+	/**
+	 * Construct a Tree with a known SHA-1 under another tree. Data is not yet
+	 * specified and will have to be loaded on demand.
+	 *
+	 * @param parent
+	 * @param id
+	 * @param nameUTF8
+	 */
 	public Tree(final Tree parent, final ObjectId id, final byte[] nameUTF8) {
 		super(parent, id, nameUTF8);
 		db = parent.getRepository();
@@ -133,6 +178,9 @@ public class Tree extends TreeEntry implements Treeish {
 		return FileMode.TREE;
 	}
 
+	/**
+	 * @return true if this Tree is the top level Tree.
+	 */
 	public boolean isRoot() {
 		return getParent() == null;
 	}
@@ -149,20 +197,44 @@ public class Tree extends TreeEntry implements Treeish {
 		return this;
 	}
 
+	/**
+	 * @return true of the data of this Tree is loaded
+	 */
 	public boolean isLoaded() {
 		return contents != null;
 	}
 
+	/**
+	 * Forget the in-memory data for this tree.
+	 */
 	public void unload() {
 		if (isModified())
 			throw new IllegalStateException("Cannot unload a modified tree.");
 		contents = null;
 	}
 
+	/**
+	 * Adds a new or existing file with the specified name to this tree.
+	 * Trees are added if necessary as the name may contain '/':s.
+	 *
+	 * @param name Name
+	 * @return a {@link FileTreeEntry} for the added file.
+	 * @throws IOException
+	 */
 	public FileTreeEntry addFile(final String name) throws IOException {
 		return addFile(Repository.gitInternalSlash(name.getBytes(Constants.CHARACTER_ENCODING)), 0);
 	}
 
+	/**
+	 * Adds a new or existing file with the specified name to this tree.
+	 * Trees are added if necessary as the name may contain '/':s.
+	 *
+	 * @param s an array containing the name
+	 * @param offset when the name starts in the tree.
+	 *
+	 * @return a {@link FileTreeEntry} for the added file.
+	 * @throws IOException
+	 */
 	public FileTreeEntry addFile(final byte[] s, final int offset)
 			throws IOException {
 		int slash;
@@ -194,10 +266,28 @@ public class Tree extends TreeEntry implements Treeish {
 		}
 	}
 
+	/**
+	 * Adds a new or existing Tree with the specified name to this tree.
+	 * Trees are added if necessary as the name may contain '/':s.
+	 *
+	 * @param name Name
+	 * @return a {@link FileTreeEntry} for the added tree.
+	 * @throws IOException
+	 */
 	public Tree addTree(final String name) throws IOException {
 		return addTree(Repository.gitInternalSlash(name.getBytes(Constants.CHARACTER_ENCODING)), 0);
 	}
 
+	/**
+	 * Adds a new or existing Tree with the specified name to this tree.
+	 * Trees are added if necessary as the name may contain '/':s.
+	 *
+	 * @param s an array containing the name
+	 * @param offset when the name starts in the tree.
+	 *
+	 * @return a {@link FileTreeEntry} for the added tree.
+	 * @throws IOException
+	 */
 	public Tree addTree(final byte[] s, final int offset) throws IOException {
 		int slash;
 		int p;
@@ -221,6 +311,12 @@ public class Tree extends TreeEntry implements Treeish {
 		return slash == s.length ? t : t.addTree(s, slash + 1);
 	}
 
+	/**
+	 * Add the specified tree entry to this tree.
+	 *
+	 * @param e
+	 * @throws IOException
+	 */
 	public void addEntry(final TreeEntry e) throws IOException {
 		final int p;
 
@@ -263,6 +359,10 @@ public class Tree extends TreeEntry implements Treeish {
 		}
 	}
 
+	/**
+	 * @return number of members in this tree
+	 * @throws IOException
+	 */
 	public int memberCount() throws IOException {
 		ensureLoaded();
 		return contents.length;
@@ -271,7 +371,7 @@ public class Tree extends TreeEntry implements Treeish {
 	/**
 	 * Return all members of the tree sorted in Git order.
 	 *
-	 * Entries are sorted by the numberical unsigned byte
+	 * Entries are sorted by the numerical unsigned byte
 	 * values with (sub)trees having an implicit '/'. An
 	 * example of a tree with three entries. a:b is an
 	 * actual file name here.
@@ -300,10 +400,22 @@ public class Tree extends TreeEntry implements Treeish {
 		return findMember(s, slast) != null;
 	}
 
+	/**
+	 * @param path
+	 * @return true if a tree with the specified path can be found under this
+	 *         tree.
+	 * @throws IOException
+	 */
 	public boolean existsTree(String path) throws IOException {
 		return exists(path,(byte)'/');
 	}
 
+	/**
+	 * @param path
+	 * @return true if a blob or symlink with the specified name can be found
+	 *         under this tree.
+	 * @throws IOException
+	 */
 	public boolean existsBlob(String path) throws IOException {
 		return exists(path,(byte)0);
 	}
@@ -334,10 +446,22 @@ public class Tree extends TreeEntry implements Treeish {
 		return null;
 	}
 
+	/**
+	 * @param s
+	 *            blob name
+	 * @return a {@link TreeEntry} representing an object with the specified
+	 *         relative path.
+	 * @throws IOException
+	 */
 	public TreeEntry findBlobMember(String s) throws IOException {
 		return findMember(s,(byte)0);
 	}
 
+	/**
+	 * @param s Tree Name
+	 * @return a Tree with the name s or null
+	 * @throws IOException
+	 */
 	public TreeEntry findTreeMember(String s) throws IOException {
 		return findMember(s,(byte)'/');
 	}

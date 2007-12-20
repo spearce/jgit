@@ -22,6 +22,11 @@ import java.util.zip.DataFormatException;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 
+/**
+ * A Git version 2 pack file representation. A pack file contains
+ * Git objects in delta packed format yielding high compression of
+ * lots of object where some objects are similar.
+ */
 public class PackFile {
 	private static final int IDX_HDR_LEN = 256 * 4;
 
@@ -35,6 +40,13 @@ public class PackFile {
 
 	private long objectCnt;
 
+	/**
+	 * Construct a representation of a packfile
+	 *
+	 * @param parentRepo Git repository holding this pack file
+	 * @param packFile
+	 * @throws IOException
+	 */
 	public PackFile(final Repository parentRepo, final File packFile)
 			throws IOException {
 		repo = parentRepo;
@@ -118,6 +130,10 @@ public class PackFile {
 		return objReader;
 	}
 
+	/**
+	 * Close the resources utilized by this repository
+	 * @throws IOException
+	 */
 	public void close() throws IOException {
 		pack.close();
 	}

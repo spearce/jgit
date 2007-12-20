@@ -22,12 +22,55 @@ import java.io.IOException;
 
 import org.spearce.jgit.lib.GitIndex.Entry;
 
+/**
+ * Visitor interface for traversing the index and two trees in parallel.
+ *
+ * When merging we deal with up to two tree nodes and a base node. Then
+ * we figure out what to do.
+ *
+ * A File argument is supplied to allow us to check for modifications in
+ * a work tree or update the file.
+ */
 public interface IndexTreeVisitor {
+	/**
+	 * Visit a blob, and corresponding tree and index entries.
+	 *
+	 * @param treeEntry
+	 * @param indexEntry
+	 * @param file
+	 * @throws IOException
+	 */
 	public void visitEntry(TreeEntry treeEntry, Entry indexEntry, File file) throws IOException;
 	
+	/**
+	 * Visit a blob, and corresponding tree nodes and associated index entry.
+	 *
+	 * @param treeEntry
+	 * @param auxEntry
+	 * @param indexEntry
+	 * @param file
+	 * @throws IOException
+	 */
 	public void visitEntry(TreeEntry treeEntry, TreeEntry auxEntry, Entry indexEntry, File file) throws IOException;
 
+	/**
+	 * Invoked after handling all child nodes of a tree, during a three way merge
+	 *
+	 * @param tree
+	 * @param auxTree
+	 * @param i
+	 * @param curDir
+	 * @throws IOException
+	 */
 	public void finishVisitTree(Tree tree, Tree auxTree, int i, String curDir) throws IOException;
 
+	/**
+	 * Invoked after handling all child nodes of a tree, during two way merge.
+	 *
+	 * @param tree
+	 * @param i
+	 * @param curDir
+	 * @throws IOException
+	 */
 	public void finishVisitTree(Tree tree, int i, String curDir) throws IOException;
 }

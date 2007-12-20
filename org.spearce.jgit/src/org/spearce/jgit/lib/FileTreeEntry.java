@@ -18,9 +18,24 @@ package org.spearce.jgit.lib;
 
 import java.io.IOException;
 
+/**
+ * A representation of a file (blob) object in a {@link Tree}.
+ */
 public class FileTreeEntry extends TreeEntry {
 	private FileMode mode;
 
+	/**
+	 * Constructor for a File (blob) object.
+	 *
+	 * @param parent
+	 *            The {@link Tree} holding this object (or null)
+	 * @param id
+	 *            the SHA-1 of the blob (or null for a yet unhashed file)
+	 * @param nameUTF8
+	 *            raw object name in the parent tree
+	 * @param execute
+	 *            true if the executable flag is set
+	 */
 	public FileTreeEntry(final Tree parent, final ObjectId id,
 			final byte[] nameUTF8, final boolean execute) {
 		super(parent, id, nameUTF8);
@@ -31,14 +46,24 @@ public class FileTreeEntry extends TreeEntry {
 		return mode;
 	}
 
+	/**
+	 * @return true if this file is executable
+	 */
 	public boolean isExecutable() {
 		return getMode().equals(FileMode.EXECUTABLE_FILE);
 	}
 
+	/**
+	 * @param execute set/reset the executable flag
+	 */
 	public void setExecutable(final boolean execute) {
 		mode = execute ? FileMode.EXECUTABLE_FILE : FileMode.REGULAR_FILE;
 	}
 
+	/**
+	 * @return an {@link ObjectLoader} that will return the data
+	 * @throws IOException
+	 */
 	public ObjectLoader openReader() throws IOException {
 		return getRepository().openBlob(getId());
 	}

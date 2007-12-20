@@ -34,6 +34,29 @@ import java.util.WeakHashMap;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.ObjectWritingException;
 
+/**
+ * Represents a Git repository. A repository holds all objects and refs used for
+ * managing source code (could by any type of file, but source code is what
+ * SCM's are typically used for).
+ *
+ * In Git terms all data is stored in GIT_DIR, typically a directory called
+ * .git. A work tree is maintained unless the repository is a bare repository.
+ * Typically the .git directory is located at the root of the work dir.
+ *
+ * <ul>
+ * <li>GIT_DIR
+ * 	<ul>
+ * 		<li>objects/ - objects</li>
+ * 		<li>refs/ - tags and heads</li>
+ * 		<li>config - configuration</li>
+ * 		<li>info/ - more configurations</li>
+ * 	</ul>
+ * </li>
+ * </ul>
+ *
+ * This implemention only handles a subtly undocumented subset of git features.
+ *
+ */
 public class Repository {
 	private static final String[] refSearchPaths = { "", "refs/", "refs/tags/",
 			"refs/heads/", };
@@ -55,6 +78,13 @@ public class Repository {
 
 	private GitIndex index;
 
+	/**
+	 * Construct a representation of this git repo managing a Git repository.
+	 *
+	 * @param d
+	 *            GIT_DIR
+	 * @throws IOException
+	 */
 	public Repository(final File d) throws IOException {
 		gitDir = d.getAbsoluteFile();
 		try {
@@ -93,6 +123,12 @@ public class Repository {
 		return ret;
 	}
 
+	/**
+	 * Create a new Git repository initializing the necessary files and
+	 * directories.
+	 *
+	 * @throws IOException
+	 */
 	public void create() throws IOException {
 		if (gitDir.exists()) {
 			throw new IllegalStateException("Repository already exists: "
@@ -123,22 +159,44 @@ public class Repository {
 		windows = new WindowCache(256 * 1024 * 1024, 4);
 	}
 
+	/**
+	 * @return GIT_DIR
+	 */
 	public File getDirectory() {
 		return gitDir;
 	}
 
+	/**
+	 * @return the directory containg the objects owned by this repository.
+	 */
 	public File getObjectsDirectory() {
 		return objectsDirs[0];
 	}
 
+	/**
+	 * @return the configuration of this repository
+	 */
 	public RepositoryConfig getConfig() {
 		return config;
 	}
 
+	/**
+	 * @return the cache needed for accessing packed objects in this repository.
+	 */
 	public WindowCache getWindowCache() {
 		return windows;
 	}
 
+	/**
+	 * Construct a filename where the loose object having a specified SHA-1
+	 * should be stored. If the object is stored in a shared repository the path
+	 * to the alternative repo will be returned. If the object is not yet store
+	 * a usable path in this repo will be returned. It is assumed that callers
+	 * will look for objects in a pack first.
+	 *
+	 * @param objectId
+	 * @return suggested file name
+	 */
 	public File toFile(final ObjectId objectId) {
 		final String n = objectId.toString();
 		String d=n.substring(0, 2);
@@ -151,6 +209,11 @@ public class Repository {
 		return new File(new File(objectsDirs[0], d), f);
 	}
 
+	/**
+	 * @param objectId
+	 * @return true if the specified object is stored in this repo or any of the
+	 *         known shared repositories.
+	 */
 	public boolean hasObject(final ObjectId objectId) {
 		int k = packs.length;
 		if (k > 0) {
@@ -162,6 +225,13 @@ public class Repository {
 		return toFile(objectId).isFile();
 	}
 
+	/**
+	 * @param id SHA-1 of an object.
+	 *
+	 * @return a {@link ObjectLoader} for accessing the data of the named
+	 *         object, or null if the object does not exist.
+	 * @throws IOException
+	 */
 	public ObjectLoader openObject(final ObjectId id) throws IOException {
 		int k = packs.length;
 		if (k > 0) {
@@ -198,19 +268,48 @@ public class Repository {
 		}
 	}
 
+	/**
+	 * @param id
+	 *            SHA'1 of a blob
+	 * @return an {@link ObjectLoader} for accessing the data of a named blob
+	 * @throws IOException
+	 */
 	public ObjectLoader openBlob(final ObjectId id) throws IOException {
 		return openObject(id);
 	}
 
+	/**
+	 * @param id
+	 *            SHA'1 of a tree
+	 * @return an {@link ObjectLoader} for accessing the data of a named tree
+	 * @throws IOException
+	 */
 	public ObjectLoader openTree(final ObjectId id) throws IOException {
 		return openObject(id);
 	}
 
+	/**
+	 * Access a Commit object using a symbolic reference. This reference may
+	 * be a SHA-1 or ref in combination with a number of symbols translating
+	 * from one ref or SHA1-1 to another, such as HEAD^ etc.
+	 *
+	 * @param revstr a reference to a git commit object
+	 * @return a Commit named by the specified string
+	 * @throws IOException for I/O error or unexpected object type.
+	 *
+	 * @see #resolve(String)
+	 */
 	public Commit mapCommit(final String revstr) throws IOException {
 		final ObjectId id = resolve(revstr);
 		return id != null ? mapCommit(id) : null;
 	}
 
+	/**
+	 * Access a Commit by SHA'1 id.
+	 * @param id
+	 * @return Commit or null
+	 * @throws IOException for I/O error or unexpected object type.
+	 */
 	public Commit mapCommit(final ObjectId id) throws IOException {
 		Reference<Commit> retr = commitCache.get(id);
 		if (retr != null) {
@@ -234,11 +333,28 @@ public class Repository {
 		throw new IncorrectObjectTypeException(id, Constants.TYPE_COMMIT);
 	}
 
+	/**
+	 * Access a Tree object using a symbolic reference. This reference may
+	 * be a SHA-1 or ref in combination with a number of symbols translating
+	 * from one ref or SHA1-1 to another, such as HEAD^{tree} etc.
+	 *
+	 * @param revstr a reference to a git commit object
+	 * @return a Tree named by the specified string
+	 * @throws IOException
+	 *
+	 * @see #resolve(String)
+	 */
 	public Tree mapTree(final String revstr) throws IOException {
 		final ObjectId id = resolve(revstr);
 		return id != null ? mapTree(id) : null;
 	}
 
+	/**
+	 * Access a Tree by SHA'1 id.
+	 * @param id
+	 * @return Tree or null
+	 * @throws IOException for I/O error or unexpected object type.
+	 */
 	public Tree mapTree(final ObjectId id) throws IOException {
 		Reference<Tree> wret = treeCache.get(id);
 		if (wret != null) {
@@ -261,11 +377,25 @@ public class Repository {
 		throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
 	}
 
+	/**
+	 * Access a tag by symbolic name.
+	 *
+	 * @param revstr
+	 * @return a Tag or null
+	 * @throws IOException on I/O error or unexpected type
+	 */
 	public Tag mapTag(String revstr) throws IOException {
 		final ObjectId id = resolve(revstr);
 		return id != null ? mapTag(revstr, id) : null;
 	}
 
+	/**
+	 * Access a Tag by SHA'1 id
+	 * @param refName
+	 * @param id
+	 * @return Commit or null
+	 * @throws IOException for I/O error or unexpected object type.
+	 */
 	public Tag mapTag(final String refName, final ObjectId id) throws IOException {
 		final ObjectLoader or = openObject(id);
 		if (or == null)
@@ -276,18 +406,39 @@ public class Repository {
 		return new Tag(this, id, refName, null);
 	}
 
+	/**
+	 * Get a locked handle to a ref suitable for updating or creating.
+	 *
+	 * @param ref name to lock
+	 * @return a locked ref
+	 * @throws IOException
+	 */
 	public RefLock lockRef(final String ref) throws IOException {
 		final Ref r = readRef(ref, true);
 		final RefLock l = new RefLock(new File(gitDir, r.getName()));
 		return l.lock() ? l : null;
 	}
 
-	/** Parse a git revision string and return an object id.
+	/**
+	 * Parse a git revision string and return an object id.
 	 *
-	 *  It is not fully implemented, so it only deals with
-	 *  commits and to some extent tags. Reflogs are not
-	 *  supported yet.
-	 *  The plan is to implement it fully.
+	 * Currently supported is combinations of these.
+	 * <ul>
+	 *  <li>SHA-1 - a SHA-1</li>
+	 *  <li>refs/... - a ref name</li>
+	 *  <li>ref^n - nth parent reference</li>
+	 *  <li>ref~n - distance via parent reference</li>
+	 *  <li>ref@{n} - nth version of ref</li>
+	 *  <li>ref^{tree} - tree references by ref</li>
+	 *  <li>ref^{commit} - commit references by ref</li>
+	 * </ul>
+	 *
+	 * Not supported is
+	 * <ul>
+	 * <li>timestamps in reflogs, ref@{full or relative timestamp}</li>
+	 * <li>abbreviated SHA-1's</li>
+	 * </ul>
+	 *
 	 * @param revstr A git object references expression
 	 * @return an ObjectId
 	 * @throws IOException on serious errors
@@ -416,6 +567,11 @@ public class Repository {
 		return id;
 	}
 
+	/**
+	 * Close all resources used by this repository
+	 *
+	 * @throws IOException
+	 */
 	public void close() throws IOException {
 		closePacks();
 	}
@@ -427,6 +583,10 @@ public class Repository {
 		packs = new PackFile[0];
 	}
 
+	/**
+	 * Scan the object dirs, including alternates for packs
+	 * to use.
+	 */
 	public void scanForPacks() {
 		final ArrayList<PackFile> p = new ArrayList<PackFile>();
 		for (int i=0; i<objectsDirs.length; ++i)
@@ -461,6 +621,13 @@ public class Repository {
 		}
 	}
 
+    /**
+     * Writes a symref (e.g. HEAD) to disk
+     *
+     * @param name symref name
+     * @param target pointed to ref
+     * @throws IOException
+     */
     public void writeSymref(final String name, final String target)
 			throws IOException {
 		final byte[] content = ("ref: " + target + "\n").getBytes("UTF-8");
@@ -525,6 +692,10 @@ public class Repository {
 		return "Repository[" + getDirectory() + "]";
 	}
 
+	/**
+	 * @return name of topmost Stacked Git patch.
+	 * @throws IOException
+	 */
 	public String getPatch() throws IOException {
 		final File ptr = new File(getDirectory(),"patches/"+getBranch()+"/applied");
 		final BufferedReader br = new BufferedReader(new FileReader(ptr));
@@ -540,6 +711,10 @@ public class Repository {
 		return last;
 	}
 
+	/**
+	 * @return name of current branch
+	 * @throws IOException
+	 */
 	public String getFullBranch() throws IOException {
 		final File ptr = new File(getDirectory(),"HEAD");
 		final BufferedReader br = new BufferedReader(new FileReader(ptr));
@@ -554,6 +729,10 @@ public class Repository {
 		return ref;
 	}
 	
+	/**
+	 * @return name of current branch.
+	 * @throws IOException
+	 */
 	public String getBranch() throws IOException {
 		try {
 			final File ptr = new File(getDirectory(),"HEAD");
@@ -582,10 +761,16 @@ public class Repository {
 		}
 	}
 
+	/**
+	 * @return names of all local branches
+	 */
 	public Collection<String> getBranches() {
 		return listRefs("heads");
 	}
 	
+	/**
+	 * @return the names of all refs (local and remotes branches, tags)
+	 */
 	public Collection<String> getAllRefs() {
 		return listRefs("");
 	}
@@ -609,6 +794,9 @@ public class Repository {
 		return branches;
 	}
 
+	/**
+	 * @return all git tags
+	 */
 	public Collection<String> getTags() {
 		return listRefs("tags");
 	}
@@ -682,14 +870,31 @@ public class Repository {
 		}
 	}
 
+	/**
+	 * A Stacked Git patch
+	 */
 	public static class StGitPatch {
+
+		/**
+		 * Construct an StGitPatch
+		 * @param patchName
+		 * @param id
+		 */
 		public StGitPatch(String patchName, ObjectId id) {
 			name = patchName;
 			gitId = id;
 		}
+
+		/**
+		 * @return commit id of patch
+		 */
 		public ObjectId getGitId() {
 			return gitId;
 		}
+
+		/**
+		 * @return name of patch
+		 */
 		public String getName() {
 			return name;
 		}
@@ -744,6 +949,10 @@ public class Repository {
 		packedRefs = null;
 	}
 
+	/**
+	 * @return a representation of the index associated with this repo
+	 * @throws IOException
+	 */
 	public GitIndex getIndex() throws IOException {
 		if (index == null) {
 			index = new GitIndex(this);
@@ -788,7 +997,7 @@ public class Repository {
 		},
 
 		/**
-		 * An unfinished rebase. Must resolve, skip or abort befor normal work can take place
+		 * An unfinished rebase. Must resolve, skip or abort before normal work can take place
 		 */
 		REBASING {
 			public boolean canCheckout() { return false; }
@@ -798,7 +1007,7 @@ public class Repository {
 		},
 
 		/**
-		 * An unfinished rebase with merge. Must resolve, skip or abort befor normal work can take place
+		 * An unfinished rebase with merge. Must resolve, skip or abort before normal work can take place
 		 */
 		REBASING_MERGE {
 			public boolean canCheckout() { return false; }
@@ -808,7 +1017,7 @@ public class Repository {
 		},
 
 		/**
-		 * An unfinished interactive rebase. Must resolve, skip or abort befor normal work can take place
+		 * An unfinished interactive rebase. Must resolve, skip or abort before normal work can take place
 		 */
 		REBASING_INTERACTIVE {
 			public boolean canCheckout() { return false; }
@@ -818,7 +1027,7 @@ public class Repository {
 		},
 
 		/**
-		 * Bisecting being done. Normal work may continue but is discouranged
+		 * Bisecting being done. Normal work may continue but is discouraged
 		 */
 		BISECTING {
 			/* Changing head is a normal operation when bisecting */

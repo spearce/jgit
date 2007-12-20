@@ -44,7 +44,7 @@ public class Activator extends AbstractUIPlugin {
 	}
 
 	/**
-	 * Instatiate an error exception.
+	 * Instantiate an error exception.
 	 *
 	 * @param message description of the error
 	 * @param thr cause of the error or null
@@ -76,7 +76,7 @@ public class Activator extends AbstractUIPlugin {
 	}
 
 	/**
-	 * Log a dbeug message
+	 * Log a debug message
 	 * @param what message to log
 	 */
 	public static void trace(final String what) {

@@ -18,9 +18,18 @@ package org.spearce.jgit.errors;
 
 import java.io.IOException;
 
+/**
+ * An exception thrown when a symlink entry is found and cannot be
+ * handled.
+ */
 public class SymlinksNotSupportedException extends IOException {
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Construct a SymlinksNotSupportedException for the specified link
+	 *
+	 * @param s name of link in tree or workdir
+	 */
 	public SymlinksNotSupportedException(final String s) {
 		super(s);
 	}

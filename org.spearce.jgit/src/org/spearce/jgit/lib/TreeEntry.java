@@ -19,11 +19,23 @@ package org.spearce.jgit.lib;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
+/**
+ * This class represents an entry in a tree, like a blob or another tree.
+ */
 public abstract class TreeEntry implements Comparable {
+	/**
+	 * a flag for {@link TreeEntry#accept(TreeVisitor, int)} to visit only modified entries
+	 */
 	public static final int MODIFIED_ONLY = 1 << 0;
 
+	/**
+	 * a flag for {@link TreeEntry#accept(TreeVisitor, int)} to visit only loaded entries
+	 */
 	public static final int LOADED_ONLY = 1 << 1;
 
+	/**
+	 * a flag for {@link TreeEntry#accept(TreeVisitor, int)} obsolete?
+	 */
 	public static final int CONCURRENT_MODIFICATION = 1 << 2;
 
 	private byte[] nameUTF8;
@@ -32,6 +44,13 @@ public abstract class TreeEntry implements Comparable {
 
 	private ObjectId id;
 
+	/**
+	 * Construct a named tree entry.
+	 *
+	 * @param myParent
+	 * @param myId
+	 * @param myNameUTF8
+	 */
 	protected TreeEntry(final Tree myParent, final ObjectId myId,
 			final byte[] myNameUTF8) {
 		nameUTF8 = myNameUTF8;
@@ -39,15 +58,24 @@ public abstract class TreeEntry implements Comparable {
 		id = myId;
 	}
 
+	/**
+	 * @return parent of this tree.
+	 */
 	public Tree getParent() {
 		return parent;
 	}
 
+	/**
+	 * Delete this entry.
+	 */
 	public void delete() {
 		getParent().removeEntry(this);
 		detachParent();
 	}
 
+	/**
+	 * Detach this entry from it's parent.
+	 */
 	public void detachParent() {
 		parent = null;
 	}
@@ -56,14 +84,23 @@ public abstract class TreeEntry implements Comparable {
 		parent = p;
 	}
 
+	/**
+	 * @return the repository owning this entry.
+	 */
 	public Repository getRepository() {
 		return getParent().getRepository();
 	}
 
+	/**
+	 * @return the raw byte name of this entry.
+	 */
 	public byte[] getNameUTF8() {
 		return nameUTF8;
 	}
 
+	/**
+	 * @return the name of this entry.
+	 */
 	public String getName() {
 		try {
 			return nameUTF8 != null ? new String(nameUTF8,
@@ -74,10 +111,22 @@ public abstract class TreeEntry implements Comparable {
 		}
 	}
 
+	/**
+	 * Rename this entry.
+	 *
+	 * @param n The new name
+	 * @throws IOException
+	 */
 	public void rename(final String n) throws IOException {
 		rename(n.getBytes(Constants.CHARACTER_ENCODING));
 	}
 
+	/**
+	 * Rename this entry.
+	 *
+	 * @param n The new name
+	 * @throws IOException
+	 */
 	public void rename(final byte[] n) throws IOException {
 		final Tree t = getParent();
 		if (t != null) {
@@ -89,18 +138,33 @@ public abstract class TreeEntry implements Comparable {
 		}
 	}
 
+	/**
+	 * @return true if this entry is new or modified since being loaded.
+	 */
 	public boolean isModified() {
 		return getId() == null;
 	}
 
+	/**
+	 * Mark this entry as modified.
+	 */
 	public void setModified() {
 		setId(null);
 	}
 
+	/**
+	 * @return SHA-1 of this tree entry (null for new unhashed entries)
+	 */
 	public ObjectId getId() {
 		return id;
 	}
 
+	/**
+	 * Set (update) the SHA-1 of this entry. Invalidates the id's of all
+	 * entries above this entry as they will have to be recomputed.
+	 *
+	 * @param n SHA-1 for this entry.
+	 */
 	public void setId(final ObjectId n) {
 		// If we have a parent and our id is being cleared or changed then force
 		// the parent's id to become unset as it depends on our id.
@@ -116,6 +180,9 @@ public abstract class TreeEntry implements Comparable {
 		id = n;
 	}
 
+	/**
+	 * @return repository relative name of this entry
+	 */
 	public String getFullName() {
 		final StringBuffer r = new StringBuffer();
 		appendFullName(r);
@@ -130,6 +197,12 @@ public abstract class TreeEntry implements Comparable {
 		return -1;
 	}
 
+	/**
+	 * Helper for accessing tree/blob methods.
+	 *
+	 * @param treeEntry
+	 * @return '/' for Tree entries and NUL for non-treeish objects.
+	 */
 	final public static int lastChar(TreeEntry treeEntry) {
 		if (treeEntry instanceof FileTreeEntry)
 			return '\0';
@@ -137,12 +210,32 @@ public abstract class TreeEntry implements Comparable {
 			return '/';
 	}
 
+	/**
+	 * See @{link {@link #accept(TreeVisitor, int)}.
+	 *
+	 * @param tv
+	 * @throws IOException
+	 */
 	public void accept(final TreeVisitor tv) throws IOException {
 		accept(tv, 0);
 	}
 
+	/**
+	 * Visit the members of this TreeEntry.
+	 *
+	 * @param tv
+	 *            A visitor object doing the work
+	 * @param flags
+	 *            Specification for what members to visit. See
+	 *            {@link #MODIFIED_ONLY}, {@link #LOADED_ONLY},
+	 *            {@link #CONCURRENT_MODIFICATION}.
+	 * @throws IOException
+	 */
 	public abstract void accept(TreeVisitor tv, int flags) throws IOException;
 
+	/**
+	 * @return mode (type of object)
+	 */
 	public abstract FileMode getMode();
 
 	private void appendFullName(final StringBuffer r) {

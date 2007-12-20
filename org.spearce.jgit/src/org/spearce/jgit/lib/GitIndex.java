@@ -24,6 +24,27 @@ import java.util.TreeMap;
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.NotSupportedException;
 
+/**
+ * A representation of the Git index.
+ *
+ * The index points to the objects currently checked out or in the process of
+ * being prepared for committing or objects involved in an unfinished merge.
+ *
+ * The abstract format is:<br/> path stage flags statdata SHA-1
+ * <ul>
+ * <li>Path is the relative path in the workdir</li>
+ * <li>stage is 0 (normally), but when
+ * merging 1 is the common ancestor version, 2 is 'our' version and 3 is 'their'
+ * version. A fully resolved merge only contains stage 0.</li>
+ * <li>flags is the object type and information of validity</li>
+ * <li>statdata is the size of this object and some other file system specifics,
+ * some of it ignored by JGit</li>
+ * <li>SHA-1 represents the content of the references object</li>
+ * </ul>
+ *
+ * An index can also contain a tree cache which we ignore for now. We drop the
+ * tree cache when writing the index.
+ */
 public class GitIndex {
 
 	/** Stage 0 represents merged entries. */
@@ -62,21 +83,40 @@ public class GitIndex {
 		}
 	});
 
+	/**
+	 * Construct a Git index representation.
+	 * @param db
+	 */
 	public GitIndex(Repository db) {
 		this.db = db;
 		this.cacheFile = new File(db.getDirectory(), "index");
 	}
 
+	/**
+	 * @return true if we have modified the index in memory since reading it from disk
+	 */
 	public boolean isChanged() {
 		return changed || statDirty;
 	}
 
+	/**
+	 * Reread index data from disk if the index file has been changed
+	 * @throws IOException
+	 */
 	public void rereadIfNecessary() throws IOException {
 		if (cacheFile.exists() && cacheFile.lastModified() != lastCacheTime) {
 			read();
 		}
 	}
 
+	/**
+	 * Add the content of a file to the index.
+	 *
+	 * @param wd workdir
+	 * @param f the file
+	 * @return a new or updated index entry for the path represented by f
+	 * @throws IOException
+	 */
 	public Entry add(File wd, File f) throws IOException {
 		byte[] key = makeKey(wd, f);
 		Entry e = (Entry) entries.get(key);
@@ -89,11 +129,25 @@ public class GitIndex {
 		return e;
 	}
 
+	/**
+	 * Remove a path from the index.
+	 *
+	 * @param wd
+	 *            workdir
+	 * @param f
+	 *            the file whose path shall be removed.
+	 * @return true if such a path was found (and thus removed)
+	 */
 	public boolean remove(File wd, File f) {
 		byte[] key = makeKey(wd, f);
 		return entries.remove(key) != null;
 	}
 
+	/**
+	 * Read the cache file into memory.
+	 *
+	 * @throws IOException
+	 */
 	public void read() throws IOException {
 		long t0 = System.currentTimeMillis();
 		changed = false;
@@ -127,6 +181,11 @@ public class GitIndex {
 		}
 	}
 
+	/**
+	 * Write content of index to disk.
+	 *
+	 * @throws IOException
+	 */
 	public void write() throws IOException {
 		checkWriteOk();
 		File tmpIndex = new File(cacheFile.getAbsoluteFile() + ".tmp");
@@ -261,6 +320,7 @@ public class GitIndex {
 		return config.getBoolean("core", null, "filemode", true);
 	}
 
+	/** An index entry */
 	public class Entry {
 		private long ctime;
 
@@ -345,6 +405,15 @@ public class GitIndex {
 									+ name.length + 8) & ~7));
 		}
 
+		/**
+		 * Update this index entry with stat and SHA-1 information if it looks
+		 * like the file has been modified in the workdir.
+		 *
+		 * @param f
+		 *            file in work dir
+		 * @return true if a change occurred
+		 * @throws IOException
+		 */
 		public boolean update(File f) throws IOException {
 			boolean modified = false;
 			long lm = f.lastModified() * 1000000L;
@@ -521,10 +590,16 @@ public class GitIndex {
 					+ gid + "/s" + size + "/f" + flags + "/@" + getStage();
 		}
 
+		/**
+		 * @return path name for this entry
+		 */
 		public String getName() {
 			return new String(name);
 		}
 
+		/**
+		 * @return SHA-1 of the entry managed by this index
+		 */
 		public ObjectId getObjectId() {
 			return sha1;
 		}
@@ -536,6 +611,9 @@ public class GitIndex {
 			return (flags & 0x3000) >> 12;
 		}
 
+		/**
+		 * @return size of disk object
+		 */
 		public int getSize() {
 			return size;
 		}
@@ -638,6 +716,12 @@ public class GitIndex {
 		}
 	}
 	
+	/**
+	 * Add tree entry to index
+	 * @param te tree entry
+	 * @return new or modified index entry
+	 * @throws IOException
+	 */
 	public Entry addEntry(TreeEntry te) throws IOException {
 		byte[] key = te.getFullName().getBytes("UTF-8");
 		Entry e = new Entry(te, 0);
@@ -645,6 +729,13 @@ public class GitIndex {
 		return e;
 	}
 
+	/**
+	 * Check out content of the content represented by the index
+	 *
+	 * @param wd
+	 *            workdir
+	 * @throws IOException
+	 */
 	public void checkout(File wd) throws IOException {
 		for (Iterator i = entries.values().iterator(); i.hasNext();) {
 			Entry e = (Entry) i.next();
@@ -654,6 +745,13 @@ public class GitIndex {
 		}
 	}
 	
+	/**
+	 * Check out content of the specified index entry
+	 *
+	 * @param wd workdir
+	 * @param e index entry
+	 * @throws IOException
+	 */
 	public void checkoutEntry(File wd, Entry e) throws IOException {
 		ObjectLoader ol = db.openBlob(e.sha1);
 		byte[] bytes = ol.getBytes();
@@ -679,6 +777,13 @@ public class GitIndex {
 		e.ctime = e.mtime;
 	}
 
+	/**
+	 * Construct and write tree out of index.
+	 *
+	 * @return SHA-1 of the constructed tree
+	 *
+	 * @throws IOException
+	 */
 	public ObjectId writeTree() throws IOException {
 		checkWriteOk();
 		ObjectWriter writer = new ObjectWriter(db);
@@ -755,7 +860,7 @@ public class GitIndex {
 	 * Small beware: Unaccounted for are unmerged entries. You may want
 	 * to abort if members with stage != 0 are found if you are doing
 	 * any updating operations. All stages will be found after one another
-	 * here later. Currenly only one stage per name is returned.
+	 * here later. Currently only one stage per name is returned.
 	 *
 	 * @return The index entries sorted
 	 */
@@ -763,10 +868,20 @@ public class GitIndex {
 		return (Entry[]) entries.values().toArray(new Entry[entries.size()]);
 	}
 
+	/**
+	 * Look up an entry with the specified path.
+	 *
+	 * @param path
+	 * @return index entry for the path or null if not in index.
+	 * @throws UnsupportedEncodingException
+	 */
 	public Entry getEntry(String path) throws UnsupportedEncodingException {
 		return (Entry) entries.get(Repository.gitInternalSlash(path.getBytes("ISO-8859-1")));
 	}
 
+	/**
+	 * @return The repository holding this index.
+	 */
 	public Repository getRepository() {
 		return db;
 	}

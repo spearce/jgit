@@ -18,8 +18,18 @@ package org.spearce.jgit.lib;
 
 import java.io.IOException;
 
+/**
+ * Tree-ish is an interface for tree-like Git objects.
+ */
 public interface Treeish {
+	/**
+	 * @return the id of this tree
+	 */
 	public ObjectId getTreeId();
 
+	/**
+	 * @return the tree of this tree-ish object
+	 * @throws IOException
+	 */
 	public Tree getTree() throws IOException;
 }

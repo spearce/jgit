@@ -23,6 +23,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * The topological walker traverses the commit graph and
+ * returns it in topological order. Topological order is
+ * useful for displaying graphs of more than one branch.
+ */
 public class TopologicalWalker extends Walker {
 
 		@SuppressWarnings("unchecked")
@@ -32,6 +37,9 @@ public class TopologicalWalker extends Walker {
 		TopologicalSorter<ObjectId> topoSorter;
 		final boolean returnAll;
 		
+		/**
+		 * @return true if all commit should be returned rather than being filtered.
+		 */
 		public boolean isReturnAll() {
 			return returnAll;
 		}

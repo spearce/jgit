@@ -18,6 +18,9 @@ package org.spearce.jgit.lib;
 
 import java.io.IOException;
 
+/**
+ *	Visitor for marking all nodes of a tree as modified.
+ */
 public class ForceModified implements TreeVisitor {
 	public void startVisitTree(final Tree t) throws IOException {
 		t.setModified();
@@ -32,7 +35,7 @@ public class ForceModified implements TreeVisitor {
 	}
 
 	public void visitSymlink(final SymlinkTreeEntry s) throws IOException {
-		// TODO: handle symlinks. Only problem is that JGit is indepent of
+		// TODO: handle symlinks. Only problem is that JGit is independent of
 		// Eclipse
 		// and Pure Java does not know what to do about symbolic links.
 	}

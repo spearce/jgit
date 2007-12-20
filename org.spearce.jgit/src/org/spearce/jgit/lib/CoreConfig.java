@@ -18,6 +18,9 @@ package org.spearce.jgit.lib;
 
 import java.util.zip.Deflater;
 
+/**
+ * This class keeps git repository core parameters.
+ */
 public class CoreConfig {
 	private final int compression;
 
@@ -29,10 +32,18 @@ public class CoreConfig {
 		legacyHeaders = rc.getBoolean("core", null, "legacyHeaders", false);
 	}
 
+	/**
+	 * @see ObjectWriter
+	 * @return The compression level to use when storing loose objects
+	 */
 	public int getCompression() {
 		return compression;
 	}
 
+	/**
+	 * @see ObjectWriter
+	 * @return whether to use legacy headers
+	 */
 	public boolean useLegacyHeaders() {
 		return legacyHeaders;
 	}

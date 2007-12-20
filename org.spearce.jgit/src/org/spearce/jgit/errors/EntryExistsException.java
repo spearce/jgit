@@ -18,9 +18,18 @@ package org.spearce.jgit.errors;
 
 import java.io.IOException;
 
+/**
+ * Attempt to add an entry to a tree that already exists.
+ */
 public class EntryExistsException extends IOException {
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Construct an EntryExistsException when the specified name already
+	 * exists in a tree.
+	 *
+	 * @param name workdir relative file name
+	 */
 	public EntryExistsException(final String name) {
 		super("Tree entry \"" + name + "\" already exists.");
 	}

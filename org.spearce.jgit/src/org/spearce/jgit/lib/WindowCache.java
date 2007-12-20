@@ -19,6 +19,10 @@ package org.spearce.jgit.lib;
 import java.io.IOException;
 import java.util.zip.Inflater;
 
+/**
+ * The WindowCache manages reusable <q>Windows</q> and inflaters
+ * used by the other windowed file access classes.
+ */
 public class WindowCache {
 	private final Inflater[] inflaterCache;
 

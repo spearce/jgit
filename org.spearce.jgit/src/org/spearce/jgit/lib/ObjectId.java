@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
 
+/**
+ * A SHA-1 abstraction.
+ */
 public class ObjectId implements Comparable {
 	private static final ObjectId ZEROID;
 
@@ -30,10 +33,17 @@ public class ObjectId implements Comparable {
 		ZEROID_STR = ZEROID.toString();
 	}
 
+	/**
+	 * @return an all zeroes ObjectId for special cases.
+	 */
 	public static ObjectId zeroId() {
 		return ZEROID;
 	}
 	
+	/**
+	 * @param id
+	 * @return true if id is a well formed hexadecimal SHA-1
+	 */
 	public static final boolean isId(final String id) {
 		if (id.length() != (2 * Constants.OBJECT_ID_LENGTH)) {
 			return false;
@@ -52,10 +62,20 @@ public class ObjectId implements Comparable {
 		return true;
 	}
 
+	/**
+	 * @param i SHA-1
+	 * @return the hexadecimal string representation of the supplied ObjectId
+	 */
 	public static String toString(final ObjectId i) {
 		return i != null ? i.toString() : ZEROID_STR;
 	}
 
+	/**
+	 * Construct an ObjectId from parts of a byte array
+	 * @param i byte array
+	 * @param offset within the byte array
+	 * @return an ObjectId from the bits in the supplied array starting at offset
+	 */
 	public static ObjectId fromString(final byte[] i, int offset) {
 		final byte[] id = new byte[Constants.OBJECT_ID_LENGTH];
 		for (int k = 0; k < Constants.OBJECT_ID_LENGTH; k++) {
@@ -83,6 +103,15 @@ public class ObjectId implements Comparable {
 		return new ObjectId(id);
 	}
 
+	/**
+	 * Compare this ObjectId with SHA-1 bytes of another id
+	 *
+	 * @param b
+	 *            byte array containing SHA-1 bytes
+	 * @param pos
+	 *            offset of SHA-1 bytes
+	 * @return 0 if the same, -1 or +1 de
+	 */
 	public int compareTo(byte[] b, long pos) {
 		for (int k = 0; k < Constants.OBJECT_ID_LENGTH; k++) {
 			final int ak = id[k] & 0xff;
@@ -113,6 +142,11 @@ public class ObjectId implements Comparable {
 
 	private final byte[] id;
 
+	/**
+	 * Construct an ObjectId from a hexadecimal SHA-1
+	 *
+	 * @param i hexadecimal SHA-1
+	 */
 	public ObjectId(final String i) {
 		if (i.length() != (2 * Constants.OBJECT_ID_LENGTH)) {
 			throw new IllegalArgumentException("Invalid id \"" + i
@@ -149,6 +183,11 @@ public class ObjectId implements Comparable {
 		}
 	}
 
+	/**
+	 * Construct an ObjectId from SHA-1 bytes.
+	 *
+	 * @param i
+	 */
 	public ObjectId(final byte[] i) {
 		id = i;
 	}
@@ -157,14 +196,29 @@ public class ObjectId implements Comparable {
 		return id[0] & 0xff;
 	}
 
+	/**
+	 * @return the SHA-1 bytes
+	 */
 	public byte[] getBytes() {
 		return id;
 	}
 
+	/**
+	 * Compare the ObjectId to another SHA-1's bytes
+	 *
+	 * @param b
+	 * @return -1,0 or +1 depending or recommended sort order.
+	 */
 	public int compareTo(final byte[] b) {
 		return b != null ? compare(id, b) : 1;
 	}
 
+	/**
+	 * Compare the ObjectId to another ObjectId
+	 *
+	 * @param b
+	 * @return -1,0 or +1 depending or recommended sort order.
+	 */
 	public int compareTo(final ObjectId b) {
 		return b != null ? compare(id, b.id) : 1;
 	}
@@ -187,6 +241,10 @@ public class ObjectId implements Comparable {
 		return h;
 	}
 
+	/**
+	 * @param o
+	 * @return true if this and the other object represent the same SHA-1
+	 */
 	public boolean equals(final ObjectId o) {
 		if (this == o)
 			return true;
@@ -205,6 +263,11 @@ public class ObjectId implements Comparable {
 		return equals((ObjectId)o);
 	}
 
+	/**
+	 * Write this ObjectId to a stream in hexadecimal format
+	 * @param w
+	 * @throws IOException
+	 */
 	public void copyTo(final OutputStream w) throws IOException {
 		for (int k = 0; k < Constants.OBJECT_ID_LENGTH; k++) {
 			final int b = id[k];
@@ -215,6 +278,11 @@ public class ObjectId implements Comparable {
 		}
 	}
 
+	/**
+	 * Write this ObjectId to a Writer in hexadecimal format
+	 * @param w
+	 * @throws IOException
+	 */
 	public void copyTo(final Writer w) throws IOException {
 		for (int k = 0; k < Constants.OBJECT_ID_LENGTH; k++) {
 			final int b = id[k];

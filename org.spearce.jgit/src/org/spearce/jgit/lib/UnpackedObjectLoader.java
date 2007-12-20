@@ -23,6 +23,10 @@ import java.util.zip.Inflater;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 
+/**
+ * Loose object loader. This class loads an object not
+ * stored in a pack.
+ */
 public class UnpackedObjectLoader extends ObjectLoader {
 	private final String objectType;
 
@@ -30,6 +34,12 @@ public class UnpackedObjectLoader extends ObjectLoader {
 
 	private final byte[] bytes;
 
+	/**
+	 * Construct an ObjectLoader for the specified SHA-1
+	 * @param db repository
+	 * @param id SHA-1
+	 * @throws IOException
+	 */
 	public UnpackedObjectLoader(final Repository db, final ObjectId id)
 			throws IOException {
 		final FileInputStream objStream = new FileInputStream(db.toFile(id));

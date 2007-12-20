@@ -25,6 +25,12 @@ import java.util.HashMap;
 import org.spearce.jgit.errors.CheckoutConflictException;
 import org.spearce.jgit.lib.GitIndex.Entry;
 
+/**
+ * This class handles checking out one or two trees merging
+ * with the index (actually a tree too).
+ *
+ * Three-way merges are no performed. See {@link #setFailOnConflict(boolean)}.
+ */
 public class WorkDirCheckout {
 	protected Repository repo;
 
@@ -55,6 +61,14 @@ public class WorkDirCheckout {
 		this.merge = repo.mapTree(newIndex.writeTree());
 	}
 	
+	/**
+	 * Create a checkout class for checking out one tree, merging with the index
+	 *
+	 * @param repo
+	 * @param root workdir
+	 * @param index current index
+	 * @param merge tree to check out
+	 */
 	public WorkDirCheckout(Repository repo, File root, 
 			GitIndex index, Tree merge) {
 		this.repo = repo;
@@ -63,11 +77,25 @@ public class WorkDirCheckout {
 		this.merge = merge;
 	}
 
+	/**
+	 * Create a checkout class for merging and checking our two trees and the index.
+	 *
+	 * @param repo
+	 * @param root workdir
+	 * @param head
+	 * @param index
+	 * @param merge
+	 */
 	public WorkDirCheckout(Repository repo, File root, Tree head, GitIndex index, Tree merge) {
 		this(repo, root, index, merge);
 		this.head = head;
 	}
 	
+	/**
+	 * Execute this checkout
+	 *
+	 * @throws IOException
+	 */
 	public void checkout() throws IOException {
 		if (head == null)
 			prescanOneTree();
@@ -190,10 +218,16 @@ public class WorkDirCheckout {
 		return f.getPath().substring(root.getPath().length() + 1);
 	}
 
+	/**
+	 * @return a list of conflicts created by this checkout
+	 */
 	public ArrayList<String> getConflicts() {
 		return conflicts;
 	}
 
+	/**
+	 * @return a list of all files removed by this checkout
+	 */
 	public ArrayList<String> getRemoved() {
 		return removed;
 	}

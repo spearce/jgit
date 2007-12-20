@@ -98,7 +98,7 @@ import org.spearce.jgit.lib.TopologicalSorter.Lane;
 /**
  * The Git history page, i.e. the history view.
  *
- * This class extendes the build in history page with Git features, such
+ * This class extends the build in history page with Git features, such
  * as a graphical view and operations and options specific to egit.
  */
 public class GitHistoryPage extends HistoryPage implements IAdaptable,
@@ -1161,7 +1161,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 	 * between paragraphs (two \n).
 	 *
 	 * @param origComment
-	 * @return reformated comment
+	 * @return reformatted comment
 	 */
 	private static String unwrapComment(String origComment) {
 		if (origComment == null)

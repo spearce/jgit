@@ -20,6 +20,12 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+/**
+ * A combination of a person identity and time in Git.
+ *
+ * Git combines Name + email + time + time zone to specify who
+ * wrote or committed something.
+ */
 public class PersonIdent {
 	private final String name;
 
@@ -41,6 +47,7 @@ public class PersonIdent {
 
 	/**
 	 * Creates new PersonIdent from config info in repository, with current time
+	 *
 	 * @param repo
 	 */
 	public PersonIdent(final Repository repo) {
@@ -60,18 +67,42 @@ public class PersonIdent {
 				/ (60 * 1000);
 	}
 
+	/**
+	 * Copy a {@link PersonIdent}.
+	 *
+	 * @param pi Original {@link PersonIdent}
+	 */
 	public PersonIdent(final PersonIdent pi) {
 		this(pi.getName(), pi.getEmailAddress());
 	}
 
+	/**
+	 * Construct a new {@link PersonIdent} with current time.
+	 *
+	 * @param aName
+	 * @param aEmailAddress
+	 */
 	public PersonIdent(final String aName, final String aEmailAddress) {
 		this(aName, aEmailAddress, new Date(), TimeZone.getDefault());
 	}
 
+	/**
+	 * Copy a PersonIdent, but alter the clone's time stamp
+	 *
+	 * @param pi original {@link PersonIdent}
+	 * @param when local time
+	 * @param tz time zone
+	 */
 	public PersonIdent(final PersonIdent pi, final Date when, final TimeZone tz) {
 		this(pi.getName(), pi.getEmailAddress(), when, tz);
 	}
 
+	/**
+	 * Copy a {@link PersonIdent}, but alter the clone's time stamp
+	 *
+	 * @param pi original {@link PersonIdent}
+	 * @param aWhen local time
+	 */
 	public PersonIdent(final PersonIdent pi, final Date aWhen) {
 		name = pi.getName();
 		emailAddress = pi.getEmailAddress();
@@ -79,6 +110,14 @@ public class PersonIdent {
 		tzOffset = pi.tzOffset;
 	}
 
+	/**
+	 * Construct a PersonIdent from simple data
+	 *
+	 * @param aName
+	 * @param aEmailAddress
+	 * @param aWhen local time stamp
+	 * @param aTZ time zone
+	 */
 	public PersonIdent(final String aName, final String aEmailAddress,
 			final Date aWhen, final TimeZone aTZ) {
 		name = aName;
@@ -87,6 +126,14 @@ public class PersonIdent {
 		tzOffset = aTZ.getOffset(when.longValue()) / (60 * 1000);
 	}
 
+	/**
+	 * Construct a {@link PersonIdent}
+	 *
+	 * @param aName
+	 * @param aEmailAddress
+	 * @param aWhen local time stamp
+	 * @param aTZ time zone
+	 */
 	public PersonIdent(final String aName, final String aEmailAddress,
 			final long aWhen, final int aTZ) {
 		name = aName;
@@ -95,6 +142,13 @@ public class PersonIdent {
 		tzOffset = aTZ;
 	}
 
+	/**
+	 * Copy a PersonIdent, but alter the clone's time stamp
+	 *
+	 * @param pi original {@link PersonIdent}
+	 * @param aWhen local time stamp
+	 * @param aTZ time zone
+	 */
 	public PersonIdent(final PersonIdent pi, final long aWhen, final int aTZ) {
 		name = pi.getName();
 		emailAddress = pi.getEmailAddress();
@@ -102,6 +156,12 @@ public class PersonIdent {
 		tzOffset = aTZ;
 	}
 
+	/**
+	 * Construct a PersonIdent from a string with full name, email,
+	 * time time zone string. The input string must be valid.
+	 *
+	 * @param in a Git internal format author/committer string.
+	 */
 	public PersonIdent(final String in) {
 		final int lt = in.indexOf('<');
 		if (lt == -1) {
@@ -135,14 +195,23 @@ public class PersonIdent {
 		emailAddress = in.substring(lt + 1, gt).trim();
 	}
 
+	/**
+	 * @return Name of person
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * @return email address of person
+	 */
 	public String getEmailAddress() {
 		return emailAddress;
 	}
 
+	/**
+	 * @return local timestamp or null
+	 */
 	public Date getWhen() {
 		if (when != null)
 			return new Date(when.longValue());
@@ -163,6 +232,10 @@ public class PersonIdent {
 		return false;
 	}
 
+	/**
+	 * Format for Git storage.
+	 * @return a string in the git author format 
+	 */
 	public String toExternalString() {
 		final StringBuffer r = new StringBuffer();
 		int offset = tzOffset;

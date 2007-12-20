@@ -10,6 +10,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * Git history walker.
+ *
+ * A walker traverses the parent relationships and filters out
+ * data according to some criteria.
+ */
 public abstract class Walker {
 	private String[] relativeResourceName;
 	private boolean leafIsBlob;
@@ -45,14 +51,14 @@ public abstract class Walker {
 	 * state, the HEAD is listed..
 	 *
 	 * If the state of CURRENT and HEAD is different CURRENT is listed. The default
-	 * impleementation listes it as a null commit (without a commit id).
+	 * Implementation lists it as a null commit (without a commit id).
 	 *
 	 * @param repostory The repository to scan
 	 * @param starts HEAD in this context
 	 * @param relativeResourceName The path to log, split by path components
 	 * @param leafIsBlob We refer to a CURRENT state which is a blob
 	 * @param followMainOnly Follow the first parent only
-	 * @param merges Include or eclude merges or both as a tristate Boolean.
+	 * @param merges Include or exclude merges or both as a tristate Boolean.
 	 * @param activeDiffLeafId a SHA-1 or null to start comparing with.2
 	 */
 	protected Walker(Repository repostory, Commit[] starts,

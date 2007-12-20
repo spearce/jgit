@@ -84,6 +84,12 @@ public abstract class FileMode {
 		}
 	}
 
+	/**
+	 * Test a file mode for equality with this {@link FileMode} object.
+	 *
+	 * @param modebits
+	 * @return true if the mode bits represent the same mode as this object
+	 */
 	public abstract boolean equals(final int modebits);
 
 	/**

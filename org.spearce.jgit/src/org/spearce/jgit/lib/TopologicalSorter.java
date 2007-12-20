@@ -32,7 +32,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * A topological sorter. Use it by adding elemens and/or edges. Then the nodes
+ * A topological sorter. Use it by adding elements and/or edges. Then the nodes
  * can be retrieved in sequence by either invoking the iterator() or calling
  * getEntries(). Both are lazy methods that do not wait for the sort to complete
  * before returning data. The sort is executed incrementally.
@@ -64,6 +64,7 @@ public class TopologicalSorter<T> {
 
 	private Map<T, Integer> internalOrder = new HashMap<T, Integer>();
 
+	/** list of lanes */
 	public List<Lane> currentLanes = new ArrayList<Lane>();
 
 	int lastLane = 0;
@@ -264,6 +265,10 @@ public class TopologicalSorter<T> {
 		}
 	}
 
+	/**
+	 * @param node
+	 * @return Lane containg this node
+	 */
 	public Lane getLane(T node) {
 		return lane.get(node);
 	}
@@ -274,9 +279,14 @@ public class TopologicalSorter<T> {
 		return ret;
 	}
 
+	/**
+	 * A swim lane in a history graph
+	 */
 	public class Lane {
+		/** Where this lane ends (so far) */
 		public T endsAt;
 
+		/** First node of this lane */
 		public T startsAt;
 
 		private int number = -1;
@@ -299,16 +309,25 @@ public class TopologicalSorter<T> {
 			return "L[" + number + "]("+startsAt+" to "+endsAt+")";
 		}
 
+		/**
+		 * @return all lanes in same graph as this one
+		 */
 		public List<Lane> getAllLanes() {
 			return currentLanes;
 		}
 
+		/**
+		 * @return lane number
+		 */
 		public int getNumber() {
 			if (number == -1)
 				number = lastLane++;
 			return number;
 		}
 
+		/**
+		 * @return the sorter handling this lane
+		 */
 		public TopologicalSorter<T> getSorter() {
 			return TopologicalSorter.this;
 		}
@@ -365,6 +384,9 @@ public class TopologicalSorter<T> {
 					+ getClass().getName());
 		}
 
+		/**
+		 * @return the sorter this iterator belongs to
+		 */
 		public TopologicalSorter<T> getSorter() {
 			return TopologicalSorter.this;
 		}

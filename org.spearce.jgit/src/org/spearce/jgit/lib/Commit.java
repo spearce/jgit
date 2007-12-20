@@ -24,6 +24,10 @@ import java.nio.charset.Charset;
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.MissingObjectException;
 
+/**
+ * Instances of this class represent a Commit object. It represents a snapshot
+ * in a Git repository, who created it and when.
+ */
 public class Commit implements Treeish {
 	private static final ObjectId[] EMPTY_OBJECTID_LIST = new ObjectId[0];
 
@@ -47,16 +51,43 @@ public class Commit implements Treeish {
 
 	private Charset encoding;
 
+	/**
+	 * Create an empty commit object. More information must be fed to this
+	 * object to make it useful.
+	 *
+	 * @param db
+	 *            The repository with which to associate it.
+	 */
 	public Commit(final Repository db) {
 		objdb = db;
 		parentIds = EMPTY_OBJECTID_LIST;
 	}
 	
+	/**
+	 * Create a commit associated with these parents and associate it with a
+	 * repository.
+	 *
+	 * @param db
+	 *            The repository to which this commit object belongs
+	 * @param parentIds
+	 *            Id's of the parent(s)
+	 */
 	public Commit(final Repository db, final ObjectId[] parentIds) {
 		objdb = db;
 		this.parentIds = parentIds;
 	}
 
+	/**
+	 * Create a commit object with the specified id and data from and existing
+	 * commit object in a repository.
+	 *
+	 * @param db
+	 *            The repository to which this commit object belongs
+	 * @param id
+	 *            Commit id
+	 * @param raw
+	 *            Raw commit object data
+	 */
 	public Commit(final Repository db, final ObjectId id, final byte[] raw) {
 		objdb = db;
 		commitId = id;
@@ -94,10 +125,19 @@ public class Commit implements Treeish {
 		this.raw = raw;
 	}
 
+	/**
+	 * @return The commit object id
+	 */
 	public ObjectId getCommitId() {
 		return commitId;
 	}
 
+	/**
+	 * Set the id of this object.
+	 *
+	 * @param id
+	 *            the id that we calculated for this object.
+	 */
 	public void setCommitId(final ObjectId id) {
 		commitId = id;
 	}
@@ -106,6 +146,11 @@ public class Commit implements Treeish {
 		return treeId;
 	}
 
+	/**
+	 * Set the tree id for this commit object
+	 *
+	 * @param id
+	 */
 	public void setTreeId(final ObjectId id) {
 		if (treeId==null || !treeId.equals(id)) {
 			treeObj = null;
@@ -124,38 +169,67 @@ public class Commit implements Treeish {
 		return treeObj;
 	}
 
+	/**
+	 * Set the tree object for this commit
+	 * @see #setTreeId
+	 * @param t the Tree object
+	 */
 	public void setTree(final Tree t) {
 		treeId = t.getTreeId();
 		treeObj = t;
 	}
 
+	/**
+	 * @return the author and authoring time for this commit
+	 */
 	public PersonIdent getAuthor() {
 		decode();
 		return author;
 	}
 
+	/**
+	 * Set the author and authoring time for this commit
+	 * @param a
+	 */
 	public void setAuthor(final PersonIdent a) {
 		author = a;
 	}
 
+	/**
+	 * @return the committer and commit time for this object
+	 */
 	public PersonIdent getCommitter() {
 		decode();
 		return committer;
 	}
 
+	/**
+	 * Set the committer and commit time for this object
+	 * @param c the committer information
+	 */
 	public void setCommitter(final PersonIdent c) {
 		committer = c;
 	}
 
+	/**
+	 * @return the object ids of this commit
+	 */
 	public ObjectId[] getParentIds() {
 		return parentIds;
 	}
 
+	/**
+	 * @return the commit message
+	 */
 	public String getMessage() {
 		decode();
 		return message;
 	}
 
+	/**
+	 * Set the parents of this commit
+	 * @param parentIds
+	 */
 	public void setParentIds(ObjectId[] parentIds) {
 		this.parentIds = new ObjectId[parentIds.length];
 		for (int i=0; i<parentIds.length; ++i)
@@ -214,10 +288,20 @@ public class Commit implements Treeish {
 		}
 	}
 
+	/**
+	 * Set the commit message
+	 *
+	 * @param m the commit message
+	 */
 	public void setMessage(final String m) {
 		message = m;
 	}
 
+	/**
+	 * Persist this commit object
+	 *
+	 * @throws IOException
+	 */
 	public void commit() throws IOException {
 		if (getCommitId() != null)
 			throw new IllegalStateException("exists " + getCommitId());
@@ -228,14 +312,29 @@ public class Commit implements Treeish {
 		return "Commit[" + getCommitId() + " " + getAuthor() + "]";
 	}
 
+	/**
+	 * State the encoding for the commit information
+	 *
+	 * @param e
+	 *            the encoding. See {@link Charset}
+	 */
 	public void setEncoding(String e) {
 		encoding = Charset.forName(e);
 	}
 
+	/**
+	 * State the encoding for the commit information
+	 *
+	 * @param e
+	 *            the encoding. See {@link Charset}
+	 */
 	public void setEncoding(Charset e) {
 		encoding = e;
 	}
 
+	/**
+	 * @return the encoding used. See {@link Charset}
+	 */
 	public String getEncoding() {
 		if (encoding != null)
 			return encoding.name();

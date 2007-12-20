@@ -22,6 +22,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * A SuperList is a list composed of other Lists.
+ * The content of the sublists is not copied.
+ *
+ * @param <T> Element type
+ */
 public class SuperList<T> extends AbstractList<T> {
 
 	List<List<T>> subLists = new ArrayList<List<T>>();
@@ -35,6 +41,11 @@ public class SuperList<T> extends AbstractList<T> {
 		throw new UnsupportedOperationException();
 	}
 
+	/**
+	 * Add a sublist to this list.
+	 * @param subList
+	 * @return true.
+	 */
 	public boolean addAll(List<T> subList) {
 		int lastEnd = subLists.size() > 0 ? subListEnd.get(subListEnd.size()-1).intValue() : 0;
 		subListEnd.add(new Integer(lastEnd + subList.size()));

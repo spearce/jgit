@@ -25,6 +25,18 @@ package org.spearce.jgit.lib;
  * </p>
  */
 public class BinaryDelta {
+
+	/**
+	 * Apply the changes defined by delta to the data in base, yielding a new
+	 * array of bytes.
+	 *
+	 * @param base
+	 *            some byte representing an object of some kind.
+	 * @param delta
+	 *            a git pack delta defining the transform from one version to
+	 *            another.
+	 * @return patched base
+	 */
 	public static final byte[] apply(final byte[] base, final byte[] delta) {
 		int deltaPtr = 0;
 

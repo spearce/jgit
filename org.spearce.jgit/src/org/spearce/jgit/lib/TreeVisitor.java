@@ -18,12 +18,41 @@ package org.spearce.jgit.lib;
 
 import java.io.IOException;
 
+/**
+ * A TreeVisitor is invoked depth first for every node in a tree and is expected
+ * to perform different actions.
+ */
 public interface TreeVisitor {
+	/**
+	 * Visit to a tree node before child nodes are visited.
+	 *
+	 * @param t
+	 *            Tree
+	 * @throws IOException
+	 */
 	public void startVisitTree(final Tree t) throws IOException;
 
+	/**
+	 * Visit to a tree node. after child nodes have been visited.
+	 *
+	 * @param t Tree
+	 * @throws IOException
+	 */
 	public void endVisitTree(final Tree t) throws IOException;
 
+	/**
+	 * Visit to a blob.
+	 *
+	 * @param f Blob
+	 * @throws IOException
+	 */
 	public void visitFile(final FileTreeEntry f) throws IOException;
 
+	/**
+	 * Visit to a symlink.
+	 *
+	 * @param s Symlink entry
+	 * @throws IOException
+	 */
 	public void visitSymlink(final SymlinkTreeEntry s) throws IOException;
 }

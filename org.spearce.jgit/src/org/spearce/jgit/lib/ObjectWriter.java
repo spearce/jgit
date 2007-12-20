@@ -30,6 +30,9 @@ import java.util.zip.DeflaterOutputStream;
 
 import org.spearce.jgit.errors.ObjectWritingException;
 
+/**
+ * A class for writing loose objects.
+ */
 public class ObjectWriter {
 	private static final byte[] htree = Constants.encodeASCII("tree");
 
@@ -51,6 +54,10 @@ public class ObjectWriter {
 
 	private final boolean legacyHeaders;
 
+	/**
+	 * Construct an Object writer for the specified repository
+	 * @param d
+	 */
 	public ObjectWriter(final Repository d) {
 		r = d;
 		buf = new byte[8192];
@@ -59,10 +66,25 @@ public class ObjectWriter {
 		legacyHeaders = r.getConfig().getCore().useLegacyHeaders();
 	}
 
+	/**
+	 * Write a blob with the specified data
+	 *
+	 * @param b bytes of the blob
+	 * @return SHA-1 of the blob
+	 * @throws IOException
+	 */
 	public ObjectId writeBlob(final byte[] b) throws IOException {
 		return writeBlob(b.length, new ByteArrayInputStream(b));
 	}
 
+	/**
+	 * Write a blob with the data in the specified file
+	 *
+	 * @param f
+	 *            a file containing blob data
+	 * @return SHA-1 of the blob
+	 * @throws IOException
+	 */
 	public ObjectId writeBlob(final File f) throws IOException {
 		final FileInputStream is = new FileInputStream(f);
 		try {
@@ -72,12 +94,30 @@ public class ObjectWriter {
 		}
 	}
 
+	/**
+	 * Write a blob with data from a stream
+	 *
+	 * @param len
+	 *            number of bytes to consume from the stream
+	 * @param is
+	 *            stream with blob data
+	 * @return SHA-1 of the blob
+	 * @throws IOException
+	 */
 	public ObjectId writeBlob(final long len, final InputStream is)
 			throws IOException {
 		return writeObject(Constants.OBJ_BLOB, Constants.TYPE_BLOB, len, is,
 				true);
 	}
 
+	/**
+	 * Write a Tree to the object database.
+	 *
+	 * @param t
+	 *            Tree
+	 * @return SHA-1 of the tree
+	 * @throws IOException
+	 */
 	public ObjectId writeTree(final Tree t) throws IOException {
 		final ByteArrayOutputStream o = new ByteArrayOutputStream();
 		final TreeEntry[] items = t.members();
@@ -110,6 +150,14 @@ public class ObjectWriter {
 				true);
 	}
 
+	/**
+	 * Write a Commit to the object database
+	 *
+	 * @param c
+	 *            Commit to store
+	 * @return SHA-1 of the commit
+	 * @throws IOException
+	 */
 	public ObjectId writeCommit(final Commit c) throws IOException {
 		final ByteArrayOutputStream os = new ByteArrayOutputStream();
 		String encoding = c.getEncoding();
@@ -160,6 +208,14 @@ public class ObjectWriter {
 		return writeTag(b.length, new ByteArrayInputStream(b));
 	}
 
+	/**
+	 * Write an annotated Tag to the object database
+	 *
+	 * @param c
+	 *            Tag
+	 * @return SHA-1 of the tag
+	 * @throws IOException
+	 */
 	public ObjectId writeTag(final Tag c) throws IOException {
 		final ByteArrayOutputStream os = new ByteArrayOutputStream();
 		final OutputStreamWriter w = new OutputStreamWriter(os,
@@ -203,6 +259,15 @@ public class ObjectWriter {
 		return writeObject(Constants.OBJ_TAG, Constants.TYPE_TAG, len, is, true);
 	}
 
+	/**
+	 * Compute the SHA-1 of a blob without creating an object. This is for
+	 * figuring out if we already have a blob or not.
+	 *
+	 * @param len number of bytes to consume
+	 * @param is stream for read blob data from
+	 * @return SHA-1 of a looked for blob
+	 * @throws IOException
+	 */
 	public ObjectId computeBlobSha1(final long len, final InputStream is)
 			throws IOException {
 		return writeObject(Constants.OBJ_BLOB, Constants.TYPE_BLOB, len, is,

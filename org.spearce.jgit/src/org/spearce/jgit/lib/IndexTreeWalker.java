@@ -22,6 +22,11 @@ import java.io.IOException;
 
 import org.spearce.jgit.lib.GitIndex.Entry;
 
+/**
+ * A class for traversing the index and one or two trees.
+ *
+ * A visitor is invoked for executing actions, like figuring out how to merge.
+ */
 public class IndexTreeWalker {
 	private final Tree mainTree;
 	private final Tree newTree;
@@ -29,6 +34,14 @@ public class IndexTreeWalker {
 	private final IndexTreeVisitor visitor;
 	private boolean threeTrees;
 
+	/**
+	 * Construct a walker for the index and one tree.
+	 *
+	 * @param index
+	 * @param tree
+	 * @param root
+	 * @param visitor
+	 */
 	public IndexTreeWalker(GitIndex index, Tree tree, File root, IndexTreeVisitor visitor) {
 		this.mainTree = tree;
 		this.root = root;
@@ -40,6 +53,15 @@ public class IndexTreeWalker {
 		indexMembers = index.getMembers();
 	}
 	
+	/**
+	 * Construct a walker for the index and two trees.
+	 *
+	 * @param index
+	 * @param mainTree
+	 * @param newTree
+	 * @param root
+	 * @param visitor
+	 */
 	public IndexTreeWalker(GitIndex index, Tree mainTree, Tree newTree, File root, IndexTreeVisitor visitor) {
 		this.mainTree = mainTree;
 		this.newTree = newTree;
@@ -54,6 +76,11 @@ public class IndexTreeWalker {
 	Entry[] indexMembers;
 	int indexCounter = 0;
 	
+	/**
+	 * Actually walk the index tree
+	 *
+	 * @throws IOException
+	 */
 	public void walk() throws IOException {
 		walk(mainTree, newTree, "/");
 	}
@@ -127,7 +154,7 @@ public class IndexTreeWalker {
 					}
 					
 					auxTreeCounter++;
-				} else { // indexentry is first
+				} else { // index entry is first
 					// I < H, I < M
 					visitor.visitEntry(null, null, i, new File(root, indexName));
 					

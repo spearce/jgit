@@ -145,7 +145,7 @@ public final class Constants {
 	 * <p>
 	 * A reference delta uses a full object id (hash) to reference the delta
 	 * base. The base object is allowed to be omitted from the packfile, but
-	 * only in the case of a thin pack being transferred over the newtork.
+	 * only in the case of a thin pack being transferred over the network.
 	 * <p>
 	 * <b>This constant is fixed and is defined by the Git packfile format.</b>
 	 */

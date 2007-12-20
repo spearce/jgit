@@ -92,7 +92,7 @@ public class WindowedFile {
 	 *            number of bytes within a window. This value must be a power of
 	 *            2 and must be at least 4096, or one system page, whichever is
 	 *            larger. If <code>mapType</code> is not null then this value
-	 *            should be large (e.g. several MiBs) to ammortize the high cost
+	 *            should be large (e.g. several MiBs) to amortize the high cost
 	 *            of mapping the file.
 	 * @param usemmap
 	 *            indicates if the operating system mmap should be used for the
@@ -196,8 +196,6 @@ public class WindowedFile {
 	 *            of this file, to copy from.
 	 * @param dstbuf
 	 *            buffer to copy the bytes into.
-	 * @returns total number of bytes read. Always <code>dstbuf.length</code>
-	 *          unless the requested range to copy is over the end of the file.
 	 * @throws IOException
 	 *             a necessary window was not found in the window cache and
 	 *             trying to load it in from the operating system failed.

@@ -18,9 +18,22 @@ package org.spearce.jgit.lib;
 
 import java.io.IOException;
 
+/**
+ * A tree entry representing a symbolic link.
+ *
+ * Note. Java cannot really handle these as file system objects.
+ */
 public class SymlinkTreeEntry extends TreeEntry {
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Construct a {@link SymlinkTreeEntry} with the specified name and SHA-1 in
+	 * the specified parent
+	 *
+	 * @param parent
+	 * @param id
+	 * @param nameUTF8
+	 */
 	public SymlinkTreeEntry(final Tree parent, final ObjectId id,
 			final byte[] nameUTF8) {
 		super(parent, id, nameUTF8);

@@ -18,9 +18,18 @@ package org.spearce.jgit.errors;
 
 import java.io.IOException;
 
+/**
+ * JGit encountered a case that it knows it cannot yet handle.
+ */
 public class NotSupportedException extends IOException {
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Construct a NotSupportedException for some issue JGit cannot
+	 * yet handle.
+	 *
+	 * @param s message describing the issue
+	 */
 	public NotSupportedException(final String s) {
 		super(s);
 	}

@@ -20,9 +20,23 @@ import java.io.IOException;
 
 import org.spearce.jgit.lib.ObjectId;
 
+/**
+ * An inconsistency with respect to handling different object types.
+ *
+ * This most likely signals a programming error rather than a corrupt
+ * object database.
+ */
 public class IncorrectObjectTypeException extends IOException {
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Construct and IncorrectObjectTypeException for the specified object id.
+	 *
+	 * Provide the type to make it easier to track down the problem.
+	 *
+	 * @param id SHA-1
+	 * @param type object type
+	 */
 	public IncorrectObjectTypeException(final ObjectId id, final String type) {
 		super("Object " + id + " is not a " + type + ".");
 	}

@@ -20,6 +20,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+/**
+ * Abstract TreeVisitor for visiting all files known by a Tree.
+ */
 public abstract class TreeVisitorWithCurrentDirectory implements TreeVisitor {
 	private final ArrayList stack;
 

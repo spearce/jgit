@@ -18,13 +18,28 @@ package org.spearce.jgit.errors;
 
 import java.io.IOException;
 
+/**
+ * Cannot store an object in the object database. This is a serious
+ * error that users need to be made aware of.
+ */
 public class ObjectWritingException extends IOException {
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Constructs an ObjectWritingException with the specified detail message.
+	 *
+	 * @param s message
+	 */
 	public ObjectWritingException(final String s) {
 		super(s);
 	}
 
+	/**
+	 * Constructs an ObjectWritingException with the specified detail message.
+	 *
+	 * @param s message
+	 * @param cause root cause exception
+	 */
 	public ObjectWritingException(final String s, final Throwable cause) {
 		super(s);
 		initCause(cause);

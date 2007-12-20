@@ -5,7 +5,7 @@ import java.util.zip.DataFormatException;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 
-/** Reader for a deltafied object stored in a pack file. */
+/** Reader for a deltified object stored in a pack file. */
 abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 	private final int deltaSize;
 
@@ -43,5 +43,9 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 		}
 	}
 
+	/**
+	 * @return the object loader for the base object
+	 * @throws IOException
+	 */
 	protected abstract ObjectLoader getBaseLoader() throws IOException;
 }

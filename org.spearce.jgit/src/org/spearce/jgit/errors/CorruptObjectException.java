@@ -20,13 +20,29 @@ import java.io.IOException;
 
 import org.spearce.jgit.lib.ObjectId;
 
+/**
+ * Exception thrown when an object cannot be read from Git.
+ */
 public class CorruptObjectException extends IOException {
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Construct a CorruptObjectException for reporting a problem specified
+	 * object id
+	 *
+	 * @param id
+	 * @param why
+	 */
 	public CorruptObjectException(final ObjectId id, final String why) {
 		super("Object " + id + " is corrupt: " + why);
 	}
 
+	/**
+	 * Construct a CorruptObjectException for reporting a problem not associated
+	 * with a specific object id.
+	 *
+	 * @param why
+	 */
 	public CorruptObjectException(final String why) {
 		super(why);
 	}

@@ -49,7 +49,7 @@ public abstract class WindowProvider {
 	 *            {@link WindowCache#get(org.spearce.jgit.lib.WindowProvider, int)}
 	 *            for details.
 	 * @return a byte buffer for this window's data. Never null. The returned
-	 *         byffer may be smaller than the estimate supplied by
+	 *         buffer may be smaller than the estimate supplied by
 	 *         {@link #getWindowSize(int)}.
 	 * @throws IOException
 	 *             the window could not be loaded due to an operating system
