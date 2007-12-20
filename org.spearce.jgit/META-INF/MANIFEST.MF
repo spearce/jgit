@@ -7,6 +7,5 @@ Bundle-Localization: plugin
 Bundle-Vendor: %provider_name
 Export-Package: org.spearce.jgit.errors,
  org.spearce.jgit.lib
-Require-Bundle: org.junit
 Eclipse-LazyStart: true
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
