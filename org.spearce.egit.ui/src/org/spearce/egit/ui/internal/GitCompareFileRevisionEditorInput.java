@@ -21,6 +21,7 @@ import org.eclipse.compare.ITypedElement;
 import org.eclipse.compare.structuremergeviewer.DiffNode;
 import org.eclipse.compare.structuremergeviewer.Differencer;
 import org.eclipse.compare.structuremergeviewer.ICompareInput;
+import org.eclipse.compare.structuremergeviewer.IDiffElement;
 import org.eclipse.compare.structuremergeviewer.IStructureComparator;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFileState;
@@ -299,7 +300,29 @@ public class GitCompareFileRevisionEditorInput extends CompareEditorInput {
 		ensureContentsCached(getLeftRevision(), getRightRevision(), monitor);
 		initLabels(input);
 		setTitle(NLS.bind(TeamUIMessages.SyncInfoCompareInput_title, new String[] { input.getName() }));
-		return input;
+
+		// The compare editor (Structure Compare) will show the diff filenames
+		// with their project relative path. So, no need to also show directory entries.
+		DiffNode flatDiffNode = new DiffNode(null,Differencer.CHANGE,null,left,right);
+		flatDiffView(flatDiffNode, (DiffNode) input);
+
+		return flatDiffNode;
+	}
+
+	private void flatDiffView(DiffNode rootNode, DiffNode currentNode) {
+		if(currentNode != null) {
+			IDiffElement[] dElems = currentNode.getChildren();
+			if(dElems != null) {
+				for(IDiffElement dElem : dElems) {
+					DiffNode dNode = (DiffNode) dElem;
+					if(dNode.getChildren() != null && dNode.getChildren().length > 0) {
+						flatDiffView(rootNode, dNode);
+					} else {
+						rootNode.add(dNode);
+					}
+				}
+			}
+		}
 	}
 
 }
