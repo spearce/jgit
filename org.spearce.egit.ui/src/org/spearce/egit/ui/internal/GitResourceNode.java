@@ -21,6 +21,7 @@ import org.spearce.jgit.lib.TreeEntry;
 public class GitResourceNode extends BufferedContent implements IStructureComparator, ITypedElement {
 	TreeEntry entry;
 	GitResourceNode[] children;
+	String contentIdentifier;
 
 	public GitResourceNode(TreeEntry e) {
 		entry = e;
@@ -28,6 +29,7 @@ public class GitResourceNode extends BufferedContent implements IStructureCompar
 
 	public GitResourceNode(IFileRevision file) {
 		this(file instanceof GitCommitFileRevision ? ((GitCommitFileRevision)file).getTreeEntry() : null);
+		contentIdentifier = ((GitCommitFileRevision)file).getContentIdentifier();
 	}
 
 	public Object[] getChildren() {
@@ -100,5 +102,8 @@ public class GitResourceNode extends BufferedContent implements IStructureCompar
 		}
 	}
 
+	public String getContentIdentifier() {
+		return contentIdentifier;
+	}
 }
 

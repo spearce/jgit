@@ -152,6 +152,18 @@ public class GitCompareFileRevisionEditorInput extends CompareEditorInput {
 
 	private void initLabels(ICompareInput input) {
 		CompareConfiguration cc = getCompareConfiguration();
+		if(left != null && left instanceof GitResourceNode) {
+			String ci = ((GitResourceNode)left).getContentIdentifier();
+			if(ci != null) {
+				cc.setLeftLabel(ci.substring(0, 7) + "..");
+			}
+		}
+		if(right != null && right instanceof GitResourceNode) {
+			String ci = ((GitResourceNode)right).getContentIdentifier();
+			if(ci != null) {
+				cc.setRightLabel(ci.substring(0, 7) + "..");
+			}
+		}
 		if (getLeftRevision() != null) {
 			String leftLabel = getFileRevisionLabel(getLeftRevision());
 			cc.setLeftLabel(leftLabel);
