@@ -39,6 +39,15 @@ public class UIText extends NLS {
 
 	public static String QuickDiff_failedLoading;
 
+	/** */
+	public static String ResourceHistory_toggleCommentWrap;
+	/** */
+	public static String ResourceHistory_toggleRevDetail;
+	/** */
+	public static String ResourceHistory_toggleRevComment;
+	/** */
+	public static String ResourceHistory_toggleTooltips;
+
 	static {
 		initializeMessages(UIText.class.getPackage().getName() + ".uitext",
 				UIText.class);
