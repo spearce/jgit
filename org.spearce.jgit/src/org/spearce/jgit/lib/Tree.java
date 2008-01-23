@@ -65,7 +65,10 @@ public class Tree extends TreeEntry implements Treeish {
 			else if (aj > lastb)
 				return 1;
 			else
-				return 0;
+				if (j == a.length - 1)
+					return 0;
+				else
+					return -1;
 		}
 		if (k < nameEnd) {
 			int bk = nameUTF8[k] & 0xff;
@@ -74,7 +77,10 @@ public class Tree extends TreeEntry implements Treeish {
 			else if (lasta > bk)
 				return 1;
 			else
-				return 0;
+				if (k == nameEnd - 1)
+					return 0;
+				else
+					return 1;
 		}
 		if (lasta < lastb)
 			return -1;
