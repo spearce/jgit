@@ -21,12 +21,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -36,12 +35,8 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.team.core.TeamException;
 import org.eclipse.team.internal.ui.Utils;
-import org.eclipse.ui.IObjectActionDelegate;
-import org.eclipse.ui.IWorkbenchPart;
 import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.internal.dialogs.CommitDialog;
@@ -61,16 +56,8 @@ import org.spearce.jgit.lib.GitIndex.Entry;
 /**
  * Scan for modified resources in the same project as the selected resources.
  */
-public class CommitAction implements IObjectActionDelegate {
+public class CommitAction extends RepositoryAction {
 
-	private IWorkbenchPart wp;
-
-	private List rsrcList;
-
-	public void setActivePart(final IAction act, final IWorkbenchPart part) {
-		wp = part;
-	}
-	
 	private ArrayList<IFile> notIndexed;
 	private ArrayList<IFile> indexChanges;
 	private ArrayList<IFile> files;
@@ -80,13 +67,17 @@ public class CommitAction implements IObjectActionDelegate {
 	private boolean amendAllowed;
 	private boolean amending;
 
+	public void execute(IAction action) {
+		run(action);
+	}
 
+	@Override
 	public void run(IAction act) {
 		resetState();
 		try {
 			buildIndexHeadDiffList();
 		} catch (IOException e) {
-			Utils.handleError(wp.getSite().getShell(), e, "Error during commit", "Error occurred computing diffs");
+			Utils.handleError(getTargetPart().getSite().getShell(), e, "Error during commit", "Error occurred computing diffs");
 			return;
 		}
 
@@ -104,7 +95,7 @@ public class CommitAction implements IObjectActionDelegate {
 		// repo cannot really be null because this action cannot be invoked on a
 		// non-git managed project.
 		if (repo != null && !repo.getRepositoryState().canCommit()) {
-			MessageDialog.openError(wp.getSite().getShell(),
+			MessageDialog.openError(getTargetPart().getSite().getShell(),
 					"Cannot commit now", "Respository state:"
 							+ repo.getRepositoryState().getDescription());
 			return;
@@ -113,21 +104,21 @@ public class CommitAction implements IObjectActionDelegate {
 		if (files.isEmpty()) {
 			if (amendAllowed) {
 				boolean result = MessageDialog
-				.openQuestion(wp.getSite().getShell(),
+				.openQuestion(getTargetPart().getSite().getShell(),
 						"No files to commit",
 				"No changed items were selected. Do you wish to amend the last commit?");
 				if (!result)
 					return;
 				amending = true;
 			} else {
-				MessageDialog.openWarning(wp.getSite().getShell(), "No files to commit", "No changed items were selected.\n\nAmend is not possible as you have selected multiple repositories.");
+				MessageDialog.openWarning(getTargetPart().getSite().getShell(), "No files to commit", "No changed items were selected.\n\nAmend is not possible as you have selected multiple repositories.");
 				return;
 			}
 		}
 
 		loadPreviousCommit();
 
-		CommitDialog commitDialog = new CommitDialog(wp.getSite().getShell());
+		CommitDialog commitDialog = new CommitDialog(getTargetPart().getSite().getShell());
 		commitDialog.setAmending(amending);
 		commitDialog.setAmendAllowed(amendAllowed);
 		commitDialog.setFileList(files);
@@ -142,7 +133,7 @@ public class CommitAction implements IObjectActionDelegate {
 		try {
 			performCommit(commitDialog, commitMessage);
 		} catch (TeamException e) {
-			Utils.handleError(wp.getSite().getShell(), e, "Error during commit", "Error occurred while committing");
+			Utils.handleError(getTargetPart().getSite().getShell(), e, "Error during commit", "Error occurred while committing");
 		}
 	}
 
@@ -156,7 +147,7 @@ public class CommitAction implements IObjectActionDelegate {
 	}
 
 	private void loadPreviousCommit() {
-		IProject project = ((IResource) rsrcList.get(0)).getProject();
+		IProject project = getSelectedProjects()[0];
 
 		Repository repo = RepositoryMapping.getMapping(project).getRepository();
 		try {
@@ -164,7 +155,7 @@ public class CommitAction implements IObjectActionDelegate {
 			if (parentId != null)
 				previousCommit = repo.mapCommit(parentId);
 		} catch (IOException e) {
-			Utils.handleError(wp.getSite().getShell(), e, "Error during commit", "Error occurred retreiving last commit");
+			Utils.handleError(getTargetPart().getSite().getShell(), e, "Error during commit", "Error occurred retreiving last commit");
 		}
 	}
 
@@ -404,15 +395,8 @@ public class CommitAction implements IObjectActionDelegate {
 		}
 	}
 
-	private ArrayList<IProject> listProjects() {
-		ArrayList<IProject> projects = new ArrayList<IProject>();
-
-		for (Iterator i = rsrcList.iterator(); i.hasNext();) {
-			IResource res = (IResource) i.next();
-			if (!projects.contains(res.getProject()))
-				projects.add(res.getProject());
-		}
-		return projects;
+	private List<IProject> listProjects() {
+		return Arrays.asList(getSelectedProjects());
 	}
 
 	boolean tryAddResource(IFile resource, GitProjectData projectData, ArrayList<IFile> category) {
@@ -451,15 +435,8 @@ public class CommitAction implements IObjectActionDelegate {
 		return false;
 	}
 
-	public void selectionChanged(IAction act, ISelection sel) {
-		final List selection;
-		if (sel instanceof IStructuredSelection && !sel.isEmpty()) {
-			selection = ((IStructuredSelection) sel).toList();
-		} else {
-			selection = Collections.EMPTY_LIST;
-		}
-		act.setEnabled(!selection.isEmpty());
-		rsrcList = selection;
+	@Override
+	public boolean isEnabled() {
+		return !getSelection().isEmpty();
 	}
-
 }
