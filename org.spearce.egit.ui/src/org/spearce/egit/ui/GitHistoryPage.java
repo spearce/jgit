@@ -88,7 +88,9 @@ import org.spearce.egit.core.internal.mapping.GitFileHistoryProvider;
 import org.spearce.egit.core.internal.mapping.GitFileRevision;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.internal.actions.GitCompareRevisionAction;
+import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Tag;
 import org.spearce.jgit.lib.TopologicalSorter;
 import org.spearce.jgit.lib.Repository.StGitPatch;
@@ -221,12 +223,13 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				if(selection2.length == 1) {
 					// if the table item is not visible in the UI and it's selected via keyboard
 					// this listener is called before the listener that sets the item data.
-					if(selection2[0] == null) {
+					IFileRevision revision = selection2[0];
+					if(revision == null) {
 						int ix = table.getSelectionIndex();
-						GitFileRevision revision = (GitFileRevision) fileRevisions.get(ix);
+						revision = fileRevisions.get(ix);
 						selection2[0] = revision;
 					}
-					setRevisionInfoTextViewers(selection2[0]);
+					setRevisionInfoTextViewers((GitCommitFileRevision)revision);
 				}
 
 				compareAction.setCurrentFileRevision(fileRevisions.get(0));
@@ -554,7 +557,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		revCommentTextViewer = new TextViewer(composite, SWT.H_SCROLL | SWT.V_SCROLL | SWT.READ_ONLY);
 	}
 
-	/* private */void setRevisionInfoTextViewers(IFileRevision rev) {
+	/* private */void setRevisionInfoTextViewers(GitCommitFileRevision rev) {
 		StringBuilder revisionInfo = new StringBuilder();
 		if (appliedPatches != null) {
 			String id = rev.getContentIdentifier();
@@ -616,6 +619,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				}
 			}
 		} catch (IOException e) {
+			// TODO: better error handling.
 			e.printStackTrace();
 		}
 
@@ -673,10 +677,31 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			e.printStackTrace();
 		}
 
+		Commit commit = rev.getCommit();
 		revisionInfo.append("\nAuthor: ");
-		revisionInfo.append(rev.getAuthor());
-		revisionInfo.append("\nDate: ");
-		revisionInfo.append(DATETIMETZ_FORMAT.format(new Date(rev.getTimestamp())));
+		revisionInfo.append(formatPersonIdentForRevInfo(commit.getAuthor()));
+		revisionInfo.append("\nCommitter: ");
+		revisionInfo.append(formatPersonIdentForRevInfo(commit.getCommitter()));
+		if(commit.getParentIds() != null) {
+			for(ObjectId pid : commit.getParentIds()) {
+				revisionInfo.append("\nParent: ");
+				revisionInfo.append(pid.toString());
+				try {
+					Commit pc = repositoryMapping.getRepository().mapCommit(pid);
+					revisionInfo.append(" (");
+					String cmesg = pc.getMessage();
+					int enterIndex = cmesg.indexOf("\n");
+					if(enterIndex > 0) {
+						cmesg = cmesg.substring(0, enterIndex);
+					}
+					revisionInfo.append(cmesg);
+					revisionInfo.append(" )");
+				} catch (IOException e) {
+					// TODO: better error handling.
+					e.printStackTrace();
+				}
+			}
+		}
 
 		String comment = rev.getComment();
 		revDetailTextViewer.setDocument(new Document(revisionInfo.toString()));
@@ -691,6 +716,23 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		if (workbenchPageSite != null) {
 			workbenchPageSite.getActionBars().getStatusLineManager().setMessage(comment);
 		}
+
+	}
+
+	private String formatPersonIdentForRevInfo(PersonIdent p) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(p.getName());
+		if(p.getEmailAddress() != null) {
+			sb.append(" <");
+			sb.append(p.getEmailAddress());
+			sb.append(">");
+		}
+		if(p.getWhen() != null) {
+			sb.append(" ");
+			sb.append(DATETIMETZ_FORMAT.format(p.getWhen()));
+		}
+
+		return sb.toString();
 	}
 
 	/* private */void cleanRevisionInfoTextViewers() {
