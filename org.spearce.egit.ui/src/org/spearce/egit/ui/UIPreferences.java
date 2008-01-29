@@ -29,4 +29,16 @@ public class UIPreferences {
 	public final static String RESOURCEHISTORY_SHOW_REV_COMMENT = "resourcehistory_show_rev_comment";
 	/** */
 	public final static String RESOURCEHISTORY_SHOW_TOOLTIPS = "resourcehistory_show_tooltips";
+	/** */
+	public final static String RESOURCEHISTORY_SHOW_FINDTOOLBAR = "resourcehistory_show_findtoolbar";
+	/** */
+	public final static String FINDTOOLBAR_IGNORE_CASE = "findtoolbar_ignore_case";
+	/** */
+	public final static String FINDTOOLBAR_COMMIT_ID = "findtoolbar_commit_id";
+	/** */
+	public final static String FINDTOOLBAR_COMMENTS = "findtoolbar_comments";
+	/** */
+	public final static String FINDTOOLBAR_AUTHOR = "findtoolbar_author";
+	/** */
+	public final static String FINDTOOLBAR_COMMITTER = "findtoolbar_committer";
 }

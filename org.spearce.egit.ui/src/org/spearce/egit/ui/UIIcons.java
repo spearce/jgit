@@ -40,6 +40,13 @@ public class UIIcons {
 	/** Decoration for tracked resources that we want to ignore changes in. */
 	public static final ImageDescriptor OVR_ASSUMEVALID;
 
+	/** Find icon */
+	public static final ImageDescriptor ELCL16_FIND;
+	/** Next arrow icon */
+	public static final ImageDescriptor ELCL16_NEXT;
+	/** Previous arrow icon */
+	public static final ImageDescriptor ELCL16_PREVIOUS;
+
 	private static final URL base;
 
 	static {
@@ -49,6 +56,9 @@ public class UIIcons {
 		OVR_SHARED = map("ovr/shared.gif");
 		OVR_CONFLICT = map("ovr/conflict.gif");
 		OVR_ASSUMEVALID = map("ovr/assumevalid.gif");
+		ELCL16_FIND = map("elcl16/find.gif");
+		ELCL16_NEXT = map("elcl16/next.gif");
+		ELCL16_PREVIOUS = map("elcl16/previous.gif");
 	}
 
 	private static ImageDescriptor map(final String icon) {

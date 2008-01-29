@@ -18,6 +18,7 @@ package org.spearce.egit.ui;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -60,6 +61,8 @@ import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseMoveListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -111,9 +114,12 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 	private static final String PREF_SHOWALLFOLDERVERSIONS = "org.spearce.egit.ui.githistorypage.showallfolderversions";
 	/* private */static final SimpleDateFormat DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 	/* private */static final SimpleDateFormat DATETIMETZ_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+	/* private */Font BANNER_FONT_BOLD;
 
+	private Composite parentComposite;
 	private SashForm localComposite;
 	private SashForm revisionInfoComposite;
+	/* private */FindToolbar findToolbar;
 
 	/* private */Preferences prefs = Activator.getDefault().getPluginPreferences();
 
@@ -124,6 +130,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 	/* private */IAction toggleRevDetailAction;
 	/* private */IAction toggleRevCommentAction;
 	/* private */IAction toggleTooltipsAction;
+	/* private */IAction findAction;
 
 	/* private */Table table;
 	private MouseMoveListener tableMouseMoveListener;
@@ -162,15 +169,34 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 	}
 
 	public void createControl(Composite parent) {
-		localComposite = new SashForm(parent, SWT.VERTICAL);
+		Font bannerFont = JFaceResources.getBannerFont();
+		BANNER_FONT_BOLD = new Font(parent.getDisplay(),
+				new FontData(bannerFont.getFontData()[0].getName(), bannerFont.getFontData()[0].getHeight(), SWT.BOLD));
 
-		GridLayout layout = new GridLayout();
-		layout.marginHeight = 0;
-		layout.marginWidth = 0;
-		localComposite.setLayout(layout);
+		parentComposite = new Composite(parent, SWT.NULL);
+		GridLayout parentLayout = new GridLayout();
+		parentLayout.marginHeight = 0;
+		parentLayout.marginWidth = 0;
+		parentLayout.verticalSpacing = 0;
+		parentComposite.setLayout(parentLayout);
+		GridData parentData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		parentComposite.setLayoutData(parentData);
+
+		localComposite = new SashForm(parentComposite, SWT.VERTICAL);
 		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
-		data.grabExcessVerticalSpace = true;
 		localComposite.setLayoutData(data);
+
+		findToolbar = new FindToolbar(parentComposite);
+		findToolbar.addSelectionListener(new Listener() {
+			public void handleEvent(Event event) {
+				cleanRevisionInfoTextViewers();
+				int ix = table.getSelectionIndex();
+				IFileRevision revision = fileRevisions.get(ix);
+				if(revision instanceof GitCommitFileRevision) {
+					setRevisionInfoTextViewers((GitCommitFileRevision) revision);
+				}
+			}
+		});
 
 		createTable(localComposite);
 
@@ -278,6 +304,18 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(
 				resourceListener, IResourceChangeEvent.POST_CHANGE);
 
+		findAction = new Action("Fi", UIIcons.ELCL16_FIND) {
+			public void run() {
+				showHideFindToolbar();
+				prefs.setValue(UIPreferences.RESOURCEHISTORY_SHOW_FINDTOOLBAR, findAction.isChecked());
+				Activator.getDefault().savePluginPreferences();
+			}
+		};
+		findAction.setToolTipText("Find");
+		findAction.setChecked(prefs.getBoolean(UIPreferences.RESOURCEHISTORY_SHOW_FINDTOOLBAR));
+		getSite().getActionBars().getToolBarManager()
+				.add(findAction);
+
 		Action showAllRepoVersionsAction = new Action("R") {
 			public void run() {
 				setShowAllRepoVersions(isChecked());
@@ -378,6 +416,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		actionBars.updateActionBars();
 		updateResourceHistoryComposites();
 		updateShowTooltips();
+		showHideFindToolbar();
 
 		localComposite.setWeights(new int[] {65, 35});
 		revisionInfoComposite.setWeights(new int[] {40, 60});
@@ -418,6 +457,18 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			// so if we move to the javadoc style tooltip, this problem may be irrelevant.
 			table.setToolTipText(null);
 		}
+	}
+
+	/* private */void showHideFindToolbar() {
+		boolean showFindToobar = findAction.isChecked();
+
+		if(showFindToobar) {
+			((GridData) findToolbar.getLayoutData()).heightHint = SWT.DEFAULT;
+		} else {
+			((GridData) findToolbar.getLayoutData()).heightHint = 0;
+			findToolbar.clear();
+		}
+		parentComposite.layout();
 	}
 
 	/* private */boolean isShowAllRepoVersions() {
@@ -735,7 +786,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		return sb.toString();
 	}
 
-	/* private */void cleanRevisionInfoTextViewers() {
+	void cleanRevisionInfoTextViewers() {
 		if(revDetailTextViewer != null && revCommentTextViewer != null) {
 			revDetailTextViewer.setDocument(new Document(""));
 			revCommentTextViewer.setDocument(new Document(""));
@@ -756,6 +807,8 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
 		table.setLayoutData(data);
 		table.setData("HEAD");
+		findToolbar.setHistoryTable(table);
+		findToolbar.clear();
 		table.addListener(SWT.SetData, new Listener() {
 			public void handleEvent(Event event) {
 				try {
@@ -780,7 +833,12 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 						else
 							item.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GRAY));
 					}
-					item.setFont(0,JFaceResources.getBannerFont());
+
+					if (findToolbar.findResults.isFoundAt(event.index)) {
+						item.setFont(BANNER_FONT_BOLD);
+					} else {
+						item.setFont(0,JFaceResources.getBannerFont());
+					}
 				} catch (Throwable b) {
 					b.printStackTrace();
 				}
@@ -992,7 +1050,16 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 								-1,
 								monitor,
 								isShowAllRepoVersions());
-				fileRevisions = fileHistoryFor.getFileRevisionsList();
+				fileRevisions = Collections.synchronizedList(fileHistoryFor.getFileRevisionsList());
+				findToolbar.setFileRevisions(fileRevisions);
+				Display.getDefault().syncExec(new Runnable() {
+					public void run() {
+						if (findToolbar.isDisposed()) {
+							return;
+						}
+						findToolbar.clear();
+					}
+				});
 				final Map fnewappliedPatches = newappliedPatches;
 				final Map<ObjectId,Tag[]> ftags = newtags;
 	
@@ -1118,11 +1185,11 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 	}
 
 	public Control getControl() {
-		return localComposite;
+		return parentComposite;
 	}
 
 	public void setFocus() {
-		localComposite.setFocus();
+		parentComposite.setFocus();
 	}
 
 	public String getDescription() {
@@ -1216,6 +1283,12 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				result.append("\n\n");
 		}
 		return result.toString();
+	}
+
+	@Override
+	public void dispose() {
+		BANNER_FONT_BOLD.dispose();
+		super.dispose();
 	}
 
 }
