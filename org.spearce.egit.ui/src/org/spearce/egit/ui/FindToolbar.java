@@ -21,6 +21,8 @@ import java.util.List;
 
 import org.eclipse.core.runtime.Preferences;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -193,7 +195,7 @@ public class FindToolbar extends Composite {
 			}
 		});
 
-		Listener findButtonsListener = new Listener() {
+		final Listener findButtonsListener = new Listener() {
 			public void handleEvent(Event event) {
 				if (patternField.getText().length() > 0
 						&& findResults.size() == 0) {
@@ -241,6 +243,25 @@ public class FindToolbar extends Composite {
 		};
 		nextButton.addListener(SWT.Selection, findButtonsListener);
 		previousButton.addListener(SWT.Selection, findButtonsListener);
+
+		patternField.addKeyListener(new KeyAdapter() {
+			private Event event = new Event();
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if(e.keyCode == SWT.ARROW_DOWN) {
+					if(nextButton.isEnabled()) {
+						event.widget = nextButton;
+						findButtonsListener.handleEvent(event);
+					}
+				} else if(e.keyCode == SWT.ARROW_UP) {
+					if(previousButton.isEnabled()) {
+						event.widget = previousButton;
+						findButtonsListener.handleEvent(event);
+					}
+				}
+			}
+		});
 
 		caseItem.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
