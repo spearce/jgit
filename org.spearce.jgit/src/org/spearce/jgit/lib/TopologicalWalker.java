@@ -54,7 +54,7 @@ public class TopologicalWalker extends Walker {
 			super(repostory, starts, relativeResourceName, leafIsBlob,
 					followMainOnly, merges, activeDiffLeafId);
 			this.returnAll = returnAll;
-			topoSorter = new TopologicalSorter<ObjectId>() {;
+			topoSorter = new TopologicalSorter<ObjectId>() {
 				@Override
 				protected boolean filter(ObjectId element) {
 					return returnAll ? true : collected.containsKey(element);

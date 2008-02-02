@@ -124,7 +124,7 @@ public class WorkDirCheckout {
 		}
 	}
 
-	ArrayList<String> conflicts  = new ArrayList<String>();;
+	ArrayList<String> conflicts  = new ArrayList<String>();
 	ArrayList<String> removed = new ArrayList<String>();
 
 	protected Tree head = null;

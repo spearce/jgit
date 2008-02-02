@@ -232,7 +232,6 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 					}
 				else
 					activeDiffLeafId = ObjectId.zeroId();
-					;
 			}
 
 			Collection<IFileRevision> githistory;

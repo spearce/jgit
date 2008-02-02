@@ -653,7 +653,7 @@ public class GitIndex {
 			if (updateNeeded)
 				flags |= 0x4000;
 			else
-				flags &= ~0x4000;;
+				flags &= ~0x4000;
 		}
 	}
 
