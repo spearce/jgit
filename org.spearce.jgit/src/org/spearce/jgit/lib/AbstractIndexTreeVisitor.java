@@ -31,17 +31,21 @@ import org.spearce.jgit.lib.GitIndex.Entry;
 public class AbstractIndexTreeVisitor implements IndexTreeVisitor {
 	public void finishVisitTree(Tree tree, Tree auxTree, int i, String curDir)
 			throws IOException {
+		// Empty
 	}
 
 	public void finishVisitTree(Tree tree, int i, String curDir)
 			throws IOException {
+		// Empty
 	}
 
 	public void visitEntry(TreeEntry treeEntry, Entry indexEntry, File file)
 			throws IOException {
+		// Empty
 	}
 
 	public void visitEntry(TreeEntry treeEntry, TreeEntry auxEntry,
 			Entry indexEntry, File file) throws IOException {
+		// Empty
 	}
 }

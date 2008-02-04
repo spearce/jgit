@@ -36,5 +36,6 @@ public class GitPreferencePage extends PreferencePage implements
 	}
 
 	public void init(final IWorkbench workbench) {
+		// Empty
 	}
 }

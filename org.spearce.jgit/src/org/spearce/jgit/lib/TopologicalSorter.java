@@ -292,6 +292,7 @@ public class TopologicalSorter<T> {
 		private int number = -1;
 
 		Lane() {
+			// Empty
 		}
 
 		@Override

@@ -212,6 +212,7 @@ public class CommitDialog extends Dialog {
 			}
 		
 			public void widgetDefaultSelected(SelectionEvent arg0) {
+				// Empty
 			}
 		});
 		
@@ -242,9 +243,11 @@ public class CommitDialog extends Dialog {
 
 			public void inputChanged(Viewer viewer, Object oldInput,
 					Object newInput) {
+				// Empty
 			}
 
 			public void dispose() {
+				// Empty
 			}
 
 			public Object[] getElements(Object inputElement) {

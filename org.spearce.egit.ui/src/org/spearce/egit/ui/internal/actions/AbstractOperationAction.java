@@ -73,6 +73,7 @@ public abstract class AbstractOperationAction implements IObjectActionDelegate {
 	 * A method to invoke when the operation is finished.
 	 */
 	protected void postOperation() {
+		// Empty
 	}
 
 	public void run(final IAction act) {
