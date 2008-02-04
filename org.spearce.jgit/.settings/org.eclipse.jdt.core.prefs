@@ -1,4 +1,4 @@
-#Tue Dec 18 01:35:52 CET 2007
+#Sun Feb 03 03:16:45 CET 2008
 eclipse.preferences.version=1
 org.eclipse.jdt.core.compiler.codegen.inlineJsrBytecode=enabled
 org.eclipse.jdt.core.compiler.codegen.targetPlatform=1.5
@@ -59,7 +59,6 @@ org.eclipse.jdt.core.compiler.problem.typeParameterHiding=warning
 org.eclipse.jdt.core.compiler.problem.uncheckedTypeOperation=warning
 org.eclipse.jdt.core.compiler.problem.undocumentedEmptyBlock=warning
 org.eclipse.jdt.core.compiler.problem.unhandledWarningToken=warning
-org.eclipse.jdt.core.compiler.problem.unnecessaryElse=warning
 org.eclipse.jdt.core.compiler.problem.unnecessaryTypeCheck=error
 org.eclipse.jdt.core.compiler.problem.unqualifiedFieldAccess=ignore
 org.eclipse.jdt.core.compiler.problem.unusedDeclaredThrownException=error

@@ -59,7 +59,6 @@ org.eclipse.jdt.core.compiler.problem.typeParameterHiding=warning
 org.eclipse.jdt.core.compiler.problem.uncheckedTypeOperation=warning
 org.eclipse.jdt.core.compiler.problem.undocumentedEmptyBlock=warning
 org.eclipse.jdt.core.compiler.problem.unhandledWarningToken=warning
-org.eclipse.jdt.core.compiler.problem.unnecessaryElse=warning
 org.eclipse.jdt.core.compiler.problem.unnecessaryTypeCheck=error
 org.eclipse.jdt.core.compiler.problem.unqualifiedFieldAccess=ignore
 org.eclipse.jdt.core.compiler.problem.unusedDeclaredThrownException=error
