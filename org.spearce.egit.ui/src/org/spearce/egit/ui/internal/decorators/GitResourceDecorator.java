@@ -207,7 +207,7 @@ public class GitResourceDecorator extends LabelProvider implements
 					return Boolean.FALSE;
 				}
 
-				return mapped.isResourceChanged(rsrc);
+				return new Boolean(mapped.isResourceChanged(rsrc));
 			}
 			return null; // not mapped
 		} catch (CoreException e) {
@@ -244,8 +244,8 @@ public class GitResourceDecorator extends LabelProvider implements
 						if (rsrc instanceof IContainer) {
 							Integer df = (Integer) rsrc
 									.getSessionProperty(GITFOLDERDIRTYSTATEPROPERTY);
-							Boolean f = df == null ? isDirty(rsrc) : df
-									.intValue() == CHANGED;
+							Boolean f = df == null ? isDirty(rsrc)
+									: new Boolean(df.intValue() == CHANGED);
 							if (f != null) {
 								if (f.booleanValue()) {
 									decoration.addPrefix(">"); // Have not
@@ -358,7 +358,7 @@ public class GitResourceDecorator extends LabelProvider implements
 		try {
 			Integer dirty = (Integer) rsrc.getSessionProperty(GITFOLDERDIRTYSTATEPROPERTY);
 			if (dirty == null) {
-				rsrc.setSessionProperty(GITFOLDERDIRTYSTATEPROPERTY, flag);
+				rsrc.setSessionProperty(GITFOLDERDIRTYSTATEPROPERTY, new Integer(flag));
 				Activator.trace("SETTING:"+rsrc.getFullPath().toOSString()+" => "+flag);
 				orState(rsrc.getParent(), flag);
 				Display.getDefault().asyncExec(new Runnable() {
@@ -375,7 +375,7 @@ public class GitResourceDecorator extends LabelProvider implements
 				});
 			} else {
 				if ((dirty.intValue() | flag) != dirty.intValue()) {
-					dirty = dirty | flag;
+					dirty = new Integer(dirty.intValue() | flag);
 					rsrc.setSessionProperty(GITFOLDERDIRTYSTATEPROPERTY, dirty);
 					Activator.trace("SETTING:"+rsrc.getFullPath().toOSString()+" => "+dirty);
 					orState(rsrc.getParent(), dirty.intValue());

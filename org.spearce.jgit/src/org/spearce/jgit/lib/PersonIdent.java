@@ -62,7 +62,7 @@ public class PersonIdent {
 
 		name = username;
 		emailAddress = email;
-		when = Calendar.getInstance().getTimeInMillis();
+		when = new Long(Calendar.getInstance().getTimeInMillis());
 		tzOffset = TimeZone.getDefault().getOffset(when.longValue())
 				/ (60 * 1000);
 	}

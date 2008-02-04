@@ -28,6 +28,7 @@ public class SuperListTest extends TestCase {
 		assertEquals(0, l.size());
 	}
 
+	@SuppressWarnings("boxing")
 	public void testNonEmpty() {
 		List<Integer> l = new SuperList<Integer>();
 		List<Integer> sl1 = Arrays.asList(new Integer[] { 3,4 });

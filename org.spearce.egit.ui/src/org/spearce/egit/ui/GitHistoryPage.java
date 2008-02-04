@@ -864,6 +864,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 //				SWT.COLOR_WHITE,
 				SWT.COLOR_YELLOW
 			};
+			@SuppressWarnings("boxing")
 			public void handleEvent(Event event) {
 				TableItem item = (TableItem) event.item;
 				if (event.index == 0) {

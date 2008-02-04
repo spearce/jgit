@@ -498,6 +498,7 @@ public class LaneTest extends TestCase {
 				, road);
 	}
 
+	@SuppressWarnings("boxing")
 	private String drawAsAscii(TopologicalSorter<Data> counter) {
 		StringWriter w = new StringWriter();
 		List<Data> entries = counter.getEntries();
