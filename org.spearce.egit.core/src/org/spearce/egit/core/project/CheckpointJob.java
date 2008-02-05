@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2006  Shawn Pearce <spearce@spearce.org>
- *  Copyrighy (C) 2007  Robin Rosenberg
+ *  Copyright (C) 2007  Robin Rosenberg
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -31,10 +31,19 @@ import org.spearce.egit.core.CoreText;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.GitIndex.Entry;
 
+/**
+ * This class updates the index with the content of all resources tracked by git
+ * in the index.
+ */
 public class CheckpointJob extends Job {
 
 	private final RepositoryMapping rm;
 
+	/**
+	 * Construct a {@link CheckpointJob} for the specified resource mapping
+	 *
+	 * @param m
+	 */
 	public CheckpointJob(final RepositoryMapping m) {
 		super(NLS.bind(CoreText.CheckpointJob_name, m.getContainer()
 				.getFullPath()));

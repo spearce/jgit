@@ -24,9 +24,17 @@ import org.eclipse.team.core.history.IFileRevision;
 import org.spearce.egit.core.internal.mapping.GitFileRevision;
 import org.spearce.jgit.lib.ObjectId;
 
+/**
+ * An {@link IFileRevision} for the version in the Git index.
+ */
 public class GitIndexFileRevision extends GitFileRevision implements
 		IFileRevision {
 
+	/**
+	 * Construct a GitIndexFileRevision matching a certain resource.
+	 * @param resource The corresponding workspace resource
+	 * @param count index into the full list of results
+	 */
 	public GitIndexFileRevision(IResource resource, int count) {
 		super(resource, count);
 	}

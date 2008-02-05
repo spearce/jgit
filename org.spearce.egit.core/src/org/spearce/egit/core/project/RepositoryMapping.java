@@ -37,8 +37,11 @@ import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 import org.spearce.jgit.lib.GitIndex.Entry;
 
+/**
+ * This class keeps track
+ */
 public class RepositoryMapping {
-	public static boolean isInitialKey(final String key) {
+	static boolean isInitialKey(final String key) {
 		return key.endsWith(".gitdir");
 	}
 
@@ -52,6 +55,12 @@ public class RepositoryMapping {
 
 	private IContainer container;
 
+	/**
+	 * Construct a {@link RepositoryMapping} for a previously connected project.
+	 *
+	 * @param p TODO
+	 * @param initialKey TODO
+	 */
 	public RepositoryMapping(final Properties p, final String initialKey) {
 		final int dot = initialKey.lastIndexOf('.');
 		String s;
@@ -62,6 +71,14 @@ public class RepositoryMapping {
 		subset = "".equals(s) ? null : s;
 	}
 
+	/**
+	 * Construct a {@link RepositoryMapping} for previously
+	 * unknown project.
+	 *
+	 * @param mappedContainer
+	 * @param gitDir
+	 * @param subsetRoot
+	 */
 	public RepositoryMapping(final IContainer mappedContainer,
 			final File gitDir, final String subsetRoot) {
 		final IPath cLoc = mappedContainer.getLocation()
@@ -103,55 +120,75 @@ public class RepositoryMapping {
 		}
 	}
 
-	public IPath getContainerPath() {
+	IPath getContainerPath() {
 		return Path.fromPortableString(containerPath);
 	}
 
-	public IPath getGitDirPath() {
+	IPath getGitDirPath() {
 		return Path.fromPortableString(gitdirPath);
 	}
 
+	/**
+	 * Eclipse projects typically reside one or more levels
+	 * below the repository. This method return the relative
+	 * path to the project. Null is returned instead of "".
+	 *
+	 * @return relative path from repository to project, or null
+	 */
 	public String getSubset() {
 		return subset;
 	}
 
+	/**
+	 * @return the workdir file, i.e. where the files are checked out
+	 */
 	public File getWorkDir() {
-//		assert containerPath.endsWith("/" + subset);
-//		return Path.fromPortableString(
-//				containerPath.substring(containerPath.length() - 1
-//						- subset.length())).toFile();
 		return getRepository().getDirectory().getParentFile();
 	}
 
-	public synchronized void clear() {
+	synchronized void clear() {
 		db = null;
 		container = null;
 	}
 
+	/**
+	 * @return a reference to the repository object handled by this mapping
+	 */
 	public synchronized Repository getRepository() {
 		return db;
 	}
 
-	public synchronized void setRepository(final Repository r) {
+	synchronized void setRepository(final Repository r) {
 		db = r;
 	}
 
+	/**
+	 * @return the mapped container (currently project)
+	 */
 	public synchronized IContainer getContainer() {
 		return container;
 	}
 
-	public synchronized void setContainer(final IContainer c) {
+	synchronized void setContainer(final IContainer c) {
 		container = c;
 	}
 
-	public synchronized void fullUpdate() {
-		recomputeMerge();
-	}
-
+	/**
+	 * @deprecated, leftover from the old "index"
+	 * TODO: rename or replace
+	 */
 	public synchronized void recomputeMerge() {
 		GitProjectData.fireRepositoryChanged(this);
 	}
 
+	/**
+	 * Retrieve the Git tree object matching the currently
+	 * checked out version.
+	 *
+	 * @return the Git Tree matching the container mapped
+	 * @throws IOException on general problems accessing the repository
+	 * @throws MissingObjectException something is missing
+	 */
 	public synchronized Tree mapHEADTree() throws IOException,
 			MissingObjectException {
 		Tree head = getRepository().mapTree(Constants.HEAD);
@@ -168,7 +205,7 @@ public class RepositoryMapping {
 		return head;
 	}
 
-	public synchronized void store(final Properties p) {
+	synchronized void store(final Properties p) {
 		p.setProperty(containerPath + ".gitdir", gitdirPath);
 		if (subset != null && !"".equals(subset)) {
 			p.setProperty(containerPath + ".subset", subset);
@@ -179,6 +216,19 @@ public class RepositoryMapping {
 		return "RepositoryMapping[" + containerPath + " -> " + gitdirPath + "]";
 	}
 
+	/**
+	 * Check whether a resource has been changed relative to the checked out
+	 * version. Content is assumed changed by this routine if the resource's
+	 * modification time differs from what is recorded in the index, but the
+	 * real content hasn't changed. The reason is performance.
+	 *
+	 * @param rsrc
+	 * @return true if a resource differs in the workdir or index relative to
+	 *         HEAD
+	 *
+	 * @throws IOException
+	 * @throws UnsupportedEncodingException
+	 */
 	public boolean isResourceChanged(IResource rsrc) throws IOException, UnsupportedEncodingException {
 		Repository repository = getRepository();
 		GitIndex index = repository.getIndex();
@@ -193,10 +243,13 @@ public class RepositoryMapping {
 		if (blob == null)
 			return true; // added in index
 		boolean hashesDiffer = !entry.getObjectId().equals(blob.getId());
-//		System.out.println("HashesDiffer: " + rsrc);
 		return hashesDiffer || entry.isModified(getWorkDir());
 	}
 
+	/**
+	 * @param rsrc
+	 * @return the path relative to the Git repository, including base name.
+	 */
 	public String getRepoRelativePath(IResource rsrc) {
 		String prefix = getSubset();
 		String projectRelativePath = rsrc.getProjectRelativePath().toString();
@@ -208,6 +261,8 @@ public class RepositoryMapping {
 				repoRelativePath = prefix + "/" + projectRelativePath;
 		} else
 			repoRelativePath = projectRelativePath;
+
+		assert repoRelativePath != null;
 		return repoRelativePath;
 	}
 

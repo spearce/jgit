@@ -25,13 +25,16 @@ import org.eclipse.team.core.history.IFileRevision;
 import org.eclipse.team.core.history.provider.FileHistoryProvider;
 import org.spearce.egit.core.GitWorkspaceFileRevision;
 
+/**
+ * A {@link FileHistoryProvider} for Git. This class has methods for
+ * retrieving specific versions of a tracked resource.
+ */
 public class GitFileHistoryProvider extends FileHistoryProvider implements
 		IFileHistoryProvider {
 
 	public IFileHistory getFileHistoryFor(IResource resource, int flags,
 			IProgressMonitor monitor) {
-		// TODO: implement flags
-		return new GitFileHistory(resource, flags, monitor, false); // TODO: implement flags
+		return new GitFileHistory(resource, flags, monitor, false);
 	}
 
 	public IFileRevision getWorkspaceFileRevision(IResource resource) {
@@ -44,6 +47,21 @@ public class GitFileHistoryProvider extends FileHistoryProvider implements
 		return null;
 	}
 
+	/**
+	 * Get the history for a given resource as viewed using the specified
+	 * filtering flags.
+	 *
+	 * @param resource
+	 * @param flags
+	 *            See {@link IFileHistoryProvider}
+	 * @param monitor
+	 *            progress monitor
+	 * @param returnAll
+	 *            true if all revisions are returned and interesting revisions marked.
+	 *
+	 * @return a {@link GitFileHistory} object.
+	 *
+	 */
 	public GitFileHistory getHistoryFor(IResource resource, int flags, IProgressMonitor monitor, boolean returnAll) {
 		return new GitFileHistory(resource, flags, monitor, returnAll); // TODO: implement flags
 	}

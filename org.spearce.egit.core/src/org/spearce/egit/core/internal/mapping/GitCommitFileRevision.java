@@ -38,10 +38,21 @@ import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 
+/**
+ * An {@link IFileRevision} for a version of a specified resource in the
+ * specified commit (revision).
+ */
 public class GitCommitFileRevision extends GitFileRevision {
 
 	private final ObjectId commitId;
 
+	/**
+	 * Construct a {@link GitCommitFileRevision} for a resource in a specified commit.
+	 *
+	 * @param commitId
+	 * @param resource
+	 * @param count index to full list of commits.
+	 */
 	public GitCommitFileRevision(ObjectId commitId, IResource resource, int count) {
 		super(resource, count);
 		this.commitId = commitId;
@@ -109,6 +120,12 @@ public class GitCommitFileRevision extends GitFileRevision {
 		return (ITag[]) ret.toArray(new ITag[ret.size()]);
 	}
 
+	/**
+	 * Maps the commit id of the object this revision refers to and
+	 * to retrieves the commit object from the database.
+	 *
+	 * @return the {@link Commit} object this {@link IFileRevision} refers to
+	 */
 	public Commit getCommit() {
 		try {
 			return RepositoryMapping.getMapping(getResource()).getRepository().mapCommit(commitId);
@@ -121,6 +138,9 @@ public class GitCommitFileRevision extends GitFileRevision {
 		return commitId;
 	}
 
+	/**
+	 * @return the {@link TreeEntry} this {@link IFileRevision} refers to.
+	 */
 	public TreeEntry getTreeEntry() {
 		RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(getResource());
 		Tree tree;

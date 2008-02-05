@@ -23,6 +23,9 @@ import org.eclipse.team.core.history.IFileHistoryProvider;
 import org.spearce.egit.core.internal.mapping.GitFileHistoryProvider;
 import org.spearce.egit.core.project.GitProjectData;
 
+/**
+ * The Team provider class for a Git repository.
+ */
 public class GitProvider extends RepositoryProvider {
 	private GitProjectData data;
 
@@ -53,6 +56,10 @@ public class GitProvider extends RepositoryProvider {
 		return hook;
 	}
 
+	/**
+	 * @return information about the mapping of an Eclipse project
+	 * to a Git repository.
+	 */
 	public synchronized GitProjectData getData() {
 		if (data == null) {
 			data = GitProjectData.get(getProject());

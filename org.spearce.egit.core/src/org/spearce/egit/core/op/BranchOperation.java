@@ -34,12 +34,21 @@ import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.WorkDirCheckout;
 
+/**
+ * This class implements checkouts of a specific revision. A check
+ * is made that this can be done without data loss.
+ */
 public class BranchOperation implements IWorkspaceRunnable {
 
 	private final Repository repository;
 
 	private final String refName;
 
+	/**
+	 * Construct a {@link BranchOperation} object.
+	 * @param repository
+	 * @param refName Name of git ref to checkout
+	 */
 	public BranchOperation(Repository repository, String refName) {
 		this.repository = repository;
 		this.refName = refName;

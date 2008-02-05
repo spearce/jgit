@@ -23,9 +23,22 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.team.core.history.IFileRevision;
 import org.spearce.egit.core.internal.mapping.GitFileRevision;
 
+/**
+ * An {@link IFileRevision} for the version in workspace.
+ */
 public class GitWorkspaceFileRevision extends GitFileRevision implements
 		IFileRevision {
 
+	/**
+	 * Construct a GitWorkspaceFileRevision matching a certain resource. This is
+	 * the same as the resource, which the possible distinction that this is the
+	 * version on disk when unsaved.
+	 *
+	 * @param resource
+	 *            The corresponding workspace resource
+	 * @param count
+	 *            index into the full list of results
+	 */
 	public GitWorkspaceFileRevision(IResource resource, int count) {
 		super(resource, count);
 	}

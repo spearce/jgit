@@ -48,6 +48,10 @@ import org.spearce.egit.core.CoreText;
 import org.spearce.egit.core.GitProvider;
 import org.spearce.jgit.lib.Repository;
 
+/**
+ * This class keeps information about how a project is mapped to
+ * a Git repository.
+ */
 public class GitProjectData {
 	private static final Map projectDataCache = new HashMap();
 
@@ -78,6 +82,11 @@ public class GitProjectData {
 		}
 	}
 
+	/**
+	 * Start listening for resource changes.
+	 *
+	 * @param includeChange true to listen to content changes
+	 */
 	public static void attachToWorkspace(final boolean includeChange) {
 		trace("attachToWorkspace - addResourceChangeListener");
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(
@@ -87,6 +96,9 @@ public class GitProjectData {
 						| IResourceChangeEvent.PRE_DELETE);
 	}
 
+	/**
+	 * Stop listening to resource changes
+	 */
 	public static void detachFromWorkspace() {
 		trace("detachFromWorkspace - removeResourceChangeListener");
 		ResourcesPlugin.getWorkspace().removeResourceChangeListener(rcl);
@@ -134,6 +146,10 @@ public class GitProjectData {
 		return repositoryChangeListeners;
 	}
 
+	/**
+	 * @param p
+	 * @return {@link GitProjectData} for the specified project
+	 */
 	public synchronized static GitProjectData get(final IProject p) {
 		try {
 			GitProjectData d = lookup(p);
@@ -149,6 +165,11 @@ public class GitProjectData {
 		}
 	}
 
+	/**
+	 * Drop the Eclipse project from our association of projects/repositories
+	 *
+	 * @param p Eclipse project
+	 */
 	public static void delete(final IProject p) {
 		trace("delete(" + p.getName() + ")");
 		GitProjectData d = lookup(p);
@@ -218,6 +239,12 @@ public class GitProjectData {
 
 	private final Set protectedResources;
 
+	/**
+	 * Construct a {@link GitProjectData} for the mapping
+	 * of a project.
+	 *
+	 * @param p Eclipse project
+	 */
 	public GitProjectData(final IProject p) {
 		project = p;
 		mappings = new ArrayList();
@@ -225,16 +252,29 @@ public class GitProjectData {
 		protectedResources = new HashSet();
 	}
 
+	/**
+	 * @return the Eclipse project mapped through this resource.
+	 */
 	public IProject getProject() {
 		return project;
 	}
 
+	/**
+	 * TODO: is this right?
+	 *
+	 * @param newMappings
+	 */
 	public void setRepositoryMappings(final Collection newMappings) {
 		mappings.clear();
 		mappings.addAll(newMappings);
 		remapAll();
 	}
 
+	/**
+	 * Hide our private parts from the navigators other browsers.
+	 *
+	 * @throws CoreException
+	 */
 	public void markTeamPrivateResources() throws CoreException {
 		final Iterator i = c2mapping.entrySet().iterator();
 		while (i.hasNext()) {
@@ -258,15 +298,26 @@ public class GitProjectData {
 		}
 	}
 
+	/**
+	 * @param f
+	 * @return true if a resource is protected in this repository
+	 */
 	public boolean isProtected(final IResource f) {
 		return protectedResources.contains(f);
 	}
 
+	/**
+	 * TODO: check usage, we should probably declare the parameter
+	 * as IProject.
+	 *
+	 * @param r Eclipse project
+	 * @return the mapping for the specified project
+	 */
 	public RepositoryMapping getRepositoryMapping(final IResource r) {
 		return (RepositoryMapping) c2mapping.get(r);
 	}
 
-	public void delete() {
+	private void delete() {
 		final File dir = propertyFile().getParentFile();
 		final File[] todel = dir.listFiles();
 		if (todel != null) {
@@ -281,6 +332,11 @@ public class GitProjectData {
 		uncache(getProject());
 	}
 
+	/**
+	 * Store information about the repository connection in the workspace
+	 *
+	 * @throws CoreException
+	 */
 	public void store() throws CoreException {
 		final File dat = propertyFile();
 		final File tmp;
@@ -385,7 +441,7 @@ public class GitProjectData {
 			// We are in deep trouble. This should NOT have happend. Detach
 			// our listeners and forget it ever did.
 			//
-			attachToWorkspace(false);
+			detachFromWorkspace();
 			Activator.logError(CoreText.GitProjectData_notifyChangedFailed, ce);
 		}
 

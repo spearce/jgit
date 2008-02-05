@@ -36,10 +36,27 @@ import org.spearce.jgit.lib.Tag;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.WorkDirCheckout;
 
+/**
+ * A class for changing a ref and possibly index and workdir too.
+ */
 public class ResetOperation implements IWorkspaceRunnable {
+	/**
+	 * Kind of reset
+	 */
 	public enum ResetType {
+		/**
+		 * Just change the ref. The index and workdir are not changed.
+		 */
 		SOFT,
+
+		/**
+		 * Change the ref and the index. The workdir is not changed.
+		 */
 		MIXED,
+
+		/**
+		 * Change the ref, the index and the workdir
+		 */
 		HARD
 	}
 	
@@ -52,6 +69,13 @@ public class ResetOperation implements IWorkspaceRunnable {
 	private Tree newTree;
 	private GitIndex index;
 
+	/**
+	 * Construct a {@link ResetOperation}
+	 *
+	 * @param repository
+	 * @param refName
+	 * @param type
+	 */
 	public ResetOperation(Repository repository, String refName, ResetType type) {
 		this.repository = repository;
 		this.refName = refName;

@@ -26,6 +26,11 @@ import org.eclipse.team.core.history.provider.FileRevision;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.TopologicalSorter;
 
+/**
+ * A Git related {@link IFileRevision}. It references a version
+ * and a resource, i.e. the version we think corresponds to the
+ * resource in specific version.
+ */
 public abstract class GitFileRevision extends FileRevision {
 
 	private final IResource resource;
@@ -34,6 +39,12 @@ public abstract class GitFileRevision extends FileRevision {
 
 	private TopologicalSorter<ObjectId>.Lane lane;
 
+	/**
+	 * Construct a {@link GitFileRevision}
+	 *
+	 * @param resource
+	 * @param count index into the full list of commits
+	 */
 	public GitFileRevision(IResource resource, int count) {
 		this.count = count;
 		this.resource = resource;
@@ -56,20 +67,43 @@ public abstract class GitFileRevision extends FileRevision {
 		return resource.getLocationURI();
 	}
 
+	/**
+	 * @return the {@link IResource} the {@link IFileRevision} refers to.
+	 */
 	public IResource getResource() {
 		return resource;
 	}
 
+	/**
+	 * @deprecated
+	 * @return index into full list of versions
+	 */
 	public int getCount() {
 		return count;
 	}
 
+	/**
+	 * @return the swim lane assigned by the graph layout
+	 */
 	public TopologicalSorter<ObjectId>.Lane getLane() {
 		return lane;
 	}
 
+	/**
+	 * Set the swim where this revision is found. Invoked by the
+	 * graph layout.
+	 *
+	 * @param lane
+	 */
 	public void setLane(TopologicalSorter<ObjectId>.Lane lane) {
 		this.lane = lane;
+	}
+
+	/**
+	 * @return the ObjectId this IFileRevision refers to.
+	 */
+	public ObjectId getCommitId() {
+		return null;
 	}
 
 }

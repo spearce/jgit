@@ -18,10 +18,18 @@ package org.spearce.egit.core;
 
 import org.eclipse.team.core.history.ITag;
 
+/**
+ * A representation of a Git tag in Eclipse.
+ */
 public class GitTag implements ITag {
 
 	private String name;
 
+	/**
+	 * Construct a GitTag object with a given name.
+	 *
+	 * @param name the Git tag name
+	 */
 	public GitTag(String name) {
 		this.name = name;
 	}

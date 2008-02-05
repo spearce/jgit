@@ -48,6 +48,11 @@ import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 import org.spearce.jgit.lib.GitIndex.Entry;
 
+/**
+ * A list of revisions for a specific resource according to some
+ * filtering criterion. Though git really does not do file tracking,
+ * this corresponds to listing all files with the same path.
+ */
 public class GitFileHistory extends FileHistory implements IAdaptable {
 
 	private final IResource resource;
@@ -60,6 +65,20 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 
 	private final boolean returnAll;
 
+	/**
+	 * Construct a {@link GitFileHistory} object for a given resource (path)
+	 * with some filtering applied. The filter could reduce the number of
+	 * commits returned or just mark some versions as interesting.
+	 *
+	 * @param resource
+	 * @param flags
+	 *            See {@link IFileHistoryProvider}
+	 * @param monitor
+	 *            progress reporting facility
+	 * @param returnAll
+	 *            true if all versions should be collected even if the filter
+	 *            does not match.
+	 */
 	public GitFileHistory(IResource resource, int flags, IProgressMonitor monitor, boolean returnAll) {
 		this.resource = resource;
 		this.flags = flags;
@@ -160,6 +179,9 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 		return revisions.toArray(new IFileRevision[revisions.size()]);
 	}
 
+	/**
+	 * @return the list of revisions. The list may be lazy-evaluated.
+	 */
 	public List<IFileRevision> getFileRevisionsList() {
 		return revisions;
 	}

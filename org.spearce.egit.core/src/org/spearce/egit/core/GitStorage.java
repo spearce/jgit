@@ -36,6 +36,9 @@ import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 import org.spearce.jgit.lib.GitIndex.Entry;
 
+/**
+ * Implements access to a Git managed version of a resource.
+ */
 public class GitStorage implements IStorage {
 
 	private final IResource resource;
@@ -44,6 +47,13 @@ public class GitStorage implements IStorage {
 
 	private ObjectId treeId;
 
+	/**
+	 * Construct a GitStorage instance corresponding to
+	 * a certain workspace resource.
+	 *
+	 * @param treeId
+	 * @param resource
+	 */
 	public GitStorage(ObjectId treeId, IResource resource) {
 		this.treeId = treeId;
 		this.resource = resource;

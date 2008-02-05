@@ -40,10 +40,20 @@ import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.GitIndex.Entry;
 
+/**
+ * This job updates the index with the content of all specified
+ * and tracked resources. If a project is selected all tracked
+ * resources withing that container are updated.
+ */
 public class UpdateJob extends Job {
 
 	private final Collection rsrcList;
 
+	/**
+	 * Construct an UpdateJob for the specified resources.
+	 *
+	 * @param rsrcList
+	 */
 	public UpdateJob(Collection rsrcList) {
 		super("Update index");
 		this.rsrcList = rsrcList;

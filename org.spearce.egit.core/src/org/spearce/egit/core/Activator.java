@@ -24,22 +24,45 @@ import org.eclipse.core.runtime.Status;
 import org.osgi.framework.BundleContext;
 import org.spearce.egit.core.project.GitProjectData;
 
+/**
+ * The plugin class for the org.spearce.egit.core plugin. This
+ * is a singleton class.
+ */
 public class Activator extends Plugin {
 	private static Activator plugin;
 
+	/**
+	 * @return the singleton {@link Activator}
+	 */
 	public static Activator getDefault() {
 		return plugin;
 	}
 
+	/**
+	 * @return the name of this plugin
+	 */
 	public static String getPluginId() {
 		return getDefault().getBundle().getSymbolicName();
 	}
 
+	/**
+	 * Utility method to help throwing errors in the Egit plugin. This method
+	 * does not actually throw the exception, but just creates an instance.
+	 *
+	 * @param message User comprehensible message
+	 * @param thr cause
+	 * @return an Initialized {@link CoreException}
+	 */
 	public static CoreException error(final String message, final Throwable thr) {
 		return new CoreException(new Status(IStatus.ERROR, getPluginId(), 0,
 				message, thr));
 	}
 
+	/**
+	 * Utility method to log errors in the Egit plugin.
+	 * @param message User comprehensible message
+	 * @param thr The exception through which we noticed the error
+	 */
 	public static void logError(final String message, final Throwable thr) {
 		getDefault().getLog().log(
 				new Status(IStatus.ERROR, getPluginId(), 0, message, thr));
@@ -51,6 +74,11 @@ public class Activator extends Plugin {
 		return value != null && value.equals("true");
 	}
 
+	/**
+	 * Utility method for debug logging.
+	 *
+	 * @param what
+	 */
 	public static void trace(final String what) {
 		if (getDefault().traceVerbose) {
 			System.out.println("[" + getPluginId() + "] " + what);
@@ -59,6 +87,9 @@ public class Activator extends Plugin {
 
 	private boolean traceVerbose;
 
+	/**
+	 * Construct the {@link Activator} singleton instance
+	 */
 	public Activator() {
 		plugin = this;
 	}
