@@ -274,7 +274,7 @@ public class FetchClient {
 						if (msg.startsWith("Compressing "))
 							stage = 1;
 						monitor.worked(stage * scale + scale*amount / 100 - monitor.getWorked());
-						monitor.setTask(matcher.group(1));
+						monitor.setMessage(matcher.group(1));
 					}
 				} else {
 					Matcher cmatcher = counting.matcher(msg);
@@ -403,7 +403,7 @@ public class FetchClient {
 	 */
 	public void run(ProgressMonitor aMonitor) throws IOException {
 		monitor = aMonitor;
-		monitor.setTask("Negotiating with server");
+		monitor.setMessage("Negotiating with server");
 		monitor.worked(5);
 		if (initialCommand != null) {
 			writeServer(initialCommand);
