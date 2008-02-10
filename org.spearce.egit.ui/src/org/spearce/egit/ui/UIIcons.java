@@ -47,6 +47,9 @@ public class UIIcons {
 	/** Previous arrow icon */
 	public static final ImageDescriptor ELCL16_PREVIOUS;
 
+	/** Import Wizard banner */
+	public static final ImageDescriptor WIZBAN_IMPORT_REPO;
+
 	private static final URL base;
 
 	static {
@@ -59,6 +62,7 @@ public class UIIcons {
 		ELCL16_FIND = map("elcl16/find.gif");
 		ELCL16_NEXT = map("elcl16/next.gif");
 		ELCL16_PREVIOUS = map("elcl16/previous.gif");
+		WIZBAN_IMPORT_REPO = map("wizban/import.png");
 	}
 
 	private static ImageDescriptor map(final String icon) {
