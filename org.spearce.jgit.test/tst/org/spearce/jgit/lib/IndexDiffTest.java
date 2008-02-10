@@ -31,8 +31,12 @@ public class IndexDiffTest extends RepositoryTestCase {
 		index.add(trash, new File(trash, "dir/subfile"));
 		IndexDiff diff = new IndexDiff(tree, index);
 		diff.diff();
+		assertEquals(2, diff.getAdded().size());
 		assertTrue(diff.getAdded().contains("file1"));
 		assertTrue(diff.getAdded().contains("dir/subfile"));
+		assertEquals(0, diff.getChanged().size());
+		assertEquals(0, diff.getModified().size());
+		assertEquals(0, diff.getRemoved().size());
 	}
 
 	public void testRemoved() throws IOException {
@@ -44,11 +48,20 @@ public class IndexDiffTest extends RepositoryTestCase {
 		tree.addFile("file2");
 		tree.addFile("dir/file3");
 		assertEquals(2, tree.memberCount());
+		tree.findBlobMember("file2").setId(new ObjectId("30d67d4672d5c05833b7192cc77a79eaafb5c7ad"));
+		Tree tree2 = (Tree) tree.findTreeMember("dir");
+		tree2.findBlobMember("file3").setId(new ObjectId("873fb8d667d05436d728c52b1d7a09528e6eb59b"));
+		tree2.setId(new ObjectWriter(db).writeTree(tree2));
+		tree.setId(new ObjectWriter(db).writeTree(tree));
 
 		IndexDiff diff = new IndexDiff(tree, index);
 		diff.diff();
+		assertEquals(2, diff.getRemoved().size());
 		assertTrue(diff.getRemoved().contains("file2"));
 		assertTrue(diff.getRemoved().contains("dir/file3"));
+		assertEquals(0, diff.getChanged().size());
+		assertEquals(0, diff.getModified().size());
+		assertEquals(0, diff.getAdded().size());
 	}
 
 	public void testModified() throws IOException {
@@ -65,10 +78,19 @@ public class IndexDiffTest extends RepositoryTestCase {
 		tree.addFile("dir/file3").setId(new ObjectId("0123456789012345678901234567890123456789"));
 		assertEquals(2, tree.memberCount());
 
+		Tree tree2 = (Tree) tree.findTreeMember("dir");
+		tree2.setId(new ObjectWriter(db).writeTree(tree2));
+		tree.setId(new ObjectWriter(db).writeTree(tree));
 		IndexDiff diff = new IndexDiff(tree, index);
 		diff.diff();
+		assertEquals(2, diff.getChanged().size());
 		assertTrue(diff.getChanged().contains("file2"));
 		assertTrue(diff.getChanged().contains("dir/file3"));
+		assertEquals(1, diff.getModified().size());
 		assertTrue(diff.getModified().contains("dir/file3"));
+		assertEquals(0, diff.getAdded().size());
+		assertEquals(0, diff.getRemoved().size());
+		assertEquals(0, diff.getMissing().size());
 	}
+
 }
