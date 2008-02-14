@@ -91,7 +91,7 @@ three for packaging.
   in future versions.
 
 - Newer version of EGit/JGit may implement new functionality, remove
-  existing functios and change others without other notice than what
+  existing functions and change others without other notice than what
   is written in the commit log and source files themselves.
 
 
@@ -124,8 +124,8 @@ three for packaging.
 
     * Checkout in dirty working directory if trivial.
 
-    * Walk a the history from a given set of commits looking for commits
-      introducing changed in a path.
+    * Walk the history from a given set of commits looking for commits
+      introducing changes in files under a specified path.
 
   org.spearce.egit.core/
 
@@ -154,7 +154,7 @@ three for packaging.
       for existing repository directories.
 
     * Team actions: track (add), untrack (remove), disconnect, show
-      history, compare version, show history.
+      history, compare version.
 
     * Resource decorator shows file/directory state in the package
       explorer and other views.
@@ -166,7 +166,7 @@ three for packaging.
 
             == Missing Features                ==
 
-There are a lot of missig features. You need the real Git for this.
+There are a lot of missing features. You need the real Git for this.
 For some operations it may just be the preferred solution also. There
 are not just a command line, there is e.g. git-gui that makes committing
 partial files simple.
@@ -176,15 +176,15 @@ partial files simple.
 
 - Merging. 
 
-- Repacking from withine the plugin.
+- Repacking from within the plugin.
 
 - Generate a GIT format patch.
 
 - Apply a GIT format patch.
 
-- Documentation.  :-)
+- Documentation. :-)
 
-- Windows support is new and very little tested. Do not blame us if
+- Windows support is new and very ligthly tested. Do not blame us if
   it blows, but tell us about it and what you did. Double check
   everything.
 
@@ -195,7 +195,7 @@ partial files simple.
 - submodule support
   Submodules are not supported or even recognized.
 
-- The Eclipse plygin cannot handle files outside any Eclipse project. You
+- The Eclipse plugin cannot handle files outside any Eclipse project. You
   need commit changes to such files outside of Eclipse.
 
 - Speed in some areas
@@ -208,7 +208,7 @@ partial files simple.
   the plugin have been optimized but not all and not conclusively. In general
   however Java almost always needs more memory than an application written in 
   e.g. C. In particular there is an overhead from the rather large standard
-  libraries that a normal Java installations comes with. See the ACM report:
+  libraries that a normal Java installation comes with. See the ACM report:
 
 	Prechelt, L. 1999. Technical opinion: comparing Java vs. C/C++
         efficiency differences to interpersonal differences. Commun. ACM 42, 
@@ -222,7 +222,7 @@ partial files simple.
   The conclusion from having about 30 programmers write a program to the same
   specification using their own choice of language (from C,C++ and Java) is
   that the skills of the programmer is what determines the performance of the
-  code rather than choice  of programming language.
+  code rather than choice of programming language.
 
   JGit is much slower (measured up to eight times for some random cases), but
   then the real Git is ridicilously fast.
@@ -230,7 +230,7 @@ partial files simple.
 
             == Support                         ==
 
-  Post question, comments patches to the git@vger.kernel.org mailing list.
+  Post question, comments or patches to the git@vger.kernel.org mailing list.
 
 
             == Contributing                    ==
@@ -247,3 +247,4 @@ C based implementation can be obtained from the GIT websites:
   http://git.or.cz/
   http://www.kernel.org/pub/software/scm/git/
   http://www.kernel.org/pub/software/scm/git/docs/
+
