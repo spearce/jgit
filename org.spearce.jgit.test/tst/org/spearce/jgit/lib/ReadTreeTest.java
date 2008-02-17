@@ -477,7 +477,21 @@ public class ReadTreeTest extends RepositoryTestCase {
 		
 		assertNoConflicts();
 	}
-	
+
+	public void testCloseNameConflictsX0() throws IOException {
+		setupCase(mkmap("a/a", "a/a-c"), mkmap("a/a","a/a", "b.b/b.b","b.b/b.bs"), mkmap("a/a", "a/a-c") );
+		checkout();
+		go();
+		assertNoConflicts();
+	}
+
+	public void testCloseNameConflicts1() throws IOException {
+		setupCase(mkmap("a/a", "a/a-c"), mkmap("a/a","a/a", "a.a/a.a","a.a/a.a"), mkmap("a/a", "a/a-c") );
+		checkout();
+		go();
+		assertNoConflicts();
+	}
+
 	private void checkout() throws IOException {
 		readTree = new WorkDirCheckout(db, trash, head, index, merge);
 		readTree.checkout();
