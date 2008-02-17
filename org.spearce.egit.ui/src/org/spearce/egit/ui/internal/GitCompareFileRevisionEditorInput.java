@@ -122,35 +122,92 @@ public class GitCompareFileRevisionEditorInput extends CompareEditorInput {
 			while (li<lc.length && ri<rc.length) {
 				ITypedElement ln = lc[li];
 				ITypedElement rn = rc[ri];
+				int compareTo = ln.getName().compareTo(rn.getName());
 				// TODO: Git ordering!
-				if (ln.getName().compareTo(rn.getName()) < 0) {
-					diffNode.add(new DiffNode(Differencer.ADDITION,null, ln, null));
-					++li;
-				}
-				if (ln.getName().compareTo(rn.getName()) > 0) {
-					diffNode.add(new DiffNode(Differencer.DELETION,null, null, rn));
-					++ri;
-				}
-				if (ln.getName().compareTo(rn.getName()) == 0) {
+				if (compareTo == 0) {
 					if (!ln.equals(rn))
 						diffNode.add(compare(ln,rn));
 					++li;
+					++ri;
+				} else if (compareTo < 0) {
+					DiffNode childDiffNode = new DiffNode(Differencer.ADDITION, null, ln, null);
+					diffNode.add(childDiffNode);
+					if (ln.getType().equals(ITypedElement.FOLDER_TYPE)) {
+						ITypedElement[] children = (ITypedElement[])((IStructureComparator)ln).getChildren();
+						if(children != null && children.length > 0) {
+							for (ITypedElement child : children) {
+								childDiffNode.add(addDirectoryFiles(child, Differencer.ADDITION));
+							}
+						}
+					}
+					++li;
+				} else {
+					DiffNode childDiffNode = new DiffNode(Differencer.DELETION, null, null, rn);
+					diffNode.add(childDiffNode);
+					if (rn.getType().equals(ITypedElement.FOLDER_TYPE)) {
+						ITypedElement[] children = (ITypedElement[])((IStructureComparator)rn).getChildren();
+						if(children != null && children.length > 0) {
+							for (ITypedElement child : children) {
+								childDiffNode.add(addDirectoryFiles(child, Differencer.DELETION));
+							}
+						}
+					}
 					++ri;
 				}
 			}
 			while (li<lc.length) {
 				ITypedElement ln = lc[li];
-				diffNode.add(new DiffNode(Differencer.ADDITION,null, ln, null));
+				DiffNode childDiffNode = new DiffNode(Differencer.ADDITION, null, ln, null);
+				diffNode.add(childDiffNode);
+				if (ln.getType().equals(ITypedElement.FOLDER_TYPE)) {
+					ITypedElement[] children = (ITypedElement[])((IStructureComparator)ln).getChildren();
+					if(children != null && children.length > 0) {
+						for (ITypedElement child : children) {
+							childDiffNode.add(addDirectoryFiles(child, Differencer.ADDITION));
+						}
+					}
+				}
 				++li;
 			}
 			while (ri<rc.length) {
 				ITypedElement rn = rc[ri];
-				diffNode.add(new DiffNode(Differencer.ADDITION,null, null, rn));
+				DiffNode childDiffNode = new DiffNode(Differencer.DELETION, null, null, rn);
+				diffNode.add(childDiffNode);
+				if (rn.getType().equals(ITypedElement.FOLDER_TYPE)) {
+					ITypedElement[] children = (ITypedElement[])((IStructureComparator)rn).getChildren();
+					if(children != null && children.length > 0) {
+						for (ITypedElement child : children) {
+							childDiffNode.add(addDirectoryFiles(child, Differencer.DELETION));
+						}
+					}
+				}
 				++ri;
 			}
 			return diffNode;
 		} else {
 			return new DiffNode(left, right);
+		}
+	}
+
+	private DiffNode addDirectoryFiles(ITypedElement elem, int diffType) {
+		ITypedElement l = null;
+		ITypedElement r = null;
+		if (diffType == Differencer.DELETION) {
+			r = elem;
+		} else {
+			l = elem;
+		}
+
+		if (elem.getType().equals(ITypedElement.FOLDER_TYPE)) {
+			DiffNode diffNode = null;
+			diffNode = new DiffNode(null,Differencer.CHANGE,null,l,r);
+			ITypedElement[] children = (ITypedElement[])((IStructureComparator)elem).getChildren();
+			for (ITypedElement child : children) {
+				diffNode.add(addDirectoryFiles(child, diffType));
+			}
+			return diffNode;
+		} else {
+			return new DiffNode(diffType, null, l, r);
 		}
 	}
 
