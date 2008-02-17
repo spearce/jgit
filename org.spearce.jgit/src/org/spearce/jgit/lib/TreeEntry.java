@@ -19,6 +19,8 @@ package org.spearce.jgit.lib;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
+import org.spearce.jgit.lib.GitIndex.Entry;
+
 /**
  * This class represents an entry in a tree, like a blob or another tree.
  */
@@ -189,6 +191,14 @@ public abstract class TreeEntry implements Comparable {
 		return r.toString();
 	}
 
+	/**
+	 * @return repository relative name of the entry
+	 * FIXME better encoding
+	 */
+	public byte[] getFullNameUTF8() {
+		return getFullName().getBytes();
+	}
+
 	public int compareTo(final Object o) {
 		if (this == o)
 			return 0;
@@ -208,6 +218,19 @@ public abstract class TreeEntry implements Comparable {
 			return '\0';
 		else
 			return '/';
+	}
+
+	/**
+	 * Helper for accessing tree/blob/index methods.
+	 *
+	 * @param i
+	 * @return '/' for Tre entries and NUL for non-treeish objects
+	 */
+	final public static int lastChar(Entry i) {
+		// FIXME, gitlink etc. Currently Trees cannot appear in the
+		// index so '\0' is always returned, except maybe for submodules
+		// which we do not support yet.
+		return FileMode.TREE.equals(i.getModeBits()) ? '/' : '\0';
 	}
 
 	/**
