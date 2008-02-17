@@ -598,6 +598,13 @@ public class GitIndex {
 		}
 
 		/**
+		 * @return path name for this entry as byte array, hopefully UTF-8 encoded
+		 */
+		public byte[] getNameUTF8() {
+			return name;
+		}
+
+		/**
 		 * @return SHA-1 of the entry managed by this index
 		 */
 		public ObjectId getObjectId() {
@@ -654,6 +661,14 @@ public class GitIndex {
 				flags |= 0x4000;
 			else
 				flags &= ~0x4000;
+		}
+
+		/**
+		 * Return raw file mode bits. See {@link FileMode}
+		 * @return file mode bits
+		 */
+		public int getModeBits() {
+			return mode;
 		}
 	}
 
