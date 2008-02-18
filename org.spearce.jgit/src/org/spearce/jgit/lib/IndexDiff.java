@@ -69,7 +69,8 @@ public class IndexDiff {
 					added.add(indexEntry.getName());
 					anyChanges = true;
 				} else if (indexEntry == null) {
-					removed.add(treeEntry.getFullName());
+					if (!(treeEntry instanceof Tree))
+						removed.add(treeEntry.getFullName());
 					anyChanges = true;
 				} else {
 					if (!treeEntry.getId().equals(indexEntry.getObjectId())) {
