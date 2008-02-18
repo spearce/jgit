@@ -288,38 +288,11 @@ public class IndexTreeWalker {
 	}
 
 	static int compare(TreeEntry t, Entry i) {
-		if (t.getFullName().equals(i.getName())) {
-			if (t instanceof Tree)
-				return 1;
-			return 0;
-		}
-		return t.getFullName().compareTo(i.getName());
+		return Tree.compareNames(t.getFullNameUTF8(), i.getNameUTF8(), TreeEntry.lastChar(t), TreeEntry.lastChar(i)); 
 	}
 	
 	static int compare(TreeEntry t1, TreeEntry t2) {
-		if (t1.getName().equals(t2.getName())) {
-			if (t1 instanceof Tree && t2 instanceof Tree)
-				return 0;
-			if (t1 instanceof Tree)
-				return 1;
-			if (t2 instanceof Tree)
-				return -1;
-			return 0;
-		}
-		return t1.getName().compareTo(t2.getName());
+		return Tree.compareNames(t1.getNameUTF8(), t2.getNameUTF8(), TreeEntry.lastChar(t1), TreeEntry.lastChar(t2)); 
 	}
 	
-	static int compare(byte[] name1, byte[] name2) {
-		for (int i = 0; i < name1.length && i < name2.length; i++) {
-			if (name1[i] < name2[i])
-				return -1;
-			if (name1[i] > name2[i])
-				return 1;
-		}
-		if (name1.length < name2.length)
-			return -1;
-		if (name2.length < name1.length)
-			return 1;
-		return 0;
-	}
 }
