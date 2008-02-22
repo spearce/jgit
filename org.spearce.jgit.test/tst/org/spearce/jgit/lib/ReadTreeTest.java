@@ -273,50 +273,55 @@ public class ReadTreeTest extends RepositoryTestCase {
 	 *19   D	    0       F											  Update
 	 */
 	
-	public void testDirectoryFileConflicts() throws Exception {
+	public void testDirectoryFileConflicts_1() throws Exception {
 		// 1
 		doit(mk("DF/DF"), mk("DF"), mk("DF/DF"));
 		assertNoConflicts();
 		assertUpdated("DF");
 		assertRemoved("DF/DF");
-		
+	}
+
+	public void testDirectoryFileConflicts_2() throws Exception {
 		// 2
 		setupCase(mk("DF/DF"), mk("DF"), mk("DF/DF"));
 		writeTrashFile("DF/DF", "different");
 		go();
 		assertConflict("DF/DF");
 		
+	}
+
+	public void testDirectoryFileConflicts_3() throws Exception {
 		// 3 - the first to break!
-		tearDown();
-		setUp();
 		doit(mk("DF/DF"), mk("DF/DF"), mk("DF"));
 		assertUpdated("DF/DF");
 		assertRemoved("DF");
-		
+	}
+
+	public void testDirectoryFileConflicts_4() throws Exception {
 		// 4 (basically same as 3, just with H and M different)
-		tearDown();
-		setUp();
 		doit(mk("DF/DF"), mkmap("DF/DF", "foo"), mk("DF"));
 		assertUpdated("DF/DF");
 		assertRemoved("DF");
 		
+	}
+
+	public void testDirectoryFileConflicts_5() throws Exception {
 		// 5
-		tearDown();
-		setUp();
 		doit(mk("DF/DF"), mk("DF"), mk("DF"));
 		assertRemoved("DF/DF");
 		
+	}
+
+	public void testDirectoryFileConflicts_6() throws Exception {
 		// 6
-		tearDown();
-		setUp();
 		setupCase(mk("DF/DF"), mk("DF"), mk("DF"));
 		writeTrashFile("DF", "different");
 		go();
 		assertRemoved("DF/DF");
-		
+	}
+
+	public void testDirectoryFileConflicts_7() throws Exception {
 		// 7
-		tearDown();
-		setUp();
 		doit(mk("DF"), mk("DF"), mk("DF/DF"));
 		assertUpdated("DF");
 		assertRemoved("DF/DF");
@@ -334,29 +339,40 @@ public class ReadTreeTest extends RepositoryTestCase {
 		assertConflict("DF/DF/DF/DF/DF");
 		assertUpdated("DF/DF");
 
+	}
+
+	// 8 ?
+
+	public void testDirectoryFileConflicts_9() throws Exception {
 		// 9
-		tearDown();
-		setUp();
 		doit(mk("DF"), mkmap("DF", "QP"), mk("DF/DF"));
 		assertRemoved("DF/DF");
 		assertUpdated("DF");
-		
+	}
+
+	public void testDirectoryFileConflicts_10() throws Exception {
 		// 10
 		cleanUpDF();
 		doit(mk("DF"), mk("DF/DF"), mk("DF/DF"));
 		assertNoConflicts();
 		
+	}
+
+	public void testDirectoryFileConflicts_11() throws Exception {
 		// 11
-		cleanUpDF();
 		doit(mk("DF"), mk("DF/DF"), mkmap("DF/DF", "asdf"));
 		assertConflict("DF/DF");
-		
+	}
+
+	public void testDirectoryFileConflicts_12() throws Exception {
 		// 12
 		cleanUpDF();
 		doit(mk("DF"), mk("DF/DF"), mk("DF"));
 		assertRemoved("DF");
 		assertUpdated("DF/DF");
-		
+	}
+
+	public void testDirectoryFileConflicts_13() throws Exception {
 		// 13
 		cleanUpDF();
 		setupCase(mk("DF"), mk("DF/DF"), mk("DF"));
@@ -364,29 +380,39 @@ public class ReadTreeTest extends RepositoryTestCase {
 		go();
 		assertConflict("DF");
 		assertUpdated("DF/DF");
-		
+	}
+
+	public void testDirectoryFileConflicts_14() throws Exception {
 		// 14
 		cleanUpDF();
 		doit(mk("DF"), mk("DF/DF"), mkmap("DF", "Foo"));
 		assertConflict("DF");
 		assertUpdated("DF/DF");
-		
+	}
+
+	public void testDirectoryFileConflicts_15() throws Exception {
 		// 15
 		doit(mkmap(), mk("DF/DF"), mk("DF"));
 		assertRemoved("DF");
 		assertUpdated("DF/DF");
-		
+	}
+
+	public void testDirectoryFileConflicts_15b() throws Exception {
 		// 15, take 2, just to check multi-leveled
 		doit(mkmap(), mk("DF/DF/DF/DF"), mk("DF"));
 		assertRemoved("DF");
 		assertUpdated("DF/DF/DF/DF");
-		
+	}
+
+	public void testDirectoryFileConflicts_16() throws Exception {
 		// 16
 		cleanUpDF();
 		doit(mkmap(), mk("DF"), mk("DF/DF/DF"));
 		assertRemoved("DF/DF/DF");
 		assertUpdated("DF");
-		
+	}
+
+	public void testDirectoryFileConflicts_17() throws Exception {
 		// 17
 		cleanUpDF();
 		setupCase(mkmap(), mk("DF"), mk("DF/DF/DF"));
@@ -394,13 +420,17 @@ public class ReadTreeTest extends RepositoryTestCase {
 		go();
 		assertConflict("DF/DF/DF");
 		assertUpdated("DF");
-		
+	}
+
+	public void testDirectoryFileConflicts_18() throws Exception {
 		// 18
 		cleanUpDF();
 		doit(mk("DF/DF"), mk("DF/DF/DF/DF"), null);
 		assertRemoved("DF/DF");
 		assertUpdated("DF/DF/DF/DF");
-		
+	}
+
+	public void testDirectoryFileConflicts_19() throws Exception {
 		// 19
 		cleanUpDF();
 		doit(mk("DF/DF/DF/DF"), mk("DF/DF/DF"), null);
