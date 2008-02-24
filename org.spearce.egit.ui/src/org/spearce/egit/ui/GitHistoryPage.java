@@ -1207,8 +1207,12 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 	}
 
 	public void refresh() {
-		// TODO Auto-generated method stub
-
+		if (historyRefreshJob.cancel()) {
+			System.out.println("rescheduling");
+			historyRefreshJob.schedule();
+		} else {
+			System.out.println("failed to cancel?");
+		}
 	}
 
 	public Object getAdapter(Class adapter) {
