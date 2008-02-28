@@ -1077,4 +1077,17 @@ public class Repository {
 			return RepositoryState.BISECTING;
 		return RepositoryState.SAFE;
 	}
+
+	/**
+	 * String work dir and return normalized repository path
+	 *
+	 * @param wd Work dir
+	 * @param f File whose path shall be stripp off it's workdir
+	 * @return normalized repository relative path
+	 */
+	public static String stripWorkDir(File wd, File f) {
+		String relName = f.getPath().substring(wd.getPath().length() + 1);
+		relName = relName.replace(File.separatorChar, '/');
+		return relName;
+	}
 }

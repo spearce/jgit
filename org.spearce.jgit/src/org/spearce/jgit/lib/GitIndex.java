@@ -305,8 +305,7 @@ public class GitIndex {
 	static byte[] makeKey(File wd, File f) {
 		if (!f.getPath().startsWith(wd.getPath()))
 			throw new Error("Path is not in working dir");
-		String relName = f.getPath().substring(wd.getPath().length() + 1)
-				.replace(File.separatorChar, '/');
+		String relName = Repository.stripWorkDir(wd, f);
 		return relName.getBytes();
 	}
 
