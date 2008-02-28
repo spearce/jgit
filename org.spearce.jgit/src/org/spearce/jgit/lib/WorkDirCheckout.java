@@ -209,13 +209,9 @@ public class WorkDirCheckout {
 			if (f.isDirectory())
 				listFiles(f, list);
 			else {
-				list.add(stripWorkdirFront(f));
+				list.add(Repository.stripWorkDir(root, f));
 			}
 		}
-	}
-
-	private String stripWorkdirFront(File f) {
-		return f.getPath().substring(root.getPath().length() + 1);
 	}
 
 	/**
@@ -371,7 +367,7 @@ public class WorkDirCheckout {
 				if (parent.isDirectory())
 					break;
 				if (parent.isFile()) {
-					conflicts.add(stripWorkdirFront(parent));
+					conflicts.add(Repository.stripWorkDir(root, parent));
 					break;
 				}
 				parent = parent.getParentFile();
