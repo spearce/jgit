@@ -17,12 +17,56 @@
 package org.spearce.jgit.lib;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class T0002_Tree extends RepositoryTestCase {
 	private static final ObjectId SOME_FAKE_ID = new ObjectId(
 			"0123456789abcdef0123456789abcdef01234567");
+
+	private int compareNamesUsingSpecialCompare(String a,String b) throws UnsupportedEncodingException {
+		char lasta = '\0';
+		byte[] abytes;
+		if (a.length() > 0 && a.charAt(a.length()-1) == '/') {
+			lasta = '/';
+			a = a.substring(0, a.length() - 1);
+		}
+		abytes = a.getBytes("ISO-8859-1");
+		char lastb = '\0';
+		byte[] bbytes;
+		if (b.length() > 0 && b.charAt(b.length()-1) == '/') {
+			lastb = '/';
+			b = b.substring(0, b.length() - 1);
+		}
+		bbytes = b.getBytes("ISO-8859-1");
+		return Tree.compareNames(abytes, bbytes, lasta, lastb);
+	}
+
+	public void test000_sort_01() throws UnsupportedEncodingException {
+		assertEquals(0, compareNamesUsingSpecialCompare("a","a"));
+	}
+	public void test000_sort_02() throws UnsupportedEncodingException {
+		assertEquals(-1, compareNamesUsingSpecialCompare("a","b"));
+		assertEquals(1, compareNamesUsingSpecialCompare("b","a"));
+	}
+	public void test000_sort_03() throws UnsupportedEncodingException {
+		assertEquals(1, compareNamesUsingSpecialCompare("a:","a"));
+		assertEquals(1, compareNamesUsingSpecialCompare("a/","a"));
+		assertEquals(-1, compareNamesUsingSpecialCompare("a","a/"));
+		assertEquals(-1, compareNamesUsingSpecialCompare("a","a:"));
+		assertEquals(1, compareNamesUsingSpecialCompare("a:","a/"));
+		assertEquals(-1, compareNamesUsingSpecialCompare("a/","a:"));
+	}
+	public void test000_sort_04() throws UnsupportedEncodingException {
+		assertEquals(-1, compareNamesUsingSpecialCompare("a.a","a/a"));
+		assertEquals(1, compareNamesUsingSpecialCompare("a/a","a.a"));
+	}
+	public void test000_sort_05() throws UnsupportedEncodingException {
+		assertEquals(-1, compareNamesUsingSpecialCompare("a.","a/"));
+		assertEquals(1, compareNamesUsingSpecialCompare("a/","a."));
+
+	}
 
 	public void test001_createEmpty() throws IOException {
 		final Tree t = new Tree(db);

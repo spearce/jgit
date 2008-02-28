@@ -29,7 +29,7 @@ import org.spearce.jgit.lib.GitIndex.Entry;
  *
  */
 public class AbstractIndexTreeVisitor implements IndexTreeVisitor {
-	public void finishVisitTree(Tree tree, Tree auxTree, int i, String curDir)
+	public void finishVisitTree(Tree tree, Tree auxTree, String curDir)
 			throws IOException {
 		// Empty
 	}

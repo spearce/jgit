@@ -58,11 +58,10 @@ public interface IndexTreeVisitor {
 	 *
 	 * @param tree
 	 * @param auxTree
-	 * @param i
 	 * @param curDir
 	 * @throws IOException
 	 */
-	public void finishVisitTree(Tree tree, Tree auxTree, int i, String curDir) throws IOException;
+	public void finishVisitTree(Tree tree, Tree auxTree, String curDir) throws IOException;
 
 	/**
 	 * Invoked after handling all child nodes of a tree, during two way merge.

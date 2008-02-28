@@ -82,189 +82,92 @@ public class IndexTreeWalker {
 	 * @throws IOException
 	 */
 	public void walk() throws IOException {
-		walk(mainTree, newTree, "/");
+		walk(mainTree, newTree, "");
 	}
 
 	private void walk(Tree tree, Tree auxTree, String curDir) throws IOException {
-		TreeEntry[] treeMembers = tree == null ? new TreeEntry[0] : tree.members();
-		TreeEntry[] auxTreeMembers = auxTree == null ? new TreeEntry[0] : auxTree.members();
-		int treeCounter = 0;
-		int auxTreeCounter = 0;
-		
+		TreeIterator mi = new TreeIterator(tree, TreeIterator.Order.POSTORDER);
+		TreeIterator ai = new TreeIterator(auxTree, TreeIterator.Order.POSTORDER);
+		TreeEntry m = mi.hasNext() ? mi.next() : null;
+		TreeEntry a = ai.hasNext() ? ai.next() : null;
 		int curIndexPos = indexCounter;
-		
-		while (treeCounter < treeMembers.length || 
-				indexCounter < indexMembers.length || 
-				auxTreeCounter < auxTreeMembers.length) {
-			TreeEntry h = treeCounter < treeMembers.length ? treeMembers[treeCounter] : null;
-			TreeEntry m = auxTreeCounter < auxTreeMembers.length ? auxTreeMembers[auxTreeCounter] : null;
-			Entry i = indexCounter < indexMembers.length ? indexMembers[indexCounter] : null;
-
-			String indexName = i == null ? null : i.getName();
-			String treeName = h == null ? null : h.getFullName();
-			String auxTreeName = m == null ? null : m.getFullName();
+		Entry i = indexCounter < indexMembers.length ? indexMembers[indexCounter++] : null;
+		while (m != null || a != null || i != null) {
+			int cmpma = compare(m, a);
+			int cmpmi = compare(m, i);
+			int cmpai = compare(a, i);
 			
-			if (treeName != null && indexName != null && auxTreeName != null) { 
-				if (eq(h, i) && eq(m, i)) {
-					// H == I == M
-					visitor.visitEntry(h, m, i, new File(root, treeName));
-					
-					treeCounter++;
-					indexCounter++;
-					auxTreeCounter++;
-				} else if (eq(h, i) && lt(h, m)) {
-					// H == I, H < M
-					visitor.visitEntry(h, null, i, new File(root, treeName));
-					
-					treeCounter++;
-					indexCounter++;
-				} else if (eq(h, m) && lt(h, i)) {
-					// H == M, H < I
-					if (h instanceof Tree) {
-						walk((Tree)h, (Tree)m, "/" + treeName);
-					} else {
-						visitor.visitEntry(h, m, null, new File(root, treeName));
-					}
-					
-					treeCounter++;
-					auxTreeCounter++;
-					
-					
-				} else if (eq(m, i) && lt(i, h)) {
-					// I == M, I < H
-					visitor.visitEntry(null, m, i, new File(root, indexName));
-					
-					indexCounter++;
-					auxTreeCounter++;
-				} else if (lt(h, i) && lt(h, m)) {
-					// H < I, H < M
-					if (h instanceof Tree) {
-						walk((Tree) h, null, "/" + treeName);
-					} else {
-						visitor.visitEntry(h, null, null, new File(root, treeName));
-					}
-					
-					treeCounter++;
-				} else if (lt(m, i) && lt(m, h)) {
-					// M < I, M < H
-					if (m instanceof Tree) {
-						walk(null, (Tree) m, "/" + auxTreeName);
-					} else {
-						visitor.visitEntry(null, m, null, new File(root, auxTreeName));
-					}
-					
-					auxTreeCounter++;
-				} else { // index entry is first
-					// I < H, I < M
-					visitor.visitEntry(null, null, i, new File(root, indexName));
-					
-					indexCounter++;
-				}
-			} else if (treeName != null && indexName != null) {
-				if (eq(h, i)) {
-					if (threeTrees)
-						visitor.visitEntry(h, null, i, new File(root, indexName));
-					else visitor.visitEntry(h, i, new File(root, indexName));
-					
-					treeCounter++;
-					indexCounter++;
-				} else if (lt(h, i)) {
-					if (h instanceof Tree) 
-						walk((Tree) h, null, "/" + treeName);
-					else {
-						if (threeTrees) {
-							visitor.visitEntry(h, null, null, new File(root, treeName));
-						} else visitor.visitEntry(h, null, new File(root, treeName));
-					}
-					
-					treeCounter++;
-				} else { // lt(i, h)
-					if (threeTrees) {
-						visitor.visitEntry(null, null, i, new File(root, indexName));
-					} else visitor.visitEntry(null, i, new File(root, indexName));
-					
-					indexCounter++;
-				}
-			} else if (treeName != null && auxTreeName != null) {
-				if (eq(h, m)) {
-					if (h instanceof Tree) {
-						walk((Tree) h, (Tree) m, "/" + treeName);
-					} else {
-						visitor.visitEntry(h, m, null, new File(root, treeName));
-					}
-					
-					treeCounter++;
-					auxTreeCounter++;
-				} else if (lt(h, m)) {
-					if (h instanceof Tree) {
-						walk((Tree) h, null, "/" + treeName);
-					} else {
-						visitor.visitEntry(h, null, null, new File(root, treeName));
-					}
-					
-					treeCounter++;
-				} else { // lt(m, h)
-					if (m instanceof Tree) {
-						walk(null, (Tree) m, "/" + auxTreeName);
-					} else {
-						visitor.visitEntry(null, m, null, new File("/" + auxTreeName));
-					}
-						
-					auxTreeCounter++;
-				}
-				
-			} else if (indexName != null && auxTreeName != null) {
-				if (eq(m, i)) {
-					visitor.visitEntry(null, m, i, new File(root, indexName));
-					
-					auxTreeCounter++;
-					indexCounter++;
-				} else if (lt(m, i)) {
-					if (m instanceof Tree) 
-						walk(null, (Tree) m, "/" + auxTreeName);
-					else {
-						visitor.visitEntry(null, m, null, new File(root, auxTreeName));
-					}
-					
-					auxTreeCounter++;
-				} else { // lt(i, m)
-					visitor.visitEntry(null, null, i, new File(root, indexName));
-					
-					indexCounter++;
-				}
-			} else if (treeName != null) {
-				if (h instanceof Tree) {
-					walk((Tree) h, null, "/" + treeName);
-				} else if (threeTrees)
-					visitor.visitEntry(h, null, null, new File(root, treeName));
-				else visitor.visitEntry(h, null, new File(root, treeName));
-				
-				treeCounter++;
-			} else if (auxTreeName != null) {
-				if (m instanceof Tree) {
-					walk(null, (Tree)m, "/" + auxTreeName);
-				} else visitor.visitEntry(null, m, null, new File(root, auxTreeName));
-				
-				auxTreeCounter++;
-			} else if (indexName != null) {
-				// need to check if we're done with this tree
-				String curDirNoSlash = curDir.substring(1);
-				if (!indexName.startsWith(curDirNoSlash + "/") && curDirNoSlash.length() != 0)
-					break;
-				
-				if (threeTrees)
-					visitor.visitEntry(null, null, i, new File(root, indexName));
-				else visitor.visitEntry(null, i, new File(root, indexName));
-				indexCounter++;
-			}
+			TreeEntry pm = cmpma <= 0 && cmpmi <= 0 ? m : null;
+			TreeEntry pa = cmpma >= 0 && cmpai <= 0 ? a : null;
+			Entry     pi = cmpmi >= 0 && cmpai >= 0 ? i : null;
+
+			if (pi != null)
+				visitEntry(pm, pa, pi, root);
+			else
+				finishVisitTree(pm, pa, curIndexPos, root);
+
+			if (pm != null) m = mi.hasNext() ? mi.next() : null;
+			if (pa != null) a = ai.hasNext() ? ai.next() : null;
+			if (pi != null) i = indexCounter < indexMembers.length ? indexMembers[indexCounter++] : null;
 		}
-		
-		if (threeTrees) {
-			visitor.finishVisitTree(tree, auxTree, indexCounter - curIndexPos, 
-					curDir.substring(1));
-		} else {
-			visitor.finishVisitTree(tree, indexCounter - curIndexPos, curDir);
+	}
+
+	private void visitEntry(TreeEntry t1, TreeEntry t2,
+			Entry i, File root) throws IOException {
+
+		assert t1 != null || t2 != null || i != null : "Needs at least one entry";
+		assert root != null : "Needs workdir";
+
+		if (t1 != null && t1.getParent() == null)
+			t1 = null;
+		if (t2 != null && t2.getParent() == null)
+			t2 = null;
+
+		File f = null;
+		if (i != null)
+			f = new File(root, i.getName());
+		else if (t1 != null)
+			f = new File(root, t1.getFullName());
+		else if (t2 != null)
+			f = new File(root, t2.getFullName());
+
+		if (t1 != null || t2 != null || i != null)
+			if (threeTrees)
+				visitor.visitEntry(t1, t2, i, f);
+			else
+				visitor.visitEntry(t1, i, f);
+	}
+
+	private void finishVisitTree(TreeEntry t1, TreeEntry t2, int curIndexPos, File root)
+			throws IOException {
+
+		assert t1 != null || t2 != null : "Needs at least one entry";
+		assert root != null : "Needs workdir";
+
+		if (t1 != null && t1.getParent() == null)
+			t1 = null;
+		if (t2 != null && t2.getParent() == null)
+			t2 = null;
+
+		File f = null;
+		String c= null;
+		if (t1 != null) {
+			c = t1.getFullName();
+			f = new File(root, c);
+		} else if (t2 != null) {
+			c = t2.getFullName();
+			f = new File(root, c);
 		}
+		if (t1 instanceof Tree || t2 instanceof Tree)
+			if (threeTrees)
+				visitor.finishVisitTree((Tree)t1, (Tree)t2, c);
+			else
+				visitor.finishVisitTree((Tree)t1, indexCounter - curIndexPos, c);
+		else if (t1 != null || t2 != null)
+			if (threeTrees)
+				visitor.visitEntry(t1, t2, null, f);
+			else
+				visitor.visitEntry(t1, null, f);
 	}
 
 	static boolean lt(TreeEntry h, Entry i) {
@@ -288,38 +191,30 @@ public class IndexTreeWalker {
 	}
 
 	static int compare(TreeEntry t, Entry i) {
-		if (t.getFullName().equals(i.getName())) {
-			if (t instanceof Tree)
-				return 1;
+		if (t == null && i == null)
 			return 0;
-		}
-		return t.getFullName().compareTo(i.getName());
+		if (t == null)
+			return 1;
+		if (i == null)
+			return -1;
+		return Tree.compareNames(t.getFullNameUTF8(), i.getNameUTF8(), TreeEntry.lastChar(t), TreeEntry.lastChar(i)); 
 	}
 	
 	static int compare(TreeEntry t1, TreeEntry t2) {
-		if (t1.getName().equals(t2.getName())) {
-			if (t1 instanceof Tree && t2 instanceof Tree)
-				return 0;
-			if (t1 instanceof Tree)
-				return 1;
-			if (t2 instanceof Tree)
-				return -1;
+		if (t1 != null && t1.getParent() == null && t2 != null && t2.getParent() == null)
 			return 0;
-		}
-		return t1.getName().compareTo(t2.getName());
+		if (t1 != null && t1.getParent() == null)
+			return -1;
+		if (t2 != null && t2.getParent() == null)
+			return 1;
+
+		if (t1 == null && t2 == null)
+			return 0;
+		if (t1 == null)
+			return 1;
+		if (t2 == null)
+			return -1;
+		return Tree.compareNames(t1.getFullNameUTF8(), t2.getFullNameUTF8(), TreeEntry.lastChar(t1), TreeEntry.lastChar(t2));
 	}
 	
-	static int compare(byte[] name1, byte[] name2) {
-		for (int i = 0; i < name1.length && i < name2.length; i++) {
-			if (name1[i] < name2[i])
-				return -1;
-			if (name1[i] > name2[i])
-				return 1;
-		}
-		if (name1.length < name2.length)
-			return -1;
-		if (name2.length < name1.length)
-			return 1;
-		return 0;
-	}
 }

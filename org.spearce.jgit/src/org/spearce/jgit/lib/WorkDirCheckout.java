@@ -243,11 +243,10 @@ public class WorkDirCheckout {
 			}
 	
 			@Override
-			public void finishVisitTree(Tree tree, Tree auxTree, int i,
-					String curDir) throws IOException {
+			public void finishVisitTree(Tree tree, Tree auxTree, String curDir) throws IOException {
 				if (curDir.length() == 0) return;
 				
-				if (auxTree != null && i == 0) {
+				if (auxTree != null) {
 					if (index.getEntry(curDir) != null)
 						removed.add(curDir);
 				} 
