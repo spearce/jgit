@@ -35,6 +35,7 @@ import org.spearce.jgit.lib.BinaryDelta;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdMap;
+import org.spearce.jgit.lib.Repository;
 
 /** Indexes Git pack files for local use. */
 public class IndexPack {

@@ -122,7 +122,14 @@ git checkout master
 
 git_merge c d e
 
-git repack -a -d
+git repack -d
+
+git tag A a
+git tag -a -m "An annotated tag" B a^
+
+git repack -d
+
 git pack-refs --all
+
 
 qgit --all master
