@@ -20,23 +20,19 @@ import java.io.File;
 import java.io.IOException;
 import java.util.zip.DataFormatException;
 
-import org.spearce.jgit.errors.CorruptObjectException;
-
 /**
  * A Git version 2 pack file representation. A pack file contains
  * Git objects in delta packed format yielding high compression of
  * lots of object where some objects are similar.
  */
 public class PackFile {
-	private static final int IDX_HDR_LEN = 256 * 4;
-
 	private static final byte[] SIGNATURE = { 'P', 'A', 'C', 'K' };
 
 	private final Repository repo;
 
 	private final WindowedFile pack;
 
-	private byte[][] idxdata;
+	private final PackIndex idx;
 
 	private long objectCnt;
 
@@ -58,20 +54,9 @@ public class PackFile {
 
 			final String name = packFile.getName();
 			final int dot = name.lastIndexOf('.');
-			final File idxFile = new File(packFile.getParentFile(), name
+			idx = new PackIndex(new File(packFile.getParentFile(), name
 					.substring(0, dot)
-					+ ".idx");
-			// FIXME window size and mmap type should be configurable
-			final WindowedFile idx = new WindowedFile(new WindowCache(8*1024*1024,1), idxFile, 8*1024*1024, true);
-			try {
-				readIndexHeader(idx);
-			} finally {
-				try {
-					idx.close();
-				} catch (IOException err2) {
-					// ignore
-				}
-			}
+					+ ".idx"), objectCnt);
 		} catch (IOException ioe) {
 			try {
 				pack.close();
@@ -98,7 +83,7 @@ public class PackFile {
 	 * @return true if the object is in this pack; false otherwise.
 	 */
 	public boolean hasObject(final ObjectId id) {
-		return findOffset(id) != -1;
+		return idx.findOffset(id) != -1;
 	}
 
 	/**
@@ -122,7 +107,7 @@ public class PackFile {
 	 */
 	public PackedObjectLoader get(final ObjectId id)
 			throws IOException {
-		final long offset = findOffset(id);
+		final long offset = idx.findOffset(id);
 		if (offset == -1)
 			return null;
 		final PackedObjectLoader objReader = reader(offset);
@@ -165,31 +150,6 @@ public class PackFile {
 		position += 4;
 
 		objectCnt = pack.readUInt32(position, intbuf);
-	}
-
-	private void readIndexHeader(final WindowedFile idx) throws CorruptObjectException, IOException {
-		if (idx.length() != (IDX_HDR_LEN + (24 * objectCnt) + (2 * Constants.OBJECT_ID_LENGTH)))
-			throw new CorruptObjectException("Invalid pack index"
-					+ ", incorrect file length: " + idx.getName());
-
-		final long[] idxHeader = new long[256]; // really unsigned 32-bit...
-		final byte[] intbuf = new byte[4];
-		for (int k = 0; k < idxHeader.length; k++)
-			idxHeader[k] = idx.readUInt32(k * 4, intbuf);
-		idxdata = new byte[idxHeader.length][];
-		for (int k = 0; k < idxHeader.length; k++) {
-			int n;
-			if (k == 0) {
-				n = (int)(idxHeader[k]);
-			} else {
-				n = (int)(idxHeader[k]-idxHeader[k-1]);
-			}
-			if (n > 0) {
-				idxdata[k] = new byte[n * (Constants.OBJECT_ID_LENGTH + 4)];
-				int off = (int) ((k == 0) ? 0 : idxHeader[k-1] * (Constants.OBJECT_ID_LENGTH + 4));
-				idx.read(off + IDX_HDR_LEN, idxdata[k]);
-			}
-		}
 	}
 
 	private PackedObjectLoader reader(final long objOffset)
@@ -245,30 +205,5 @@ public class PackFile {
 	private final WholePackedObjectLoader whole(final String type,
 			final long pos, final long size) {
 		return new WholePackedObjectLoader(this, pos, type, (int) size);
-	}
-
-	private long findOffset(final ObjectId objId) {
-		final int levelOne = objId.getFirstByte();
-		byte[] data = idxdata[levelOne];
-		if (data == null)
-			return -1;
-		long high = data.length / (4 + Constants.OBJECT_ID_LENGTH);
-		long low = 0;
-		do {
-			final long mid = (low + high) / 2;
-			final long pos = ((4 + Constants.OBJECT_ID_LENGTH) * mid) + 4;
-			final int cmp = objId.compareTo(data, pos);
-			if (cmp < 0)
-				high = mid;
-			else if (cmp == 0) {
-				int b0 = data[(int)pos-4] & 0xff;
-				int b1 = data[(int)pos-3] & 0xff;
-				int b2 = data[(int)pos-2] & 0xff;
-				int b3 = data[(int)pos-1] & 0xff;
-				return (((long)b0) << 24) | ( b1 << 16 ) | ( b2 << 8 ) | (b3); 
-			} else
-				low = mid + 1;
-		} while (low < high);
-		return -1;
 	}
 }
