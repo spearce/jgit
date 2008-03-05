@@ -16,8 +16,11 @@
  */
 package org.spearce.jgit.lib;
 
+import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 
@@ -27,28 +30,35 @@ class PackIndex {
 	private byte[][] idxdata;
 
 	PackIndex(final File idxFile, final long objectCnt) throws IOException {
-		// FIXME window size and mmap type should be configurable
-		final WindowedFile idx = new WindowedFile(new WindowCache(8*1024*1024,1), idxFile, 8*1024*1024, true);
+		final FileInputStream fd = new FileInputStream(idxFile);
 		try {
-			loadVersion1(idx, objectCnt);
+			loadVersion1(fd, objectCnt, idxFile);
+		} catch (IOException ioe) {
+			final String path = idxFile.getAbsolutePath();
+			final IOException err;
+			err = new IOException("Unreadable pack index: " + path);
+			err.initCause(ioe);
+			throw err;
 		} finally {
 			try {
-				idx.close();
+				fd.close();
 			} catch (IOException err2) {
 				// ignore
 			}
 		}
 	}
 
-	private void loadVersion1(final WindowedFile idx, final long objectCnt) throws CorruptObjectException, IOException {
-		if (idx.length() != (IDX_HDR_LEN + (24 * objectCnt) + (2 * Constants.OBJECT_ID_LENGTH)))
-			throw new CorruptObjectException("Invalid pack index"
-					+ ", incorrect file length: " + idx.getName());
+	private void loadVersion1(final InputStream fd, final long objectCnt,
+			final File idxFile) throws CorruptObjectException, IOException {
+		if (idxFile.length() != (IDX_HDR_LEN + (24 * objectCnt) + (2 * Constants.OBJECT_ID_LENGTH)))
+			throw new CorruptObjectException("Invalid pack index v1 length.");
+
+		final byte[] fanoutTable = new byte[IDX_HDR_LEN];
+		readFully(fd, fanoutTable);
 
 		final long[] idxHeader = new long[256]; // really unsigned 32-bit...
-		final byte[] intbuf = new byte[4];
 		for (int k = 0; k < idxHeader.length; k++)
-			idxHeader[k] = idx.readUInt32(k * 4, intbuf);
+			idxHeader[k] = decodeUInt32(k * 4, fanoutTable);
 		idxdata = new byte[idxHeader.length][];
 		for (int k = 0; k < idxHeader.length; k++) {
 			int n;
@@ -59,9 +69,28 @@ class PackIndex {
 			}
 			if (n > 0) {
 				idxdata[k] = new byte[n * (Constants.OBJECT_ID_LENGTH + 4)];
-				int off = (int) ((k == 0) ? 0 : idxHeader[k-1] * (Constants.OBJECT_ID_LENGTH + 4));
-				idx.read(off + IDX_HDR_LEN, idxdata[k]);
+				readFully(fd, idxdata[k]);
 			}
+		}
+	}
+
+	private static long decodeUInt32(final int offset, final byte[] intbuf) {
+		return (intbuf[offset + 0] & 0xff) << 24
+				| (intbuf[offset + 1] & 0xff) << 16
+				| (intbuf[offset + 2] & 0xff) << 8
+				| (intbuf[offset + 3] & 0xff);
+	}
+
+	private static void readFully(final InputStream fd, final byte[] buf)
+			throws IOException {
+		int dstoff = 0;
+		int remaining = buf.length;
+		while (remaining > 0) {
+			final int r = fd.read(buf, dstoff, remaining);
+			if (r <= 0)
+				throw new EOFException("Short read of index data block.");
+			dstoff += r;
+			remaining -= r;
 		}
 	}
 
