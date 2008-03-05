@@ -616,6 +616,7 @@ public class Repository {
 				} catch (IOException ioe) {
 					// Whoops. That's not a pack!
 					//
+					ioe.printStackTrace();
 				}
 			}
 		}
