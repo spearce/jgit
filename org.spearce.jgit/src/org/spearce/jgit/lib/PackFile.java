@@ -169,7 +169,8 @@ public class PackFile {
 
 	private void readIndexHeader(final WindowedFile idx) throws CorruptObjectException, IOException {
 		if (idx.length() != (IDX_HDR_LEN + (24 * objectCnt) + (2 * Constants.OBJECT_ID_LENGTH)))
-			throw new CorruptObjectException("Invalid pack index");
+			throw new CorruptObjectException("Invalid pack index"
+					+ ", incorrect file length: " + idx.getName());
 
 		final long[] idxHeader = new long[256]; // really unsigned 32-bit...
 		final byte[] intbuf = new byte[4];
