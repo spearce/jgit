@@ -30,7 +30,7 @@ class PackIndex {
 		// FIXME window size and mmap type should be configurable
 		final WindowedFile idx = new WindowedFile(new WindowCache(8*1024*1024,1), idxFile, 8*1024*1024, true);
 		try {
-			readIndexHeader(idx, objectCnt);
+			loadVersion1(idx, objectCnt);
 		} finally {
 			try {
 				idx.close();
@@ -40,7 +40,7 @@ class PackIndex {
 		}
 	}
 
-	private void readIndexHeader(final WindowedFile idx, final long objectCnt) throws CorruptObjectException, IOException {
+	private void loadVersion1(final WindowedFile idx, final long objectCnt) throws CorruptObjectException, IOException {
 		if (idx.length() != (IDX_HDR_LEN + (24 * objectCnt) + (2 * Constants.OBJECT_ID_LENGTH)))
 			throw new CorruptObjectException("Invalid pack index"
 					+ ", incorrect file length: " + idx.getName());
