@@ -123,6 +123,15 @@ public class WindowedFile {
 	}
 
 	/**
+	 * Get the path name of this file.
+	 *
+	 * @return the absolute path name of the file.
+	 */
+	public String getName() {
+		return wp.getStoreDescription();
+	}
+
+	/**
 	 * Read the bytes into a buffer until it is full.
 	 * <p>
 	 * This routine always reads until either the requested number of bytes has
@@ -276,9 +285,12 @@ public class WindowedFile {
 
 		final RandomAccessFile fd;
 
+		final File fPath;
+
 		Provider(final boolean usemmap, final File file) throws IOException {
 			map = usemmap;
 			fd = new RandomAccessFile(file, "r");
+			fPath = file;
 		}
 
 		public ByteWindow loadWindow(final int windowId) throws IOException {
@@ -303,6 +315,11 @@ public class WindowedFile {
 		public int getWindowSize(final int id) {
 			final long position = id << szb;
 			return length < position + sz ? (int) (length - position) : sz;
+		}
+
+		@Override
+		public String getStoreDescription() {
+			return fPath.getAbsolutePath();
 		}
 	}
 }

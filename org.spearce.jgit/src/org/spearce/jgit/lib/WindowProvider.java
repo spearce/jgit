@@ -72,4 +72,12 @@ public abstract class WindowProvider {
 	 * @return total number of bytes in the requested window.
 	 */
 	public abstract int getWindowSize(int id);
+
+	/**
+	 * Description of the backing store, such as the file path.
+	 *
+	 * @return description of the backing store. Usually this is an absolute
+	 *         file path as most providers are connected to files.
+	 */
+	public abstract String getStoreDescription();
 }
