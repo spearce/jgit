@@ -17,6 +17,11 @@
 
 			Shawn Pearce
 
+ SSH is provided by JSch under the BSD license. See
+ org.spearce.jgit/lib/Jsch.LICENSE.
+
+			Robin Rosenberg
+
 ----------------------------------------
 
 		    GNU GENERAL PUBLIC LICENSE
