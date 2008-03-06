@@ -52,16 +52,9 @@ public class WindowedFile {
 	private static final int bits(int sz) {
 		if (sz < 4096)
 			throw new IllegalArgumentException("Invalid window size");
-
-		int b = 0;
-		while (sz > 1) {
-			if ((sz & 1) != 0)
-				throw new IllegalArgumentException(
-						"Window size must be a power of 2");
-			b++;
-			sz >>= 1;
-		}
-		return b;
+		if (Integer.bitCount(sz) != 1)
+			throw new IllegalArgumentException("Window size must be power of 2");
+		return Integer.numberOfTrailingZeros(sz);
 	}
 
 	private final WindowCache cache;
