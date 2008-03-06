@@ -55,6 +55,15 @@ abstract class PackIndex {
 		try {
 			final byte[] hdr = new byte[8];
 			readFully(fd, 0, hdr);
+			if (isTOC(hdr)) {
+				final int v = (int) decodeUInt32(4, hdr);
+				switch (v) {
+				case 2:
+					return new PackIndexV2(fd);
+				default:
+					throw new IOException("Unsupported pack index version " + v);
+				}
+			}
 			return new PackIndexV1(fd, hdr);
 		} catch (IOException ioe) {
 			final String path = idxFile.getAbsolutePath();
@@ -69,6 +78,10 @@ abstract class PackIndex {
 				// ignore
 			}
 		}
+	}
+
+	private static boolean isTOC(final byte[] h) {
+		return h[0] == -1 && h[1] == 't' && h[2] == 'O' && h[3] == 'c';
 	}
 
 	/**
@@ -87,6 +100,22 @@ abstract class PackIndex {
 				| (intbuf[offset + 1] & 0xff) << 16
 				| (intbuf[offset + 2] & 0xff) << 8
 				| (intbuf[offset + 3] & 0xff);
+	}
+
+	/**
+	 * Convert sequence of 8 bytes (network byte order) into unsigned value.
+	 *
+	 * @param offset
+	 *            position within the buffer to begin reading from. This
+	 *            position and the next 7 bytes after it (for a total of 8
+	 *            bytes) will be read.
+	 * @param intbuf
+	 *            buffer to acquire the 8 bytes of data from.
+	 * @return unsigned integer value that matches the 64 bits read.
+	 */
+	protected static long decodeUInt64(final int offset, final byte[] intbuf) {
+		return (decodeUInt32(offset, intbuf) << 32)
+				| decodeUInt32(offset + 4, intbuf);
 	}
 
 	/**
