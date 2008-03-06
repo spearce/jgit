@@ -16,8 +16,6 @@
  */
 package org.spearce.jgit.lib;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -30,28 +28,11 @@ class PackIndexV1 extends PackIndex {
 
 	private long objectCnt;
 
-	PackIndexV1(final File idxFile) throws IOException {
-		final FileInputStream fd = new FileInputStream(idxFile);
-		try {
-			loadVersion1(fd);
-		} catch (IOException ioe) {
-			final String path = idxFile.getAbsolutePath();
-			final IOException err;
-			err = new IOException("Unreadable pack index: " + path);
-			err.initCause(ioe);
-			throw err;
-		} finally {
-			try {
-				fd.close();
-			} catch (IOException err2) {
-				// ignore
-			}
-		}
-	}
-
-	private void loadVersion1(final InputStream fd) throws CorruptObjectException, IOException {
+	PackIndexV1(final InputStream fd, final byte[] hdr)
+			throws CorruptObjectException, IOException {
 		final byte[] fanoutTable = new byte[IDX_HDR_LEN];
-		readFully(fd, 0, fanoutTable);
+		System.arraycopy(hdr, 0, fanoutTable, 0, hdr.length);
+		readFully(fd, hdr.length, fanoutTable);
 
 		final long[] idxHeader = new long[256]; // really unsigned 32-bit...
 		for (int k = 0; k < idxHeader.length; k++)

@@ -18,6 +18,7 @@ package org.spearce.jgit.lib;
 
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +51,24 @@ abstract class PackIndex {
 	 *             unrecognized data version, or unexpected data corruption.
 	 */
 	static PackIndex open(final File idxFile) throws IOException {
-		return new PackIndexV1(idxFile);
+		final FileInputStream fd = new FileInputStream(idxFile);
+		try {
+			final byte[] hdr = new byte[8];
+			readFully(fd, 0, hdr);
+			return new PackIndexV1(fd, hdr);
+		} catch (IOException ioe) {
+			final String path = idxFile.getAbsolutePath();
+			final IOException err;
+			err = new IOException("Unreadable pack index: " + path);
+			err.initCause(ioe);
+			throw err;
+		} finally {
+			try {
+				fd.close();
+			} catch (IOException err2) {
+				// ignore
+			}
+		}
 	}
 
 	/**
