@@ -31,7 +31,7 @@ class PackIndex {
 
 	private long objectCnt;
 
-	PackIndex(final File idxFile, final long objectCnt) throws IOException {
+	PackIndex(final File idxFile) throws IOException {
 		final FileInputStream fd = new FileInputStream(idxFile);
 		try {
 			loadVersion1(fd);
@@ -48,12 +48,6 @@ class PackIndex {
 				// ignore
 			}
 		}
-
-		if (this.objectCnt != objectCnt)
-			throw new CorruptObjectException("Pack index"
-					+ " object count mismatch; expected " + objectCnt
-					+ " found " + this.objectCnt + ": "
-					+ idxFile.getAbsolutePath());
 	}
 
 	private void loadVersion1(final InputStream fd) throws CorruptObjectException, IOException {
@@ -97,6 +91,10 @@ class PackIndex {
 			dstoff += r;
 			remaining -= r;
 		}
+	}
+
+	long getObjectCount() {
+		return objectCnt;
 	}
 
 	long findOffset(final ObjectId objId) {

@@ -56,7 +56,12 @@ public class PackFile {
 			final int dot = name.lastIndexOf('.');
 			idx = new PackIndex(new File(packFile.getParentFile(), name
 					.substring(0, dot)
-					+ ".idx"), objectCnt);
+					+ ".idx"));
+			if (idx.getObjectCount() != objectCnt)
+				throw new IOException("Pack index"
+						+ " object count mismatch; expected " + objectCnt
+						+ " found " + idx.getObjectCount() + ": "
+						+ packFile.getAbsolutePath());
 		} catch (IOException ioe) {
 			try {
 				pack.close();
