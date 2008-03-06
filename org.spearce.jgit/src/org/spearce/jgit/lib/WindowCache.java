@@ -100,6 +100,21 @@ public class WindowCache {
 			return w;
 		}
 
+		if (++wp.openCount == 1) {
+			try {
+				wp.open();
+			} catch (IOException ioe) {
+				wp.openCount = 0;
+				throw ioe;
+			} catch (RuntimeException ioe) {
+				wp.openCount = 0;
+				throw ioe;
+			} catch (Error ioe) {
+				wp.openCount = 0;
+				throw ioe;
+			}
+		}
+
 		idx = -(idx + 1);
 		final int wSz = wp.getWindowSize(id);
 		while (openWindowCount == windows.length
@@ -110,7 +125,12 @@ public class WindowCache {
 					oldest = k;
 			}
 
-			openByteCount -= windows[oldest].size();
+			final ByteWindow w = windows[oldest];
+			final WindowProvider p = w.provider;
+			if (--p.openCount == 0 && p != wp)
+				p.close();
+
+			openByteCount -= w.size();
 			final int toMove = openWindowCount - oldest - 1;
 			if (toMove > 0)
 				System.arraycopy(windows, oldest + 1, windows, oldest, toMove);
@@ -171,5 +191,10 @@ public class WindowCache {
 				openByteCount -= win.size();
 		}
 		openWindowCount = d;
+
+		if (wp.openCount > 0) {
+			wp.openCount = 0;
+			wp.close();
+		}
 	}
 }

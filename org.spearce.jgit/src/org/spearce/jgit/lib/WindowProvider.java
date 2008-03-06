@@ -24,9 +24,24 @@ import java.io.IOException;
 public abstract class WindowProvider {
 	final int hash;
 
+	/** Total number of windows actively in the associated cache. */
+	int openCount;
+
 	protected WindowProvider() {
 		hash = System.identityHashCode(this);
 	}
+
+	/**
+	 * Open this window provider so that calls to loadWindow can be performed.
+	 *
+	 * @throws IOException
+	 *             the provider is unable to provide windows as its backing
+	 *             store cannot be opened for reading.
+	 */
+	public abstract void open() throws IOException;
+
+	/** Close this window provider, releasing any resources. */
+	public abstract void close();
 
 	/**
 	 * Load a specific window.

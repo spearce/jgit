@@ -34,8 +34,6 @@ public class PackFile {
 
 	private final PackIndex idx;
 
-	private long objectCnt;
-
 	/**
 	 * Construct a reader for an existing, pre-indexed packfile.
 	 *
@@ -53,22 +51,15 @@ public class PackFile {
 		repo = parentRepo;
 		// FIXME window size and mmap type should be configurable
 		pack = new WindowedFile(repo.getWindowCache(), packFile,
-				64 * 1024 * 1024, true);
-		try {
-			readPackHeader();
-
-			idx = PackIndex.open(idxFile);
-			if (idx.getObjectCount() != objectCnt)
-				throw new IOException("Pack index"
-						+ " object count mismatch; expected " + objectCnt
-						+ " found " + idx.getObjectCount() + ": "
-						+ packFile.getAbsolutePath());
-		} catch (IOException ioe) {
-			try {
-				pack.close();
-			} catch (IOException err2) {
-				// Ignore this
+				64 * 1024 * 1024, true) {
+			@Override
+			protected void onOpen() throws IOException {
+				readPackHeader();
 			}
+		};
+		try {
+			idx = PackIndex.open(idxFile);
+		} catch (IOException ioe) {
 			throw ioe;
 		}
 	}
@@ -123,9 +114,8 @@ public class PackFile {
 
 	/**
 	 * Close the resources utilized by this repository
-	 * @throws IOException
 	 */
-	public void close() throws IOException {
+	public void close() {
 		pack.close();
 	}
 
@@ -155,7 +145,12 @@ public class PackFile {
 			throw new IOException("Unsupported pack version " + vers + ".");
 		position += 4;
 
-		objectCnt = pack.readUInt32(position, intbuf);
+		final long objectCnt = pack.readUInt32(position, intbuf);
+		if (idx.getObjectCount() != objectCnt)
+			throw new IOException("Pack index"
+					+ " object count mismatch; expected " + objectCnt
+					+ " found " + idx.getObjectCount() + ": "
+					+ pack.getName());
 	}
 
 	private PackedObjectLoader reader(final long objOffset)

@@ -98,11 +98,9 @@ public class WindowedFile {
 	 *            allocate a byte[] in Java and reading the file data into the
 	 *            array. True will use a read only mmap, however this requires
 	 *            allocation of small temporary objects during every read.
-	 * @throws IOException
-	 *             the file could not be opened.
 	 */
 	public WindowedFile(final WindowCache winCache, final File file,
-			final int windowSz, final boolean usemmap) throws IOException {
+			final int windowSz, final boolean usemmap) {
 		cache = winCache;
 		sz = windowSz;
 		szb = bits(windowSz);
@@ -267,30 +265,70 @@ public class WindowedFile {
 	}
 
 	/**
-	 * Close this file and remove all open windows.
+	 * Overridable hook called after the file is opened.
+	 * <p>
+	 * This hook is invoked each time the file is opened for reading, but before
+	 * the first window is mapped into the cache. Implementers are free to use
+	 * any of the window access methods to obtain data, however doing so may
+	 * pollute the window cache with otherwise unnecessary windows.
+	 * </p>
 	 * 
 	 * @throws IOException
-	 *             the file refused to be closed.
+	 *             something is wrong with the file, for example the caller does
+	 *             not understand its version header information.
 	 */
-	public void close() throws IOException {
+	protected void onOpen() throws IOException {
+		wp.fd.getFD(); // Silly Eclipse requires us to throw.
+	}
+
+	/** Close this file and remove all open windows. */
+	public void close() {
 		cache.purge(wp);
-		wp.fd.close();
 	}
 
 	private class Provider extends WindowProvider {
 		final boolean map;
 
-		final RandomAccessFile fd;
+		RandomAccessFile fd;
 
 		long length;
 
 		final File fPath;
 
-		Provider(final boolean usemmap, final File file) throws IOException {
+		Provider(final boolean usemmap, final File file) {
 			map = usemmap;
-			fd = new RandomAccessFile(file, "r");
-			length = fd.length();
 			fPath = file;
+			length = Long.MAX_VALUE;
+		}
+
+		@Override
+		public void open() throws IOException {
+			fd = new RandomAccessFile(fPath, "r");
+			length = fd.length();
+			try {
+				onOpen();
+			} catch (IOException ioe) {
+				close();
+				throw ioe;
+			} catch (RuntimeException re) {
+				close();
+				throw re;
+			} catch (Error re) {
+				close();
+				throw re;
+			}
+		}
+
+		@Override
+		public void close() {
+			try {
+				fd.close();
+			} catch (IOException err) {
+				// Ignore a close event. We had it open only for reading.
+				// There should not be errors related to network buffers
+				// not flushed, etc.
+			}
+			fd = null;
 		}
 
 		public ByteWindow loadWindow(final int windowId) throws IOException {

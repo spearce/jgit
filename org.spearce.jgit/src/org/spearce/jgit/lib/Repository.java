@@ -570,14 +570,12 @@ public class Repository {
 
 	/**
 	 * Close all resources used by this repository
-	 *
-	 * @throws IOException
 	 */
-	public void close() throws IOException {
+	public void close() {
 		closePacks();
 	}
 
-	void closePacks() throws IOException {
+	void closePacks() {
 		for (int k = packs.length - 1; k >= 0; k--) {
 			packs[k].close();
 		}
