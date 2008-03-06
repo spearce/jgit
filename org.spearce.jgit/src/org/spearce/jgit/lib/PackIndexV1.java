@@ -16,7 +16,6 @@
  */
 package org.spearce.jgit.lib;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -71,26 +70,6 @@ class PackIndexV1 extends PackIndex {
 			}
 		}
 		objectCnt = idxHeader[255];
-	}
-
-	private static long decodeUInt32(final int offset, final byte[] intbuf) {
-		return (intbuf[offset + 0] & 0xff) << 24
-				| (intbuf[offset + 1] & 0xff) << 16
-				| (intbuf[offset + 2] & 0xff) << 8
-				| (intbuf[offset + 3] & 0xff);
-	}
-
-	private static void readFully(final InputStream fd, final byte[] buf)
-			throws IOException {
-		int dstoff = 0;
-		int remaining = buf.length;
-		while (remaining > 0) {
-			final int r = fd.read(buf, dstoff, remaining);
-			if (r <= 0)
-				throw new EOFException("Short read of index data block.");
-			dstoff += r;
-			remaining -= r;
-		}
 	}
 
 	long getObjectCount() {

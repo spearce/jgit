@@ -16,9 +16,11 @@
  */
 package org.spearce.jgit.lib;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Access path to locate objects by {@link ObjectId} in a {@link PackFile}.
@@ -49,6 +51,49 @@ abstract class PackIndex {
 	 */
 	static PackIndex open(final File idxFile) throws IOException {
 		return new PackIndexV1(idxFile);
+	}
+
+	/**
+	 * Convert sequence of 4 bytes (network byte order) into unsigned value.
+	 *
+	 * @param offset
+	 *            position within the buffer to begin reading from. This
+	 *            position and the next 3 bytes after it (for a total of 4
+	 *            bytes) will be read.
+	 * @param intbuf
+	 *            buffer to acquire the 4 bytes of data from.
+	 * @return unsigned integer value that matches the 32 bits read.
+	 */
+	protected static long decodeUInt32(final int offset, final byte[] intbuf) {
+		return (intbuf[offset + 0] & 0xff) << 24
+				| (intbuf[offset + 1] & 0xff) << 16
+				| (intbuf[offset + 2] & 0xff) << 8
+				| (intbuf[offset + 3] & 0xff);
+	}
+
+	/**
+	 * Read the entire byte array into memory, or throw an exception.
+	 *
+	 * @param fd
+	 *            input stream to read the data from.
+	 * @param buf
+	 *            buffer that must be fully populated, from 0 to its end.
+	 * @throws EOFException
+	 *             the stream ended before buf was fully populated.
+	 * @throws IOException
+	 *             there was an error reading from the stream.
+	 */
+	protected static void readFully(final InputStream fd, final byte[] buf)
+			throws IOException {
+		int dstoff = 0;
+		int remaining = buf.length;
+		while (remaining > 0) {
+			final int r = fd.read(buf, dstoff, remaining);
+			if (r <= 0)
+				throw new EOFException("Short read of index data block.");
+			dstoff += r;
+			remaining -= r;
+		}
 	}
 
 	/**
