@@ -47,10 +47,10 @@ import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.RepositoryState;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 import org.spearce.jgit.lib.GitIndex.Entry;
-import org.spearce.jgit.lib.Repository.RepositoryState;
 
 /**
  * Supplies annotations for displayed resources.
