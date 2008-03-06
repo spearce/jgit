@@ -95,15 +95,36 @@ public class RepositoryConfig {
 	 */
 	public int getInt(final String section, String subsection,
 			final String name, final int defaultValue) {
-		final String n = getString(section, subsection, name);
-		if (n == null)
+		final String str = getString(section, subsection, name);
+		if (str == null)
+			return defaultValue;
+
+		String n = str.trim();
+		if (n.length() == 0)
+			return defaultValue;
+
+		int mul = 1;
+		switch (Character.toLowerCase(n.charAt(n.length() - 1))) {
+		case 'g':
+			mul = 1024 * 1024 * 1024;
+			break;
+		case 'm':
+			mul = 1024 * 1024;
+			break;
+		case 'k':
+			mul = 1024;
+			break;
+		}
+		if (mul > 1)
+			n = n.substring(0, n.length() - 1).trim();
+		if (n.length() == 0)
 			return defaultValue;
 
 		try {
-			return Integer.parseInt(n);
+			return mul * Integer.parseInt(n);
 		} catch (NumberFormatException nfe) {
 			throw new IllegalArgumentException("Invalid integer value: "
-					+ section + "." + name + "=" + n);
+					+ section + "." + name + "=" + str);
 		}
 	}
 
