@@ -17,14 +17,56 @@
 package org.spearce.jgit.lib;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
+/**
+ * Access path to locate objects by {@link ObjectId} in a {@link PackFile}.
+ * <p>
+ * Indexes are strictly redundant information in that we can rebuild all of the
+ * data held in the index file from the on disk representation of the pack file
+ * itself, but it is faster to access for random requests because data is stored
+ * by ObjectId.
+ * </p>
+ */
 abstract class PackIndex {
+	/**
+	 * Open an existing pack <code>.idx</code> file for reading.
+	 * <p>
+	 * The format of the file will be automatically detected and a proper access
+	 * implementation for that format will be constructed and returned to the
+	 * caller. The file may or may not be held open by the returned instance.
+	 * </p>
+	 *
+	 * @param idxFile
+	 *            existing pack .idx to read.
+	 * @return access implementation for the requested file.
+	 * @throws FileNotFoundException
+	 *             the file does not exist.
+	 * @throws IOException
+	 *             the file exists but could not be read due to security errors,
+	 *             unrecognized data version, or unexpected data corruption.
+	 */
 	static PackIndex open(final File idxFile) throws IOException {
 		return new PackIndexV1(idxFile);
 	}
 
+	/**
+	 * Obtain the total number of objects described by this index.
+	 *
+	 * @return number of objects in this index, and likewise in the associated
+	 *         pack that this index was generated from.
+	 */
 	abstract long getObjectCount();
 
+	/**
+	 * Locate the file offset position for the requested object.
+	 *
+	 * @param objId
+	 *            name of the object to locate within the pack.
+	 * @return offset of the object's header and compressed content; -1 if the
+	 *         object does not exist in this index and is thus not stored in the
+	 *         associated pack.
+	 */
 	abstract long findOffset(ObjectId objId);
 }
