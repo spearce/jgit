@@ -39,6 +39,17 @@ import java.util.Map;
  * file depending on how it is instantiated.
  */
 public class RepositoryConfig {
+	/**
+	 * Obtain a new configuration instance for ~/.gitconfig.
+	 * 
+	 * @return a new configuration instance to read the user's global
+	 *         configuration file from their home directory.
+	 */
+	public static RepositoryConfig openUserConfig() {
+		return new RepositoryConfig(null, new File(System
+				.getProperty("user.home"), ".gitconfig"));
+	}
+
 	private final RepositoryConfig baseConfig;
 
 	private final File configFile;
@@ -58,9 +69,7 @@ public class RepositoryConfig {
 	private static final String MAGIC_EMPTY_VALUE = "%%magic%%empty%%";
 
 	RepositoryConfig(final Repository repo) {
-		this(new RepositoryConfig(null, new File(System
-				.getProperty("user.home"), ".gitconfig")), new File(repo
-				.getDirectory(), "config"));
+		this(openUserConfig(), new File(repo.getDirectory(), "config"));
 	}
 
 	/**
