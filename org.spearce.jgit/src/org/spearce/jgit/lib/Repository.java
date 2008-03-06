@@ -54,7 +54,7 @@ import org.spearce.jgit.errors.ObjectWritingException;
  * </li>
  * </ul>
  *
- * This implemention only handles a subtly undocumented subset of git features.
+ * This implementation only handles a subtly undocumented subset of git features.
  *
  */
 public class Repository {
