@@ -54,7 +54,7 @@ public class PackFile {
 
 			final String name = packFile.getName();
 			final int dot = name.lastIndexOf('.');
-			idx = new PackIndex(new File(packFile.getParentFile(), name
+			idx = PackIndex.open(new File(packFile.getParentFile(), name
 					.substring(0, dot)
 					+ ".idx"));
 			if (idx.getObjectCount() != objectCnt)
