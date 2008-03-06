@@ -76,17 +76,18 @@ abstract class PackIndex {
 	 *
 	 * @param fd
 	 *            input stream to read the data from.
+	 * @param dstoff
+	 *            position within the buffer to start writing to.
 	 * @param buf
-	 *            buffer that must be fully populated, from 0 to its end.
+	 *            buffer that must be fully populated, from dstoff to its end.
 	 * @throws EOFException
 	 *             the stream ended before buf was fully populated.
 	 * @throws IOException
 	 *             there was an error reading from the stream.
 	 */
-	protected static void readFully(final InputStream fd, final byte[] buf)
-			throws IOException {
-		int dstoff = 0;
-		int remaining = buf.length;
+	protected static void readFully(final InputStream fd, int dstoff,
+			final byte[] buf) throws IOException {
+		int remaining = buf.length - dstoff;
 		while (remaining > 0) {
 			final int r = fd.read(buf, dstoff, remaining);
 			if (r <= 0)

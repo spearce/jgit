@@ -51,7 +51,7 @@ class PackIndexV1 extends PackIndex {
 
 	private void loadVersion1(final InputStream fd) throws CorruptObjectException, IOException {
 		final byte[] fanoutTable = new byte[IDX_HDR_LEN];
-		readFully(fd, fanoutTable);
+		readFully(fd, 0, fanoutTable);
 
 		final long[] idxHeader = new long[256]; // really unsigned 32-bit...
 		for (int k = 0; k < idxHeader.length; k++)
@@ -66,7 +66,7 @@ class PackIndexV1 extends PackIndex {
 			}
 			if (n > 0) {
 				idxdata[k] = new byte[n * (Constants.OBJECT_ID_LENGTH + 4)];
-				readFully(fd, idxdata[k]);
+				readFully(fd, 0, idxdata[k]);
 			}
 		}
 		objectCnt = idxHeader[255];
