@@ -18,9 +18,9 @@ package org.spearce.jgit.lib;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
@@ -598,22 +598,20 @@ public class Repository {
 	}
 
 	private void scanForPacks(final File packDir, Collection<PackFile> packList) {
-		final File[] list = packDir.listFiles(new FileFilter() {
-			public boolean accept(final File f) {
-				final String n = f.getName();
-				if (!n.endsWith(".pack")) {
-					return false;
-				}
-				final String nBase = n.substring(0, n.lastIndexOf('.'));
-				final File idx = new File(packDir, nBase + ".idx");
-				return f.isFile() && f.canRead() && idx.isFile()
-						&& idx.canRead();
+		final String[] idxList = packDir.list(new FilenameFilter() {
+			public boolean accept(final File baseDir, final String n) {
+				// Must match "pack-[0-9a-f]{40}.idx" to be an index.
+				return n.length() == 49 && n.endsWith(".idx")
+						&& n.startsWith("pack-");
 			}
 		});
-		if (list != null) {
-			for (int k = 0; k < list.length; k++) {
+		if (idxList != null) {
+			for (final String indexName : idxList) {
+				final String n = indexName.substring(0, indexName.length() - 4);
+				final File idxFile = new File(packDir, n + ".idx");
+				final File packFile = new File(packDir, n + ".pack");
 				try {
-					packList.add(new PackFile(this, list[k]));
+					packList.add(new PackFile(this, idxFile, packFile));
 				} catch (IOException ioe) {
 					// Whoops. That's not a pack!
 					//

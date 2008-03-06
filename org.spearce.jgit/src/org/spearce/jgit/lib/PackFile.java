@@ -37,14 +37,19 @@ public class PackFile {
 	private long objectCnt;
 
 	/**
-	 * Construct a representation of a packfile
+	 * Construct a reader for an existing, pre-indexed packfile.
 	 *
-	 * @param parentRepo Git repository holding this pack file
+	 * @param parentRepo
+	 *            Git repository holding this pack file
+	 * @param idxFile
+	 *            path of the <code>.idx</code> file listing the contents.
 	 * @param packFile
+	 *            path of the <code>.pack</code> file holding the data.
 	 * @throws IOException
+	 *             the index file cannot be accessed at this time.
 	 */
-	public PackFile(final Repository parentRepo, final File packFile)
-			throws IOException {
+	public PackFile(final Repository parentRepo, final File idxFile,
+			final File packFile) throws IOException {
 		repo = parentRepo;
 		// FIXME window size and mmap type should be configurable
 		pack = new WindowedFile(repo.getWindowCache(), packFile,
@@ -52,11 +57,7 @@ public class PackFile {
 		try {
 			readPackHeader();
 
-			final String name = packFile.getName();
-			final int dot = name.lastIndexOf('.');
-			idx = PackIndex.open(new File(packFile.getParentFile(), name
-					.substring(0, dot)
-					+ ".idx"));
+			idx = PackIndex.open(idxFile);
 			if (idx.getObjectCount() != objectCnt)
 				throw new IOException("Pack index"
 						+ " object count mismatch; expected " + objectCnt

@@ -20,8 +20,9 @@ import java.io.File;
 import java.io.IOException;
 
 public class T0004_PackReader extends RepositoryTestCase {
-	private static final File TEST_PACK = new File(new File("tst"),
-			"pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.pack");
+	private static final String PACK_NAME = "pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f";
+	private static final File TEST_PACK = new File(new File("tst"), PACK_NAME + ".pack");
+	private static final File TEST_IDX = new File(TEST_PACK.getParentFile(), PACK_NAME + ".idx");
 
 	public void test003_lookupCompressedObject() throws IOException {
 		final PackFile pr;
@@ -29,7 +30,7 @@ public class T0004_PackReader extends RepositoryTestCase {
 		final PackedObjectLoader or;
 
 		id = new ObjectId("902d5476fa249b7abc9d84c611577a81381f0327");
-		pr = new PackFile(db, TEST_PACK);
+		pr = new PackFile(db, TEST_IDX, TEST_PACK);
 		or = pr.get(id);
 		assertNotNull(or);
 		assertEquals(id, or.getId());
