@@ -90,6 +90,9 @@ public class WindowCache {
 	/**
 	 * Get a specific window.
 	 * 
+	 * @param curs
+	 *            an active cursor object to maintain the window reference while
+	 *            the caller needs it.
 	 * @param wp
 	 *            the provider of the window. If the window is not currently in
 	 *            the cache then the provider will be asked to load it.
@@ -98,18 +101,18 @@ public class WindowCache {
 	 *            <code>wp</code>. Typically this id is the byte offset
 	 *            within the file divided by the window size, but its meaning is
 	 *            left open to the provider.
-	 * @return the requested window. Never null.
 	 * @throws IOException
 	 *             the window was not found in the cache and the given provider
 	 *             was unable to load the window on demand.
 	 */
-	public synchronized final ByteWindow get(final WindowProvider wp,
-			final int id) throws IOException {
+	public synchronized final void get(final WindowCursor curs,
+			final WindowProvider wp, final int id) throws IOException {
 		int idx = binarySearch(wp, id);
 		if (0 <= idx) {
 			final ByteWindow w = windows[idx];
 			w.lastAccessed = ++accessClock;
-			return w;
+			curs.window = w;
+			return;
 		}
 
 		if (++wp.openCount == 1) {
@@ -158,7 +161,8 @@ public class WindowCache {
 		windows[idx] = w;
 		openWindowCount++;
 		openByteCount += w.size();
-		return w;
+		curs.window = w;
+		return;
 	}
 
 	private final int binarySearch(final WindowProvider sprov, final int sid) {

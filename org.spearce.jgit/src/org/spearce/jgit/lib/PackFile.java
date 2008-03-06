@@ -123,17 +123,18 @@ public class PackFile {
 	byte[] decompress(final long position, final int totalSize)
 			throws DataFormatException, IOException {
 		final byte[] dstbuf = new byte[totalSize];
-		pack.readCompressed(position, dstbuf);
+		pack.readCompressed(position, dstbuf, new WindowCursor());
 		return dstbuf;
 	}
 
 	private void readPackHeader() throws IOException {
+		final WindowCursor curs = new WindowCursor();
 		long position = 0;
 		final byte[] sig = new byte[SIGNATURE.length];
 		final byte[] intbuf = new byte[4];
 		final long vers;
 
-		if (pack.read(position, sig) != SIGNATURE.length)
+		if (pack.read(position, sig, curs) != SIGNATURE.length)
 			throw new IOException("Not a PACK file.");
 		for (int k = 0; k < SIGNATURE.length; k++) {
 			if (sig[k] != SIGNATURE[k])
@@ -141,12 +142,12 @@ public class PackFile {
 		}
 		position += SIGNATURE.length;
 
-		vers = pack.readUInt32(position, intbuf);
+		vers = pack.readUInt32(position, intbuf, curs);
 		if (vers != 2 && vers != 3)
 			throw new IOException("Unsupported pack version " + vers + ".");
 		position += 4;
 
-		final long objectCnt = pack.readUInt32(position, intbuf);
+		final long objectCnt = pack.readUInt32(position, intbuf, curs);
 		if (idx.getObjectCount() != objectCnt)
 			throw new IOException("Pack index"
 					+ " object count mismatch; expected " + objectCnt
@@ -158,8 +159,9 @@ public class PackFile {
 			throws IOException {
 		long pos = objOffset;
 		int p = 0;
+		final WindowCursor curs = new WindowCursor();
 		final byte[] ib = new byte[Constants.OBJECT_ID_LENGTH];
-		pack.readFully(pos, ib);
+		pack.readFully(pos, ib, curs);
 		int c = ib[p++] & 0xff;
 		final int typeCode = (c >> 4) & 7;
 		long dataSize = c & 15;
@@ -181,7 +183,7 @@ public class PackFile {
 		case Constants.OBJ_TAG:
 			return whole(Constants.TYPE_TAG, pos, dataSize);
 		case Constants.OBJ_OFS_DELTA: {
-			pack.readFully(pos, ib);
+			pack.readFully(pos, ib, curs);
 			p = 0;
 			c = ib[p++] & 0xff;
 			long ofs = c & 127;
@@ -195,7 +197,7 @@ public class PackFile {
 					(int) dataSize, objOffset - ofs);
 		}
 		case Constants.OBJ_REF_DELTA: {
-			pack.readFully(pos, ib);
+			pack.readFully(pos, ib, curs);
 			return new DeltaRefPackedObjectLoader(this, pos + ib.length,
 					(int) dataSize, new ObjectId(ib));
 		}

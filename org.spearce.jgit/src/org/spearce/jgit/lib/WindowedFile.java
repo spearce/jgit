@@ -132,15 +132,18 @@ public class WindowedFile {
 	 *            of this file, to copy from.
 	 * @param dstbuf
 	 *            buffer to copy the bytes into.
+	 * @param curs
+	 *            current cursor for reading data from the file.
 	 * @return total number of bytes read. Always <code>dstbuf.length</code>
 	 *         unless the requested range to copy is over the end of the file.
 	 * @throws IOException
 	 *             a necessary window was not found in the window cache and
 	 *             trying to load it in from the operating system failed.
 	 */
-	public int read(final long position, final byte[] dstbuf)
+	public int read(final long position, final byte[] dstbuf,
+			final WindowCursor curs)
 			throws IOException {
-		return read(position, dstbuf, 0, dstbuf.length);
+		return read(position, dstbuf, 0, dstbuf.length, curs);
 	}
 
 	/**
@@ -161,6 +164,8 @@ public class WindowedFile {
 	 * @param cnt
 	 *            number of bytes to copy. Must not exceed
 	 *            <code>dstbuf.length - dstoff</code>.
+	 * @param curs
+	 *            current cursor for reading data from the file.
 	 * @return total number of bytes read. Always <code>length</code> unless
 	 *         the requested range to copy is over the end of the file.
 	 * @throws IOException
@@ -168,11 +173,12 @@ public class WindowedFile {
 	 *             trying to load it in from the operating system failed.
 	 */
 	public int read(long position, final byte[] dstbuf, int dstoff,
-			final int cnt) throws IOException {
+			final int cnt, final WindowCursor curs) throws IOException {
 		int remaining = cnt;
 		while (remaining > 0 && position < wp.length) {
-			final int r = cache.get(wp, (int) (position >> szb)).copy(
-					((int) position) & szm, dstbuf, dstoff, remaining);
+			final int r;
+			cache.get(curs, wp, (int) (position >> szb));
+			r = curs.copy(((int) position) & szm, dstbuf, dstoff, remaining);
 			position += r;
 			dstoff += r;
 			remaining -= r;
@@ -193,6 +199,8 @@ public class WindowedFile {
 	 *            of this file, to copy from.
 	 * @param dstbuf
 	 *            buffer to copy the bytes into.
+	 * @param curs
+	 *            current cursor for reading data from the file.
 	 * @throws IOException
 	 *             a necessary window was not found in the window cache and
 	 *             trying to load it in from the operating system failed.
@@ -200,31 +208,35 @@ public class WindowedFile {
 	 *             the file ended before <code>dstbuf.length</code> bytes
 	 *             could be read.
 	 */
-	public void readFully(final long position, final byte[] dstbuf)
+	public void readFully(final long position, final byte[] dstbuf,
+			final WindowCursor curs)
 			throws IOException {
-		if (read(position, dstbuf, 0, dstbuf.length) != dstbuf.length)
+		if (read(position, dstbuf, 0, dstbuf.length, curs) != dstbuf.length)
 			throw new EOFException();
 	}
 
-	void readCompressed(final long position, final byte[] dstbuf)
+	void readCompressed(final long position, final byte[] dstbuf,
+			final WindowCursor curs)
 			throws IOException, DataFormatException {
 		final Inflater inf = cache.borrowInflater();
 		try {
-			readCompressed(position, dstbuf, inf);
+			readCompressed(position, dstbuf, curs, inf);
 		} finally {
 			inf.reset();
 			cache.returnInflater(inf);
 		}
 	}
 
-	void readCompressed(long pos, final byte[] dstbuf, final Inflater inf)
+	void readCompressed(long pos, final byte[] dstbuf, final WindowCursor curs,
+			final Inflater inf)
 			throws IOException, DataFormatException {
 		int dstoff = 0;
-		dstoff = cache.get(wp, (int) (pos >> szb)).inflate(((int) pos) & szm,
-				dstbuf, dstoff, inf);
+		cache.get(curs, wp, (int) (pos >> szb));
+		dstoff = curs.inflate(((int) pos) & szm, dstbuf, dstoff, inf);
 		pos >>= szb;
 		while (!inf.finished()) {
-			dstoff = cache.get(wp, (int) ++pos).inflate(0, dstbuf, dstoff, inf);
+			cache.get(curs, wp, (int) ++pos);
+			dstoff = curs.inflate(0, dstbuf, dstoff, inf);
 		}
 		if (dstoff != dstbuf.length)
 			throw new EOFException();
@@ -242,6 +254,8 @@ public class WindowedFile {
 	 *            conversion. Must be supplied by the caller and must have room
 	 *            for at least 4 bytes, but may be longer if the caller has a
 	 *            larger buffer they wish to loan.
+	 * @param curs
+	 *            current cursor for reading data from the file.
 	 * @return the unsigned 32 bit integer value.
 	 * @throws IOException
 	 *             necessary window was not found in the window cache and trying
@@ -249,9 +263,9 @@ public class WindowedFile {
 	 * @throws EOFException
 	 *             the file has less than 4 bytes remaining at position.
 	 */
-	public long readUInt32(final long position, byte[] intbuf)
-			throws IOException {
-		if (read(position, intbuf, 0, 4) != 4)
+	public long readUInt32(final long position, byte[] intbuf,
+			final WindowCursor curs) throws IOException {
+		if (read(position, intbuf, 0, 4, curs) != 4)
 			throw new EOFException();
 		return (intbuf[0] & 0xff) << 24 | (intbuf[1] & 0xff) << 16
 				| (intbuf[2] & 0xff) << 8 | (intbuf[3] & 0xff);

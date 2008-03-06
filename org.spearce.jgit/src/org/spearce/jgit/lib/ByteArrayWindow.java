@@ -27,12 +27,12 @@ public final class ByteArrayWindow extends ByteWindow {
 
 	/**
 	 * Constructor for ByteWindow.
-	 *
+	 * 
 	 * @param o
 	 *            the WindowProvider providing data access
 	 * @param d
 	 *            an id provided by the WindowProvider. See
-	 *            {@link WindowCache#get(WindowProvider, int)}.
+	 *            {@link WindowCache#get(WindowCursor, WindowProvider, int)}.
 	 * @param b
 	 *            byte array for storage
 	 */

@@ -61,7 +61,7 @@ public abstract class WindowProvider {
 	 * 
 	 * @param id
 	 *            the id number of this window. See
-	 *            {@link WindowCache#get(org.spearce.jgit.lib.WindowProvider, int)}
+	 *            {@link WindowCache#get(WindowCursor, WindowProvider, int)}
 	 *            for details.
 	 * @return a byte buffer for this window's data. Never null. The returned
 	 *         buffer may be smaller than the estimate supplied by
@@ -82,7 +82,7 @@ public abstract class WindowProvider {
 	 * 
 	 * @param id
 	 *            id number of the window to estimate. See
-	 *            {@link WindowCache#get(org.spearce.jgit.lib.WindowProvider, int)}
+	 *            {@link WindowCache#get(WindowCursor, WindowProvider, int)}
 	 *            for details.
 	 * @return total number of bytes in the requested window.
 	 */
