@@ -22,9 +22,7 @@ import java.util.zip.Inflater;
 /**
  * A {@link ByteWindow} with an underlying byte array for storage.
  */
-public final class ByteArrayWindow extends ByteWindow {
-	private final byte[] array;
-
+final class ByteArrayWindow extends ByteWindow<byte[]> {
 	/**
 	 * Constructor for ByteWindow.
 	 * 
@@ -36,19 +34,18 @@ public final class ByteArrayWindow extends ByteWindow {
 	 * @param b
 	 *            byte array for storage
 	 */
-	public ByteArrayWindow(final WindowProvider o, final int d, final byte[] b) {
-		super(o, d);
-		array = b;
+	ByteArrayWindow(final WindowProvider o, final int d, final byte[] b) {
+		super(o, d, b, b.length);
 	}
 
-	public int copy(final int p, final byte[] b, final int o, int n) {
+	int copy(final byte[] array, final int p, final byte[] b, final int o, int n) {
 		n = Math.min(array.length - p, n);
 		System.arraycopy(array, p, b, o, n);
 		return n;
 	}
 
-	public int inflate(final int pos, final byte[] b, int o, final Inflater inf)
-			throws DataFormatException {
+	int inflate(final byte[] array, final int pos, final byte[] b, int o,
+			final Inflater inf) throws DataFormatException {
 		while (!inf.finished()) {
 			if (inf.needsInput()) {
 				inf.setInput(array, pos, array.length - pos);
@@ -59,9 +56,5 @@ public final class ByteArrayWindow extends ByteWindow {
 		while (!inf.finished() && !inf.needsInput())
 			o += inf.inflate(b, o, b.length - o);
 		return o;
-	}
-
-	public int size() {
-		return array.length;
 	}
 }

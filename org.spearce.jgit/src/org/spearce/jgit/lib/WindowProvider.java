@@ -59,18 +59,17 @@ public abstract class WindowProvider {
 	 * might prevent other threads from accessing the cache.
 	 * </p>
 	 * 
+	 * @param curs
+	 *            the cursor the window needs to be pinned by while loading.
 	 * @param id
 	 *            the id number of this window. See
-	 *            {@link WindowCache#get(WindowCursor, WindowProvider, int)}
-	 *            for details.
-	 * @return a byte buffer for this window's data. Never null. The returned
-	 *         buffer may be smaller than the estimate supplied by
-	 *         {@link #getWindowSize(int)}.
+	 *            {@link WindowCache#get(WindowCursor, WindowProvider, int)} for
+	 *            details.
 	 * @throws IOException
 	 *             the window could not be loaded due to an operating system
 	 *             issue.
 	 */
-	public abstract ByteWindow loadWindow(int id) throws IOException;
+	public abstract void loadWindow(WindowCursor curs, int id) throws IOException;
 
 	/**
 	 * Estimate the size of a given window.

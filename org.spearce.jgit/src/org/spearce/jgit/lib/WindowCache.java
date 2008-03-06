@@ -109,10 +109,12 @@ public class WindowCache {
 			final WindowProvider wp, final int id) throws IOException {
 		int idx = binarySearch(wp, id);
 		if (0 <= idx) {
-			final ByteWindow w = windows[idx];
-			w.lastAccessed = ++accessClock;
-			curs.window = w;
-			return;
+			final ByteWindow<?> w = windows[idx];
+			if ((curs.handle = w.get()) != null) {
+				w.lastAccessed = ++accessClock;
+				curs.window = w;
+				return;
+			}
 		}
 
 		if (++wp.openCount == 1) {
@@ -136,7 +138,12 @@ public class WindowCache {
 				|| (openWindowCount > 0 && openByteCount + wSz > maxByteCount)) {
 			int oldest = 0;
 			for (int k = openWindowCount - 1; k > 0; k--) {
-				if (windows[k].lastAccessed < windows[oldest].lastAccessed)
+				final ByteWindow w = windows[k];
+				if (w.isEnqueued()) {
+					oldest = k;
+					break;
+				}
+				if (w.lastAccessed < windows[oldest].lastAccessed)
 					oldest = k;
 			}
 
@@ -145,7 +152,7 @@ public class WindowCache {
 			if (--p.openCount == 0 && p != wp)
 				p.close();
 
-			openByteCount -= w.size();
+			openByteCount -= w.size;
 			final int toMove = openWindowCount - oldest - 1;
 			if (toMove > 0)
 				System.arraycopy(windows, oldest + 1, windows, oldest, toMove);
@@ -157,11 +164,10 @@ public class WindowCache {
 		final int toMove = openWindowCount - idx;
 		if (toMove > 0)
 			System.arraycopy(windows, idx, windows, idx + 1, toMove);
-		final ByteWindow w = wp.loadWindow(id);
-		windows[idx] = w;
+		wp.loadWindow(curs, id);
+		windows[idx] = curs.window;
 		openWindowCount++;
-		openByteCount += w.size();
-		curs.window = w;
+		openByteCount += curs.window.size;
 		return;
 	}
 
@@ -204,7 +210,7 @@ public class WindowCache {
 			if (win.provider != wp)
 				windows[d++] = win;
 			else
-				openByteCount -= win.size();
+				openByteCount -= win.size;
 		}
 		openWindowCount = d;
 

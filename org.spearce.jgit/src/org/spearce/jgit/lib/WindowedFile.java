@@ -338,15 +338,21 @@ public class WindowedFile {
 			fd = null;
 		}
 
-		public ByteWindow loadWindow(final int windowId) throws IOException {
+		public void loadWindow(final WindowCursor curs, final int windowId)
+				throws IOException {
 			final int windowSize = getWindowSize(windowId);
 			if (map) {
 				final MappedByteBuffer map = fd.getChannel().map(
 						MapMode.READ_ONLY, windowId << szb, windowSize);
-				if (map.hasArray())
-					return new ByteArrayWindow(this, windowId, map.array());
-				else
-					return new ByteBufferWindow(this, windowId, map);
+				if (map.hasArray()) {
+					final byte[] b = map.array();
+					curs.window = new ByteArrayWindow(this, windowId, b);
+					curs.handle = b;
+				} else {
+					curs.window = new ByteBufferWindow(this, windowId, map);
+					curs.handle = map;
+				}
+				return;
 			}
 
 			final byte[] b = new byte[windowSize];
@@ -354,7 +360,8 @@ public class WindowedFile {
 				fd.seek(windowId << szb);
 				fd.readFully(b);
 			}
-			return new ByteArrayWindow(this, windowId, b);
+			curs.window = new ByteArrayWindow(this, windowId, b);
+			curs.handle = b;
 		}
 
 		public int getWindowSize(final int id) {

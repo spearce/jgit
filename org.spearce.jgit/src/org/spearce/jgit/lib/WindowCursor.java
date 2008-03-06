@@ -7,6 +7,8 @@ import java.util.zip.Inflater;
 public final class WindowCursor {
 	ByteWindow window;
 
+	Object handle;
+
 	/**
 	 * Copy bytes from the window to a caller supplied buffer.
 	 * 
@@ -25,7 +27,7 @@ public final class WindowCursor {
 	 *         bytes available.
 	 */
 	public int copy(int pos, byte[] dstbuf, int dstoff, int cnt) {
-		return window.copy(pos, dstbuf, dstoff, cnt);
+		return window.copy(handle, pos, dstbuf, dstoff, cnt);
 	}
 
 	/**
@@ -54,11 +56,12 @@ public final class WindowCursor {
 	 */
 	public int inflate(int pos, byte[] dstbuf, int dstoff, Inflater inf)
 			throws DataFormatException {
-		return window.inflate(pos, dstbuf, dstoff, inf);
+		return window.inflate(handle, pos, dstbuf, dstoff, inf);
 	}
 
 	/** Release the current window cursor. */
 	public void release() {
 		window = null;
+		handle = null;
 	}
 }
