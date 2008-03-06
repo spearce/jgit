@@ -156,8 +156,7 @@ public class Repository {
 	}
 
 	private void initializeWindowCache() {
-		// FIXME these should be configurable...
-		windows = new WindowCache(256 * 1024 * 1024, 4);
+		windows = new WindowCache(getConfig().getCore().getPackedGitLimit(), 4);
 	}
 
 	/**

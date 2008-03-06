@@ -49,9 +49,10 @@ public class PackFile {
 	public PackFile(final Repository parentRepo, final File idxFile,
 			final File packFile) throws IOException {
 		repo = parentRepo;
-		// FIXME window size and mmap type should be configurable
-		pack = new WindowedFile(repo.getWindowCache(), packFile,
-				64 * 1024 * 1024, true) {
+		final CoreConfig core = parentRepo.getConfig().getCore();
+		final int winsz = core.getPackedGitWindowSize();
+		final boolean mmap = core.isPackedGitMMAP();
+		pack = new WindowedFile(repo.getWindowCache(), packFile, winsz, mmap) {
 			@Override
 			protected void onOpen() throws IOException {
 				readPackHeader();
