@@ -646,7 +646,7 @@ public class Repository {
 
 	private Ref readRef(final String revstr, final boolean missingOk)
 			throws IOException {
-		refreshPackredRefsCache();
+		refreshPackedRefsCache();
 		for (int k = 0; k < refSearchPaths.length; k++) {
 			final Ref r = readRefBasic(refSearchPaths[k] + revstr);
 			if (missingOk || r.getObjectId() != null) {
@@ -787,7 +787,7 @@ public class Repository {
 			branches.add("refs/" + refSubDir + b);
 		}
 		
-		refreshPackredRefsCache();
+		refreshPackedRefsCache();
 		Set<String> keySet = packedRefs.keySet();
 		for (String s : keySet)
 			if (s.startsWith("refs/" + refSubDir) && !branches.contains(s))
@@ -805,7 +805,7 @@ public class Repository {
 	private Map<String,ObjectId> packedRefs = new HashMap<String,ObjectId>();
 	private long packedrefstime = 0;
 
-	private void refreshPackredRefsCache() {
+	private void refreshPackedRefsCache() {
 		File file = new File(gitDir, "packed-refs");
 		if (!file.exists()) {
 			if (packedRefs.size() > 0)
