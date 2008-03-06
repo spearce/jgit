@@ -39,6 +39,18 @@ public class WindowCache {
 	private int accessClock;
 
 	/**
+	 * Create a new window cache, using configured values.
+	 * 
+	 * @param cfg
+	 *            repository (or global user) configuration to control the
+	 *            cache. If cache parameters are not specified by the given
+	 *            configuration they will use default values.
+	 */
+	public WindowCache(final RepositoryConfig cfg) {
+		this(cfg.getCore().getPackedGitLimit(), 4);
+	}
+
+	/**
 	 * Create a new window cache.
 	 * 
 	 * @param maxBytes

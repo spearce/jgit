@@ -47,6 +47,8 @@ import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
 import org.spearce.egit.core.GitProvider;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.RepositoryConfig;
+import org.spearce.jgit.lib.WindowCache;
 
 /**
  * This class keeps information about how a project is mapped to
@@ -58,6 +60,8 @@ public class GitProjectData {
 	private static final Map repositoryCache = new HashMap();
 
 	private static RepositoryChangeListener[] repositoryChangeListeners = {};
+
+	private static WindowCache windows;
 
 	@SuppressWarnings("synthetic-access")
 	private static final IResourceChangeListener rcl = new RCL();
@@ -225,10 +229,31 @@ public class GitProjectData {
 		final Reference r = (Reference) repositoryCache.get(gitDir);
 		Repository d = r != null ? (Repository) r.get() : null;
 		if (d == null) {
-			d = new Repository(gitDir);
+			d = new Repository(getWindowCache(), gitDir);
 			repositoryCache.put(gitDir, new WeakReference(d));
 		}
 		return d;
+	}
+
+	/**
+	 * Obtain the global window cache for the workspace.
+	 * 
+	 * @return shared global cache for all projects.
+	 */
+	public static synchronized WindowCache getWindowCache() {
+		if (windows == null) {
+			final RepositoryConfig usr = RepositoryConfig.openUserConfig();
+			try {
+				usr.load();
+			} catch (FileNotFoundException fnfe){
+				usr.create();
+			} catch (IOException err) {
+				usr.create();
+				Activator.logError("Cannot read user .gitconfig", err);
+			}
+			windows = new WindowCache(usr);
+		}
+		return windows;
 	}
 
 	private final IProject project;

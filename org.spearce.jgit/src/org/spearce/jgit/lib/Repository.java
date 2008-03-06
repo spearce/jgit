@@ -72,7 +72,7 @@ public class Repository {
 
 	private PackFile[] packs;
 
-	private WindowCache windows;
+	private final WindowCache windows;
 
 	private Map<ObjectId,Reference<Tree>> treeCache = new WeakHashMap<ObjectId,Reference<Tree>>(30000);
 	private Map<ObjectId,Reference<Commit>> commitCache = new WeakHashMap<ObjectId,Reference<Commit>>(30000);
@@ -87,6 +87,24 @@ public class Repository {
 	 * @throws IOException
 	 */
 	public Repository(final File d) throws IOException {
+		this(null, d);
+	}
+
+	/**
+	 * Construct a representation of a Git repository.
+	 * 
+	 * @param wc
+	 *            cache this repository's data will be cached through during
+	 *            access. May be shared with another repository, or null to
+	 *            indicate this repository should allocate its own private
+	 *            cache.
+	 * @param d
+	 *            GIT_DIR (the location of the repository metadata).
+	 * @throws IOException
+	 *             the repository appears to already exist but cannot be
+	 *             accessed.
+	 */
+	public Repository(final WindowCache wc, final File d) throws IOException {
 		gitDir = d.getAbsoluteFile();
 		try {
 			objectsDirs = readObjectsDirs(new File(gitDir, "objects"), new ArrayList<File>()).toArray(new File[0]);
@@ -98,7 +116,9 @@ public class Repository {
 		refsDir = new File(gitDir, "refs");
 		packs = new PackFile[0];
 		config = new RepositoryConfig(this);
-		if (objectsDirs[0].exists()) {
+
+		final boolean isExisting = objectsDirs[0].exists();
+		if (isExisting) {
 			getConfig().load();
 			final String repositoryFormatVersion = getConfig().getString(
 					"core", null, "repositoryFormatVersion");
@@ -106,9 +126,12 @@ public class Repository {
 				throw new IOException("Unknown repository format \""
 						+ repositoryFormatVersion + "\"; expected \"0\".");
 			}
-			initializeWindowCache();
-			scanForPacks();
+		} else {
+			getConfig().create();
 		}
+		windows = wc != null ? wc : new WindowCache(getConfig());
+		if (isExisting)
+			scanForPacks();
 	}
 
 	private Collection<File> readObjectsDirs(File objectsDir, Collection<File> ret) throws IOException {
@@ -152,11 +175,6 @@ public class Repository {
 
 		getConfig().create();
 		getConfig().save();
-		initializeWindowCache();
-	}
-
-	private void initializeWindowCache() {
-		windows = new WindowCache(getConfig().getCore().getPackedGitLimit(), 4);
 	}
 
 	/**
