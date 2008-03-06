@@ -6,6 +6,7 @@ Bundle-Version: 0.3.1.qualifier
 Bundle-Localization: plugin
 Bundle-Vendor: %provider_name
 Export-Package: org.spearce.jgit.errors,
- org.spearce.jgit.lib
+ org.spearce.jgit.lib,
+ org.spearce.jgit.stgit
 Eclipse-LazyStart: true
 Bundle-RequiredExecutionEnvironment: J2SE-1.5

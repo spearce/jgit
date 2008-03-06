@@ -96,9 +96,9 @@ import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Tag;
 import org.spearce.jgit.lib.TopologicalSorter;
-import org.spearce.jgit.lib.Repository.StGitPatch;
 import org.spearce.jgit.lib.TopologicalSorter.Edge;
 import org.spearce.jgit.lib.TopologicalSorter.Lane;
+import org.spearce.jgit.stgit.StGitPatch;
 
 /**
  * The Git history page, i.e. the history view.

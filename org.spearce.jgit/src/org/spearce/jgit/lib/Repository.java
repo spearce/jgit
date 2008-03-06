@@ -33,6 +33,7 @@ import java.util.WeakHashMap;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.ObjectWritingException;
+import org.spearce.jgit.stgit.StGitPatch;
 
 /**
  * Represents a Git repository. A repository holds all objects and refs used for
@@ -869,39 +870,6 @@ public class Repository {
 			e.printStackTrace();
 			return false;
 		}
-	}
-
-	/**
-	 * A Stacked Git patch
-	 */
-	public static class StGitPatch {
-
-		/**
-		 * Construct an StGitPatch
-		 * @param patchName
-		 * @param id
-		 */
-		public StGitPatch(String patchName, ObjectId id) {
-			name = patchName;
-			gitId = id;
-		}
-
-		/**
-		 * @return commit id of patch
-		 */
-		public ObjectId getGitId() {
-			return gitId;
-		}
-
-		/**
-		 * @return name of patch
-		 */
-		public String getName() {
-			return name;
-		}
-
-		private String name;
-		private ObjectId gitId;
 	}
 
 	/**
