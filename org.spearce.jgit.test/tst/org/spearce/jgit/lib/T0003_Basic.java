@@ -62,7 +62,6 @@ public class T0003_Basic extends RepositoryTestCase {
 				"825dc642cb6eb9a060e54bf8d69288fbee4904");
 		assertTrue("Exists " + o, o.isFile());
 		assertTrue("Read-only " + o, !o.canWrite());
-		assertEquals(9, o.length());
 	}
 
 	public void test002_WriteEmptyTree2() throws IOException {
