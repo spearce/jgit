@@ -49,10 +49,7 @@ public class PackFile {
 	public PackFile(final Repository parentRepo, final File idxFile,
 			final File packFile) throws IOException {
 		repo = parentRepo;
-		final CoreConfig core = parentRepo.getConfig().getCore();
-		final int winsz = core.getPackedGitWindowSize();
-		final boolean mmap = core.isPackedGitMMAP();
-		pack = new WindowedFile(repo.getWindowCache(), packFile, winsz, mmap) {
+		pack = new WindowedFile(repo.getWindowCache(), packFile) {
 			@Override
 			protected void onOpen() throws IOException {
 				readPackHeader();

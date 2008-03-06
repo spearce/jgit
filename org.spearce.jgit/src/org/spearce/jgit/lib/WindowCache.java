@@ -24,9 +24,25 @@ import java.util.zip.Inflater;
  * used by the other windowed file access classes.
  */
 public class WindowCache {
+	private static final int bits(int sz) {
+		if (sz < 4096)
+			throw new IllegalArgumentException("Invalid window size");
+		if (Integer.bitCount(sz) != 1)
+			throw new IllegalArgumentException("Window size must be power of 2");
+		return Integer.numberOfTrailingZeros(sz);
+	}
+
 	private final Inflater[] inflaterCache;
 
 	private final int maxByteCount;
+
+	final int sz;
+
+	final int szb;
+
+	final int szm;
+
+	final boolean mmap;
 
 	private final ByteWindow[] windows;
 
@@ -47,7 +63,8 @@ public class WindowCache {
 	 *            configuration they will use default values.
 	 */
 	public WindowCache(final RepositoryConfig cfg) {
-		this(cfg.getCore().getPackedGitLimit(), 4);
+		this(cfg.getCore().getPackedGitLimit(), cfg.getCore()
+				.getPackedGitWindowSize(), cfg.getCore().isPackedGitMMAP(), 4);
 	}
 
 	/**
@@ -58,6 +75,18 @@ public class WindowCache {
 	 *            loading another window will cause the cache to exceed this
 	 *            limit then less-recently used windows will be released for
 	 *            garbage collection before the new window is loaded.
+	 * @param windowSz
+	 *            number of bytes within a window. This value must be a power of
+	 *            2 and must be at least 4096, or one system page, whichever is
+	 *            larger. If <code>mapType</code> is not null then this value
+	 *            should be large (e.g. several MiBs) to amortize the high cost
+	 *            of mapping the file.
+	 * @param usemmap
+	 *            indicates if the operating system mmap should be used for the
+	 *            byte windows. False means don't use mmap, preferring to
+	 *            allocate a byte[] in Java and reading the file data into the
+	 *            array. True will use a read only mmap, however this requires
+	 *            allocation of small temporary objects during every read.
 	 * @param maxOpen
 	 *            maximum number of windows to have open in the cache at one
 	 *            time. If loading another window will cause the cache to exceed
@@ -65,8 +94,13 @@ public class WindowCache {
 	 *            will be released for garbage collection before the new window
 	 *            is loaded.
 	 */
-	public WindowCache(final int maxBytes, final int maxOpen) {
+	public WindowCache(final int maxBytes, final int windowSz,
+			final boolean usemmap, final int maxOpen) {
 		maxByteCount = maxBytes;
+		sz = windowSz;
+		szb = bits(windowSz);
+		szm = (1 << szb) - 1;
+		mmap = usemmap;
 		windows = new ByteWindow[maxOpen];
 		inflaterCache = new Inflater[maxOpen];
 	}

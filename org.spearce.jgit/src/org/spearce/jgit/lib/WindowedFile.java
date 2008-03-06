@@ -49,21 +49,7 @@ import java.util.zip.Inflater;
  * </p>
  */
 public class WindowedFile {
-	private static final int bits(int sz) {
-		if (sz < 4096)
-			throw new IllegalArgumentException("Invalid window size");
-		if (Integer.bitCount(sz) != 1)
-			throw new IllegalArgumentException("Window size must be power of 2");
-		return Integer.numberOfTrailingZeros(sz);
-	}
-
 	private final WindowCache cache;
-
-	private final int sz;
-
-	private final int szb;
-
-	private final int szm;
 
 	private final Provider wp;
 
@@ -79,26 +65,10 @@ public class WindowedFile {
 	 *            the file to open. The file will be opened for reading only,
 	 *            unless {@link FileChannel.MapMode#READ_WRITE} or {@link FileChannel.MapMode#PRIVATE}
 	 *            is given.
-	 * @param windowSz
-	 *            number of bytes within a window. This value must be a power of
-	 *            2 and must be at least 4096, or one system page, whichever is
-	 *            larger. If <code>mapType</code> is not null then this value
-	 *            should be large (e.g. several MiBs) to amortize the high cost
-	 *            of mapping the file.
-	 * @param usemmap
-	 *            indicates if the operating system mmap should be used for the
-	 *            byte windows. False means don't use mmap, preferring to
-	 *            allocate a byte[] in Java and reading the file data into the
-	 *            array. True will use a read only mmap, however this requires
-	 *            allocation of small temporary objects during every read.
 	 */
-	public WindowedFile(final WindowCache winCache, final File file,
-			final int windowSz, final boolean usemmap) {
+	public WindowedFile(final WindowCache winCache, final File file) {
 		cache = winCache;
-		sz = windowSz;
-		szb = bits(windowSz);
-		szm = (1 << szb) - 1;
-		wp = new Provider(usemmap, file);
+		wp = new Provider(file);
 	}
 
 	/**
@@ -177,8 +147,8 @@ public class WindowedFile {
 		int remaining = cnt;
 		while (remaining > 0 && position < wp.length) {
 			final int r;
-			cache.get(curs, wp, (int) (position >> szb));
-			r = curs.copy(((int) position) & szm, dstbuf, dstoff, remaining);
+			cache.get(curs, wp, (int) (position >> cache.szb));
+			r = curs.copy(((int) position) & cache.szm, dstbuf, dstoff, remaining);
 			position += r;
 			dstoff += r;
 			remaining -= r;
@@ -231,9 +201,9 @@ public class WindowedFile {
 			final Inflater inf)
 			throws IOException, DataFormatException {
 		int dstoff = 0;
-		cache.get(curs, wp, (int) (pos >> szb));
-		dstoff = curs.inflate(((int) pos) & szm, dstbuf, dstoff, inf);
-		pos >>= szb;
+		cache.get(curs, wp, (int) (pos >> cache.szb));
+		dstoff = curs.inflate(((int) pos) & cache.szm, dstbuf, dstoff, inf);
+		pos >>= cache.szb;
 		while (!inf.finished()) {
 			cache.get(curs, wp, (int) ++pos);
 			dstoff = curs.inflate(0, dstbuf, dstoff, inf);
@@ -294,16 +264,13 @@ public class WindowedFile {
 	}
 
 	private class Provider extends WindowProvider {
-		final boolean map;
-
 		RandomAccessFile fd;
 
 		long length;
 
 		final File fPath;
 
-		Provider(final boolean usemmap, final File file) {
-			map = usemmap;
+		Provider(final File file) {
 			fPath = file;
 			length = Long.MAX_VALUE;
 		}
@@ -340,10 +307,11 @@ public class WindowedFile {
 
 		public void loadWindow(final WindowCursor curs, final int windowId)
 				throws IOException {
+			final long position = windowId << cache.szb;
 			final int windowSize = getWindowSize(windowId);
-			if (map) {
+			if (cache.mmap) {
 				final MappedByteBuffer map = fd.getChannel().map(
-						MapMode.READ_ONLY, windowId << szb, windowSize);
+						MapMode.READ_ONLY, position, windowSize);
 				if (map.hasArray()) {
 					final byte[] b = map.array();
 					curs.window = new ByteArrayWindow(this, windowId, b);
@@ -357,7 +325,7 @@ public class WindowedFile {
 
 			final byte[] b = new byte[windowSize];
 			synchronized (fd) {
-				fd.seek(windowId << szb);
+				fd.seek(position);
 				fd.readFully(b);
 			}
 			curs.window = new ByteArrayWindow(this, windowId, b);
@@ -365,7 +333,8 @@ public class WindowedFile {
 		}
 
 		public int getWindowSize(final int id) {
-			final long position = id << szb;
+			final int sz = cache.sz;
+			final long position = id << cache.szb;
 			return length < position + sz ? (int) (length - position) : sz;
 		}
 
