@@ -98,8 +98,8 @@ public class ReadTreeTest extends RepositoryTestCase {
 		InputStream is = new ByteArrayInputStream(data.getBytes());
 		ObjectWriter objectWriter = new ObjectWriter(db);
 		try {
-			return objectWriter.writeObject(Constants.OBJ_BLOB, Constants.TYPE_BLOB, data.getBytes().length, is,
-			true);
+			return objectWriter.writeObject(Constants.TYPE_BLOB, data
+					.getBytes().length, is, true);
 		} catch (IOException e) {
 			fail(e.toString());
 		}

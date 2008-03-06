@@ -24,12 +24,9 @@ import java.util.zip.Deflater;
 public class CoreConfig {
 	private final int compression;
 
-	private final boolean legacyHeaders;
-
 	CoreConfig(final RepositoryConfig rc) {
 		compression = rc.getInt("core", null,
 				"compression", Deflater.DEFAULT_COMPRESSION);
-		legacyHeaders = rc.getBoolean("core", null, "legacyHeaders", false);
 	}
 
 	/**
@@ -38,13 +35,5 @@ public class CoreConfig {
 	 */
 	public int getCompression() {
 		return compression;
-	}
-
-	/**
-	 * @see ObjectWriter
-	 * @return whether to use legacy headers
-	 */
-	public boolean useLegacyHeaders() {
-		return legacyHeaders;
 	}
 }
