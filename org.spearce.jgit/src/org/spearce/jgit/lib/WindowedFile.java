@@ -74,8 +74,6 @@ public class WindowedFile {
 
 	private final Provider wp;
 
-	private final long length;
-
 	/**
 	 * Open a file for reading through window caching.
 	 * 
@@ -110,7 +108,6 @@ public class WindowedFile {
 		szb = bits(windowSz);
 		szm = (1 << szb) - 1;
 		wp = new Provider(usemmap, file);
-		length = wp.fd.length();
 	}
 
 	/**
@@ -119,7 +116,7 @@ public class WindowedFile {
 	 * @return the number of bytes contained within this file.
 	 */
 	public long length() {
-		return length;
+		return wp.length;
 	}
 
 	/**
@@ -182,7 +179,7 @@ public class WindowedFile {
 	public int read(long position, final byte[] dstbuf, int dstoff,
 			final int cnt) throws IOException {
 		int remaining = cnt;
-		while (remaining > 0 && position < length) {
+		while (remaining > 0 && position < wp.length) {
 			final int r = cache.get(wp, (int) (position >> szb)).copy(
 					((int) position) & szm, dstbuf, dstoff, remaining);
 			position += r;
@@ -285,11 +282,14 @@ public class WindowedFile {
 
 		final RandomAccessFile fd;
 
+		long length;
+
 		final File fPath;
 
 		Provider(final boolean usemmap, final File file) throws IOException {
 			map = usemmap;
 			fd = new RandomAccessFile(file, "r");
+			length = fd.length();
 			fPath = file;
 		}
 
