@@ -29,10 +29,12 @@ class PackIndex {
 
 	private byte[][] idxdata;
 
+	private long objectCnt;
+
 	PackIndex(final File idxFile, final long objectCnt) throws IOException {
 		final FileInputStream fd = new FileInputStream(idxFile);
 		try {
-			loadVersion1(fd, objectCnt, idxFile);
+			loadVersion1(fd);
 		} catch (IOException ioe) {
 			final String path = idxFile.getAbsolutePath();
 			final IOException err;
@@ -46,13 +48,15 @@ class PackIndex {
 				// ignore
 			}
 		}
+
+		if (this.objectCnt != objectCnt)
+			throw new CorruptObjectException("Pack index"
+					+ " object count mismatch; expected " + objectCnt
+					+ " found " + this.objectCnt + ": "
+					+ idxFile.getAbsolutePath());
 	}
 
-	private void loadVersion1(final InputStream fd, final long objectCnt,
-			final File idxFile) throws CorruptObjectException, IOException {
-		if (idxFile.length() != (IDX_HDR_LEN + (24 * objectCnt) + (2 * Constants.OBJECT_ID_LENGTH)))
-			throw new CorruptObjectException("Invalid pack index v1 length.");
-
+	private void loadVersion1(final InputStream fd) throws CorruptObjectException, IOException {
 		final byte[] fanoutTable = new byte[IDX_HDR_LEN];
 		readFully(fd, fanoutTable);
 
@@ -72,6 +76,7 @@ class PackIndex {
 				readFully(fd, idxdata[k]);
 			}
 		}
+		objectCnt = idxHeader[255];
 	}
 
 	private static long decodeUInt32(final int offset, final byte[] intbuf) {
