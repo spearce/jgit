@@ -49,7 +49,7 @@ import java.util.zip.Inflater;
  * </p>
  */
 public class WindowedFile {
-	private final WindowCache cache;
+	final WindowCache cache;
 
 	private final File fPath;
 

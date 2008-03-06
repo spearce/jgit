@@ -16,6 +16,7 @@
  */
 package org.spearce.jgit.lib;
 
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -53,8 +54,9 @@ abstract class ByteWindow<T> extends SoftReference<T> {
 	 * @param sz
 	 *            the total number of bytes in this window.
 	 */
+	@SuppressWarnings("unchecked")
 	ByteWindow(final WindowedFile o, final int d, final T ref, final int sz) {
-		super(ref);
+		super(ref, (ReferenceQueue<T>)o.cache.clearedWindowQueue);
 		provider = o;
 		size = sz;
 		id = d;

@@ -17,11 +17,12 @@
 package org.spearce.jgit.lib;
 
 import java.io.IOException;
+import java.lang.ref.ReferenceQueue;
 import java.util.zip.Inflater;
 
 /**
- * The WindowCache manages reusable <q>Windows</q> and inflaters
- * used by the other windowed file access classes.
+ * The WindowCache manages reusable <code>Windows</code> and inflaters used by
+ * the other windowed file access classes.
  */
 public class WindowCache {
 	private static final int bits(int sz) {
@@ -43,6 +44,8 @@ public class WindowCache {
 	final int szm;
 
 	final boolean mmap;
+
+	final ReferenceQueue<?> clearedWindowQueue;
 
 	private final ByteWindow[] windows;
 
@@ -70,6 +73,7 @@ public class WindowCache {
 		mmap = cfg.getCore().isPackedGitMMAP();
 		windows = new ByteWindow[maxByteCount / sz];
 		inflaterCache = new Inflater[4];
+		clearedWindowQueue = new ReferenceQueue<Object>();
 	}
 
 	synchronized Inflater borrowInflater() {
@@ -131,20 +135,50 @@ public class WindowCache {
 				wp.openCount = 0;
 				throw ioe;
 			}
+
+			// The cacheOpen may have mapped the window we are trying to
+			// map ourselves. Retrying the search ensures that does not
+			// happen to us.
+			//
+			idx = binarySearch(wp, id);
+			if (0 <= idx) {
+				final ByteWindow<?> w = windows[idx];
+				if ((curs.handle = w.get()) != null) {
+					w.lastAccessed = ++accessClock;
+					curs.window = w;
+					return;
+				}
+			}
 		}
 
 		idx = -(idx + 1);
+		for (;;) {
+			final ByteWindow<?> w = (ByteWindow<?>) clearedWindowQueue.poll();
+			if (w == null)
+				break;
+			final int oldest = binarySearch(w.provider,w.id);
+			if (oldest < 0 || windows[oldest] != w)
+				continue; // Must have been evicted by our other controls.
+
+			final WindowedFile p = w.provider;
+			if (--p.openCount == 0 && p != wp)
+				p.cacheClose();
+
+			openByteCount -= w.size;
+			final int toMove = openWindowCount - oldest - 1;
+			if (toMove > 0)
+				System.arraycopy(windows, oldest + 1, windows, oldest, toMove);
+			windows[--openWindowCount] = null;
+			if (oldest < idx)
+				idx--;
+		}
+
 		final int wSz = wp.getWindowSize(id);
 		while (openWindowCount == windows.length
 				|| (openWindowCount > 0 && openByteCount + wSz > maxByteCount)) {
 			int oldest = 0;
 			for (int k = openWindowCount - 1; k > 0; k--) {
-				final ByteWindow w = windows[k];
-				if (w.isEnqueued()) {
-					oldest = k;
-					break;
-				}
-				if (w.lastAccessed < windows[oldest].lastAccessed)
+				if (windows[k].lastAccessed < windows[oldest].lastAccessed)
 					oldest = k;
 			}
 
@@ -158,6 +192,7 @@ public class WindowCache {
 			if (toMove > 0)
 				System.arraycopy(windows, oldest + 1, windows, oldest, toMove);
 			windows[--openWindowCount] = null;
+			w.enqueue();
 			if (oldest < idx)
 				idx--;
 		}
