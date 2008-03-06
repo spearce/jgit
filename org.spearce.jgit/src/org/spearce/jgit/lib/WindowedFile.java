@@ -51,7 +51,16 @@ import java.util.zip.Inflater;
 public class WindowedFile {
 	private final WindowCache cache;
 
-	private final Provider wp;
+	private final File fPath;
+
+	final int hash;
+
+	private RandomAccessFile fd;
+
+	private long length;
+
+	/** Total number of windows actively in the associated cache. */
+	int openCount;
 
 	/**
 	 * Open a file for reading through window caching.
@@ -68,7 +77,9 @@ public class WindowedFile {
 	 */
 	public WindowedFile(final WindowCache winCache, final File file) {
 		cache = winCache;
-		wp = new Provider(file);
+		fPath = file;
+		hash = System.identityHashCode(this);
+		length = Long.MAX_VALUE;
 	}
 
 	/**
@@ -77,7 +88,7 @@ public class WindowedFile {
 	 * @return the number of bytes contained within this file.
 	 */
 	public long length() {
-		return wp.length;
+		return length;
 	}
 
 	/**
@@ -86,7 +97,7 @@ public class WindowedFile {
 	 * @return the absolute path name of the file.
 	 */
 	public String getName() {
-		return wp.getStoreDescription();
+		return fPath.getAbsolutePath();
 	}
 
 	/**
@@ -145,9 +156,9 @@ public class WindowedFile {
 	public int read(long position, final byte[] dstbuf, int dstoff,
 			final int cnt, final WindowCursor curs) throws IOException {
 		int remaining = cnt;
-		while (remaining > 0 && position < wp.length) {
+		while (remaining > 0 && position < length) {
 			final int r;
-			cache.get(curs, wp, (int) (position >> cache.szb));
+			cache.get(curs, this, (int) (position >> cache.szb));
 			r = curs.copy(((int) position) & cache.szm, dstbuf, dstoff, remaining);
 			position += r;
 			dstoff += r;
@@ -201,11 +212,11 @@ public class WindowedFile {
 			final Inflater inf)
 			throws IOException, DataFormatException {
 		int dstoff = 0;
-		cache.get(curs, wp, (int) (pos >> cache.szb));
+		cache.get(curs, this, (int) (pos >> cache.szb));
 		dstoff = curs.inflate(((int) pos) & cache.szm, dstbuf, dstoff, inf);
 		pos >>= cache.szb;
 		while (!inf.finished()) {
-			cache.get(curs, wp, (int) ++pos);
+			cache.get(curs, this, (int) ++pos);
 			dstoff = curs.inflate(0, dstbuf, dstoff, inf);
 		}
 		if (dstoff != dstbuf.length)
@@ -255,92 +266,72 @@ public class WindowedFile {
 	 *             not understand its version header information.
 	 */
 	protected void onOpen() throws IOException {
-		wp.fd.getFD(); // Silly Eclipse requires us to throw.
+		fd.getFD(); // Silly Eclipse requires us to throw.
 	}
 
 	/** Close this file and remove all open windows. */
 	public void close() {
-		cache.purge(wp);
+		cache.purge(this);
 	}
 
-	private class Provider extends WindowProvider {
-		RandomAccessFile fd;
-
-		long length;
-
-		final File fPath;
-
-		Provider(final File file) {
-			fPath = file;
-			length = Long.MAX_VALUE;
+	void cacheOpen() throws IOException {
+		fd = new RandomAccessFile(fPath, "r");
+		length = fd.length();
+		try {
+			onOpen();
+		} catch (IOException ioe) {
+			cacheClose();
+			throw ioe;
+		} catch (RuntimeException re) {
+			cacheClose();
+			throw re;
+		} catch (Error re) {
+			cacheClose();
+			throw re;
 		}
+	}
 
-		@Override
-		public void open() throws IOException {
-			fd = new RandomAccessFile(fPath, "r");
-			length = fd.length();
-			try {
-				onOpen();
-			} catch (IOException ioe) {
-				close();
-				throw ioe;
-			} catch (RuntimeException re) {
-				close();
-				throw re;
-			} catch (Error re) {
-				close();
-				throw re;
+	void cacheClose() {
+		try {
+			fd.close();
+		} catch (IOException err) {
+			// Ignore a close event. We had it open only for reading.
+			// There should not be errors related to network buffers
+			// not flushed, etc.
+		}
+		fd = null;
+	}
+
+	void loadWindow(final WindowCursor curs, final int windowId)
+			throws IOException {
+		final long position = windowId << cache.szb;
+		final int windowSize = getWindowSize(windowId);
+		if (cache.mmap) {
+			final MappedByteBuffer map = fd.getChannel().map(MapMode.READ_ONLY,
+					position, windowSize);
+			if (map.hasArray()) {
+				final byte[] b = map.array();
+				curs.window = new ByteArrayWindow(this, windowId, b);
+				curs.handle = b;
+			} else {
+				curs.window = new ByteBufferWindow(this, windowId, map);
+				curs.handle = map;
 			}
+			return;
 		}
 
-		@Override
-		public void close() {
-			try {
-				fd.close();
-			} catch (IOException err) {
-				// Ignore a close event. We had it open only for reading.
-				// There should not be errors related to network buffers
-				// not flushed, etc.
-			}
-			fd = null;
+		final byte[] b = new byte[windowSize];
+		synchronized (fd) {
+			fd.seek(position);
+			fd.readFully(b);
 		}
+		curs.window = new ByteArrayWindow(this, windowId, b);
+		curs.handle = b;
+	}
 
-		public void loadWindow(final WindowCursor curs, final int windowId)
-				throws IOException {
-			final long position = windowId << cache.szb;
-			final int windowSize = getWindowSize(windowId);
-			if (cache.mmap) {
-				final MappedByteBuffer map = fd.getChannel().map(
-						MapMode.READ_ONLY, position, windowSize);
-				if (map.hasArray()) {
-					final byte[] b = map.array();
-					curs.window = new ByteArrayWindow(this, windowId, b);
-					curs.handle = b;
-				} else {
-					curs.window = new ByteBufferWindow(this, windowId, map);
-					curs.handle = map;
-				}
-				return;
-			}
-
-			final byte[] b = new byte[windowSize];
-			synchronized (fd) {
-				fd.seek(position);
-				fd.readFully(b);
-			}
-			curs.window = new ByteArrayWindow(this, windowId, b);
-			curs.handle = b;
-		}
-
-		public int getWindowSize(final int id) {
-			final int sz = cache.sz;
-			final long position = id << cache.szb;
-			return length < position + sz ? (int) (length - position) : sz;
-		}
-
-		@Override
-		public String getStoreDescription() {
-			return fPath.getAbsolutePath();
-		}
+	int getWindowSize(final int id) {
+		final int sz = cache.sz;
+		final long position = id << cache.szb;
+		return length < position + sz ? (int) (length - position) : sz;
 	}
 }

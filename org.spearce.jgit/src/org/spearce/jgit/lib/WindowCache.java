@@ -63,46 +63,13 @@ public class WindowCache {
 	 *            configuration they will use default values.
 	 */
 	public WindowCache(final RepositoryConfig cfg) {
-		this(cfg.getCore().getPackedGitLimit(), cfg.getCore()
-				.getPackedGitWindowSize(), cfg.getCore().isPackedGitMMAP(), 4);
-	}
-
-	/**
-	 * Create a new window cache.
-	 * 
-	 * @param maxBytes
-	 *            maximum number of bytes to have in the cache at one time. If
-	 *            loading another window will cause the cache to exceed this
-	 *            limit then less-recently used windows will be released for
-	 *            garbage collection before the new window is loaded.
-	 * @param windowSz
-	 *            number of bytes within a window. This value must be a power of
-	 *            2 and must be at least 4096, or one system page, whichever is
-	 *            larger. If <code>mapType</code> is not null then this value
-	 *            should be large (e.g. several MiBs) to amortize the high cost
-	 *            of mapping the file.
-	 * @param usemmap
-	 *            indicates if the operating system mmap should be used for the
-	 *            byte windows. False means don't use mmap, preferring to
-	 *            allocate a byte[] in Java and reading the file data into the
-	 *            array. True will use a read only mmap, however this requires
-	 *            allocation of small temporary objects during every read.
-	 * @param maxOpen
-	 *            maximum number of windows to have open in the cache at one
-	 *            time. If loading another window will cause the cache to exceed
-	 *            this limit on open windows then a less-recently used window
-	 *            will be released for garbage collection before the new window
-	 *            is loaded.
-	 */
-	public WindowCache(final int maxBytes, final int windowSz,
-			final boolean usemmap, final int maxOpen) {
-		maxByteCount = maxBytes;
-		sz = windowSz;
-		szb = bits(windowSz);
+		maxByteCount = cfg.getCore().getPackedGitLimit();
+		szb = bits(cfg.getCore().getPackedGitWindowSize());
+		sz = 1 << szb;
 		szm = (1 << szb) - 1;
-		mmap = usemmap;
-		windows = new ByteWindow[maxOpen];
-		inflaterCache = new Inflater[maxOpen];
+		mmap = cfg.getCore().isPackedGitMMAP();
+		windows = new ByteWindow[maxByteCount / sz];
+		inflaterCache = new Inflater[4];
 	}
 
 	synchronized Inflater borrowInflater() {
@@ -140,7 +107,7 @@ public class WindowCache {
 	 *             was unable to load the window on demand.
 	 */
 	public synchronized final void get(final WindowCursor curs,
-			final WindowProvider wp, final int id) throws IOException {
+			final WindowedFile wp, final int id) throws IOException {
 		int idx = binarySearch(wp, id);
 		if (0 <= idx) {
 			final ByteWindow<?> w = windows[idx];
@@ -153,7 +120,7 @@ public class WindowCache {
 
 		if (++wp.openCount == 1) {
 			try {
-				wp.open();
+				wp.cacheOpen();
 			} catch (IOException ioe) {
 				wp.openCount = 0;
 				throw ioe;
@@ -182,9 +149,9 @@ public class WindowCache {
 			}
 
 			final ByteWindow w = windows[oldest];
-			final WindowProvider p = w.provider;
+			final WindowedFile p = w.provider;
 			if (--p.openCount == 0 && p != wp)
-				p.close();
+				p.cacheClose();
 
 			openByteCount -= w.size;
 			final int toMove = openWindowCount - oldest - 1;
@@ -205,7 +172,7 @@ public class WindowCache {
 		return;
 	}
 
-	private final int binarySearch(final WindowProvider sprov, final int sid) {
+	private final int binarySearch(final WindowedFile sprov, final int sid) {
 		if (openWindowCount == 0)
 			return -1;
 		final int shc = sprov.hash;
@@ -237,7 +204,7 @@ public class WindowCache {
 	 *            the window provider whose windows should be removed from the
 	 *            cache.
 	 */
-	public synchronized final void purge(final WindowProvider wp) {
+	public synchronized final void purge(final WindowedFile wp) {
 		int d = 0;
 		for (int s = 0; s < openWindowCount; s++) {
 			final ByteWindow win = windows[s];
@@ -250,7 +217,7 @@ public class WindowCache {
 
 		if (wp.openCount > 0) {
 			wp.openCount = 0;
-			wp.close();
+			wp.cacheClose();
 		}
 	}
 }

@@ -31,11 +31,11 @@ final class ByteBufferWindow extends ByteWindow<ByteBuffer> {
 	 *
 	 * @See ByteWindow
 	 *
-	 * @param o The WindowProvider
+	 * @param o The WindowedFile
 	 * @param d Window id
 	 * @param b ByteBuffer storage
 	 */
-	ByteBufferWindow(final WindowProvider o, final int d,
+	ByteBufferWindow(final WindowedFile o, final int d,
 			final ByteBuffer b) {
 		super(o, d, b, b.capacity());
 	}
