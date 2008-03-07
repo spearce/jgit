@@ -12,17 +12,18 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 	DeltaPackedObjectLoader(final PackFile pr, final long offset,
 			final int deltaSz) {
 		super(pr, offset);
+		objectType = -1;
 		deltaSize = deltaSz;
 	}
 
-	public String getType() throws IOException {
-		if (objectType == null)
+	public int getType() throws IOException {
+		if (objectType < 0)
 			getCachedBytes();
 		return objectType;
 	}
 
 	public long getSize() throws IOException {
-		if (objectType == null)
+		if (objectType < 0)
 			getCachedBytes();
 		return objectSize;
 	}

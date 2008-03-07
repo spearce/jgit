@@ -65,7 +65,7 @@ class UnpackedObjectCache {
 	}
 
 	synchronized void store(final WindowedFile pack, final long position,
-			final byte[] data, final String objectType) {
+			final byte[] data, final int objectType) {
 		if (data.length > maxByteCount)
 			return; // Too large to cache.
 
@@ -134,9 +134,9 @@ class UnpackedObjectCache {
 	static class Entry {
 		final byte[] data;
 
-		final String type;
+		final int type;
 
-		Entry(final byte[] aData, final String aType) {
+		Entry(final byte[] aData, final int aType) {
 			data = aData;
 			type = aType;
 		}

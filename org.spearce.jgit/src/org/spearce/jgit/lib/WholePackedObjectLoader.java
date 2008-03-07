@@ -8,7 +8,7 @@ import org.spearce.jgit.errors.CorruptObjectException;
 /** Reader for a non-delta (just deflated) object in a pack file. */
 class WholePackedObjectLoader extends PackedObjectLoader {
 	WholePackedObjectLoader(final PackFile pr, final long offset,
-			final String type, final int size) {
+			final int type, final int size) {
 		super(pr, offset);
 		objectType = type;
 		objectSize = size;

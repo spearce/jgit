@@ -173,6 +173,27 @@ public final class Constants {
 	}
 
 	/**
+	 * Convert an OBJ_* type constant to a TYPE_* type constant.
+	 *
+	 * @param typeCode the type code, from a pack representation.
+	 * @return the canonical string name of this type.
+	 */
+	public static String typeString(final int typeCode) {
+		switch (typeCode) {
+		case OBJ_COMMIT:
+			return TYPE_COMMIT;
+		case OBJ_TREE:
+			return TYPE_TREE;
+		case OBJ_BLOB:
+			return TYPE_BLOB;
+		case OBJ_TAG:
+			return TYPE_TAG;
+		default:
+			throw new IllegalArgumentException("Bad object type: " + typeCode);
+		}
+	}
+
+	/**
 	 * Convert an integer into its decimal representation.
 	 * 
 	 * @param s

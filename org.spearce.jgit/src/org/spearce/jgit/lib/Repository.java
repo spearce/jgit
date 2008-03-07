@@ -341,7 +341,7 @@ public class Repository {
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
-		if (Constants.TYPE_COMMIT.equals(or.getType())) {
+		if (Constants.OBJ_COMMIT == or.getType()) {
 			Commit ret = new Commit(this, id, raw);
 			// The key must not be the referenced strongly
 			// by the value in WeakHashMaps
@@ -385,12 +385,12 @@ public class Repository {
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
-		if (Constants.TYPE_TREE.equals(or.getType())) {
+		if (Constants.OBJ_TREE == or.getType()) {
 			Tree ret = new Tree(this, id, raw);
 			treeCache.put(id, new SoftReference<Tree>(ret));
 			return ret;
 		}
-		if (Constants.TYPE_COMMIT.equals(or.getType()))
+		if (Constants.OBJ_COMMIT == or.getType())
 			return mapTree(ObjectId.fromString(raw, 5));
 		throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
 	}
@@ -419,7 +419,7 @@ public class Repository {
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
-		if (Constants.TYPE_TAG.equals(or.getType()))
+		if (Constants.OBJ_TAG == or.getType())
 			return new Tag(this, id, refName, raw);
 		return new Tag(this, id, refName, null);
 	}

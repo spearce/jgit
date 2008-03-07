@@ -27,7 +27,7 @@ abstract class PackedObjectLoader extends ObjectLoader {
 
 	protected final long dataOffset;
 
-	protected String objectType;
+	protected int objectType;
 
 	protected int objectSize;
 
@@ -42,7 +42,7 @@ abstract class PackedObjectLoader extends ObjectLoader {
 		dataOffset = offset;
 	}
 
-	public String getType() throws IOException {
+	public int getType() throws IOException {
 		return objectType;
 	}
 

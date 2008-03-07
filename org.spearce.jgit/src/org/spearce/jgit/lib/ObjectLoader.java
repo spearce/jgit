@@ -33,7 +33,7 @@ public abstract class ObjectLoader {
 	public ObjectId getId() throws IOException {
 		if (objectId == null) {
 			final MessageDigest md = Constants.newMessageDigest();
-			md.update(Constants.encodeASCII(getType()));
+			md.update(Constants.encodeASCII(Constants.typeString(getType())));
 			md.update((byte) ' ');
 			md.update(Constants.encodeASCII(getSize()));
 			md.update((byte) 0);
@@ -55,10 +55,10 @@ public abstract class ObjectLoader {
 	}
 
 	/**
-	 * @return Git Object type (plain text)
+	 * @return Git in pack object type, see {@link Constants}.
 	 * @throws IOException
 	 */
-	public abstract String getType() throws IOException;
+	public abstract int getType() throws IOException;
 
 	/**
 	 * @return size of object in bytes

@@ -125,7 +125,7 @@ public class PackFile {
 		return deltaBaseCache.get(pack, position);
 	}
 
-	void saveCache(final long position, final byte[] data, final String type) {
+	void saveCache(final long position, final byte[] data, final int type) {
 		deltaBaseCache.store(pack, position, data, type);
 	}
 
@@ -184,13 +184,12 @@ public class PackFile {
 
 		switch (typeCode) {
 		case Constants.OBJ_COMMIT:
-			return whole(Constants.TYPE_COMMIT, pos, dataSize);
 		case Constants.OBJ_TREE:
-			return whole(Constants.TYPE_TREE, pos, dataSize);
 		case Constants.OBJ_BLOB:
-			return whole(Constants.TYPE_BLOB, pos, dataSize);
 		case Constants.OBJ_TAG:
-			return whole(Constants.TYPE_TAG, pos, dataSize);
+			return new WholePackedObjectLoader(this, pos, typeCode,
+					(int) dataSize);
+
 		case Constants.OBJ_OFS_DELTA: {
 			pack.readFully(pos, ib, curs);
 			p = 0;
@@ -213,10 +212,5 @@ public class PackFile {
 		default:
 			throw new IOException("Unknown object type " + typeCode + ".");
 		}
-	}
-
-	private final WholePackedObjectLoader whole(final String type,
-			final long pos, final long size) {
-		return new WholePackedObjectLoader(this, pos, type, (int) size);
 	}
 }

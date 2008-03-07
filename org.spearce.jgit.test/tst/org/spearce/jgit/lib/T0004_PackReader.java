@@ -34,7 +34,7 @@ public class T0004_PackReader extends RepositoryTestCase {
 		or = pr.get(id);
 		assertNotNull(or);
 		assertEquals(id, or.getId());
-		assertEquals(Constants.TYPE_TREE, or.getType());
+		assertEquals(Constants.OBJ_TREE, or.getType());
 		assertEquals(35, or.getSize());
 		assertEquals(7738, or.getDataOffset());
 		pr.close();
@@ -49,7 +49,7 @@ public class T0004_PackReader extends RepositoryTestCase {
 		assertNotNull(or);
 		assertTrue(or instanceof PackedObjectLoader);
 		assertEquals(id, or.getId());
-		assertEquals(Constants.TYPE_BLOB, or.getType());
+		assertEquals(Constants.OBJ_BLOB, or.getType());
 		assertEquals(18009, or.getSize());
 		assertEquals(537, ((PackedObjectLoader) or).getDataOffset());
 	}

@@ -28,7 +28,7 @@ import org.spearce.jgit.errors.CorruptObjectException;
  * stored in a pack.
  */
 public class UnpackedObjectLoader extends ObjectLoader {
-	private final String objectType;
+	private final int objectType;
 
 	private final int objectSize;
 
@@ -86,7 +86,7 @@ public class UnpackedObjectLoader extends ObjectLoader {
 				if (hdr[1] != 'l' || hdr[2] != 'o' || hdr[3] != 'b'
 						|| hdr[4] != ' ')
 					throw new CorruptObjectException(id, "invalid type");
-				objectType = Constants.TYPE_BLOB;
+				objectType = Constants.OBJ_BLOB;
 				pos = 5;
 				break;
 			case 'c':
@@ -94,7 +94,7 @@ public class UnpackedObjectLoader extends ObjectLoader {
 						|| hdr[3] != 'm' || hdr[4] != 'i' || hdr[5] != 't'
 						|| hdr[6] != ' ')
 					throw new CorruptObjectException(id, "invalid type");
-				objectType = Constants.TYPE_COMMIT;
+				objectType = Constants.OBJ_COMMIT;
 				pos = 7;
 				break;
 			case 't':
@@ -102,13 +102,13 @@ public class UnpackedObjectLoader extends ObjectLoader {
 				case 'a':
 					if (hdr[2] != 'g' || hdr[3] != ' ')
 						throw new CorruptObjectException(id, "invalid type");
-					objectType = Constants.TYPE_TAG;
+					objectType = Constants.OBJ_TAG;
 					pos = 4;
 					break;
 				case 'r':
 					if (hdr[2] != 'e' || hdr[3] != 'e' || hdr[4] != ' ')
 						throw new CorruptObjectException(id, "invalid type");
-					objectType = Constants.TYPE_TREE;
+					objectType = Constants.OBJ_TREE;
 					pos = 5;
 					break;
 				default:
@@ -148,16 +148,10 @@ public class UnpackedObjectLoader extends ObjectLoader {
 
 			switch (typeCode) {
 			case Constants.OBJ_COMMIT:
-				objectType = Constants.TYPE_COMMIT;
-				break;
 			case Constants.OBJ_TREE:
-				objectType = Constants.TYPE_TREE;
-				break;
 			case Constants.OBJ_BLOB:
-				objectType = Constants.TYPE_BLOB;
-				break;
 			case Constants.OBJ_TAG:
-				objectType = Constants.TYPE_TAG;
+				objectType = typeCode;
 				break;
 			default:
 				throw new CorruptObjectException(id, "invalid type");
@@ -187,7 +181,7 @@ public class UnpackedObjectLoader extends ObjectLoader {
 			new CorruptObjectException(getId(), "incorrect length");
 	}
 
-	public String getType() {
+	public int getType() {
 		return objectType;
 	}
 
