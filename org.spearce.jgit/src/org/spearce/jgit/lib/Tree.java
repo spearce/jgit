@@ -514,12 +514,12 @@ public class Tree extends TreeEntry implements Treeish {
 		int nextIndex = 0;
 
 		while (rawPtr < raw.length) {
-			int c = raw[rawPtr++] & 0xff;
+			int c = raw[rawPtr++];
 			if (c < '0' || c > '7')
 				throw new CorruptObjectException(getId(), "invalid entry mode");
 			int mode = c - '0';
 			for (;;) {
-				c = raw[rawPtr++] & 0xff;
+				c = raw[rawPtr++];
 				if (' ' == c)
 					break;
 				else if (c < '0' || c > '7')
@@ -529,7 +529,7 @@ public class Tree extends TreeEntry implements Treeish {
 			}
 
 			int nameLen = 0;
-			while ((raw[rawPtr + nameLen] & 0xff) != 0)
+			while (raw[rawPtr + nameLen] != 0)
 				nameLen++;
 			final byte[] name = new byte[nameLen];
 			System.arraycopy(raw, rawPtr, name, 0, nameLen);
