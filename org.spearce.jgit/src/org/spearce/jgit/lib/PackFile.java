@@ -62,7 +62,7 @@ public class PackFile {
 		}
 	}
 
-	ObjectLoader resolveBase(final long ofs) throws IOException {
+	PackedObjectLoader resolveBase(final long ofs) throws IOException {
 		return reader(ofs);
 	}
 

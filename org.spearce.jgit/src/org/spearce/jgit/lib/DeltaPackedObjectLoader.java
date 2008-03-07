@@ -47,5 +47,5 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 	 * @return the object loader for the base object
 	 * @throws IOException
 	 */
-	protected abstract ObjectLoader getBaseLoader() throws IOException;
+	protected abstract PackedObjectLoader getBaseLoader() throws IOException;
 }
