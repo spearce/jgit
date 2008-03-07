@@ -200,6 +200,8 @@ public class WindowCache {
 				idx--;
 		}
 
+		if (idx < 0)
+			idx = 0;
 		final int toMove = openWindowCount - idx;
 		if (toMove > 0)
 			System.arraycopy(windows, idx, windows, idx + 1, toMove);
@@ -207,7 +209,6 @@ public class WindowCache {
 		windows[idx] = curs.window;
 		openWindowCount++;
 		openByteCount += curs.window.size;
-		return;
 	}
 
 	private final int binarySearch(final WindowedFile sprov, final int sid) {
