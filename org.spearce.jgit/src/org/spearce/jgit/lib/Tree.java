@@ -509,11 +509,23 @@ public class Tree extends TreeEntry implements Treeish {
 	}
 
 	private void readTree(final byte[] raw) throws IOException {
+		final int rawSize = raw.length;
 		int rawPtr = 0;
-		TreeEntry[] temp = new TreeEntry[64];
+		TreeEntry[] temp;
 		int nextIndex = 0;
 
-		while (rawPtr < raw.length) {
+		while (rawPtr < rawSize) {
+			while (rawPtr < rawSize && raw[rawPtr] != 0)
+				rawPtr++;
+			rawPtr++;
+			rawPtr += Constants.OBJECT_ID_LENGTH;
+			nextIndex++;
+		}
+
+		temp = new TreeEntry[nextIndex];
+		rawPtr = 0;
+		nextIndex = 0;
+		while (rawPtr < rawSize) {
 			int c = raw[rawPtr++];
 			if (c < '0' || c > '7')
 				throw new CorruptObjectException(getId(), "invalid entry mode");
@@ -552,26 +564,10 @@ public class Tree extends TreeEntry implements Treeish {
 			else
 				throw new CorruptObjectException(getId(), "Invalid mode: "
 						+ Integer.toOctalString(mode));
-
-			if (nextIndex == temp.length) {
-				final TreeEntry[] n = new TreeEntry[temp.length << 1];
-				for (int k = nextIndex - 1; k >= 0; k--)
-					n[k] = temp[k];
-				temp = n;
-			}
-
 			temp[nextIndex++] = ent;
 		}
 
-		if (nextIndex == temp.length)
-			contents = temp;
-		else {
-			final TreeEntry[] n = new TreeEntry[nextIndex];
-			for (int k = nextIndex - 1; k >= 0; k--)
-				n[k] = temp[k];
-			contents = n;
-		}
-
+		contents = temp;
 	}
 
 	public String toString() {
