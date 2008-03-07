@@ -56,4 +56,13 @@ abstract class PackedObjectLoader extends ObjectLoader {
 	public long getDataOffset() {
 		return dataOffset;
 	}
+
+	public final byte[] getBytes() throws IOException {
+		final byte[] data = getCachedBytes();
+		final byte[] copy = new byte[data.length];
+		System.arraycopy(data, 0, copy, 0, data.length);
+		return data;
+	}
+
+	protected abstract byte[] getCachedBytes() throws IOException;
 }

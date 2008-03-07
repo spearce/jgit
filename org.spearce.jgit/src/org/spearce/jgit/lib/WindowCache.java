@@ -47,6 +47,8 @@ public class WindowCache {
 
 	final ReferenceQueue<?> clearedWindowQueue;
 
+	final UnpackedObjectCache deltaBaseCache;
+
 	private final ByteWindow[] windows;
 
 	private int openWindowCount;
@@ -74,6 +76,7 @@ public class WindowCache {
 		windows = new ByteWindow[maxByteCount / sz];
 		inflaterCache = new Inflater[4];
 		clearedWindowQueue = new ReferenceQueue<Object>();
+		deltaBaseCache = new UnpackedObjectCache(cfg);
 	}
 
 	synchronized Inflater borrowInflater() {

@@ -34,6 +34,8 @@ public class CoreConfig {
 
 	private final boolean packedGitMMAP;
 
+	private final int deltaBaseCacheLimit;
+
 	CoreConfig(final RepositoryConfig rc) {
 		compression = rc.getInt("core", "compression", DEFAULT_COMPRESSION);
 		int win = rc.getInt("core", "packedgitwindowsize", 32 * MB);
@@ -44,6 +46,7 @@ public class CoreConfig {
 		packedGitWindowSize = win;
 		packedGitLimit = rc.getInt("core", "packedgitlimit", 256 * MB);
 		packedGitMMAP = rc.getBoolean("core", "packedgitmmap", true);
+		deltaBaseCacheLimit = rc.getInt("core", "deltabasecachelimit", 16 * MB);
 	}
 
 	/**
@@ -79,5 +82,14 @@ public class CoreConfig {
 	 */
 	public boolean isPackedGitMMAP() {
 		return packedGitMMAP;
+	}
+
+	/**
+	 * Maximum number of bytes to reserve for caching base objects.
+	 *
+	 * @return number of bytes to cache for base objects in pack files.
+	 */
+	public int getDeltaBaseCacheLimit() {
+		return deltaBaseCacheLimit;
 	}
 }

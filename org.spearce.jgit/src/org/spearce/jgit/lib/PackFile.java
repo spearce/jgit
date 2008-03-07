@@ -34,6 +34,8 @@ public class PackFile {
 
 	private final PackIndex idx;
 
+	private final UnpackedObjectCache deltaBaseCache;
+
 	/**
 	 * Construct a reader for an existing, pre-indexed packfile.
 	 *
@@ -60,6 +62,7 @@ public class PackFile {
 		} catch (IOException ioe) {
 			throw ioe;
 		}
+		deltaBaseCache = pack.cache.deltaBaseCache;
 	}
 
 	PackedObjectLoader resolveBase(final long ofs) throws IOException {
@@ -114,7 +117,16 @@ public class PackFile {
 	 * Close the resources utilized by this repository
 	 */
 	public void close() {
+		deltaBaseCache.purge(pack);
 		pack.close();
+	}
+
+	UnpackedObjectCache.Entry readCache(final long position) {
+		return deltaBaseCache.get(pack, position);
+	}
+
+	void saveCache(final long position, final byte[] data, final String type) {
+		deltaBaseCache.store(pack, position, data, type);
 	}
 
 	byte[] decompress(final long position, final int totalSize)

@@ -17,23 +17,31 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 
 	public String getType() throws IOException {
 		if (objectType == null)
-			getBytes();
+			getCachedBytes();
 		return objectType;
 	}
 
 	public long getSize() throws IOException {
 		if (objectType == null)
-			getBytes();
+			getCachedBytes();
 		return objectSize;
 	}
 
-	public byte[] getBytes() throws IOException {
+	protected byte[] getCachedBytes() throws IOException {
+		final UnpackedObjectCache.Entry cache = pack.readCache(dataOffset);
+		if (cache != null){
+			objectType = cache.type;
+			objectSize = cache.data.length;
+			return cache.data;
+		}
+
 		try {
-			final ObjectLoader baseLoader = getBaseLoader();
-			final byte[] data = BinaryDelta.apply(baseLoader.getBytes(), pack
-					.decompress(dataOffset, deltaSize));
+			final PackedObjectLoader baseLoader = getBaseLoader();
+			final byte[] data = BinaryDelta.apply(baseLoader.getCachedBytes(),
+					pack.decompress(dataOffset, deltaSize));
 			objectType = baseLoader.getType();
 			objectSize = data.length;
+			pack.saveCache(dataOffset, data, objectType);
 			return data;
 		} catch (DataFormatException dfe) {
 			final CorruptObjectException coe;

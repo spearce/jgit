@@ -14,9 +14,15 @@ class WholePackedObjectLoader extends PackedObjectLoader {
 		objectSize = size;
 	}
 
-	public byte[] getBytes() throws IOException {
+	@Override
+	protected byte[] getCachedBytes() throws IOException {
+		final UnpackedObjectCache.Entry cache = pack.readCache(dataOffset);
+		if (cache != null)
+			return cache.data;
 		try {
-			return pack.decompress(dataOffset, objectSize);
+			final byte[] data = pack.decompress(dataOffset, objectSize);
+			pack.saveCache(dataOffset, data, objectType);
+			return data;
 		} catch (DataFormatException dfe) {
 			final CorruptObjectException coe;
 			coe = new CorruptObjectException(getId(), "bad stream");
