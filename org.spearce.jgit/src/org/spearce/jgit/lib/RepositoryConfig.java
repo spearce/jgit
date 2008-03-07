@@ -96,11 +96,33 @@ public class RepositoryConfig {
 	}
 
 	/**
+	 * Obtain an integer value from the configuration.
+	 *
 	 * @param section
-	 * @param subsection
+	 *            section the key is grouped within.
 	 * @param name
+	 *            name of the key to get.
 	 * @param defaultValue
-	 * @return an integer value from the git config
+	 *            default value to return if no value was present.
+	 * @return an integer value from the configuration, or defaultValue.
+	 */
+	public int getInt(final String section, final String name,
+			final int defaultValue) {
+		return getInt(section, null, name, defaultValue);
+	}
+
+	/**
+	 * Obtain an integer value from the configuration.
+	 *
+	 * @param section
+	 *            section the key is grouped within.
+	 * @param subsection
+	 *            subsection name, such a remote or branch name.
+	 * @param name
+	 *            name of the key to get.
+	 * @param defaultValue
+	 *            default value to return if no value was present.
+	 * @return an integer value from the configuration, or defaultValue.
 	 */
 	public int getInt(final String section, String subsection,
 			final String name, final int defaultValue) {
@@ -141,9 +163,30 @@ public class RepositoryConfig {
 	 * Get a boolean value from the git config
 	 *
 	 * @param section
-	 * @param subsection
+	 *            section the key is grouped within.
 	 * @param name
+	 *            name of the key to get.
 	 * @param defaultValue
+	 *            default value to return if no value was present.
+	 * @return true if any value or defaultValue is true, false for missing or
+	 *         explicit false
+	 */
+	protected boolean getBoolean(final String section, final String name,
+			final boolean defaultValue) {
+		return getBoolean(section, null, name, defaultValue);
+	}
+
+	/**
+	 * Get a boolean value from the git config
+	 *
+	 * @param section
+	 *            section the key is grouped within.
+	 * @param subsection
+	 *            subsection name, such a remote or branch name.
+	 * @param name
+	 *            name of the key to get.
+	 * @param defaultValue
+	 *            default value to return if no value was present.
 	 * @return true if any value or defaultValue is true, false for missing or
 	 *         explicit false
 	 */
