@@ -24,6 +24,7 @@ import java.util.Iterator;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.RevWalkException;
+import org.spearce.jgit.errors.StopWalkException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdMap;
@@ -215,34 +216,37 @@ public class RevWalk implements Iterable<RevCommit> {
 	 */
 	public RevCommit next() throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
-		for (;;) {
-			final RevCommit c = pending.pop();
-			if (c == null)
-				return null;
-
-			final int carry = c.flags & CARRY_MASK;
-			for (final RevCommit p : c.parents) {
-				p.flags |= carry;
-				if ((p.flags & SEEN) != 0)
-					continue;
-				if ((p.flags & PARSED) == 0)
-					p.parse(this);
-				p.flags |= SEEN;
-				pending.add(p);
-			}
-
-			if ((c.flags & UNINTERESTING) != 0) {
-				if (pending.everbodyHasFlag(UNINTERESTING)) {
-					pending.clear();
+		try {
+			for (;;) {
+				final RevCommit c = pending.pop();
+				if (c == null)
 					return null;
+
+				final int carry = c.flags & CARRY_MASK;
+				for (final RevCommit p : c.parents) {
+					p.flags |= carry;
+					if ((p.flags & SEEN) != 0)
+						continue;
+					if ((p.flags & PARSED) == 0)
+						p.parse(this);
+					p.flags |= SEEN;
+					pending.add(p);
 				}
-				continue;
+
+				if ((c.flags & UNINTERESTING) != 0) {
+					if (pending.everbodyHasFlag(UNINTERESTING))
+						throw StopWalkException.INSTANCE;
+					continue;
+				}
+
+				if (!filter.include(this, c))
+					continue;
+
+				return c;
 			}
-
-			if (!filter.include(this, c))
-				continue;
-
-			return c;
+		} catch (StopWalkException swe) {
+			pending.clear();
+			return null;
 		}
 	}
 

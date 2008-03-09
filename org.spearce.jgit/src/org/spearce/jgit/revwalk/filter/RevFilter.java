@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.errors.StopWalkException;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevWalk;
 
@@ -119,6 +120,10 @@ public abstract class RevFilter {
 	 *            and its body is available for inspection.
 	 * @return true to include this commit in the results; false to have this
 	 *         commit be omitted entirely from the results.
+	 * @throws StopWalkException
+	 *             the filter knows for certain that no additional commits can
+	 *             ever match, and the current commit doesn't match either. The
+	 *             walk is halted and no more results are provided.
 	 * @throws MissingObjectException
 	 *             an object the filter needs to consult to determine its answer
 	 *             does not exist in the Git repository the walker is operating
@@ -132,8 +137,8 @@ public abstract class RevFilter {
 	 *             necessary for the filter to make its decision.
 	 */
 	public abstract boolean include(RevWalk walker, RevCommit cmit)
-			throws MissingObjectException, IncorrectObjectTypeException,
-			IOException;
+			throws StopWalkException, MissingObjectException,
+			IncorrectObjectTypeException, IOException;
 
 	/**
 	 * Clone this revision filter, including its parameters.
