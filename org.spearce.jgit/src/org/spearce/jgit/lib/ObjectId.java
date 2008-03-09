@@ -232,13 +232,16 @@ public class ObjectId implements Comparable {
 	}
 
 	public int hashCode() {
-		// Object Id' are well distributed so grab the first four bytes
-		int b0 = id[0] & 0xff;
+		// Object Id' are well distributed so grab four bytes. We skip
+		// the first byte as that is often used already to break out to
+		// different maps. Hence including it may be redundant and give
+		// a less distributed hashing.
+		//
 		int b1 = id[1] & 0xff;
 		int b2 = id[2] & 0xff;
 		int b3 = id[3] & 0xff;
-		int h = (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
-		return h;
+		int b4 = id[4] & 0xff;
+		return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
 	}
 
 	/**
