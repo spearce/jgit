@@ -225,6 +225,13 @@ public class GitResourceDecorator extends LabelProvider implements
 		if (rsrc == null)
 			return;
 
+		// If the workspace has not been refreshed properly a resource might
+		// not actually exist, so we ignore these and do not decorate them
+		if (!rsrc.exists() && !rsrc.isPhantom()) {
+			Activator.trace("Tried to decorate non-existent resource "+rsrc);
+			return;
+		}
+
 		RepositoryMapping mapped = RepositoryMapping.getMapping(rsrc);
 
 		Activator.trace("decorate: " + element);
