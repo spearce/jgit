@@ -124,9 +124,9 @@ public class RevCommit extends RevObject {
 	/**
 	 * Time from the "committer " line of the buffer.
 	 * 
-	 * @return time, expressed as milliseconds since the epoch.
+	 * @return time, expressed as seconds since the epoch.
 	 */
-	public long getCommitTime() {
+	public int getCommitTime() {
 		return commitTime;
 	}
 
