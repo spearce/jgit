@@ -20,6 +20,8 @@ package org.spearce.jgit.revwalk;
 public class DateRevQueue {
 	private Entry head;
 
+	private Entry free;
+
 	/**
 	 * Insert the commit pointer by commit time ordering.
 	 * 
@@ -29,7 +31,7 @@ public class DateRevQueue {
 	public void add(final RevCommit c) {
 		Entry q = head;
 		final long when = c.commitTime;
-		final Entry n = new Entry(c);
+		final Entry n = newEntry(c);
 		if (q == null || when > q.commit.commitTime) {
 			n.next = q;
 			head = n;
@@ -55,6 +57,7 @@ public class DateRevQueue {
 		if (q == null)
 			return null;
 		head = q.next;
+		freeEntry(q);
 		return q.commit;
 	}
 
@@ -70,6 +73,7 @@ public class DateRevQueue {
 	/** Remove all entries from this queue. */
 	public void clear() {
 		head = null;
+		free = null;
 	}
 
 	boolean everbodyHasFlag(final int f) {
@@ -91,13 +95,24 @@ public class DateRevQueue {
 		return s.toString();
 	}
 
+	private Entry newEntry(final RevCommit c) {
+		Entry r = free;
+		if (r == null)
+			r = new Entry();
+		else
+			free = r.next;
+		r.commit = c;
+		return r;
+	}
+
+	private void freeEntry(final Entry e) {
+		e.next = free;
+		free = e;
+	}
+
 	static class Entry {
 		Entry next;
 
-		final RevCommit commit;
-
-		Entry(final RevCommit c) {
-			commit = c;
-		}
+		RevCommit commit;
 	}
 }

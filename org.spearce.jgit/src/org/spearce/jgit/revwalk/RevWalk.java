@@ -29,6 +29,7 @@ import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdMap;
 import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.revwalk.filter.RevFilter;
 
 /**
  * Walks a commit graph and produces the matching commits in order.
@@ -102,6 +103,8 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	private final DateRevQueue pending;
 
+	private RevFilter filter;
+
 	/**
 	 * Create a new revision walker for a given repository.
 	 * 
@@ -113,6 +116,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		objects = new ObjectIdMap<RevObject>(new HashMap());
 		roots = new ArrayList<RevCommit>();
 		pending = new DateRevQueue();
+		filter = RevFilter.ALL;
 	}
 
 	/**
@@ -235,8 +239,43 @@ public class RevWalk implements Iterable<RevCommit> {
 				continue;
 			}
 
+			if (!filter.include(this, c))
+				continue;
+
 			return c;
 		}
+	}
+
+	/**
+	 * Get the currently configured commit filter.
+	 * 
+	 * @return the current filter. Never null as a filter is always needed.
+	 */
+	public RevFilter getRevFilter() {
+		return filter;
+	}
+
+	/**
+	 * Set the commit filter for this walker.
+	 * <p>
+	 * Multiple filters may be combined by constructing an arbitrary tree of
+	 * <code>AndRevFilter</code> or <code>OrRevFilter</code> instances to
+	 * describe the boolean expression required by the application. Custom
+	 * filter implementations may also be constructed by applications.
+	 * <p>
+	 * Note that filters are not thread-safe and may not be shared by concurrent
+	 * RevWalk instances. Every RevWalk must be supplied its own unique filter,
+	 * unless the filter implementation specifically states it is (and always
+	 * will be) thread-safe.
+	 * 
+	 * @param newFilter
+	 *            the new filter. If null the special {@link RevFilter#ALL}
+	 *            filter will be used instead, as it matches every commit.
+	 * @see org.spearce.jgit.revwalk.filter.AndRevFilter
+	 * @see org.spearce.jgit.revwalk.filter.OrRevFilter
+	 */
+	public void setRevFilter(final RevFilter newFilter) {
+		filter = newFilter != null ? newFilter : RevFilter.ALL;
 	}
 
 	/**

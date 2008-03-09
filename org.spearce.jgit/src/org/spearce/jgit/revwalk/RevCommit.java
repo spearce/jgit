@@ -150,6 +150,45 @@ public class RevCommit extends RevObject {
 		return tree;
 	}
 
+	/**
+	 * Get the number of parent commits listed in this commit.
+	 * 
+	 * @return number of parents; always a positive value but can be 0.
+	 */
+	public int getParentCount() {
+		return parents.length;
+	}
+
+	/**
+	 * Get the nth parent from this commit's parent list.
+	 * 
+	 * @param nth
+	 *            parent index to obtain. Must be in the range 0 through
+	 *            {@link #getParentCount()}-1.
+	 * @return the specified parent.
+	 * @throws ArrayIndexOutOfBoundsException
+	 *             an invalid parent index was specified.
+	 */
+	public RevCommit getParent(final int nth) {
+		return parents[nth];
+	}
+
+	/**
+	 * Obtain the raw unparsed commit body (<b>NOTE - THIS IS NOT A COPY</b>).
+	 * <p>
+	 * This method is exposed only to provide very fast, efficient access to
+	 * this commit's message buffer within a RevFilter. Applications relying on
+	 * this buffer should be very careful to ensure they do not modify its
+	 * contents during their use of it.
+	 * 
+	 * @return the raw unparsed commit body. This is <b>NOT A COPY</b>.
+	 *         Altering the contents of this buffer may alter the walker's
+	 *         knowledge of this commit, and the results it produces.
+	 */
+	public byte[] getRawBuffer() {
+		return buffer;
+	}
+
 	public void dispose() {
 		flags &= ~PARSED;
 		buffer = null;
