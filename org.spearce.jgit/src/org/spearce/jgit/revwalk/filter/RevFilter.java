@@ -38,7 +38,8 @@ import org.spearce.jgit.revwalk.RevWalk;
  * safe and may not be shared by different RevWalk instances at the same time.
  * This restriction allows RevFilter implementations to cache state within their
  * instances during {@link #include(RevWalk, RevCommit)} if it is beneficial to
- * their implementation.
+ * their implementation. Deep clones created by {@link #clone()} may be used to
+ * construct a thread-safe copy of an existing filter.
  *
  * <p>
  * <b>Message filters:</b>
@@ -71,6 +72,11 @@ public abstract class RevFilter {
 		}
 
 		@Override
+		public RevFilter clone() {
+			return this;
+		}
+
+		@Override
 		public String toString() {
 			return "ALL";
 		}
@@ -81,6 +87,11 @@ public abstract class RevFilter {
 		@Override
 		public boolean include(final RevWalk walker, final RevCommit c) {
 			return c.getParentCount() < 2;
+		}
+
+		@Override
+		public RevFilter clone() {
+			return this;
 		}
 
 		@Override
@@ -123,6 +134,16 @@ public abstract class RevFilter {
 	public abstract boolean include(RevWalk walker, RevCommit cmit)
 			throws MissingObjectException, IncorrectObjectTypeException,
 			IOException;
+
+	/**
+	 * Clone this revision filter, including its parameters.
+	 * <p>
+	 * This is a deep clone. If this filter embeds objects or other filters it
+	 * must also clone those, to ensure the instances do not share mutable data.
+	 *
+	 * @return another copy of this filter, suitable for another thread.
+	 */
+	public abstract RevFilter clone();
 
 	@Override
 	public String toString() {

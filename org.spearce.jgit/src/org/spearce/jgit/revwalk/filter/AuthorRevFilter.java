@@ -68,6 +68,11 @@ public class AuthorRevFilter {
 		protected CharSequence text(final RevCommit cmit) {
 			return textFor(cmit);
 		}
+
+		@Override
+		public RevFilter clone() {
+			return new PatternSearch(pattern());
+		}
 	}
 
 	private static class SubStringSearch extends SubStringRevFilter {

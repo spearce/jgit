@@ -55,6 +55,11 @@ public class NotRevFilter extends RevFilter {
 	}
 
 	@Override
+	public RevFilter clone() {
+		return new NotRevFilter(a.clone());
+	}
+
+	@Override
 	public String toString() {
 		return "NOT " + a.toString();
 	}

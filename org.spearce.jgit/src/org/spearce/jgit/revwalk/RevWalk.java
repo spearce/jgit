@@ -266,7 +266,8 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * Note that filters are not thread-safe and may not be shared by concurrent
 	 * RevWalk instances. Every RevWalk must be supplied its own unique filter,
 	 * unless the filter implementation specifically states it is (and always
-	 * will be) thread-safe.
+	 * will be) thread-safe. Callers may use {@link RevFilter#clone()} to create
+	 * a unique filter tree for this RevWalk instance.
 	 * 
 	 * @param newFilter
 	 *            the new filter. If null the special {@link RevFilter#ALL}

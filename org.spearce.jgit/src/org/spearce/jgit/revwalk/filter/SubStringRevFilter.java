@@ -87,6 +87,11 @@ public abstract class SubStringRevFilter extends RevFilter {
 	protected abstract RawCharSequence text(RevCommit cmit);
 
 	@Override
+	public RevFilter clone() {
+		return this; // Typically we are actually thread-safe.
+	}
+
+	@Override
 	public String toString() {
 		return super.toString() + "(\"" + pattern.pattern() + "\")";
 	}

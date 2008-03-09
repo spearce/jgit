@@ -92,6 +92,15 @@ public abstract class PatternMatchRevFilter extends RevFilter {
 		compiledPattern = Pattern.compile(p, flags).matcher("");
 	}
 
+	/**
+	 * Get the pattern this filter uses.
+	 *
+	 * @return the pattern this filter is applying to candidate strings.
+	 */
+	public String pattern() {
+		return patternText;
+	}
+
 	@Override
 	public boolean include(final RevWalk walker, final RevCommit cmit)
 			throws MissingObjectException, IncorrectObjectTypeException,

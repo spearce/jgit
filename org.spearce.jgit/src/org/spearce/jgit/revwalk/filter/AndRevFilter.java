@@ -100,6 +100,11 @@ public abstract class AndRevFilter extends RevFilter {
 		}
 
 		@Override
+		public RevFilter clone() {
+			return new Binary(a.clone(), b.clone());
+		}
+
+		@Override
 		public String toString() {
 			return "(" + a.toString() + " AND " + b.toString() + ")";
 		}
@@ -121,6 +126,14 @@ public abstract class AndRevFilter extends RevFilter {
 					return false;
 			}
 			return true;
+		}
+
+		@Override
+		public RevFilter clone() {
+			final RevFilter[] s = new RevFilter[subfilters.length];
+			for (int i = 0; i < s.length; i++)
+				s[i] = subfilters[i].clone();
+			return new List(s);
 		}
 
 		@Override
