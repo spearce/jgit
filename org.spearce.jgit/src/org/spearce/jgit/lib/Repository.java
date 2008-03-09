@@ -60,7 +60,7 @@ import org.spearce.jgit.stgit.StGitPatch;
  */
 public class Repository {
 	private static final String[] refSearchPaths = { "", "refs/", "refs/tags/",
-			"refs/heads/", };
+			"refs/heads/", "refs/remotes/" };
 
 	private final File gitDir;
 
