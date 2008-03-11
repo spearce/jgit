@@ -108,6 +108,6 @@ public class T0002_history extends GitTestCase {
 		IFileRevision[] fileRevisions = fileHistory.getFileRevisions();
 		assertEquals(2, fileRevisions.length);
 		assertEquals("Index", fileRevisions[0].getContentIdentifier());
-		assertEquals("e2eadee5e6de7315df91cf03a75a8b2194a69af2", fileRevisions[1].getContentIdentifier());
+		assertEquals("6dd8f0b51204fa24a01734971947847549ec4ba8", fileRevisions[1].getContentIdentifier());
 	}
 }
