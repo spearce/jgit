@@ -305,6 +305,33 @@ public class Repository {
 	}
 
 	/**
+	 * Access any type of Git object by id and
+	 *
+	 * @param id
+	 *            SHA-1 of object to read
+	 * @param refName optional, only relevant for simple tags
+	 * @return The Git object if found or null
+	 * @throws IOException
+	 */
+	public Object mapObject(final ObjectId id, final String refName) throws IOException {
+		if (commitCache.containsKey(id))
+			return mapCommit(id);
+		if (treeCache.containsKey(id))
+			return mapTree(id);
+		final ObjectLoader or = openObject(id);
+		final byte[] raw = or.getBytes();
+		if (Constants.TYPE_TREE.equals(or.getType()))
+			return makeTree(id, raw);
+		if (Constants.TYPE_COMMIT.equals(or.getType()))
+			return makeCommit(id, raw);
+		if (Constants.TYPE_TAG.equals(or.getType()))
+			return makeTag(id, refName, raw);
+		if (Constants.TYPE_BLOB.equals(or.getType()))
+			return raw;
+		return null;
+	}
+
+	/**
 	 * Access a Commit by SHA'1 id.
 	 * @param id
 	 * @return Commit or null
@@ -324,13 +351,17 @@ public class Repository {
 			return null;
 		final byte[] raw = or.getBytes();
 		if (Constants.TYPE_COMMIT.equals(or.getType())) {
-			Commit ret = new Commit(this, id, raw);
-			// The key must not be the referenced strongly
-			// by the value in WeakHashMaps
-			commitCache.put(id, new SoftReference<Commit>(ret));
-			return ret;
+			return makeCommit(id, raw);
 		}
 		throw new IncorrectObjectTypeException(id, Constants.TYPE_COMMIT);
+	}
+
+	private Commit makeCommit(final ObjectId id, final byte[] raw) {
+		Commit ret = new Commit(this, id, raw);
+		// The key must not be the referenced strongly
+		// by the value in WeakHashMaps
+		commitCache.put(id, new SoftReference<Commit>(ret));
+		return ret;
 	}
 
 	/**
@@ -368,13 +399,22 @@ public class Repository {
 			return null;
 		final byte[] raw = or.getBytes();
 		if (Constants.TYPE_TREE.equals(or.getType())) {
-			Tree ret = new Tree(this, id, raw);
-			treeCache.put(id, new SoftReference<Tree>(ret));
-			return ret;
+			return makeTree(id, raw);
 		}
 		if (Constants.TYPE_COMMIT.equals(or.getType()))
 			return mapTree(ObjectId.fromString(raw, 5));
 		throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
+	}
+
+	private Tree makeTree(final ObjectId id, final byte[] raw) throws IOException {
+		Tree ret = new Tree(this, id, raw);
+		treeCache.put(id, new SoftReference<Tree>(ret));
+		return ret;
+	}
+
+	private Tag makeTag(final ObjectId id, final String refName, final byte[] raw) {
+		Tag ret = new Tag(this, id, refName, raw);
+		return ret;
 	}
 
 	/**
