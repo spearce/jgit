@@ -192,7 +192,12 @@ public class ObjectId implements Comparable {
 		id = i;
 	}
 
-	int getFirstByte() {
+	/**
+	 * Helper for maps and set that use a 256 entry fan-out map
+	 *
+	 * @return as hash like value within the range 0..255
+	 */
+	public int getFirstByte() {
 		return id[0] & 0xff;
 	}
 
