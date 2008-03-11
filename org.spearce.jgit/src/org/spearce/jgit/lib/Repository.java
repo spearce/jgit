@@ -1119,6 +1119,48 @@ public class Repository {
 	}
 
 	/**
+	 * Check validty of a ref name. It must not contain character that has
+	 * a special meaning in a Git object reference expression. Some other
+	 * dangerous characters are also excluded.
+	 *
+	 * @param refName
+	 *
+	 * @return true if refName is a valid ref name
+	 */
+	public static boolean isValidRefName(final String refName) {
+		final int len = refName.length();
+		char p = '\0';
+		for (int i=0; i<len; ++i) {
+			char c = refName.charAt(i);
+			if (c <= ' ')
+				return false;
+			switch(c) {
+			case '.':
+				if (i == 0)
+					return false;
+				if (p == '/')
+					return false;
+				if (p == '.')
+					return false;
+				break;
+			case '/':
+				if (i == 0)
+					return false;
+				if (i == len -1)
+					return false;
+				break;
+			case '~': case '^': case ':':
+			case '?': case '[':
+				return false;
+			case '*':
+				return false;
+			}
+			p = c;
+		}
+		return true;
+	}
+
+	/**
 	 * String work dir and return normalized repository path
 	 *
 	 * @param wd Work dir
