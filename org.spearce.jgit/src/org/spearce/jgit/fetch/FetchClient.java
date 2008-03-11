@@ -34,6 +34,7 @@ import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdMap;
+import org.spearce.jgit.lib.RefLock;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tag;
 import org.spearce.jgit.lib.Tree;
@@ -386,4 +387,35 @@ public class FetchClient {
 		this.fetchList = fetchList;
 	}
 
+	/**
+	 * Save the received references into the local repository.
+	 * <p>
+	 * Branches are stored under <quote>remotes</quote> name space, while tags
+	 * get stored (and overwritten) into the tags name space, i.e. not connected
+	 * to a particular remote.
+	 *
+	 * @param remote
+	 * @throws IOException
+	 */
+	void updateRemoteRefs(String remote) throws IOException {
+		for(String ref : serverHas.keySet()) {
+			ObjectId id = serverHas.get(ref);
+			if (!repository.hasObject(id))
+				throw new IllegalStateException("We should have received " + id
+						+ " in order to set up remote ref " + ref);
+			String remotePrefix = "refs/remotes/"+remote+"/";
+			String lref;
+			if (ref.startsWith("refs/heads/"))
+				lref = remotePrefix + ref.substring("refs/heads/".length());
+			else if (ref.equals("HEAD"))
+				lref = remotePrefix + "HEAD";
+			else if (ref.startsWith("refs/tags/"))
+				lref = ref;
+			else
+				throw new IllegalStateException("Bad ref name from remote "+ref);
+			RefLock lockRef = repository.lockRef(lref);
+			lockRef.write(id);
+			lockRef.commit();
+		}
+	}
 }
