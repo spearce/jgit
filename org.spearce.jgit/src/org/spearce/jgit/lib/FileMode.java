@@ -60,6 +60,14 @@ public abstract class FileMode {
 		}
 	};
 
+	/** Mode indicating an entry is a submodule commit in another repository. */
+	@SuppressWarnings("synthetic-access")
+	public static final FileMode GITLINK = new FileMode(0160000) {
+		public boolean equals(final int modeBits) {
+			return (modeBits & 0170000) == 0160000;
+		}
+	};
+
 	/**
 	 * Convert a set of mode bits into a FileMode enumerated value.
 	 *
@@ -77,6 +85,8 @@ public abstract class FileMode {
 			return REGULAR_FILE;
 		case 0120000:
 			return SYMLINK;
+		case 0160000:
+			return GITLINK;
 		}
 
 		return new FileMode(bits) {
