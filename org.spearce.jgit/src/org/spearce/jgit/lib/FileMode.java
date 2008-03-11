@@ -68,15 +68,27 @@ public abstract class FileMode {
 		}
 	};
 
+	/** Mode indicating an entry is missing during parallel walks. */
+	@SuppressWarnings("synthetic-access")
+	public static final FileMode MISSING = new FileMode(0000000) {
+		public boolean equals(final int modeBits) {
+			return modeBits == 0;
+		}
+	};
+
 	/**
 	 * Convert a set of mode bits into a FileMode enumerated value.
-	 *
+	 * 
 	 * @param bits
 	 *            the mode bits the caller has somehow obtained.
 	 * @return the FileMode instance that represents the given bits.
 	 */
 	public static final FileMode fromBits(final int bits) {
 		switch (bits & 0170000) {
+		case 0000000:
+			if (bits == 0)
+				return MISSING;
+			break;
 		case 0040000:
 			return TREE;
 		case 0100000:
@@ -123,7 +135,7 @@ public abstract class FileMode {
 
 	/**
 	 * Test a file mode for equality with this {@link FileMode} object.
-	 *
+	 * 
 	 * @param modebits
 	 * @return true if the mode bits represent the same mode as this object
 	 */
