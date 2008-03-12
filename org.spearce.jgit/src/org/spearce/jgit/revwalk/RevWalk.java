@@ -24,7 +24,6 @@ import java.util.Iterator;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.RevWalkException;
-import org.spearce.jgit.errors.StopWalkException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdMap;
@@ -92,7 +91,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	static final int RESERVED_FLAGS = 3;
 
 	/** Flags we must automatically carry from a child to a parent commit. */
-	private static final int CARRY_MASK = UNINTERESTING;
+	static final int CARRY_MASK = UNINTERESTING;
 
 	final Repository db;
 
@@ -102,7 +101,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	private final ArrayList<RevCommit> roots;
 
-	private final DateRevQueue pending;
+	Generator pending;
 
 	private RevFilter filter;
 
@@ -116,7 +115,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		db = repo;
 		objects = new ObjectIdMap<RevObject>(new HashMap());
 		roots = new ArrayList<RevCommit>();
-		pending = new DateRevQueue();
+		pending = new StartGenerator(this);
 		filter = RevFilter.ALL;
 	}
 
@@ -216,38 +215,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 */
 	public RevCommit next() throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
-		try {
-			for (;;) {
-				final RevCommit c = pending.pop();
-				if (c == null)
-					return null;
-
-				final int carry = c.flags & CARRY_MASK;
-				for (final RevCommit p : c.parents) {
-					p.flags |= carry;
-					if ((p.flags & SEEN) != 0)
-						continue;
-					if ((p.flags & PARSED) == 0)
-						p.parse(this);
-					p.flags |= SEEN;
-					pending.add(p);
-				}
-
-				if ((c.flags & UNINTERESTING) != 0) {
-					if (pending.everbodyHasFlag(UNINTERESTING))
-						throw StopWalkException.INSTANCE;
-					continue;
-				}
-
-				if (!filter.include(this, c))
-					continue;
-
-				return c;
-			}
-		} catch (StopWalkException swe) {
-			pending.clear();
-			return null;
-		}
+		return pending.next();
 	}
 
 	/**
@@ -463,28 +431,28 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	/** Resets internal state and allows this instance to be used again. */
 	public void reset() {
-		pending.clear();
-
+		final DateRevQueue q = new DateRevQueue();
 		for (final RevCommit c : roots) {
 			if ((c.flags & SEEN) == 0)
 				continue;
 			c.flags &= PARSED;
-			pending.add(c);
+			q.add(c);
 		}
 
 		for (;;) {
-			final RevCommit c = pending.pop();
+			final RevCommit c = q.pop();
 			if (c == null)
 				break;
 			for (final RevCommit p : c.parents) {
 				if ((p.flags & SEEN) == 0)
 					continue;
 				p.flags &= PARSED;
-				pending.add(p);
+				q.add(p);
 			}
 		}
 
 		roots.clear();
+		pending = new StartGenerator(this);
 	}
 
 	/**
