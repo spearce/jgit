@@ -55,14 +55,41 @@ import org.spearce.jgit.lib.Repository;
  * {@link #next()} does not.
  */
 public class RevWalk implements Iterable<RevCommit> {
+	/**
+	 * Set on objects whose important header data has been loaded.
+	 * <p>
+	 * For a RevCommit this indicates we have pulled apart the tree and parent
+	 * references from the raw bytes available in the repository and translated
+	 * those to our own local RevTree and RevCommit instances. The raw buffer is
+	 * also available for message and other header filtering.
+	 * <p>
+	 * For a RevTag this indicates we have pulled part the tag references to
+	 * find out who the tag refers to, and what that object's type is.
+	 */
 	static final int PARSED = 1 << 0;
 
+	/**
+	 * Set on RevCommit instances added to our {@link #pending} queue.
+	 * <p>
+	 * We use this flag to avoid adding the same commit instance twice to our
+	 * queue, especially if we reached it by more than one path.
+	 */
 	static final int SEEN = 1 << 1;
 
+	/**
+	 * Set on RevCommit instances the caller does not want output.
+	 * <p>
+	 * We flag commits as uninteresting if the caller does not want commits
+	 * reachable from a commit given to {@link #markUninteresting(RevCommit)}.
+	 * This flag is always carried into the commit's parents and is a key part
+	 * of the "rev-list B --not A" feature; A is marked UNINTERESTING.
+	 */
 	static final int UNINTERESTING = 1 << 2;
 
+	/** Number of flag bits we keep internal for our own use. See above flags. */
 	static final int RESERVED_FLAGS = 3;
 
+	/** Flags we must automatically carry from a child to a parent commit. */
 	private static final int CARRY_MASK = UNINTERESTING;
 
 	final Repository db;
