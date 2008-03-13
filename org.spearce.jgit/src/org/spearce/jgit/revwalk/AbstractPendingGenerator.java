@@ -77,11 +77,14 @@ class AbstractPendingGenerator extends Generator {
 				if ((c.flags & RevWalk.UNINTERESTING) != 0) {
 					if (pending.everbodyHasFlag(RevWalk.UNINTERESTING))
 						throw StopWalkException.INSTANCE;
+					c.dispose();
 					continue;
 				}
 
 				if (produce)
 					return c;
+				else
+					c.dispose();
 			}
 		} catch (StopWalkException swe) {
 			pending.clear();
