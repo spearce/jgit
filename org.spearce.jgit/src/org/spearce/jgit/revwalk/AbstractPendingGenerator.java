@@ -55,6 +55,14 @@ class AbstractPendingGenerator extends Generator {
 				if (c == null)
 					return null;
 
+				final boolean produce;
+				if ((c.flags & RevWalk.UNINTERESTING) != 0)
+					produce = false;
+				else if (filter.include(walker, c))
+					produce = true;
+				else
+					produce = false;
+
 				final int carry = c.flags & RevWalk.CARRY_MASK;
 				for (final RevCommit p : c.parents) {
 					p.flags |= carry;
@@ -72,10 +80,8 @@ class AbstractPendingGenerator extends Generator {
 					continue;
 				}
 
-				if (!filter.include(walker, c))
-					continue;
-
-				return c;
+				if (produce)
+					return c;
 			}
 		} catch (StopWalkException swe) {
 			pending.clear();
