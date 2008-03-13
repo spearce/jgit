@@ -54,7 +54,7 @@ class XInputStream extends BufferedInputStream {
 
 	long readUInt32() throws IOException {
 		readFully(intbuf, 0, 4);
-		return (intbuf[0] & 0xff) << 24 | (intbuf[1] & 0xff) << 16
+		return ((long) (intbuf[0] & 0xff)) << 24 | (intbuf[1] & 0xff) << 16
 				| (intbuf[2] & 0xff) << 8 | (intbuf[3] & 0xff);
 	}
 }

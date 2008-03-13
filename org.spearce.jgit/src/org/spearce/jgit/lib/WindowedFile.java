@@ -248,7 +248,7 @@ public class WindowedFile {
 			final WindowCursor curs) throws IOException {
 		if (read(position, intbuf, 0, 4, curs) != 4)
 			throw new EOFException();
-		return (intbuf[0] & 0xff) << 24 | (intbuf[1] & 0xff) << 16
+		return ((long) (intbuf[0] & 0xff)) << 24 | (intbuf[1] & 0xff) << 16
 				| (intbuf[2] & 0xff) << 8 | (intbuf[3] & 0xff);
 	}
 
