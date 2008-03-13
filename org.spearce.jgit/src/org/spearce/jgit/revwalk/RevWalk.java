@@ -431,7 +431,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	/** Resets internal state and allows this instance to be used again. */
 	public void reset() {
-		final DateRevQueue q = new DateRevQueue();
+		final FIFORevQueue q = new FIFORevQueue();
 		for (final RevCommit c : roots) {
 			if ((c.flags & SEEN) == 0)
 				continue;
