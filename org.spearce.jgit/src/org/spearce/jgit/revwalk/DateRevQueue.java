@@ -72,6 +72,14 @@ public class DateRevQueue {
 		head = null;
 	}
 
+	boolean everbodyHasFlag(final int f) {
+		for (Entry q = head; q != null; q = q.next) {
+			if ((q.commit.flags & f) == 0)
+				return false;
+		}
+		return true;
+	}
+
 	public String toString() {
 		final StringBuffer s = new StringBuffer();
 		for (Entry q = head; q != null; q = q.next) {

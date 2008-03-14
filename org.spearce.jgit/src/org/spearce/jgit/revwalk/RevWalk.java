@@ -59,7 +59,11 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	static final int SEEN = 1 << 1;
 
-	static final int RESERVED_FLAGS = 2;
+	static final int UNINTERESTING = 1 << 2;
+
+	static final int RESERVED_FLAGS = 3;
+
+	private static final int CARRY_MASK = UNINTERESTING;
 
 	final Repository db;
 
@@ -125,6 +129,46 @@ public class RevWalk implements Iterable<RevCommit> {
 	}
 
 	/**
+	 * Mark a commit to not produce in the output.
+	 * <p>
+	 * Uninteresting commits denote not just themselves but also their entire
+	 * ancestry chain, back until the merge base of an uninteresting commit and
+	 * an otherwise interesting commit.
+	 * <p>
+	 * Callers are encouraged to use {@link #parseCommit(ObjectId)} to obtain
+	 * the commit reference, rather than {@link #lookupCommit(ObjectId)}, as
+	 * this method requires the commit to be parsed before it can be added as a
+	 * root for the traversal.
+	 * <p>
+	 * The method will automatically parse an unparsed commit, but error
+	 * handling may be more difficult for the application to explain why a
+	 * RevCommit is not actually a commit. The object pool of this walker would
+	 * also be 'poisoned' by the non-commit RevCommit.
+	 * 
+	 * @param c
+	 *            the commit to start traversing from. The commit passed must be
+	 *            from this same revision walker.
+	 * @throws MissingObjectException
+	 *             the commit supplied is not available from the object
+	 *             database. This usually indicates the supplied commit is
+	 *             invalid, but the reference was constructed during an earlier
+	 *             invocation to {@link #lookupCommit(ObjectId)}.
+	 * @throws IncorrectObjectTypeException
+	 *             the object was not parsed yet and it was discovered during
+	 *             parsing that it is not actually a commit. This usually
+	 *             indicates the caller supplied a non-commit SHA-1 to
+	 *             {@link #lookupCommit(ObjectId)}.
+	 * @throws IOException
+	 *             a pack file or loose object could not be read.
+	 */
+	public void markUninteresting(final RevCommit c)
+			throws MissingObjectException, IncorrectObjectTypeException,
+			IOException {
+		c.flags |= UNINTERESTING;
+		markStart(c);
+	}
+
+	/**
 	 * Pop the next most recent commit.
 	 * 
 	 * @return next most recent commit; null if traversal is over.
@@ -140,20 +184,32 @@ public class RevWalk implements Iterable<RevCommit> {
 	 */
 	public RevCommit next() throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
-		final RevCommit c = pending.pop();
-		if (c == null)
-			return null;
+		for (;;) {
+			final RevCommit c = pending.pop();
+			if (c == null)
+				return null;
 
-		for (final RevCommit p : c.parents) {
-			if ((p.flags & SEEN) != 0)
+			final int carry = c.flags & CARRY_MASK;
+			for (final RevCommit p : c.parents) {
+				p.flags |= carry;
+				if ((p.flags & SEEN) != 0)
+					continue;
+				if ((p.flags & PARSED) == 0)
+					p.parse(this);
+				p.flags |= SEEN;
+				pending.add(p);
+			}
+
+			if ((c.flags & UNINTERESTING) != 0) {
+				if (pending.everbodyHasFlag(UNINTERESTING)) {
+					pending.clear();
+					return null;
+				}
 				continue;
-			if ((p.flags & PARSED) == 0)
-				p.parse(this);
-			p.flags |= SEEN;
-			pending.add(p);
-		}
+			}
 
-		return c;
+			return c;
+		}
 	}
 
 	/**
