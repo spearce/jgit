@@ -192,4 +192,9 @@ public class UnpackedObjectLoader extends ObjectLoader {
 	public byte[] getBytes() {
 		return bytes;
 	}
+
+	@Override
+	public byte[] getCachedBytes() throws IOException {
+		return bytes;
+	}
 }

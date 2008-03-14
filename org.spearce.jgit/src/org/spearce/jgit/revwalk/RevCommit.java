@@ -58,7 +58,7 @@ public class RevCommit extends RevObject {
 		final ObjectLoader ldr = walk.db.openObject(id);
 		if (ldr == null)
 			throw new MissingObjectException(id, TYPE_COMMIT);
-		final byte[] data = ldr.getBytes();
+		final byte[] data = ldr.getCachedBytes();
 		if (Constants.OBJ_COMMIT != ldr.getType())
 			throw new IncorrectObjectTypeException(id, TYPE_COMMIT);
 		parseCanonical(walk, data);

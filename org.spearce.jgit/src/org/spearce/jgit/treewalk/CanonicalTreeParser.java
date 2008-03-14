@@ -69,7 +69,7 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 	public void reset(final Repository repo, final ObjectId id)
 			throws IncorrectObjectTypeException, IOException {
 		final ObjectLoader ldr = repo.openObject(id);
-		final byte[] subtreeData = ldr.getBytes();
+		final byte[] subtreeData = ldr.getCachedBytes();
 		if (ldr.getType() != Constants.OBJ_TREE)
 			throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
 		reset(subtreeData);

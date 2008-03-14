@@ -63,6 +63,4 @@ abstract class PackedObjectLoader extends ObjectLoader {
 		System.arraycopy(data, 0, copy, 0, data.length);
 		return data;
 	}
-
-	protected abstract byte[] getCachedBytes() throws IOException;
 }

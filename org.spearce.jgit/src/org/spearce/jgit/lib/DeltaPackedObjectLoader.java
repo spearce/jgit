@@ -30,7 +30,8 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 		return objectSize;
 	}
 
-	protected byte[] getCachedBytes() throws IOException {
+	@Override
+	public byte[] getCachedBytes() throws IOException {
 		if (objectType != OBJ_COMMIT) {
 			final UnpackedObjectCache.Entry cache = pack.readCache(dataOffset);
 			if (cache != null) {

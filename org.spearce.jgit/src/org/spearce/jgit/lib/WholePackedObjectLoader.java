@@ -17,7 +17,7 @@ class WholePackedObjectLoader extends PackedObjectLoader {
 	}
 
 	@Override
-	protected byte[] getCachedBytes() throws IOException {
+	public byte[] getCachedBytes() throws IOException {
 		if (objectType != OBJ_COMMIT) {
 			final UnpackedObjectCache.Entry cache = pack.readCache(dataOffset);
 			if (cache != null)

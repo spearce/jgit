@@ -49,7 +49,7 @@ public class RevTag extends RevObject {
 		final ObjectLoader ldr = walk.db.openObject(id);
 		if (ldr == null)
 			throw new MissingObjectException(id, Constants.TYPE_TAG);
-		final byte[] data = ldr.getBytes();
+		final byte[] data = ldr.getCachedBytes();
 		if (Constants.OBJ_TAG != ldr.getType())
 			throw new IncorrectObjectTypeException(id, Constants.TYPE_TAG);
 		parseCanonical(walk, data);

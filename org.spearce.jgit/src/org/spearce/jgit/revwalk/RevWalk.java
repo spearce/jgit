@@ -436,7 +436,7 @@ public class RevWalk implements Iterable<RevCommit> {
 			final ObjectLoader ldr = db.openObject(id);
 			if (ldr == null)
 				throw new MissingObjectException(id, "unknown");
-			final byte[] data = ldr.getBytes();
+			final byte[] data = ldr.getCachedBytes();
 			final int type = ldr.getType();
 			switch (type) {
 			case Constants.OBJ_COMMIT: {

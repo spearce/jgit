@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.security.MessageDigest;
 
 /**
- * Base class for a set of loaders for different representations
- * of Git objects. New loaders are constructed for every object.
+ * Base class for a set of loaders for different representations of Git objects.
+ * New loaders are constructed for every object.
  */
 public abstract class ObjectLoader {
 	private ObjectId objectId;
@@ -45,7 +45,7 @@ public abstract class ObjectLoader {
 
 	/**
 	 * Set the SHA-1 id of the object handled by this loader
-	 *
+	 * 
 	 * @param id
 	 */
 	protected void setId(final ObjectId id) {
@@ -67,8 +67,28 @@ public abstract class ObjectLoader {
 	public abstract long getSize() throws IOException;
 
 	/**
-	 * @return the bytes of this object
+	 * Obtain a copy of the bytes of this object.
+	 * <p>
+	 * Unlike {@link #getCachedBytes()} this method returns an array that might
+	 * be modified by the caller.
+	 * 
+	 * @return the bytes of this object.
 	 * @throws IOException
+	 *             the object cannot be read.
 	 */
 	public abstract byte[] getBytes() throws IOException;
+
+	/**
+	 * Obtain a reference to the (possibly cached) bytes of this object.
+	 * <p>
+	 * This method offers direct access to the internal caches, potentially
+	 * saving on data copies between the internal cache and higher level code.
+	 * Callers who receive this reference <b>must not</b> modify its contents.
+	 * Changes (if made) will affect the cache but not the repository itself.
+	 * 
+	 * @return the cached bytes of this object. Do not modify it.
+	 * @throws IOException
+	 *             the object cannot be read.
+	 */
+	public abstract byte[] getCachedBytes() throws IOException;
 }
