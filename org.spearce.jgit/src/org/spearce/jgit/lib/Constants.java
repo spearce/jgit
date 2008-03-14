@@ -25,7 +25,7 @@ public final class Constants {
 	private static final String HASH_FUNCTION = "SHA-1";
 
 	/** Length of an object hash. */
-	public static final int OBJECT_ID_LENGTH;
+	public static final int OBJECT_ID_LENGTH = 20;
 
 	/** Special name for the "HEAD" symbolic-ref. */
 	public static final String HEAD = "HEAD";
@@ -229,7 +229,8 @@ public final class Constants {
 	}
 
 	static {
-		OBJECT_ID_LENGTH = newMessageDigest().getDigestLength();
+		if (OBJECT_ID_LENGTH != newMessageDigest().getDigestLength())
+			throw new LinkageError("Incorrect OBJECT_ID_LENGTH.");
 	}
 
 	private Constants() {
