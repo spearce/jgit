@@ -16,36 +16,10 @@
  */
 package org.spearce.jgit.pgm;
 
-import org.spearce.jgit.lib.Commit;
-import org.spearce.jgit.revwalk.RevCommit;
+class Die extends RuntimeException {
+	private static final long serialVersionUID = 1L;
 
-class Log extends RevWalkTextBuiltin {
-	@Override
-	protected void show(final RevCommit c) throws Exception {
-		out.print("commit ");
-		out.print(c.getId());
-		out.println();
-
-		final Commit parsed = c.asCommit(walk);
-		out.print("Author: ");
-		out.print(parsed.getAuthor().getName());
-		out.print(" <");
-		out.print(parsed.getAuthor().getEmailAddress());
-		out.print(">");
-		out.println();
-
-		out.print("Date:   ");
-		out.print(parsed.getAuthor().getWhen());
-		out.println();
-
-		out.println();
-		final String[] lines = parsed.getMessage().split("\n");
-		for (final String s : lines) {
-			out.print("    ");
-			out.print(s);
-			out.println();
-		}
-
-		out.println();
+	Die(final String why) {
+		super(why);
 	}
 }

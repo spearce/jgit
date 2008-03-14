@@ -16,36 +16,17 @@
  */
 package org.spearce.jgit.pgm;
 
-import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.revwalk.RevCommit;
 
-class Log extends RevWalkTextBuiltin {
+class RevList extends RevWalkTextBuiltin {
 	@Override
 	protected void show(final RevCommit c) throws Exception {
-		out.print("commit ");
 		out.print(c.getId());
-		out.println();
-
-		final Commit parsed = c.asCommit(walk);
-		out.print("Author: ");
-		out.print(parsed.getAuthor().getName());
-		out.print(" <");
-		out.print(parsed.getAuthor().getEmailAddress());
-		out.print(">");
-		out.println();
-
-		out.print("Date:   ");
-		out.print(parsed.getAuthor().getWhen());
-		out.println();
-
-		out.println();
-		final String[] lines = parsed.getMessage().split("\n");
-		for (final String s : lines) {
-			out.print("    ");
-			out.print(s);
-			out.println();
-		}
-
+		if (parents)
+			for (int i = 0; i < c.getParentCount(); i++) {
+				out.print(' ');
+				out.print(c.getParent(i).getId());
+			}
 		out.println();
 	}
 }

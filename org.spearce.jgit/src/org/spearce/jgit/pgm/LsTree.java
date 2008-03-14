@@ -16,36 +16,34 @@
  */
 package org.spearce.jgit.pgm;
 
-import org.spearce.jgit.lib.Commit;
-import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.lib.FileMode;
+import org.spearce.jgit.treewalk.TreeWalk;
 
-class Log extends RevWalkTextBuiltin {
+class LsTree extends TextBuiltin {
 	@Override
-	protected void show(final RevCommit c) throws Exception {
-		out.print("commit ");
-		out.print(c.getId());
-		out.println();
+	void execute(final String[] args) throws Exception {
+		final TreeWalk walk = new TreeWalk(db);
+		final String name;
+		if (args.length == 0)
+			name = "HEAD^{tree}";
+		else
+			name = args[0];
+		walk.addTree(resolve(name));
+		walk.setRecursive(true);
 
-		final Commit parsed = c.asCommit(walk);
-		out.print("Author: ");
-		out.print(parsed.getAuthor().getName());
-		out.print(" <");
-		out.print(parsed.getAuthor().getEmailAddress());
-		out.print(">");
-		out.println();
+		while (walk.next()) {
+			final FileMode mode = FileMode.fromBits(walk.getRawMode(0));
+			if (mode == FileMode.TREE)
+				out.print('0');
+			out.print(mode);
+			out.print(mode == FileMode.TREE ? " tree" : " blob");
 
-		out.print("Date:   ");
-		out.print(parsed.getAuthor().getWhen());
-		out.println();
+			out.print(' ');
+			out.print(walk.getObjectId(0));
 
-		out.println();
-		final String[] lines = parsed.getMessage().split("\n");
-		for (final String s : lines) {
-			out.print("    ");
-			out.print(s);
+			out.print('\t');
+			out.print(walk.getPathString());
 			out.println();
 		}
-
-		out.println();
 	}
 }

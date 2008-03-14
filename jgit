@@ -1,0 +1,7 @@
+#!/bin/sh
+cp=`dirname $0`
+cp="$cp/org.spearce.jgit/bin"
+exec java \
+	-classpath "$cp" \
+	org.spearce.jgit.pgm.Main \
+	"$@"
