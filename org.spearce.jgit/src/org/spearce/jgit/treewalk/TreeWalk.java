@@ -22,6 +22,7 @@ import java.io.UnsupportedEncodingException;
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.errors.StopWalkException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.ObjectId;
@@ -284,34 +285,38 @@ public class TreeWalk {
 	 */
 	public boolean next() throws MissingObjectException,
 			IncorrectObjectTypeException, CorruptObjectException, IOException {
-		if (advance) {
-			advance = false;
-			popEntriesEqual();
-		}
+		try {
+			if (advance) {
+				advance = false;
+				popEntriesEqual();
+			}
 
-		for (;;) {
-			final AbstractTreeIterator t = min();
-			if (t.eof()) {
-				if (depth > 0) {
-					exitSubtree();
+			for (;;) {
+				final AbstractTreeIterator t = min();
+				if (t.eof()) {
+					if (depth > 0) {
+						exitSubtree();
+						continue;
+					}
+					return false;
+				}
+
+				currentHead = t;
+				if (!filter.include(this)) {
+					popEntriesEqual();
 					continue;
 				}
-				return false;
-			}
 
-			currentHead = t;
-			if (!filter.include(this)) {
-				popEntriesEqual();
-				continue;
-			}
+				if (recursive && FileMode.TREE.equals(t.mode)) {
+					enterSubtree();
+					continue;
+				}
 
-			if (recursive && FileMode.TREE.equals(t.mode)) {
-				enterSubtree();
-				continue;
+				advance = true;
+				return true;
 			}
-
-			advance = true;
-			return true;
+		} catch (StopWalkException stop) {
+			return false;
 		}
 	}
 
@@ -385,6 +390,57 @@ public class TreeWalk {
 	 */
 	public String getPathString() {
 		return pathOf(currentHead);
+	}
+
+	/**
+	 * Test if the supplied path matches the current entry's path.
+	 * <p>
+	 * This method tests that the supplied path is exactly equal to the current
+	 * entry, or is one of its parent directories. It is faster to use this
+	 * method then to use {@link #getPathString()} to first create a String
+	 * object, then test <code>startsWith</code> or some other type of string
+	 * match function.
+	 * 
+	 * @param p
+	 *            path buffer to test. Callers should ensure the path does not
+	 *            end with '/' prior to invocation.
+	 * @param pLen
+	 *            number of bytes from <code>buf</code> to test.
+	 * @return < 0 if p is before the current path; 0 if p matches the current
+	 *         path; 1 if the current path is past p and p will never match
+	 *         again on this tree walk.
+	 */
+	public int isPathPrefix(final byte[] p, final int pLen) {
+		final AbstractTreeIterator t = currentHead;
+		final byte[] c = t.path;
+		final int cLen = t.pathLen;
+		int ci;
+
+		for (ci = 0; ci < cLen && ci < pLen; ci++) {
+			final int c_value = (c[ci] & 0xff) - (p[ci] & 0xff);
+			if (c_value != 0)
+				return c_value;
+		}
+
+		if (ci < cLen) {
+			// Ran out of pattern but we still had current data.
+			// If c[ci] == '/' then pattern matches the subtree.
+			// Otherwise we cannot be certain so we return -1.
+			//
+			return c[ci] == '/' ? 0 : -1;
+		}
+
+		if (ci < pLen) {
+			// Ran out of current, but we still have pattern data.
+			// If p[ci] == '/' then pattern matches this subtree,
+			// otherwise we cannot be certain so we return -1.
+			//
+			return p[ci] == '/' ? 0 : -1;
+		}
+
+		// Both strings are identical.
+		//
+		return 0;
 	}
 
 	/**

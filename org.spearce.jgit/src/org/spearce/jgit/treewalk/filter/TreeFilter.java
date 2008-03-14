@@ -39,6 +39,12 @@ import org.spearce.jgit.treewalk.TreeWalk;
  * construct a thread-safe copy of an existing filter.
  * 
  * <p>
+ * <b>Path filters:</b>
+ * <ul>
+ * <li>Matching pathname: {@link PathFilter}</li>
+ * </ul>
+ * 
+ * <p>
  * <b>Difference filters:</b>
  * <ul>
  * <li>Only select differences: {@link #ANY_DIFF}.</li>
@@ -58,6 +64,11 @@ public abstract class TreeFilter {
 		@Override
 		public boolean include(final TreeWalk walker) {
 			return true;
+		}
+
+		@Override
+		public boolean shouldBeRecursive() {
+			return false;
 		}
 
 		@Override
@@ -97,6 +108,11 @@ public abstract class TreeFilter {
 			for (int i = 1; i < n; i++)
 				if (walker.getRawMode(i) != m || !walker.idEqual(i, baseTree))
 					return true;
+			return false;
+		}
+
+		@Override
+		public boolean shouldBeRecursive() {
 			return false;
 		}
 
@@ -148,6 +164,20 @@ public abstract class TreeFilter {
 	public abstract boolean include(TreeWalk walker)
 			throws MissingObjectException, IncorrectObjectTypeException,
 			IOException;
+
+	/**
+	 * Does this tree filter require a recursive walk to match everything?
+	 * <p>
+	 * If this tree filter is matching on full entry path names and its pattern
+	 * is looking for a '/' then the filter would require a recursive TreeWalk
+	 * to accurately make its decisions. The walker is not required to enable
+	 * recursive behavior for any particular filter, this is only a hint.
+	 * 
+	 * @return true if the filter would like to have the walker recurse into
+	 *         subtrees to make sure it matches everything correctly; false if
+	 *         the filter does not require entering subtrees.
+	 */
+	public abstract boolean shouldBeRecursive();
 
 	/**
 	 * Clone this tree filter, including its parameters.

@@ -54,6 +54,11 @@ public class NotTreeFilter extends TreeFilter {
 	}
 
 	@Override
+	public boolean shouldBeRecursive() {
+		return a.shouldBeRecursive();
+	}
+
+	@Override
 	public TreeFilter clone() {
 		return new NotTreeFilter(a.clone());
 	}

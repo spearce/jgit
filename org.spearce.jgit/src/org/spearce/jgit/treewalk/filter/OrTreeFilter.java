@@ -99,6 +99,11 @@ public abstract class OrTreeFilter extends TreeFilter {
 		}
 
 		@Override
+		public boolean shouldBeRecursive() {
+			return a.shouldBeRecursive() || b.shouldBeRecursive();
+		}
+
+		@Override
 		public TreeFilter clone() {
 			return new Binary(a.clone(), b.clone());
 		}
@@ -124,6 +129,14 @@ public abstract class OrTreeFilter extends TreeFilter {
 				if (f.include(walker))
 					return true;
 			}
+			return false;
+		}
+
+		@Override
+		public boolean shouldBeRecursive() {
+			for (final TreeFilter f : subfilters)
+				if (f.shouldBeRecursive())
+					return true;
 			return false;
 		}
 
