@@ -7,6 +7,8 @@ import org.spearce.jgit.errors.CorruptObjectException;
 
 /** Reader for a deltified object stored in a pack file. */
 abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
+	private static final int OBJ_COMMIT = Constants.OBJ_COMMIT;
+
 	private final int deltaSize;
 
 	DeltaPackedObjectLoader(final PackFile pr, final long offset,
@@ -29,11 +31,13 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 	}
 
 	protected byte[] getCachedBytes() throws IOException {
-		final UnpackedObjectCache.Entry cache = pack.readCache(dataOffset);
-		if (cache != null){
-			objectType = cache.type;
-			objectSize = cache.data.length;
-			return cache.data;
+		if (objectType != OBJ_COMMIT) {
+			final UnpackedObjectCache.Entry cache = pack.readCache(dataOffset);
+			if (cache != null) {
+				objectType = cache.type;
+				objectSize = cache.data.length;
+				return cache.data;
+			}
 		}
 
 		try {
@@ -42,7 +46,8 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 					pack.decompress(dataOffset, deltaSize));
 			objectType = baseLoader.getType();
 			objectSize = data.length;
-			pack.saveCache(dataOffset, data, objectType);
+			if (objectType != OBJ_COMMIT)
+				pack.saveCache(dataOffset, data, objectType);
 			return data;
 		} catch (DataFormatException dfe) {
 			final CorruptObjectException coe;
