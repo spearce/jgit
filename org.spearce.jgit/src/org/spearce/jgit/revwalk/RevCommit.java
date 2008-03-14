@@ -27,6 +27,8 @@ import org.spearce.jgit.lib.ObjectLoader;
 
 /** A commit reference to a commit in the DAG. */
 public class RevCommit extends RevObject {
+	static final RevCommit[] NO_PARENTS = {};
+
 	private static final String TYPE_COMMIT = Constants.TYPE_COMMIT;
 
 	private static final ObjectId id(final byte[] raw, final int offset) {

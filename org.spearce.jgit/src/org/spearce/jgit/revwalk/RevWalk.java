@@ -30,6 +30,7 @@ import org.spearce.jgit.lib.ObjectIdMap;
 import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.revwalk.filter.RevFilter;
+import org.spearce.jgit.treewalk.filter.TreeFilter;
 
 /**
  * Walks a commit graph and produces the matching commits in order.
@@ -87,8 +88,29 @@ public class RevWalk implements Iterable<RevCommit> {
 	 */
 	static final int UNINTERESTING = 1 << 2;
 
+	/**
+	 * Set on a RevCommit that can collapse out of the history.
+	 * <p>
+	 * If the {@link #treeFilter} concluded that this commit matches his
+	 * parents' for all of the paths that the filter is interested in then we
+	 * mark the commit REWRITE. Later we can rewrite the parents of a REWRITE
+	 * child to remove chains of REWRITE commits before we produce the child to
+	 * the application.
+	 * 
+	 * @see RewriteGenerator
+	 */
+	static final int REWRITE = 1 << 3;
+
+	/**
+	 * Temporary mark for use within generators or filters.
+	 * <p>
+	 * This mark is only for local use within a single scope. If someone sets
+	 * the mark they must unset it before any other code can see the mark.
+	 */
+	static final int TEMP_MARK = 1 << 4;
+
 	/** Number of flag bits we keep internal for our own use. See above flags. */
-	static final int RESERVED_FLAGS = 3;
+	static final int RESERVED_FLAGS = 5;
 
 	/** Flags we must automatically carry from a child to a parent commit. */
 	static final int CARRY_MASK = UNINTERESTING;
@@ -105,6 +127,8 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	private RevFilter filter;
 
+	private TreeFilter treeFilter;
+
 	/**
 	 * Create a new revision walker for a given repository.
 	 * 
@@ -117,6 +141,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		roots = new ArrayList<RevCommit>();
 		pending = new StartGenerator(this);
 		filter = RevFilter.ALL;
+		treeFilter = TreeFilter.ALL;
 	}
 
 	/**
@@ -249,6 +274,39 @@ public class RevWalk implements Iterable<RevCommit> {
 	 */
 	public void setRevFilter(final RevFilter newFilter) {
 		filter = newFilter != null ? newFilter : RevFilter.ALL;
+	}
+
+	/**
+	 * Get the tree filter used to simplify commits by modified paths.
+	 * 
+	 * @return the current filter. Never null as a filter is always needed. If
+	 *         no filter is being applied {@link TreeFilter#ALL} is returned.
+	 */
+	public TreeFilter getTreeFilter() {
+		return treeFilter;
+	}
+
+	/**
+	 * Set the tree filter used to simplify commits by modified paths.
+	 * <p>
+	 * If null or {@link TreeFilter#ALL} the path limiter is removed. Commits
+	 * will not be simplified.
+	 * <p>
+	 * If non-null and not {@link TreeFilter#ALL} then the tree filter will be
+	 * installed and commits will have their ancestry simplified to hide commits
+	 * that do not contain tree entries matched by the filter.
+	 * <p>
+	 * Usually callers should be inserting a filter graph including
+	 * {@link TreeFilter#ANY_DIFF} along with one or more
+	 * {@link org.spearce.jgit.treewalk.filter.PathFilter} instances.
+	 * 
+	 * @param newFilter
+	 *            new filter. If null the special {@link TreeFilter#ALL} filter
+	 *            will be used instead, as it matches everything.
+	 * @see org.spearce.jgit.treewalk.filter.PathFilter
+	 */
+	public void setTreeFilter(final TreeFilter newFilter) {
+		treeFilter = newFilter != null ? newFilter : TreeFilter.ALL;
 	}
 
 	/**

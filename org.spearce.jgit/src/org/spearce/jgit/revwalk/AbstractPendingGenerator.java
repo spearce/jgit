@@ -18,6 +18,7 @@ package org.spearce.jgit.revwalk;
 
 import java.io.IOException;
 
+import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.StopWalkException;
@@ -32,7 +33,7 @@ import org.spearce.jgit.revwalk.filter.RevFilter;
  * commit graph to be walked. A {@link RevFilter} may be used to select a subset
  * of the commits and return them to the caller.
  */
-class AbstractPendingGenerator extends Generator {
+abstract class AbstractPendingGenerator extends Generator {
 	protected final RevWalk walker;
 
 	private final DateRevQueue pending;
@@ -59,7 +60,7 @@ class AbstractPendingGenerator extends Generator {
 				if ((c.flags & RevWalk.UNINTERESTING) != 0)
 					produce = false;
 				else if (filter.include(walker, c))
-					produce = true;
+					produce = include(c);
 				else
 					produce = false;
 
@@ -91,4 +92,24 @@ class AbstractPendingGenerator extends Generator {
 			return null;
 		}
 	}
+
+	/**
+	 * Determine if a commit should produce in the output.
+	 * 
+	 * @param c
+	 *            the current commit.
+	 * @return true if this commit should still be produced in the result (it
+	 *         looked interesting); false if this commit should be omitted from
+	 *         the result (it appeared boring).
+	 * @throws MissingObjectException
+	 *             see TreeWalk for reasons.
+	 * @throws IncorrectObjectTypeException
+	 *             see TreeWalk for reasons.
+	 * @throws CorruptObjectException
+	 *             see TreeWalk for reasons.
+	 * @throws IOException
+	 *             see TreeWalk for reasons.
+	 */
+	abstract boolean include(final RevCommit c) throws MissingObjectException,
+			IncorrectObjectTypeException, IOException, CorruptObjectException;
 }

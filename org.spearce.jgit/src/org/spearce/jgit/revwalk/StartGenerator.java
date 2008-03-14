@@ -21,6 +21,7 @@ import java.io.IOException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.revwalk.filter.RevFilter;
+import org.spearce.jgit.treewalk.filter.TreeFilter;
 
 /**
  * Initial RevWalk generator that bootstraps a new walk.
@@ -52,8 +53,20 @@ class StartGenerator extends Generator {
 
 		final RevWalk w = walker;
 		final RevFilter rf = w.getRevFilter();
+		final TreeFilter tf = w.getTreeFilter();
 
-		g = new AbstractPendingGenerator(w, pending, rf);
+		if (tf != TreeFilter.ALL) {
+			g = new TreeFilterPendingGenerator(w, pending, rf, tf);
+			g = new BufferGenerator(g);
+			g = new RewriteGenerator(g);
+		} else {
+			g = new AbstractPendingGenerator(w, pending, rf) {
+				@Override
+				boolean include(final RevCommit c) {
+					return true;
+				}
+			};
+		}
 
 		w.pending = g;
 		return g.next();
