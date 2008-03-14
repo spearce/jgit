@@ -104,6 +104,45 @@ public class ObjectId implements Comparable {
 	}
 
 	/**
+	 * Compare to object identifier byte sequences for equality.
+	 * 
+	 * @param firstBuffer
+	 *            the first buffer to compare against. Must have at least 20
+	 *            bytes from position ai through the end of the buffer.
+	 * @param fi
+	 *            first offset within firstBuffer to begin testing.
+	 * @param secondBuffer
+	 *            the second buffer to compare against. Must have at least 20
+	 *            bytes from position bi through the end of the buffer.
+	 * @param si
+	 *            first offset within secondBuffer to begin testing.
+	 * @return true if the two identifiers are the same.
+	 */
+	public static boolean equals(final byte[] firstBuffer, int fi,
+			final byte[] secondBuffer, int si) {
+		return firstBuffer[fi++] == secondBuffer[si++] // 0
+				&& firstBuffer[fi++] == secondBuffer[si++] // 1
+				&& firstBuffer[fi++] == secondBuffer[si++] // 2
+				&& firstBuffer[fi++] == secondBuffer[si++] // 3
+				&& firstBuffer[fi++] == secondBuffer[si++] // 4
+				&& firstBuffer[fi++] == secondBuffer[si++] // 5
+				&& firstBuffer[fi++] == secondBuffer[si++] // 6
+				&& firstBuffer[fi++] == secondBuffer[si++] // 7
+				&& firstBuffer[fi++] == secondBuffer[si++] // 8
+				&& firstBuffer[fi++] == secondBuffer[si++] // 9
+				&& firstBuffer[fi++] == secondBuffer[si++] // 10
+				&& firstBuffer[fi++] == secondBuffer[si++] // 11
+				&& firstBuffer[fi++] == secondBuffer[si++] // 12
+				&& firstBuffer[fi++] == secondBuffer[si++] // 13
+				&& firstBuffer[fi++] == secondBuffer[si++] // 14
+				&& firstBuffer[fi++] == secondBuffer[si++] // 15
+				&& firstBuffer[fi++] == secondBuffer[si++] // 16
+				&& firstBuffer[fi++] == secondBuffer[si++] // 17
+				&& firstBuffer[fi++] == secondBuffer[si++] // 18
+				&& firstBuffer[fi++] == secondBuffer[si++] /* 19 */;
+	}
+
+	/**
 	 * Compare this ObjectId with SHA-1 bytes of another id
 	 *
 	 * @param b
@@ -253,13 +292,7 @@ public class ObjectId implements Comparable {
 			return true;
 		if (o == null)
 			return false;
-		for (int k = 0 ; k < Constants.OBJECT_ID_LENGTH; k++) {
-			final byte ak = id[k];
-			final byte bk = o.id[k];
-			if (ak != bk)
-				return false;
-		}
-		return true;
+		return equals(id, 0, o.id, 0);
 	}
 
 	public boolean equals(final Object o) {
