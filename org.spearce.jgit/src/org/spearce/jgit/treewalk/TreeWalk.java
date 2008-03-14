@@ -26,6 +26,7 @@ import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.treewalk.filter.TreeFilter;
 
 /**
  * Walks one or more {@link AbstractTreeIterator}s in parallel.
@@ -48,6 +49,8 @@ import org.spearce.jgit.lib.Repository;
 public class TreeWalk {
 	private final Repository db;
 
+	private TreeFilter filter;
+
 	private AbstractTreeIterator[] trees = {};
 
 	private boolean recursive;
@@ -66,6 +69,7 @@ public class TreeWalk {
 	 */
 	public TreeWalk(final Repository repo) {
 		db = repo;
+		filter = TreeFilter.ALL;
 	}
 
 	/**
@@ -75,6 +79,39 @@ public class TreeWalk {
 	 */
 	public Repository getRepository() {
 		return db;
+	}
+
+	/**
+	 * Get the currently configured filter.
+	 * 
+	 * @return the current filter. Never null as a filter is always needed.
+	 */
+	public TreeFilter getFilter() {
+		return filter;
+	}
+
+	/**
+	 * Set the tree entry filter for this walker.
+	 * <p>
+	 * Multiple filters may be combined by constructing an arbitrary tree of
+	 * <code>AndTreeFilter</code> or <code>OrTreeFilter</code> instances to
+	 * describe the boolean expression required by the application. Custom
+	 * filter implementations may also be constructed by applications.
+	 * <p>
+	 * Note that filters are not thread-safe and may not be shared by concurrent
+	 * TreeWalk instances. Every TreeWalk must be supplied its own unique
+	 * filter, unless the filter implementation specifically states it is (and
+	 * always will be) thread-safe. Callers may use {@link TreeFilter#clone()}
+	 * to create a unique filter tree for this TreeWalk instance.
+	 * 
+	 * @param newFilter
+	 *            the new filter. If null the special {@link TreeFilter#ALL}
+	 *            filter will be used instead, as it matches every entry.
+	 * @see org.spearce.jgit.treewalk.filter.AndTreeFilter
+	 * @see org.spearce.jgit.treewalk.filter.OrTreeFilter
+	 */
+	public void setFilter(final TreeFilter newFilter) {
+		filter = newFilter != null ? newFilter : TreeFilter.ALL;
 	}
 
 	/**
@@ -263,6 +300,11 @@ public class TreeWalk {
 			}
 
 			currentHead = t;
+			if (!filter.include(this)) {
+				popEntriesEqual();
+				continue;
+			}
+
 			if (recursive && FileMode.TREE.equals(t.mode)) {
 				enterSubtree();
 				continue;
