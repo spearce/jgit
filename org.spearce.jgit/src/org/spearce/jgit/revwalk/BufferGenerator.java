@@ -25,6 +25,8 @@ import org.spearce.jgit.errors.MissingObjectException;
 class BufferGenerator extends Generator {
 	private final FIFORevQueue pending;
 
+	private final int outputType;
+
 	/**
 	 * Create a new buffer and completely spin the generator.
 	 * <p>
@@ -41,6 +43,7 @@ class BufferGenerator extends Generator {
 	BufferGenerator(final Generator s) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
 		pending = new FIFORevQueue();
+		outputType = s.outputType();
 		s.shareFreeList(pending);
 		for (;;) {
 			final RevCommit c = s.next();
@@ -48,6 +51,11 @@ class BufferGenerator extends Generator {
 				break;
 			pending.add(c);
 		}
+	}
+
+	@Override
+	int outputType() {
+		return outputType;
 	}
 
 	@Override

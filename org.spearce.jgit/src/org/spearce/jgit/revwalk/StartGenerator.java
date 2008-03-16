@@ -42,6 +42,11 @@ class StartGenerator extends Generator {
 	}
 
 	@Override
+	int outputType() {
+		return 0;
+	}
+
+	@Override
 	void add(final RevCommit c) {
 		pending.add(c);
 	}
@@ -55,17 +60,24 @@ class StartGenerator extends Generator {
 		final RevFilter rf = w.getRevFilter();
 		final TreeFilter tf = w.getTreeFilter();
 
-		if (tf != TreeFilter.ALL) {
+		if (tf != TreeFilter.ALL)
 			g = new TreeFilterPendingGenerator(w, pending, rf, tf);
-			g = new BufferGenerator(g);
-			g = new RewriteGenerator(g);
-		} else {
+		else
 			g = new AbstractPendingGenerator(w, pending, rf) {
 				@Override
 				boolean include(final RevCommit c) {
 					return true;
 				}
 			};
+
+		if ((g.outputType() & NEEDS_REWRITE) != 0) {
+			// Correction for an upstream NEEDS_REWRITE is to buffer
+			// fully and then apply a rewrite generator that can
+			// pull through the rewrite chain and produce a dense
+			// output graph.
+			//
+			g = new BufferGenerator(g);
+			g = new RewriteGenerator(g);
 		}
 
 		w.pending = g;

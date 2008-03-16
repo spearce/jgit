@@ -33,6 +33,15 @@ import org.spearce.jgit.errors.MissingObjectException;
  * @see StartGenerator
  */
 abstract class Generator {
+	/** Commits are sorted by commit date and time, descending. */
+	static final int SORT_COMMIT_TIME_DESC = 1 << 0;
+
+	/** Output may have {@link RevWalk#REWRITE} marked on it. */
+	static final int HAS_REWRITE = 1 << 1;
+
+	/** Output needs {@link RewriteGenerator}. */
+	static final int NEEDS_REWRITE = 1 << 2;
+
 	/**
 	 * Register a commit as a starting point.
 	 * <p>
@@ -58,6 +67,14 @@ abstract class Generator {
 	void shareFreeList(final FIFORevQueue q) {
 		// Do nothing by default.
 	}
+
+	/**
+	 * Obtain flags describing the output behavior of this generator.
+	 * 
+	 * @return one or more of the constants declared in this class, describing
+	 *         how this generator produces its results.
+	 */
+	abstract int outputType();
 
 	/**
 	 * Return the next commit to the application, or the next generator.

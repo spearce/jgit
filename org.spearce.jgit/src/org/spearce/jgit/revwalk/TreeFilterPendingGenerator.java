@@ -57,6 +57,11 @@ class TreeFilterPendingGenerator extends AbstractPendingGenerator {
 		pathFilter.setRecursive(t.shouldBeRecursive());
 	}
 
+	@Override
+	int outputType() {
+		return super.outputType() | HAS_REWRITE | NEEDS_REWRITE;
+	}
+
 	boolean include(final RevCommit c) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException, CorruptObjectException {
 		// Reset the tree filter to scan this commit and parents.

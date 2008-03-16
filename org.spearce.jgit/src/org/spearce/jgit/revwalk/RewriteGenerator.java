@@ -60,6 +60,11 @@ class RewriteGenerator extends Generator {
 	}
 
 	@Override
+	int outputType() {
+		return source.outputType() & ~NEEDS_REWRITE;
+	}
+
+	@Override
 	RevCommit next() throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
 		for (;;) {

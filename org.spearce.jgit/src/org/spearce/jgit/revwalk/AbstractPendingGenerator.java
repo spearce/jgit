@@ -48,6 +48,11 @@ abstract class AbstractPendingGenerator extends Generator {
 	}
 
 	@Override
+	int outputType() {
+		return SORT_COMMIT_TIME_DESC;
+	}
+
+	@Override
 	RevCommit next() throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
 		try {
