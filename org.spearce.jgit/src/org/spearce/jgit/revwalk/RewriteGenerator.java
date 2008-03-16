@@ -55,6 +55,11 @@ class RewriteGenerator extends Generator {
 	}
 
 	@Override
+	void shareFreeList(final FIFORevQueue q) {
+		source.shareFreeList(q);
+	}
+
+	@Override
 	RevCommit next() throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
 		for (;;) {

@@ -41,12 +41,18 @@ class BufferGenerator extends Generator {
 	BufferGenerator(final Generator s) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
 		pending = new FIFORevQueue();
+		s.shareFreeList(pending);
 		for (;;) {
 			final RevCommit c = s.next();
 			if (c == null)
 				break;
 			pending.add(c);
 		}
+	}
+
+	@Override
+	void shareFreeList(final FIFORevQueue q) {
+		q.shareFreeList(pending);
 	}
 
 	@Override

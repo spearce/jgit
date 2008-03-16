@@ -50,6 +50,16 @@ abstract class Generator {
 	}
 
 	/**
+	 * Connect the supplied queue to this generator's own free list (if any).
+	 * 
+	 * @param q
+	 *            another FIFO queue that wants to share our queue's free list.
+	 */
+	void shareFreeList(final FIFORevQueue q) {
+		// Do nothing by default.
+	}
+
+	/**
 	 * Return the next commit to the application, or the next generator.
 	 * 
 	 * @return next available commit; null if no more are to be returned.
