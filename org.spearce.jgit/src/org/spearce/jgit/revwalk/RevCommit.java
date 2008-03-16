@@ -41,6 +41,8 @@ public class RevCommit extends RevObject {
 
 	int commitTime;
 
+	int inDegree;
+
 	private byte[] buffer;
 
 	/**

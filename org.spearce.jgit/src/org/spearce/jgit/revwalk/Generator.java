@@ -42,6 +42,9 @@ abstract class Generator {
 	/** Output needs {@link RewriteGenerator}. */
 	static final int NEEDS_REWRITE = 1 << 2;
 
+	/** Topological ordering is enforced (all children before parents). */
+	static final int SORT_TOPO = 1 << 3;
+
 	/**
 	 * Register a commit as a starting point.
 	 * <p>

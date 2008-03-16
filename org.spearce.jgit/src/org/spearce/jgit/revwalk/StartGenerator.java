@@ -17,6 +17,7 @@
 package org.spearce.jgit.revwalk;
 
 import java.io.IOException;
+import java.util.EnumSet;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
@@ -59,6 +60,7 @@ class StartGenerator extends Generator {
 		final RevWalk w = walker;
 		final RevFilter rf = w.getRevFilter();
 		final TreeFilter tf = w.getTreeFilter();
+		final EnumSet<RevSort> sort = w.getRevSort();
 
 		if (tf != TreeFilter.ALL)
 			g = new TreeFilterPendingGenerator(w, pending, rf, tf);
@@ -79,6 +81,9 @@ class StartGenerator extends Generator {
 			g = new BufferGenerator(g);
 			g = new RewriteGenerator(g);
 		}
+
+		if (sort.contains(RevSort.TOPO) && (g.outputType() & SORT_TOPO) == 0)
+			g = new TopoSortGenerator(g);
 
 		w.pending = g;
 		return g.next();

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.revwalk.RevSort;
 import org.spearce.jgit.revwalk.RevWalk;
 import org.spearce.jgit.revwalk.filter.AndRevFilter;
 import org.spearce.jgit.revwalk.filter.AuthorRevFilter;
@@ -59,6 +60,10 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 			else if (a.startsWith("--grep="))
 				revLimiter.add(MessageRevFilter.create(a.substring("--grep="
 						.length())));
+			else if ("--date-order".equals(a))
+				walk.sort(RevSort.COMMIT_TIME_DESC, true);
+			else if ("--topo-order".equals(a))
+				walk.sort(RevSort.TOPO, true);
 			else if ("--parents".equals(a))
 				parents = true;
 			else if ("--total-count".equals(a))

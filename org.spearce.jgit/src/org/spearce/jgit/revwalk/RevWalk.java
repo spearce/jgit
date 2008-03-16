@@ -18,6 +18,7 @@ package org.spearce.jgit.revwalk;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -109,8 +110,17 @@ public class RevWalk implements Iterable<RevCommit> {
 	 */
 	static final int TEMP_MARK = 1 << 4;
 
+	/**
+	 * Temporary mark for use within {@link TopoSortGenerator}.
+	 * <p>
+	 * This mark indicates the commit could not produce when it wanted to, as at
+	 * least one child was behind it. Commits with this flag are delayed until
+	 * all children have been output first.
+	 */
+	static final int TOPO_DELAY = 1 << 5;
+
 	/** Number of flag bits we keep internal for our own use. See above flags. */
-	static final int RESERVED_FLAGS = 5;
+	static final int RESERVED_FLAGS = 6;
 
 	/** Flags we must automatically carry from a child to a parent commit. */
 	static final int CARRY_MASK = UNINTERESTING;
@@ -124,6 +134,8 @@ public class RevWalk implements Iterable<RevCommit> {
 	private final ArrayList<RevCommit> roots;
 
 	Generator pending;
+
+	private final EnumSet<RevSort> sorting;
 
 	private RevFilter filter;
 
@@ -140,6 +152,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		objects = new ObjectIdMap<RevObject>(new HashMap());
 		roots = new ArrayList<RevCommit>();
 		pending = new StartGenerator(this);
+		sorting = EnumSet.of(RevSort.NONE);
 		filter = RevFilter.ALL;
 		treeFilter = TreeFilter.ALL;
 	}
@@ -241,6 +254,42 @@ public class RevWalk implements Iterable<RevCommit> {
 	public RevCommit next() throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
 		return pending.next();
+	}
+
+	/**
+	 * Obtain the sort types applied to the commits returned.
+	 * 
+	 * @return the sorting strategies employed. At least one strategy is always
+	 *         used, but that strategy may be {@link RevSort#NONE}.
+	 */
+	public EnumSet<RevSort> getRevSort() {
+		return sorting.clone();
+	}
+
+	/**
+	 * Add or remove a sorting strategy for the returned commits.
+	 * <p>
+	 * Multiple strategies can be applied at once, in which case some strategies
+	 * may take precedence over others. As an example, {@link RevSort#TOPO} must
+	 * take precedence over {@link RevSort#COMMIT_TIME_DESC}, otherwise it
+	 * cannot enforce its ordering.
+	 * 
+	 * @param s
+	 *            a sorting strategy to enable or disable.
+	 * @param use
+	 *            true if this strategy should be used, false if it should be
+	 *            removed.
+	 */
+	public void sort(final RevSort s, final boolean use) {
+		if (use)
+			sorting.add(s);
+		else
+			sorting.remove(s);
+
+		if (sorting.size() > 1)
+			sorting.remove(RevSort.NONE);
+		else if (sorting.size() == 0)
+			sorting.add(RevSort.NONE);
 	}
 
 	/**
@@ -494,6 +543,7 @@ public class RevWalk implements Iterable<RevCommit> {
 			if ((c.flags & SEEN) == 0)
 				continue;
 			c.flags &= PARSED;
+			c.inDegree = 0;
 			q.add(c);
 		}
 
@@ -505,6 +555,7 @@ public class RevWalk implements Iterable<RevCommit> {
 				if ((p.flags & SEEN) == 0)
 					continue;
 				p.flags &= PARSED;
+				p.inDegree = 0;
 				q.add(p);
 			}
 		}
