@@ -52,6 +52,33 @@ public class FIFORevQueue {
 	}
 
 	/**
+	 * Insert the commit pointer at the front of the queue.
+	 * 
+	 * @param c
+	 *            the commit to insert into the queue.
+	 */
+	public void unpop(final RevCommit c) {
+		Block b = head;
+		if (b == null) {
+			b = free.newBlock();
+			b.resetToMiddle();
+			b.add(c);
+			head = b;
+			tail = b;
+			return;
+		} else if (b.canUnpop()) {
+			b.unpop(c);
+			return;
+		}
+
+		b = free.newBlock();
+		b.resetToEnd();
+		b.unpop(c);
+		b.next = head;
+		head = b;
+	}
+
+	/**
 	 * Remove the first commit from the queue.
 	 * 
 	 * @return the first commit of this queue.
@@ -150,8 +177,16 @@ public class FIFORevQueue {
 			return headIndex == tailIndex;
 		}
 
+		boolean canUnpop() {
+			return headIndex > 0;
+		}
+
 		void add(final RevCommit c) {
 			commits[tailIndex++] = c;
+		}
+
+		void unpop(final RevCommit c) {
+			commits[--headIndex] = c;
 		}
 
 		RevCommit pop() {
@@ -166,6 +201,14 @@ public class FIFORevQueue {
 			next = null;
 			headIndex = 0;
 			tailIndex = 0;
+		}
+
+		void resetToMiddle() {
+			headIndex = tailIndex = BLOCK_SIZE / 2;
+		}
+
+		void resetToEnd() {
+			headIndex = tailIndex = BLOCK_SIZE;
 		}
 	}
 }
