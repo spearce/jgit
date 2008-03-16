@@ -39,5 +39,13 @@ public enum RevSort {
 	 * <p>
 	 * This strategy can be combined with {@link #COMMIT_TIME_DESC}.
 	 */
-	TOPO;
+	TOPO,
+
+	/**
+	 * Flip the output into the reverse ordering.
+	 * <p>
+	 * This strategy can be combined with the others described by this type as
+	 * it is usually performed at the very end.
+	 */
+	REVERSE;
 }

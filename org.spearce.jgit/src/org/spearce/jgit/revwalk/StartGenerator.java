@@ -84,6 +84,8 @@ class StartGenerator extends Generator {
 
 		if (sort.contains(RevSort.TOPO) && (g.outputType() & SORT_TOPO) == 0)
 			g = new TopoSortGenerator(g);
+		if (sort.contains(RevSort.REVERSE))
+			g = new BufferGenerator(g, new LIFORevQueue());
 
 		w.pending = g;
 		return g.next();

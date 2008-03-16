@@ -21,9 +21,9 @@ import java.io.IOException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 
-/** Stores RevCommits into a FIFORevQueue for later processing. */
+/** Stores RevCommits into a BlockRevQueue for later processing. */
 class BufferGenerator extends Generator {
-	private final FIFORevQueue pending;
+	private final BlockRevQueue pending;
 
 	private final int outputType;
 
@@ -42,14 +42,35 @@ class BufferGenerator extends Generator {
 	 */
 	BufferGenerator(final Generator s) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
-		pending = new FIFORevQueue();
+		this(s, new FIFORevQueue());
+	}
+
+	/**
+	 * Create a new buffer and completely spin the generator.
+	 * <p>
+	 * When the constructor completes the supplied generator will have no
+	 * commits remaining, as all of the commits will be held inside of this
+	 * generator's internal buffer.
+	 * 
+	 * @param s
+	 *            generator to pull all commits out of, and into this buffer.
+	 * @param q
+	 *            the queue we populate and produce output from.
+	 * @throws MissingObjectException
+	 * @throws IncorrectObjectTypeException
+	 * @throws IOException
+	 */
+	BufferGenerator(final Generator s, final BlockRevQueue q)
+			throws MissingObjectException, IncorrectObjectTypeException,
+			IOException {
+		pending = q;
 		outputType = s.outputType();
-		s.shareFreeList(pending);
+		s.shareFreeList(q);
 		for (;;) {
 			final RevCommit c = s.next();
 			if (c == null)
 				break;
-			pending.add(c);
+			q.add(c);
 		}
 	}
 

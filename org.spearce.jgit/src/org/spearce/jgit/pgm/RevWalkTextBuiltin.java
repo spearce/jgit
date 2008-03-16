@@ -64,6 +64,8 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 				walk.sort(RevSort.COMMIT_TIME_DESC, true);
 			else if ("--topo-order".equals(a))
 				walk.sort(RevSort.TOPO, true);
+			else if ("--reverse".equals(a))
+				walk.sort(RevSort.REVERSE, true);
 			else if ("--parents".equals(a))
 				parents = true;
 			else if ("--total-count".equals(a))
