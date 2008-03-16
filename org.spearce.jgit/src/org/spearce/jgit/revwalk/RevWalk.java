@@ -188,6 +188,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 */
 	public void markStart(final RevCommit c) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
+		assertNotStarted();
 		if ((c.flags & SEEN) != 0)
 			return;
 		if ((c.flags & PARSED) == 0)
@@ -233,6 +234,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	public void markUninteresting(final RevCommit c)
 			throws MissingObjectException, IncorrectObjectTypeException,
 			IOException {
+		assertNotStarted();
 		c.flags |= UNINTERESTING;
 		markStart(c);
 	}
@@ -281,6 +283,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 *            removed.
 	 */
 	public void sort(final RevSort s, final boolean use) {
+		assertNotStarted();
 		if (use)
 			sorting.add(s);
 		else
@@ -322,6 +325,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * @see org.spearce.jgit.revwalk.filter.OrRevFilter
 	 */
 	public void setRevFilter(final RevFilter newFilter) {
+		assertNotStarted();
 		filter = newFilter != null ? newFilter : RevFilter.ALL;
 	}
 
@@ -355,6 +359,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * @see org.spearce.jgit.treewalk.filter.PathFilter
 	 */
 	public void setTreeFilter(final TreeFilter newFilter) {
+		assertNotStarted();
 		treeFilter = newFilter != null ? newFilter : TreeFilter.ALL;
 	}
 
@@ -616,5 +621,12 @@ public class RevWalk implements Iterable<RevCommit> {
 				throw new UnsupportedOperationException();
 			}
 		};
+	}
+
+	/** Throws an exception if we have started producing output. */
+	protected void assertNotStarted() {
+		if (pending instanceof StartGenerator)
+			return;
+		throw new IllegalStateException("Output has already been started.");
 	}
 }
