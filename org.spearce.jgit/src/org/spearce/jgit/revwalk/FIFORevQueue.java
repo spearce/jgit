@@ -17,24 +17,11 @@
 package org.spearce.jgit.revwalk;
 
 /** A queue of commits in FIFO order. */
-public class FIFORevQueue {
+public class FIFORevQueue extends BlockRevQueue {
 	private Block head;
 
 	private Block tail;
 
-	private BlockFreeList free;
-
-	/** Create an empty FIFO revision queue. */
-	public FIFORevQueue() {
-		free = new BlockFreeList();
-	}
-
-	/**
-	 * Insert the commit pointer at the end of the queue.
-	 * 
-	 * @param c
-	 *            the commit to insert into the queue.
-	 */
 	public void add(final RevCommit c) {
 		Block b = tail;
 		if (b == null) {
@@ -78,11 +65,6 @@ public class FIFORevQueue {
 		head = b;
 	}
 
-	/**
-	 * Remove the first commit from the queue.
-	 * 
-	 * @return the first commit of this queue.
-	 */
 	public RevCommit pop() {
 		final Block b = head;
 		if (b == null)
@@ -98,29 +80,10 @@ public class FIFORevQueue {
 		return c;
 	}
 
-	/** Remove all entries from this queue. */
 	public void clear() {
 		head = null;
 		tail = null;
-		free.next = null;
-	}
-
-	/**
-	 * Reconfigure this queue to share the same free list as another.
-	 * <p>
-	 * Multiple revision queues can be connected to the same free list, making
-	 * it less expensive for applications to shuttle commits between them. This
-	 * method arranges for the receiver to take from / return to the same free
-	 * list as the supplied queue.
-	 * <p>
-	 * Free lists are not thread-safe. Applications must ensure that all queues
-	 * sharing the same free list are doing so from only a single thread.
-	 * 
-	 * @param q
-	 *            the other queue we will steal entries from.
-	 */
-	public void shareFreeList(final FIFORevQueue q) {
-		free = q.free;
+		free.clear();
 	}
 
 	public String toString() {
@@ -134,81 +97,5 @@ public class FIFORevQueue {
 			}
 		}
 		return s.toString();
-	}
-
-	static final class BlockFreeList {
-		private Block next;
-
-		Block newBlock() {
-			Block b = next;
-			if (b == null)
-				return new Block();
-			next = b.next;
-			b.clear();
-			return b;
-		}
-
-		void freeBlock(final Block b) {
-			b.next = next;
-			next = b;
-		}
-	}
-
-	static final class Block {
-		private static final int BLOCK_SIZE = 256;
-
-		/** Next block in our chain of blocks; null if we are the last. */
-		Block next;
-
-		/** Our table of queued commits. */
-		final RevCommit[] commits = new RevCommit[BLOCK_SIZE];
-
-		/** Next valid entry in {@link #commits}. */
-		int headIndex;
-
-		/** Next free entry in {@link #commits} for addition at. */
-		int tailIndex;
-
-		boolean isFull() {
-			return tailIndex == BLOCK_SIZE;
-		}
-
-		boolean isEmpty() {
-			return headIndex == tailIndex;
-		}
-
-		boolean canUnpop() {
-			return headIndex > 0;
-		}
-
-		void add(final RevCommit c) {
-			commits[tailIndex++] = c;
-		}
-
-		void unpop(final RevCommit c) {
-			commits[--headIndex] = c;
-		}
-
-		RevCommit pop() {
-			return commits[headIndex++];
-		}
-
-		RevCommit peek() {
-			return commits[headIndex];
-		}
-
-		void clear() {
-			next = null;
-			headIndex = 0;
-			tailIndex = 0;
-		}
-
-		void resetToMiddle() {
-			headIndex = tailIndex = BLOCK_SIZE / 2;
-		}
-
-		void resetToEnd() {
-			headIndex = tailIndex = BLOCK_SIZE;
-		}
 	}
 }

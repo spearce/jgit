@@ -63,7 +63,7 @@ class TopoSortGenerator extends Generator {
 	}
 
 	@Override
-	void shareFreeList(final FIFORevQueue q) {
+	void shareFreeList(final BlockRevQueue q) {
 		q.shareFreeList(pending);
 	}
 

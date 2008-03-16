@@ -55,7 +55,7 @@ class RewriteGenerator extends Generator {
 	}
 
 	@Override
-	void shareFreeList(final FIFORevQueue q) {
+	void shareFreeList(final BlockRevQueue q) {
 		source.shareFreeList(q);
 	}
 
