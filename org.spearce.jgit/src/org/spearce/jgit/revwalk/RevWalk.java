@@ -19,15 +19,14 @@ package org.spearce.jgit.revwalk;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Iterator;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.RevWalkException;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.ObjectIdSubclassMap;
 import org.spearce.jgit.lib.ObjectId;
-import org.spearce.jgit.lib.ObjectIdMap;
 import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.revwalk.filter.RevFilter;
@@ -127,7 +126,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	final Repository db;
 
-	private final ObjectIdMap<RevObject> objects;
+	private final ObjectIdSubclassMap<RevObject> objects;
 
 	private int nextFlagBit = RESERVED_FLAGS;
 
@@ -149,7 +148,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 */
 	public RevWalk(final Repository repo) {
 		db = repo;
-		objects = new ObjectIdMap<RevObject>(new HashMap());
+		objects = new ObjectIdSubclassMap<RevObject>();
 		roots = new ArrayList<RevCommit>();
 		pending = new StartGenerator(this);
 		sorting = EnumSet.of(RevSort.NONE);
@@ -377,7 +376,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		RevTree c = (RevTree) objects.get(id);
 		if (c == null) {
 			c = new RevTree(id);
-			objects.put(c, c);
+			objects.add(c);
 		}
 		return c;
 	}
@@ -396,7 +395,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		RevCommit c = (RevCommit) objects.get(id);
 		if (c == null) {
 			c = new RevCommit(id);
-			objects.put(c, c);
+			objects.add(c);
 		}
 		return c;
 	}
@@ -432,7 +431,7 @@ public class RevWalk implements Iterable<RevCommit> {
 			default:
 				throw new IllegalArgumentException("invalid git type: " + type);
 			}
-			objects.put(r, r);
+			objects.add(r);
 		}
 		return r;
 	}
@@ -516,7 +515,7 @@ public class RevWalk implements Iterable<RevCommit> {
 			default:
 				throw new IllegalArgumentException("Bad object type: " + type);
 			}
-			objects.put(r, r);
+			objects.add(r);
 		}
 		return r;
 	}
