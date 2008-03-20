@@ -394,7 +394,7 @@ public class GitIndex {
 			size = b.getInt();
 			byte[] sha1bytes = new byte[Constants.OBJECT_ID_LENGTH];
 			b.get(sha1bytes);
-			sha1 = new ObjectId(sha1bytes);
+			sha1 = ObjectId.fromRaw(sha1bytes);
 			flags = b.getShort();
 			name = new byte[flags & 0xFFF];
 			b.get(name);
@@ -450,7 +450,7 @@ public class GitIndex {
 			buf.putInt(uid);
 			buf.putInt(gid);
 			buf.putInt(size);
-			buf.put(sha1.getBytes());
+			sha1.copyRawTo(buf);
 			buf.putShort(flags);
 			buf.put(name);
 			int end = startposition

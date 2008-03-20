@@ -569,20 +569,13 @@ public class Repository {
 	}
 
 	private ObjectId resolveSimple(final String revstr) throws IOException {
-		ObjectId id = null;
-
-		if (ObjectId.isId(revstr)) {
-			id = new ObjectId(revstr);
+		if (ObjectId.isId(revstr))
+			return ObjectId.fromString(revstr);
+		final Ref r = readRef(revstr, false);
+		if (r != null) {
+			return r.getObjectId();
 		}
-
-		if (id == null) {
-			final Ref r = readRef(revstr, false);
-			if (r != null) {
-				id = r.getObjectId();
-			}
-		}
-
-		return id;
+		return null;
 	}
 
 	/**
@@ -694,7 +687,7 @@ public class Repository {
 					name = line.substring("ref: ".length());
 					continue REF_READING;
 				} else if (ObjectId.isId(line))
-					return new Ref(name, new ObjectId(line));
+					return new Ref(name, ObjectId.fromString(line));
 				throw new IOException("Not a ref: " + name + ": " + line);
 			} finally {
 				br.close();
@@ -841,7 +834,7 @@ public class Repository {
 					continue;
 				}
 				int spos = p.indexOf(' ');
-				ObjectId id = new ObjectId(p.substring(0,spos));
+				ObjectId id = ObjectId.fromString(p.substring(0,spos));
 				String name = p.substring(spos+1);
 				newPackedRefs.put(name, id);
 			}
@@ -898,7 +891,7 @@ public class Repository {
 				File topFile = new File(new File(new File(patchDir,"patches"), patchName), "top");
 				BufferedReader tfr = new BufferedReader(new FileReader(topFile));
 				String objectId = tfr.readLine();
-				ObjectId id = new ObjectId(objectId);
+				ObjectId id = ObjectId.fromString(objectId);
 				ret.put(id, new StGitPatch(patchName, id));
 				tfr.close();
 			}

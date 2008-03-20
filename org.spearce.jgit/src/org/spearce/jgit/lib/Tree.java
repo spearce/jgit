@@ -547,9 +547,7 @@ public class Tree extends TreeEntry implements Treeish {
 			System.arraycopy(raw, rawPtr, name, 0, nameLen);
 			rawPtr += nameLen + 1;
 
-			final byte[] entId = new byte[Constants.OBJECT_ID_LENGTH];
-			System.arraycopy(raw, rawPtr, entId, 0, Constants.OBJECT_ID_LENGTH);
-			final ObjectId id = new ObjectId(entId);
+			final ObjectId id = ObjectId.fromRaw(raw, rawPtr);
 			rawPtr += Constants.OBJECT_ID_LENGTH;
 
 			final TreeEntry ent;

@@ -41,7 +41,7 @@ public class ObjectIdMapExtTest extends TestCase {
 			byte[] data = new byte[Constants.OBJECT_ID_LENGTH];
 			for (int j=0; j<Constants.OBJECT_ID_LENGTH; ++j)
 				data[j] = (byte) (b++^0xEE);
-			ids[i] = new ObjectId(data);
+			ids[i] = ObjectId.fromRaw(data);
 		}
 	}
 
@@ -117,16 +117,7 @@ public class ObjectIdMapExtTest extends TestCase {
 				Map levelMapWithTreeAndSpecialCompare = new ObjectIdMap(new TreeMap(new Comparator() {
 
 					public int compare(Object arg0, Object arg1) {
-						byte[] b0=((ObjectId)arg0).getBytes();
-						byte[] b1=((ObjectId)arg1).getBytes();
-						for (int i=1; i<Constants.OBJECT_ID_LENGTH; ++i) {
-							int a=b0[i]&0xff;
-							int b=b1[i]&0xff;
-							int c=a-b;
-							if (c!=0)
-								return c;
-						}
-						return 0;
+						return ((ObjectId)arg0).compareTo((ObjectId)arg1);
 					}
 
 				}));
@@ -194,16 +185,7 @@ public class ObjectIdMapExtTest extends TestCase {
 
 		Map levelMapWithTreeAndSpecialCompare = new ObjectIdMap(new TreeMap(new Comparator() {
 			public int compare(Object arg0, Object arg1) {
-				byte[] b0=((ObjectId)arg0).getBytes();
-				byte[] b1=((ObjectId)arg1).getBytes();
-				for (int i=1; i<Constants.OBJECT_ID_LENGTH; ++i) {
-					int a=b0[i]&0xff;
-					int b=b1[i]&0xff;
-					int c=a-b;
-					if (c!=0)
-						return c;
-				}
-				return 0;
+				return ((ObjectId)arg0).compareTo((ObjectId)arg1);
 			}
 		}));
 		for (int i=0; i<ids.length; ++i)
@@ -323,16 +305,7 @@ public class ObjectIdMapExtTest extends TestCase {
 
 		Map levelMapWithTreeAndSpecialCompare = new ObjectIdMap(new TreeMap(new Comparator() {
 			public int compare(Object arg0, Object arg1) {
-				byte[] b0=((ObjectId)arg0).getBytes();
-				byte[] b1=((ObjectId)arg1).getBytes();
-				for (int i=1; i<Constants.OBJECT_ID_LENGTH; ++i) {
-					int a=b0[i]&0xff;
-					int b=b1[i]&0xff;
-					int c=a-b;
-					if (c!=0)
-						return c;
-				}
-				return 0;
+				return ((ObjectId)arg0).compareTo((ObjectId)arg1);
 			}
 		}));
 		for (int i=0; i<ids.length; ++i)
@@ -459,16 +432,7 @@ public class ObjectIdMapExtTest extends TestCase {
 
 		Map levelMapWithTreeAndSpecialCompare = new ObjectIdMap(new TreeMap(new Comparator() {
 			public int compare(Object arg0, Object arg1) {
-				byte[] b0=((ObjectId)arg0).getBytes();
-				byte[] b1=((ObjectId)arg1).getBytes();
-				for (int i=1; i<Constants.OBJECT_ID_LENGTH; ++i) {
-					int a=b0[i]&0xff;
-					int b=b1[i]&0xff;
-					int c=a-b;
-					if (c!=0)
-						return c;
-				}
-				return 0;
+				return ((ObjectId)arg0).compareTo((ObjectId)arg1);
 			}
 		}));
 		for (int i=0; i<ids.length; ++i)

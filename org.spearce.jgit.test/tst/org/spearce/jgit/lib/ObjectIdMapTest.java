@@ -40,7 +40,7 @@ public class ObjectIdMapTest extends TestCase {
 			byte[] data = new byte[Constants.OBJECT_ID_LENGTH];
 			for (int j=0; j<Constants.OBJECT_ID_LENGTH; ++j)
 				data[j] = (byte) (b++^0xEE);
-			ids[i] = new ObjectId(data);
+			ids[i] = ObjectId.fromRaw(data);
 		}
 	}
 

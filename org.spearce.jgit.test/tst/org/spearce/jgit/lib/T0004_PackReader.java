@@ -29,7 +29,7 @@ public class T0004_PackReader extends RepositoryTestCase {
 		final ObjectId id;
 		final PackedObjectLoader or;
 
-		id = new ObjectId("902d5476fa249b7abc9d84c611577a81381f0327");
+		id = ObjectId.fromString("902d5476fa249b7abc9d84c611577a81381f0327");
 		pr = new PackFile(db, TEST_IDX, TEST_PACK);
 		or = pr.get(id);
 		assertNotNull(or);
@@ -44,7 +44,7 @@ public class T0004_PackReader extends RepositoryTestCase {
 		final ObjectId id;
 		final ObjectLoader or;
 
-		id = new ObjectId("5b6e7c66c276e7610d4a73c70ec1a1f7c1003259");
+		id = ObjectId.fromString("5b6e7c66c276e7610d4a73c70ec1a1f7c1003259");
 		or = db.openObject(id);
 		assertNotNull(or);
 		assertTrue(or instanceof PackedObjectLoader);
@@ -71,13 +71,13 @@ public class T0004_PackReader extends RepositoryTestCase {
 		Tree t;
 
 		t = db
-				.mapTree(new ObjectId(
+				.mapTree(ObjectId.fromString(
 						"aac9df07f653dd18b935298deb813e02c32d2e6f"));
 		assertNotNull(t);
 		t.memberCount();
 
 		t = db
-				.mapTree(new ObjectId(
+				.mapTree(ObjectId.fromString(
 						"6b9ffbebe7b83ac6a61c9477ab941d999f5d0c96"));
 		assertNotNull(t);
 		t.memberCount();

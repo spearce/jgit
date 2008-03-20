@@ -207,7 +207,7 @@ public class PackFile {
 		case Constants.OBJ_REF_DELTA: {
 			pack.readFully(pos, ib, curs);
 			return new DeltaRefPackedObjectLoader(this, pos + ib.length,
-					(int) dataSize, new ObjectId(ib));
+					(int) dataSize, ObjectId.fromRaw(ib));
 		}
 		default:
 			throw new IOException("Unknown object type " + typeCode + ".");

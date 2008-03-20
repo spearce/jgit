@@ -21,22 +21,20 @@ import junit.framework.TestCase;
 public class T0001_ObjectId extends TestCase {
 	public void test001_toString() {
 		final String x = "def4c620bc3713bb1bb26b808ec9312548e73946";
-		final ObjectId oid = new ObjectId(x);
-		assertNotNull("has bytes", oid.getBytes());
-		assertEquals(20, oid.getBytes().length);
+		final ObjectId oid = ObjectId.fromString(x);
 		assertEquals(x, oid.toString());
 	}
 
 	public void test002_toString() {
 		final String x = "ff00eedd003713bb1bb26b808ec9312548e73946";
-		final ObjectId oid = new ObjectId(x);
+		final ObjectId oid = ObjectId.fromString(x);
 		assertEquals(x, oid.toString());
 	}
 
 	public void test003_equals() {
 		final String x = "def4c620bc3713bb1bb26b808ec9312548e73946";
-		final ObjectId a = new ObjectId(x);
-		final ObjectId b = new ObjectId(x);
+		final ObjectId a = ObjectId.fromString(x);
+		final ObjectId b = ObjectId.fromString(x);
 		assertEquals(a.hashCode(), b.hashCode());
 		assertTrue("a and b are same", a.equals(b));
 	}
@@ -67,7 +65,7 @@ public class T0001_ObjectId extends TestCase {
 
 	public void test009_toString() {
 		final String x = "ff00eedd003713bb1bb26b808ec9312548e73946";
-		final ObjectId oid = new ObjectId(x);
+		final ObjectId oid = ObjectId.fromString(x);
 		assertEquals(x, ObjectId.toString(oid));
 	}
 

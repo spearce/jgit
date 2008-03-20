@@ -62,19 +62,19 @@ class PackIndexV1 extends PackIndex {
 		byte[] data = idxdata[levelOne];
 		if (data == null)
 			return -1;
-		long high = data.length / (4 + Constants.OBJECT_ID_LENGTH);
-		long low = 0;
+		int high = data.length / (4 + Constants.OBJECT_ID_LENGTH);
+		int low = 0;
 		do {
-			final long mid = (low + high) / 2;
-			final long pos = ((4 + Constants.OBJECT_ID_LENGTH) * mid) + 4;
+			final int mid = (low + high) / 2;
+			final int pos = ((4 + Constants.OBJECT_ID_LENGTH) * mid) + 4;
 			final int cmp = objId.compareTo(data, pos);
 			if (cmp < 0)
 				high = mid;
 			else if (cmp == 0) {
-				int b0 = data[(int)pos-4] & 0xff;
-				int b1 = data[(int)pos-3] & 0xff;
-				int b2 = data[(int)pos-2] & 0xff;
-				int b3 = data[(int)pos-1] & 0xff;
+				int b0 = data[pos-4] & 0xff;
+				int b1 = data[pos-3] & 0xff;
+				int b2 = data[pos-2] & 0xff;
+				int b3 = data[pos-1] & 0xff;
 				return (((long)b0) << 24) | ( b1 << 16 ) | ( b2 << 8 ) | (b3);
 			} else
 				low = mid + 1;

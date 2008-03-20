@@ -48,7 +48,7 @@ public class EmptyTreeIterator extends AbstractTreeIterator {
 
 	@Override
 	protected byte[] idBuffer() {
-		return getEntryObjectId().getBytes();
+		return zeroid;
 	}
 
 	@Override

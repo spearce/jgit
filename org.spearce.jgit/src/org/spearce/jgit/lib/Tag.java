@@ -109,7 +109,7 @@ public class Tag {
 				if (n == null || !n.startsWith("object ")) {
 					throw new CorruptObjectException(tagId, "no object");
 				}
-				objId = new ObjectId(n.substring(7));
+				objId = ObjectId.fromString(n.substring(7));
 				n = br.readLine();
 				if (n == null || !n.startsWith("type ")) {
 					throw new CorruptObjectException(tagId, "no type");

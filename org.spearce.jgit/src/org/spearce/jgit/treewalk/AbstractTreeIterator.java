@@ -49,6 +49,9 @@ import org.spearce.jgit.lib.Repository;
 public abstract class AbstractTreeIterator {
 	private static final int DEFAULT_PATH_SIZE = 128;
 
+	/** A dummy object id buffer that matches the zero ObjectId. */
+	protected static final byte[] zeroid = new byte[Constants.OBJECT_ID_LENGTH];
+
 	/** Iterator for the parent tree; null if we are the root iterator. */
 	final AbstractTreeIterator parent;
 
@@ -221,10 +224,7 @@ public abstract class AbstractTreeIterator {
 	 * @return an object id for the current entry.
 	 */
 	public ObjectId getEntryObjectId() {
-		final int n = Constants.OBJECT_ID_LENGTH;
-		final byte[] d = new byte[n];
-		System.arraycopy(idBuffer(), idOffset(), d, 0, n);
-		return new ObjectId(d);
+		return ObjectId.fromRaw(idBuffer(), idOffset());
 	}
 
 	/**

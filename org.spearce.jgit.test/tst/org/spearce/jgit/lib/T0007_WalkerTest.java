@@ -114,7 +114,7 @@ public class T0007_WalkerTest extends RepositoryTestCase {
 	 *  after the commit is a change, as is the change introduced by the commit.
 	 */
 	public void testHistoryScanLast_2_any_with_change_from_reference() {
-		MyWalker walker = newWalker(FIRST_COMMIT_ON_MASTER,"master.txt",true,true,null,new ObjectId("82b1d08466e9505f8666b778744f9a3471a70c81"));
+		MyWalker walker = newWalker(FIRST_COMMIT_ON_MASTER,"master.txt",true,true,null,ObjectId.fromString("82b1d08466e9505f8666b778744f9a3471a70c81"));
 		ObjectId[] h = walker.collect();
 		assertEquals(2, h.length);
 		assertEquals("0000000000000000000000000000000000000000", h[0].toString());
@@ -125,7 +125,7 @@ public class T0007_WalkerTest extends RepositoryTestCase {
 	 *  so the commit doesn't change anything, but it does relative to nothing, i.e. log the commit.
 	 */
 	public void testHistoryScanLast_2_any_with_no_change_from_reference() {
-		MyWalker walker = newWalker(FIRST_COMMIT_ON_MASTER,"master.txt",true,true,null,new ObjectId("8230f48330e0055d9e0bc5a2a77718f6dd9324b8"));
+		MyWalker walker = newWalker(FIRST_COMMIT_ON_MASTER,"master.txt",true,true,null,ObjectId.fromString("8230f48330e0055d9e0bc5a2a77718f6dd9324b8"));
 		ObjectId[] h = walker.collect();
 		assertEquals(1,h.length);
 		assertEquals(FIRST_COMMIT_ON_MASTER, h[0].toString());

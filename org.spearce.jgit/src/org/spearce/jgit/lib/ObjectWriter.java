@@ -131,7 +131,7 @@ public class ObjectWriter {
 			o.write(' ');
 			o.write(e.getNameUTF8());
 			o.write(0);
-			o.write(id.getBytes());
+			id.copyRawTo(o);
 		}
 		return writeTree(o.toByteArray());
 	}
@@ -330,7 +330,7 @@ public class ObjectWriter {
 					t.setReadOnly();
 			}
 
-			id = new ObjectId(md.digest());
+			id = ObjectId.fromRaw(md.digest());
 		} finally {
 			if (id == null && deflateStream != null) {
 				try {

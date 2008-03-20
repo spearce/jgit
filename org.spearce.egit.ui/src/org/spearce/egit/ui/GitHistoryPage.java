@@ -523,7 +523,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				String id = element.getContentIdentifier();
 				if (appliedPatches!=null) {
 					if (!id.equals("Workspace") && !id.equals("Index")) {
-						StGitPatch patch = (StGitPatch) appliedPatches.get(new ObjectId(id));
+						StGitPatch patch = (StGitPatch) appliedPatches.get(ObjectId.fromString(id));
 						if (patch!=null)
 							return patch.getName();
 					}
@@ -545,7 +545,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 				if (id.equals("Index")) {
 					return "";
 				}
-				ObjectId oid = new ObjectId(id);
+				ObjectId oid = ObjectId.fromString(id);
 				StringBuilder b=new StringBuilder();
 				if (tags != null) {
 					Tag[] matching = tags.get(oid);
@@ -614,7 +614,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			String id = rev.getContentIdentifier();
 			if (!id.equals("Workspace") && !id.equals("Index")) {
 				StGitPatch patch = (StGitPatch) appliedPatches
-						.get(new ObjectId(id));
+						.get(ObjectId.fromString(id));
 				if (patch != null) {
 					revisionInfo.append("Patch: ");
 					revisionInfo.append(patch.getName());
@@ -651,7 +651,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 
 			String id = rev.getContentIdentifier();
 			if (!id.equals("Workspace") && !id.equals("Index")) {
-				ObjectId oid = new ObjectId(id);
+				ObjectId oid = ObjectId.fromString(id);
 				StringBuilder b=new StringBuilder();
 				if (tags != null) {
 					Tag[] matching = tags.get(oid);
@@ -708,7 +708,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			String id = rev.getContentIdentifier();
 			if (branches != null) {
 				StringBuilder b=new StringBuilder();
-				ObjectId oid = new ObjectId(id);
+				ObjectId oid = ObjectId.fromString(id);
 				String[] matching = branches.get(oid);
 				if (matching != null) {
 					for (String t : matching) {
@@ -1246,7 +1246,7 @@ public class GitHistoryPage extends HistoryPage implements IAdaptable,
 			String id = rev.getContentIdentifier();
 			if (!id.equals("Workspace") && !id.equals("Index")) {
 				StGitPatch patch = (StGitPatch) appliedPatches
-						.get(new ObjectId(id));
+						.get(ObjectId.fromString(id));
 				if (patch != null)
 					commitStr = "Patch: " + patch.getName();
 			} else {

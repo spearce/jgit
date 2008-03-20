@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class T0002_Tree extends RepositoryTestCase {
-	private static final ObjectId SOME_FAKE_ID = new ObjectId(
+	private static final ObjectId SOME_FAKE_ID = ObjectId.fromString(
 			"0123456789abcdef0123456789abcdef01234567");
 
 	private int compareNamesUsingSpecialCompare(String a,String b) throws UnsupportedEncodingException {

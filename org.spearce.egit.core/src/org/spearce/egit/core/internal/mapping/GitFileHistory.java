@@ -119,7 +119,7 @@ public class GitFileHistory extends FileHistory implements IAdaptable {
 			return new GitWorkspaceFileRevision(resource, -1);
 		if (id.equals("Index"))
 			return new GitIndexFileRevision(resource, 0);
-		return new GitCommitFileRevision(new ObjectId(id), resource, 0);
+		return new GitCommitFileRevision(ObjectId.fromString(id), resource, 0);
 	}
 
 	static class EclipseWalker extends TopologicalWalker {
