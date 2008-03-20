@@ -293,6 +293,24 @@ public class ObjectId implements Comparable {
 		w5 = new_5;
 	}
 
+	/**
+	 * Initialize this instance by copying another existing ObjectId.
+	 * <p>
+	 * This constructor is mostly useful for subclasses who want to extend an
+	 * ObjectId with more properties, but initialize from an existing ObjectId
+	 * instance acquired by other means.
+	 * 
+	 * @param src
+	 *            another already parsed ObjectId to copy the value out of.
+	 */
+	protected ObjectId(final ObjectId src) {
+		w1 = src.w1;
+		w2 = src.w2;
+		w3 = src.w3;
+		w4 = src.w4;
+		w5 = src.w5;
+	}
+
 	final int getFirstByte() {
 		return w1 >>> 24;
 	}

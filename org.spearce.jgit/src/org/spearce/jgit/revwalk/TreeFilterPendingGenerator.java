@@ -74,9 +74,9 @@ class TreeFilterPendingGenerator extends AbstractPendingGenerator {
 			final RevCommit p = c.parents[i];
 			if ((p.flags & PARSED) == 0)
 				p.parse(walker);
-			trees[i] = p.getTree().getId();
+			trees[i] = p.getTree();
 		}
-		trees[nParents] = c.getTree().getId();
+		trees[nParents] = c.getTree();
 		tw.reset(trees);
 
 		if (nParents == 1) {

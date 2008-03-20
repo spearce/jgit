@@ -58,7 +58,7 @@ abstract class Generator {
 	 */
 	void add(final RevCommit c) {
 		throw new IllegalStateException("Revision walk has already begun;"
-				+ " it is too late to add commit " + c.getId() + ".");
+				+ " it is too late to add commit " + c + ".");
 	}
 
 	/**

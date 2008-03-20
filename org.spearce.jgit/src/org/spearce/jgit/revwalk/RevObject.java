@@ -19,15 +19,13 @@ package org.spearce.jgit.revwalk;
 import org.spearce.jgit.lib.ObjectId;
 
 /** Base object type accessed during revision walking. */
-public abstract class RevObject {
+public abstract class RevObject extends ObjectId {
 	static final int PARSED = 1;
-
-	final ObjectId id;
 
 	int flags;
 
 	RevObject(final ObjectId name) {
-		id = name;
+		super(name);
 	}
 
 	/**
@@ -36,7 +34,17 @@ public abstract class RevObject {
 	 * @return unique hash of this object.
 	 */
 	public ObjectId getId() {
-		return id;
+		return this;
+	}
+
+	@Override
+	public boolean equals(final ObjectId o) {
+		return this == o;
+	}
+
+	@Override
+	public boolean equals(final Object o) {
+		return this == o;
 	}
 
 	/**

@@ -377,7 +377,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		RevTree c = (RevTree) objects.get(id);
 		if (c == null) {
 			c = new RevTree(id);
-			objects.put(c.id, c);
+			objects.put(c, c);
 		}
 		return c;
 	}
@@ -396,7 +396,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		RevCommit c = (RevCommit) objects.get(id);
 		if (c == null) {
 			c = new RevCommit(id);
-			objects.put(c.id, c);
+			objects.put(c, c);
 		}
 		return c;
 	}
@@ -432,7 +432,7 @@ public class RevWalk implements Iterable<RevCommit> {
 			default:
 				throw new IllegalArgumentException("invalid git type: " + type);
 			}
-			objects.put(r.id, r);
+			objects.put(r, r);
 		}
 		return r;
 	}
@@ -516,7 +516,7 @@ public class RevWalk implements Iterable<RevCommit> {
 			default:
 				throw new IllegalArgumentException("Bad object type: " + type);
 			}
-			objects.put(r.getId(), r);
+			objects.put(r, r);
 		}
 		return r;
 	}

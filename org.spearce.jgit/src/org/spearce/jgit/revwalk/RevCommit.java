@@ -31,10 +31,6 @@ public class RevCommit extends RevObject {
 
 	private static final String TYPE_COMMIT = Constants.TYPE_COMMIT;
 
-	private static final ObjectId id(final byte[] raw, final int offset) {
-		return ObjectId.fromString(raw, offset);
-	}
-
 	private RevTree tree;
 
 	RevCommit[] parents;
@@ -57,26 +53,26 @@ public class RevCommit extends RevObject {
 
 	void parse(final RevWalk walk) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
-		final ObjectLoader ldr = walk.db.openObject(id);
+		final ObjectLoader ldr = walk.db.openObject(this);
 		if (ldr == null)
-			throw new MissingObjectException(id, TYPE_COMMIT);
+			throw new MissingObjectException(this, TYPE_COMMIT);
 		final byte[] data = ldr.getCachedBytes();
 		if (Constants.OBJ_COMMIT != ldr.getType())
-			throw new IncorrectObjectTypeException(id, TYPE_COMMIT);
+			throw new IncorrectObjectTypeException(this, TYPE_COMMIT);
 		parseCanonical(walk, data);
 	}
 
-	void parseCanonical(final RevWalk walk, final byte[] rawCommitBuffer) {
-		tree = walk.lookupTree(id(rawCommitBuffer, 5));
+	void parseCanonical(final RevWalk walk, final byte[] raw) {
+		tree = walk.lookupTree(fromString(raw, 5));
 
-		final int rawSize = rawCommitBuffer.length;
+		final int rawSize = raw.length;
 		int ptr = 46;
 		RevCommit[] pList = new RevCommit[1];
 		int nParents = 0;
 		for (;;) {
-			if (rawCommitBuffer[ptr] != 'p')
+			if (raw[ptr] != 'p')
 				break;
-			final RevCommit p = walk.lookupCommit(id(rawCommitBuffer, ptr + 7));
+			final RevCommit p = walk.lookupCommit(fromString(raw, ptr + 7));
 			if (nParents == 0)
 				pList[nParents++] = p;
 			else if (nParents == 1) {
@@ -100,20 +96,20 @@ public class RevCommit extends RevObject {
 		parents = pList;
 
 		// skip past "author " line
-		if (rawCommitBuffer[ptr] == 'a')
+		if (raw[ptr] == 'a')
 			while (ptr < rawSize)
-				if (rawCommitBuffer[ptr++] == '\n')
+				if (raw[ptr++] == '\n')
 					break;
 
 		// extract time from "committer "
 		commitTime = 0;
-		if (rawCommitBuffer[ptr] == 'c') {
+		if (raw[ptr] == 'c') {
 			while (ptr < rawSize)
-				if (rawCommitBuffer[ptr++] == '>')
+				if (raw[ptr++] == '>')
 					break;
 			ptr++;
 			while (ptr < rawSize) {
-				final byte b = rawCommitBuffer[ptr++];
+				final byte b = raw[ptr++];
 				if (b < '0' || b > '9')
 					break;
 				commitTime *= 10;
@@ -121,7 +117,7 @@ public class RevCommit extends RevObject {
 			}
 		}
 
-		buffer = rawCommitBuffer;
+		buffer = raw;
 		flags |= PARSED;
 	}
 
@@ -142,7 +138,7 @@ public class RevCommit extends RevObject {
 	 * @return parsed commit.
 	 */
 	public Commit asCommit(final RevWalk walk) {
-		return new Commit(walk.db, getId(), buffer);
+		return new Commit(walk.db, this, buffer);
 	}
 
 	/**

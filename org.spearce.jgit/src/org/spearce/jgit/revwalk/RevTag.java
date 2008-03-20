@@ -46,12 +46,12 @@ public class RevTag extends RevObject {
 
 	void parse(final RevWalk walk) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
-		final ObjectLoader ldr = walk.db.openObject(id);
+		final ObjectLoader ldr = walk.db.openObject(this);
 		if (ldr == null)
-			throw new MissingObjectException(id, Constants.TYPE_TAG);
+			throw new MissingObjectException(this, Constants.TYPE_TAG);
 		final byte[] data = ldr.getCachedBytes();
 		if (Constants.OBJ_TAG != ldr.getType())
-			throw new IncorrectObjectTypeException(id, Constants.TYPE_TAG);
+			throw new IncorrectObjectTypeException(this, Constants.TYPE_TAG);
 		parseCanonical(walk, data);
 	}
 
@@ -64,7 +64,7 @@ public class RevTag extends RevObject {
 		case 'b':
 			if (rawTag[53 + 1] != 'l' || rawTag[53 + 2] != 'o'
 					|| rawTag[53 + 3] != 'b' || rawTag[53 + 4] != '\n')
-				throw new CorruptObjectException(id, "invalid type");
+				throw new CorruptObjectException(this, "invalid type");
 			oType = Constants.OBJ_BLOB;
 			pos = 53 + 5;
 			break;
@@ -72,7 +72,7 @@ public class RevTag extends RevObject {
 			if (rawTag[53 + 1] != 'o' || rawTag[53 + 2] != 'm'
 					|| rawTag[53 + 3] != 'm' || rawTag[53 + 4] != 'i'
 					|| rawTag[53 + 5] != 't' || rawTag[53 + 6] != '\n')
-				throw new CorruptObjectException(id, "invalid type");
+				throw new CorruptObjectException(this, "invalid type");
 			oType = Constants.OBJ_COMMIT;
 			pos = 53 + 7;
 			break;
@@ -80,23 +80,23 @@ public class RevTag extends RevObject {
 			switch (rawTag[53 + 1]) {
 			case 'a':
 				if (rawTag[53 + 2] != 'g' || rawTag[53 + 3] != '\n')
-					throw new CorruptObjectException(id, "invalid type");
+					throw new CorruptObjectException(this, "invalid type");
 				oType = Constants.OBJ_TAG;
 				pos = 53 + 4;
 				break;
 			case 'r':
 				if (rawTag[53 + 2] != 'e' || rawTag[53 + 3] != 'e'
 						|| rawTag[53 + 4] != '\n')
-					throw new CorruptObjectException(id, "invalid type");
+					throw new CorruptObjectException(this, "invalid type");
 				oType = Constants.OBJ_TREE;
 				pos = 53 + 5;
 				break;
 			default:
-				throw new CorruptObjectException(id, "invalid type");
+				throw new CorruptObjectException(this, "invalid type");
 			}
 			break;
 		default:
-			throw new CorruptObjectException(id, "invalid type");
+			throw new CorruptObjectException(this, "invalid type");
 		}
 
 		object = walk.lookupAny(ObjectId.fromString(rawTag, 7), oType);
@@ -122,7 +122,7 @@ public class RevTag extends RevObject {
 	 * @return parsed tag.
 	 */
 	public Tag asTag(final RevWalk walk) {
-		return new Tag(walk.db, getId(), name, buffer);
+		return new Tag(walk.db, this, name, buffer);
 	}
 
 	/**
