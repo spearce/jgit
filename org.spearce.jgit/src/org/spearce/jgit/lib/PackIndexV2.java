@@ -8,12 +8,14 @@ import java.io.InputStream;
 class PackIndexV2 extends PackIndex {
 	private static final int FANOUT = 256;
 
+	private static final int[] NO_INTS = {};
+
 	private static final byte[] NO_BYTES = {};
 
 	private long objectCnt;
 
 	/** 256 arrays of contiguous object names. */
-	private byte[][] names;
+	private int[][] names;
 
 	/** 256 arrays of the 32 bit offset data, matching {@link #names}. */
 	private byte[][] offset32;
@@ -29,7 +31,7 @@ class PackIndexV2 extends PackIndex {
 			fanoutTable[k] = decodeUInt32(k * 4, fanoutRaw);
 		objectCnt = fanoutTable[FANOUT - 1];
 
-		names = new byte[FANOUT][];
+		names = new int[FANOUT][];
 		offset32 = new byte[FANOUT][];
 
 		// Object name table. The size we can permit per fan-out bucket
@@ -44,7 +46,7 @@ class PackIndexV2 extends PackIndex {
 				bucketCnt = fanoutTable[k] - fanoutTable[k - 1];
 
 			if (bucketCnt == 0) {
-				names[k] = NO_BYTES;
+				names[k] = NO_INTS;
 				offset32[k] = NO_BYTES;
 				continue;
 			}
@@ -53,9 +55,15 @@ class PackIndexV2 extends PackIndex {
 			if (nameLen > Integer.MAX_VALUE)
 				throw new IOException("Index file is too large for jgit");
 
-			names[k] = new byte[(int) nameLen];
+			final int intNameLen = (int) nameLen;
+			final byte[] raw = new byte[intNameLen];
+			final int[] bin = new int[intNameLen >> 2];
+			readFully(fd, 0, raw);
+			for (int i = 0; i < bin.length; i++)
+				bin[i] = ObjectId.rawUInt32(raw, i << 2);
+
+			names[k] = bin;
 			offset32[k] = new byte[(int) (bucketCnt * 4)];
-			readFully(fd, 0, names[k]);
 		}
 
 		// CRC32 table. Currently unused.
@@ -102,7 +110,7 @@ class PackIndexV2 extends PackIndex {
 	@Override
 	long findOffset(final ObjectId objId) {
 		final int levelOne = objId.getFirstByte();
-		final byte[] data = names[levelOne];
+		final int[] data = names[levelOne];
 		int high = offset32[levelOne].length / 4;
 		if (high == 0)
 			return -1;
@@ -111,7 +119,7 @@ class PackIndexV2 extends PackIndex {
 			final int mid = (low + high) / 2;
 			final int cmp;
 
-			cmp = objId.compareTo(data, Constants.OBJECT_ID_LENGTH * mid);
+			cmp = objId.compareTo(data, 5 * mid);
 			if (cmp < 0)
 				high = mid;
 			else if (cmp == 0) {

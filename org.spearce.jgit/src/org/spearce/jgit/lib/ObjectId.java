@@ -193,7 +193,7 @@ public class ObjectId implements Comparable {
 		return new ObjectId(a, b, c, d, e);
 	}
 
-	private static final int rawUInt32(final byte[] rawBuffer, int offset) {
+	static final int rawUInt32(final byte[] rawBuffer, int offset) {
 		int r = rawBuffer[offset] << 8;
 
 		r |= rawBuffer[offset + 1] & 0xff;
@@ -354,6 +354,28 @@ public class ObjectId implements Comparable {
 			return cmp;
 
 		return compareUInt32(w5, rawUInt32(bs, p + 16));
+	}
+
+	int compareTo(final int[] bs, final int p) {
+		int cmp;
+
+		cmp = compareUInt32(w1, bs[p]);
+		if (cmp != 0)
+			return cmp;
+
+		cmp = compareUInt32(w2, bs[p + 1]);
+		if (cmp != 0)
+			return cmp;
+
+		cmp = compareUInt32(w3, bs[p + 2]);
+		if (cmp != 0)
+			return cmp;
+
+		cmp = compareUInt32(w4, bs[p + 3]);
+		if (cmp != 0)
+			return cmp;
+
+		return compareUInt32(w5, bs[p + 4]);
 	}
 
 	private static final int compareUInt32(final int a, final int b) {
