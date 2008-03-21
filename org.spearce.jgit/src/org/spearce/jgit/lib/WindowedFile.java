@@ -157,9 +157,8 @@ public class WindowedFile {
 			final int cnt, final WindowCursor curs) throws IOException {
 		int remaining = cnt;
 		while (remaining > 0 && position < length) {
-			final int r;
-			cache.get(curs, this, (int) (position >> cache.szb));
-			r = curs.copy(((int) position) & cache.szm, dstbuf, dstoff, remaining);
+			final int r = curs.copy(this, (int) (position >> cache.szb),
+					((int) position) & cache.szm, dstbuf, dstoff, remaining);
 			position += r;
 			dstoff += r;
 			remaining -= r;
@@ -209,16 +208,13 @@ public class WindowedFile {
 	}
 
 	void readCompressed(long pos, final byte[] dstbuf, final WindowCursor curs,
-			final Inflater inf)
-			throws IOException, DataFormatException {
+			final Inflater inf) throws IOException, DataFormatException {
 		int dstoff = 0;
-		cache.get(curs, this, (int) (pos >> cache.szb));
-		dstoff = curs.inflate(((int) pos) & cache.szm, dstbuf, dstoff, inf);
+		dstoff = curs.inflate(this, (int) (pos >> cache.szb), ((int) pos)
+				& cache.szm, dstbuf, dstoff, inf);
 		pos >>= cache.szb;
-		while (!inf.finished()) {
-			cache.get(curs, this, (int) ++pos);
-			dstoff = curs.inflate(0, dstbuf, dstoff, inf);
-		}
+		while (!inf.finished())
+			dstoff = curs.inflate(this, (int) ++pos, 0, dstbuf, dstoff, inf);
 		if (dstoff != dstbuf.length)
 			throw new EOFException();
 	}
