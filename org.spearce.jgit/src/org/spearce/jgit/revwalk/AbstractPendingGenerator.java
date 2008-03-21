@@ -58,8 +58,10 @@ abstract class AbstractPendingGenerator extends Generator {
 		try {
 			for (;;) {
 				final RevCommit c = pending.pop();
-				if (c == null)
+				if (c == null) {
+					walker.curs.release();
 					return null;
+				}
 
 				final boolean produce;
 				if ((c.flags & RevWalk.UNINTERESTING) != 0)
@@ -93,6 +95,7 @@ abstract class AbstractPendingGenerator extends Generator {
 					c.dispose();
 			}
 		} catch (StopWalkException swe) {
+			walker.curs.release();
 			pending.clear();
 			return null;
 		}

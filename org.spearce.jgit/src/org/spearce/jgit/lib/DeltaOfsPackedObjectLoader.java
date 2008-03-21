@@ -14,6 +14,6 @@ class DeltaOfsPackedObjectLoader extends DeltaPackedObjectLoader {
 	}
 
 	protected PackedObjectLoader getBaseLoader() throws IOException {
-		return pack.resolveBase(deltaBase);
+		return pack.resolveBase(curs, deltaBase);
 	}
 }

@@ -244,18 +244,35 @@ public class Repository {
 	}
 
 	/**
-	 * @param id SHA-1 of an object.
-	 *
+	 * @param id
+	 *            SHA-1 of an object.
+	 * 
 	 * @return a {@link ObjectLoader} for accessing the data of the named
 	 *         object, or null if the object does not exist.
 	 * @throws IOException
 	 */
-	public ObjectLoader openObject(final ObjectId id) throws IOException {
+	public ObjectLoader openObject(final ObjectId id)
+			throws IOException {
+		return openObject(new WindowCursor(),id);
+	}
+
+	/**
+	 * @param curs
+	 *            temporary working space associated with the calling thread.
+	 * @param id
+	 *            SHA-1 of an object.
+	 * 
+	 * @return a {@link ObjectLoader} for accessing the data of the named
+	 *         object, or null if the object does not exist.
+	 * @throws IOException
+	 */
+	public ObjectLoader openObject(final WindowCursor curs, final ObjectId id)
+			throws IOException {
 		int k = packs.length;
 		if (k > 0) {
 			do {
 				try {
-					final ObjectLoader ol = packs[--k].get(id);
+					final ObjectLoader ol = packs[--k].get(curs, id);
 					if (ol != null)
 						return ol;
 				} catch (IOException ioe) {
@@ -265,8 +282,9 @@ public class Repository {
 					// been noticed with JDK < 1.6. Tell the gc that now is a good
 					// time to collect and try once more.
 					try {
+						curs.release();
 						System.gc();
-						final ObjectLoader ol = packs[k].get(id);
+						final ObjectLoader ol = packs[k].get(curs, id);
 						if (ol != null)
 							return ol;
 					} catch (IOException ioe2) {

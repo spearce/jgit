@@ -6,6 +6,9 @@ import java.util.zip.Inflater;
 
 /** Active handle to a ByteWindow. */
 public final class WindowCursor {
+	/** Temporary buffer large enough for at least one raw object id. */
+	final byte[] tempId = new byte[Constants.OBJECT_ID_LENGTH];
+
 	ByteWindow window;
 
 	Object handle;

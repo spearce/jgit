@@ -53,7 +53,7 @@ public class RevCommit extends RevObject {
 
 	void parse(final RevWalk walk) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
-		final ObjectLoader ldr = walk.db.openObject(this);
+		final ObjectLoader ldr = walk.db.openObject(walk.curs, this);
 		if (ldr == null)
 			throw new MissingObjectException(this, TYPE_COMMIT);
 		final byte[] data = ldr.getCachedBytes();

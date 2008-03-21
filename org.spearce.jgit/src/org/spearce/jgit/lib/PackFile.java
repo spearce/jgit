@@ -65,8 +65,9 @@ public class PackFile {
 		deltaBaseCache = pack.cache.deltaBaseCache;
 	}
 
-	final PackedObjectLoader resolveBase(final long ofs) throws IOException {
-		return reader(ofs);
+	final PackedObjectLoader resolveBase(final WindowCursor curs, final long ofs)
+			throws IOException {
+		return reader(curs, ofs);
 	}
 
 	/**
@@ -86,15 +87,6 @@ public class PackFile {
 
 	/**
 	 * Get an object from this pack.
-	 * <p>
-	 * For performance reasons the caller is responsible for supplying a
-	 * temporary buffer of at least {@link Constants#OBJECT_ID_LENGTH} bytes for
-	 * use during searching. If an object loader is returned this temporary
-	 * buffer becomes the property of the object loader and must not be
-	 * overwritten by the caller. If no object loader is returned then the
-	 * temporary buffer remains the property of the caller and may be given to a
-	 * different pack file to continue searching for the needed object.
-	 * </p>
 	 * 
 	 * @param id
 	 *            the object to obtain from the pack. Must not be null.
@@ -103,12 +95,28 @@ public class PackFile {
 	 * @throws IOException
 	 *             the pack file or the index could not be read.
 	 */
-	public PackedObjectLoader get(final ObjectId id)
+	public PackedObjectLoader get(final ObjectId id) throws IOException {
+		return get(new WindowCursor(), id);
+	}
+
+	/**
+	 * Get an object from this pack.
+	 * 
+	 * @param curs
+	 *            temporary working space associated with the calling thread.
+	 * @param id
+	 *            the object to obtain from the pack. Must not be null.
+	 * @return the object loader for the requested object if it is contained in
+	 *         this pack; null if the object was not found.
+	 * @throws IOException
+	 *             the pack file or the index could not be read.
+	 */
+	public PackedObjectLoader get(final WindowCursor curs, final ObjectId id)
 			throws IOException {
 		final long offset = idx.findOffset(id);
 		if (offset == -1)
 			return null;
-		final PackedObjectLoader objReader = reader(offset);
+		final PackedObjectLoader objReader = reader(curs, offset);
 		objReader.setId(id);
 		return objReader;
 	}
@@ -164,12 +172,12 @@ public class PackFile {
 					+ pack.getName());
 	}
 
-	private PackedObjectLoader reader(final long objOffset)
+	private PackedObjectLoader reader(final WindowCursor curs,
+			final long objOffset)
 			throws IOException {
 		long pos = objOffset;
 		int p = 0;
-		final WindowCursor curs = new WindowCursor();
-		final byte[] ib = new byte[Constants.OBJECT_ID_LENGTH];
+		final byte[] ib = curs.tempId;
 		pack.readFully(pos, ib, curs);
 		int c = ib[p++] & 0xff;
 		final int typeCode = (c >> 4) & 7;

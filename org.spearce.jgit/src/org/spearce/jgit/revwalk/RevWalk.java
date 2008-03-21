@@ -25,10 +25,11 @@ import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.RevWalkException;
 import org.spearce.jgit.lib.Constants;
-import org.spearce.jgit.lib.ObjectIdSubclassMap;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.ObjectIdSubclassMap;
 import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.WindowCursor;
 import org.spearce.jgit.revwalk.filter.RevFilter;
 import org.spearce.jgit.treewalk.filter.TreeFilter;
 
@@ -126,6 +127,8 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	final Repository db;
 
+	final WindowCursor curs;
+
 	private final ObjectIdSubclassMap<RevObject> objects;
 
 	private int nextFlagBit = RESERVED_FLAGS;
@@ -148,6 +151,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 */
 	public RevWalk(final Repository repo) {
 		db = repo;
+		curs = new WindowCursor();
 		objects = new ObjectIdSubclassMap<RevObject>();
 		roots = new ArrayList<RevCommit>();
 		pending = new StartGenerator(this);
@@ -564,6 +568,7 @@ public class RevWalk implements Iterable<RevCommit> {
 			}
 		}
 
+		curs.release();
 		roots.clear();
 		pending = new StartGenerator(this);
 	}
