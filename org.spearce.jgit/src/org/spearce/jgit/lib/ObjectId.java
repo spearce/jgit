@@ -507,14 +507,35 @@ public class ObjectId implements Comparable {
 		w.write(toHexCharArray());
 	}
 
+	/**
+	 * Copy this ObjectId to an output writer in hex format.
+	 * 
+	 * @param tmp
+	 *            temporary char array to buffer construct into before writing.
+	 *            Must be at least large enough to hold 2 digits for each byte
+	 *            of object id (40 characters or larger).
+	 * @param w
+	 *            the stream to copy to.
+	 * @throws IOException
+	 *             the stream writing failed.
+	 */
+	public void copyTo(final char[] tmp, final Writer w) throws IOException {
+		toHexCharArray(tmp);
+		w.write(tmp);
+	}
+
 	private char[] toHexCharArray() {
 		final char[] dst = new char[STR_LEN];
+		toHexCharArray(dst);
+		return dst;
+	}
+
+	private void toHexCharArray(final char[] dst) {
 		formatHexChar(dst, 0, w1);
 		formatHexChar(dst, 8, w2);
 		formatHexChar(dst, 16, w3);
 		formatHexChar(dst, 24, w4);
 		formatHexChar(dst, 32, w5);
-		return dst;
 	}
 
 	private static final char[] hexchar = { '0', '1', '2', '3', '4', '5', '6',
