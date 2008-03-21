@@ -163,5 +163,5 @@ abstract class PackIndex {
 	 *         object does not exist in this index and is thus not stored in the
 	 *         associated pack.
 	 */
-	abstract long findOffset(ObjectId objId);
+	abstract long findOffset(AnyObjectId objId);
 }

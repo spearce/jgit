@@ -24,7 +24,9 @@ import java.util.Iterator;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.RevWalkException;
+import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdSubclassMap;
 import org.spearce.jgit.lib.ObjectLoader;
@@ -129,6 +131,8 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	final WindowCursor curs;
 
+	final MutableObjectId idBuffer;
+
 	private final ObjectIdSubclassMap<RevObject> objects;
 
 	private int nextFlagBit = RESERVED_FLAGS;
@@ -152,6 +156,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	public RevWalk(final Repository repo) {
 		db = repo;
 		curs = new WindowCursor();
+		idBuffer = new MutableObjectId();
 		objects = new ObjectIdSubclassMap<RevObject>();
 		roots = new ArrayList<RevCommit>();
 		pending = new StartGenerator(this);
@@ -163,8 +168,8 @@ public class RevWalk implements Iterable<RevCommit> {
 	/**
 	 * Mark a commit to start graph traversal from.
 	 * <p>
-	 * Callers are encouraged to use {@link #parseCommit(ObjectId)} to obtain
-	 * the commit reference, rather than {@link #lookupCommit(ObjectId)}, as
+	 * Callers are encouraged to use {@link #parseCommit(AnyObjectId)} to obtain
+	 * the commit reference, rather than {@link #lookupCommit(AnyObjectId)}, as
 	 * this method requires the commit to be parsed before it can be added as a
 	 * root for the traversal.
 	 * <p>
@@ -180,12 +185,12 @@ public class RevWalk implements Iterable<RevCommit> {
 	 *             the commit supplied is not available from the object
 	 *             database. This usually indicates the supplied commit is
 	 *             invalid, but the reference was constructed during an earlier
-	 *             invocation to {@link #lookupCommit(ObjectId)}.
+	 *             invocation to {@link #lookupCommit(AnyObjectId)}.
 	 * @throws IncorrectObjectTypeException
 	 *             the object was not parsed yet and it was discovered during
 	 *             parsing that it is not actually a commit. This usually
 	 *             indicates the caller supplied a non-commit SHA-1 to
-	 *             {@link #lookupCommit(ObjectId)}.
+	 *             {@link #lookupCommit(AnyObjectId)}.
 	 * @throws IOException
 	 *             a pack file or loose object could not be read.
 	 */
@@ -208,8 +213,8 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * ancestry chain, back until the merge base of an uninteresting commit and
 	 * an otherwise interesting commit.
 	 * <p>
-	 * Callers are encouraged to use {@link #parseCommit(ObjectId)} to obtain
-	 * the commit reference, rather than {@link #lookupCommit(ObjectId)}, as
+	 * Callers are encouraged to use {@link #parseCommit(AnyObjectId)} to obtain
+	 * the commit reference, rather than {@link #lookupCommit(AnyObjectId)}, as
 	 * this method requires the commit to be parsed before it can be added as a
 	 * root for the traversal.
 	 * <p>
@@ -225,12 +230,12 @@ public class RevWalk implements Iterable<RevCommit> {
 	 *             the commit supplied is not available from the object
 	 *             database. This usually indicates the supplied commit is
 	 *             invalid, but the reference was constructed during an earlier
-	 *             invocation to {@link #lookupCommit(ObjectId)}.
+	 *             invocation to {@link #lookupCommit(AnyObjectId)}.
 	 * @throws IncorrectObjectTypeException
 	 *             the object was not parsed yet and it was discovered during
 	 *             parsing that it is not actually a commit. This usually
 	 *             indicates the caller supplied a non-commit SHA-1 to
-	 *             {@link #lookupCommit(ObjectId)}.
+	 *             {@link #lookupCommit(AnyObjectId)}.
 	 * @throws IOException
 	 *             a pack file or loose object could not be read.
 	 */
@@ -376,7 +381,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 *            name of the tree object.
 	 * @return reference to the tree object. Never null.
 	 */
-	public RevTree lookupTree(final ObjectId id) {
+	public RevTree lookupTree(final AnyObjectId id) {
 		RevTree c = (RevTree) objects.get(id);
 		if (c == null) {
 			c = new RevTree(id);
@@ -395,7 +400,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 *            name of the commit object.
 	 * @return reference to the commit object. Never null.
 	 */
-	public RevCommit lookupCommit(final ObjectId id) {
+	public RevCommit lookupCommit(final AnyObjectId id) {
 		RevCommit c = (RevCommit) objects.get(id);
 		if (c == null) {
 			c = new RevCommit(id);
@@ -416,7 +421,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 *            type of the object. Must be a valid Git object type.
 	 * @return reference to the object. Never null.
 	 */
-	public RevObject lookupAny(final ObjectId id, final int type) {
+	public RevObject lookupAny(final AnyObjectId id, final int type) {
 		RevObject r = objects.get(id);
 		if (r == null) {
 			switch (type) {
@@ -443,7 +448,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	/**
 	 * Locate a reference to a commit and immediately parse its content.
 	 * <p>
-	 * Unlike {@link #lookupCommit(ObjectId)} this method only returns
+	 * Unlike {@link #lookupCommit(AnyObjectId)} this method only returns
 	 * successfully if the commit object exists, is verified to be a commit, and
 	 * was parsed without error.
 	 * 
@@ -457,7 +462,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * @throws IOException
 	 *             a pack file or loose object could not be read.
 	 */
-	public RevCommit parseCommit(final ObjectId id)
+	public RevCommit parseCommit(final AnyObjectId id)
 			throws MissingObjectException, IncorrectObjectTypeException,
 			IOException {
 		RevObject c = parseAny(id);
@@ -486,13 +491,13 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * @throws IOException
 	 *             a pack file or loose object could not be read.
 	 */
-	public RevObject parseAny(final ObjectId id) throws MissingObjectException,
-			IOException {
+	public RevObject parseAny(final AnyObjectId id)
+			throws MissingObjectException, IOException {
 		RevObject r = objects.get(id);
 		if (r == null) {
 			final ObjectLoader ldr = db.openObject(id);
 			if (ldr == null)
-				throw new MissingObjectException(id, "unknown");
+				throw new MissingObjectException(id.toObjectId(), "unknown");
 			final byte[] data = ldr.getCachedBytes();
 			final int type = ldr.getType();
 			switch (type) {

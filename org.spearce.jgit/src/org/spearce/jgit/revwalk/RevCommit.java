@@ -20,9 +20,10 @@ import java.io.IOException;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.Constants;
-import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.lib.ObjectLoader;
 
 /** A commit reference to a commit in the DAG. */
@@ -47,7 +48,7 @@ public class RevCommit extends RevObject {
 	 * @param id
 	 *            object name for the commit.
 	 */
-	protected RevCommit(final ObjectId id) {
+	protected RevCommit(final AnyObjectId id) {
 		super(id);
 	}
 
@@ -63,7 +64,9 @@ public class RevCommit extends RevObject {
 	}
 
 	void parseCanonical(final RevWalk walk, final byte[] raw) {
-		tree = walk.lookupTree(fromString(raw, 5));
+		final MutableObjectId idBuffer = walk.idBuffer;
+		idBuffer.fromString(raw, 5);
+		tree = walk.lookupTree(idBuffer);
 
 		final int rawSize = raw.length;
 		int ptr = 46;
@@ -72,7 +75,8 @@ public class RevCommit extends RevObject {
 		for (;;) {
 			if (raw[ptr] != 'p')
 				break;
-			final RevCommit p = walk.lookupCommit(fromString(raw, ptr + 7));
+			idBuffer.fromString(raw, ptr + 7);
+			final RevCommit p = walk.lookupCommit(idBuffer);
 			if (nParents == 0)
 				pList[nParents++] = p;
 			else if (nParents == 1) {

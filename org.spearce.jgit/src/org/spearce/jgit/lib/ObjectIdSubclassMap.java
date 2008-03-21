@@ -47,12 +47,12 @@ public class ObjectIdSubclassMap<V extends ObjectId> {
 	 *            the object identifier to find.
 	 * @return the instance mapped to toFind, or null if no mapping exists.
 	 */
-	public V get(final ObjectId toFind) {
+	public V get(final AnyObjectId toFind) {
 		int i = index(toFind);
 		V obj;
 
 		while ((obj = obj_hash[i]) != null) {
-			if (ObjectId.equals(obj, toFind))
+			if (AnyObjectId.equals(obj, toFind))
 				return obj;
 			if (++i == obj_hash.length)
 				i = 0;
@@ -64,8 +64,8 @@ public class ObjectIdSubclassMap<V extends ObjectId> {
 	 * Store an object for future lookup.
 	 * <p>
 	 * An existing mapping for <b>must not</b> be in this map. Callers must
-	 * first call {@link #get(ObjectId)} to verify there is no current mapping
-	 * prior to adding a new mapping.
+	 * first call {@link #get(AnyObjectId)} to verify there is no current
+	 * mapping prior to adding a new mapping.
 	 * 
 	 * @param newValue
 	 *            the object to store.
@@ -80,7 +80,7 @@ public class ObjectIdSubclassMap<V extends ObjectId> {
 		size++;
 	}
 
-	private final int index(final ObjectId id) {
+	private final int index(final AnyObjectId id) {
 		return (id.w1 >>> 1) % obj_hash.length;
 	}
 

@@ -81,7 +81,7 @@ public class PackFile {
 	 *            the object to look for. Must not be null.
 	 * @return true if the object is in this pack; false otherwise.
 	 */
-	public boolean hasObject(final ObjectId id) {
+	public boolean hasObject(final AnyObjectId id) {
 		return idx.findOffset(id) != -1;
 	}
 
@@ -95,7 +95,7 @@ public class PackFile {
 	 * @throws IOException
 	 *             the pack file or the index could not be read.
 	 */
-	public PackedObjectLoader get(final ObjectId id) throws IOException {
+	public PackedObjectLoader get(final AnyObjectId id) throws IOException {
 		return get(new WindowCursor(), id);
 	}
 
@@ -111,13 +111,13 @@ public class PackFile {
 	 * @throws IOException
 	 *             the pack file or the index could not be read.
 	 */
-	public PackedObjectLoader get(final WindowCursor curs, final ObjectId id)
+	public PackedObjectLoader get(final WindowCursor curs, final AnyObjectId id)
 			throws IOException {
 		final long offset = idx.findOffset(id);
 		if (offset == -1)
 			return null;
 		final PackedObjectLoader objReader = reader(curs, offset);
-		objReader.setId(id);
+		objReader.setId(id.toObjectId());
 		return objReader;
 	}
 

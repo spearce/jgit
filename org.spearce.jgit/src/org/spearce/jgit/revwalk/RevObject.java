@@ -16,6 +16,7 @@
  */
 package org.spearce.jgit.revwalk;
 
+import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.ObjectId;
 
 /** Base object type accessed during revision walking. */
@@ -24,7 +25,7 @@ public abstract class RevObject extends ObjectId {
 
 	int flags;
 
-	RevObject(final ObjectId name) {
+	RevObject(final AnyObjectId name) {
 		super(name);
 	}
 

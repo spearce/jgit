@@ -16,7 +16,7 @@
  */
 package org.spearce.jgit.revwalk;
 
-import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.AnyObjectId;
 
 /** A reference to a tree of subtrees/files. */
 public class RevTree extends RevObject {
@@ -26,7 +26,7 @@ public class RevTree extends RevObject {
 	 * @param id
 	 *            object name for the tree.
 	 */
-	protected RevTree(final ObjectId id) {
+	protected RevTree(final AnyObjectId id) {
 		super(id);
 	}
 }

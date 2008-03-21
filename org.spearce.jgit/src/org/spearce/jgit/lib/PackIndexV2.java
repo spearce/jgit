@@ -62,7 +62,7 @@ class PackIndexV2 extends PackIndex {
 			final int[] bin = new int[intNameLen >> 2];
 			readFully(fd, 0, raw);
 			for (int i = 0; i < bin.length; i++)
-				bin[i] = ObjectId.rawUInt32(raw, i << 2);
+				bin[i] = AnyObjectId.rawUInt32(raw, i << 2);
 
 			names[k] = bin;
 			offset32[k] = new byte[(int) (bucketCnt * 4)];
@@ -110,7 +110,7 @@ class PackIndexV2 extends PackIndex {
 	}
 
 	@Override
-	long findOffset(final ObjectId objId) {
+	long findOffset(final AnyObjectId objId) {
 		final int levelOne = objId.getFirstByte();
 		final int[] data = names[levelOne];
 		int high = offset32[levelOne].length >> 2;

@@ -57,7 +57,7 @@ class PackIndexV1 extends PackIndex {
 		return objectCnt;
 	}
 
-	long findOffset(final ObjectId objId) {
+	long findOffset(final AnyObjectId objId) {
 		final int levelOne = objId.getFirstByte();
 		byte[] data = idxdata[levelOne];
 		if (data == null)

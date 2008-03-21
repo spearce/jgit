@@ -21,6 +21,7 @@ import java.io.IOException;
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectLoader;
@@ -40,7 +41,7 @@ public class RevTag extends RevObject {
 	 * @param id
 	 *            object name for the tag.
 	 */
-	protected RevTag(final ObjectId id) {
+	protected RevTag(final AnyObjectId id) {
 		super(id);
 	}
 

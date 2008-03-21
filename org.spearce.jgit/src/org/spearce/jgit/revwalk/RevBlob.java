@@ -16,7 +16,7 @@
  */
 package org.spearce.jgit.revwalk;
 
-import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.AnyObjectId;
 
 /** A binary file, or a symbolic link. */
 public class RevBlob extends RevObject {
@@ -26,7 +26,7 @@ public class RevBlob extends RevObject {
 	 * @param id
 	 *            object name for the blob.
 	 */
-	protected RevBlob(final ObjectId id) {
+	protected RevBlob(final AnyObjectId id) {
 		super(id);
 	}
 }

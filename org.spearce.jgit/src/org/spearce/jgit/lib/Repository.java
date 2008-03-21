@@ -215,7 +215,7 @@ public class Repository {
 	 * @param objectId
 	 * @return suggested file name
 	 */
-	public File toFile(final ObjectId objectId) {
+	public File toFile(final AnyObjectId objectId) {
 		final String n = objectId.toString();
 		String d=n.substring(0, 2);
 		String f=n.substring(2);
@@ -232,7 +232,7 @@ public class Repository {
 	 * @return true if the specified object is stored in this repo or any of the
 	 *         known shared repositories.
 	 */
-	public boolean hasObject(final ObjectId objectId) {
+	public boolean hasObject(final AnyObjectId objectId) {
 		int k = packs.length;
 		if (k > 0) {
 			do {
@@ -251,7 +251,7 @@ public class Repository {
 	 *         object, or null if the object does not exist.
 	 * @throws IOException
 	 */
-	public ObjectLoader openObject(final ObjectId id)
+	public ObjectLoader openObject(final AnyObjectId id)
 			throws IOException {
 		return openObject(new WindowCursor(),id);
 	}
@@ -266,7 +266,7 @@ public class Repository {
 	 *         object, or null if the object does not exist.
 	 * @throws IOException
 	 */
-	public ObjectLoader openObject(final WindowCursor curs, final ObjectId id)
+	public ObjectLoader openObject(final WindowCursor curs, final AnyObjectId id)
 			throws IOException {
 		int k = packs.length;
 		if (k > 0) {
@@ -298,7 +298,7 @@ public class Repository {
 			} while (k > 0);
 		}
 		try {
-			return new UnpackedObjectLoader(this, id);
+			return new UnpackedObjectLoader(this, id.toObjectId());
 		} catch (FileNotFoundException fnfe) {
 			return null;
 		}
