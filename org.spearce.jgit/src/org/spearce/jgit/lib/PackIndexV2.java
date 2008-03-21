@@ -6,6 +6,8 @@ import java.io.InputStream;
 
 /** Support for the pack index v2 format. */
 class PackIndexV2 extends PackIndex {
+	private static final long IS_O64 = 1L << 31;
+
 	private static final int FANOUT = 256;
 
 	private static final int[] NO_INTS = {};
@@ -111,21 +113,22 @@ class PackIndexV2 extends PackIndex {
 	long findOffset(final ObjectId objId) {
 		final int levelOne = objId.getFirstByte();
 		final int[] data = names[levelOne];
-		int high = offset32[levelOne].length / 4;
+		int high = offset32[levelOne].length >> 2;
 		if (high == 0)
 			return -1;
 		int low = 0;
 		do {
-			final int mid = (low + high) / 2;
+			final int mid = (low + high) >> 1;
+			final int mid4 = mid << 2;
 			final int cmp;
 
-			cmp = objId.compareTo(data, 5 * mid);
+			cmp = objId.compareTo(data, mid4 + mid); // mid * 5
 			if (cmp < 0)
 				high = mid;
 			else if (cmp == 0) {
-				final long p = decodeUInt32(4 * mid, offset32[levelOne]);
-				if ((p & (1L << 31)) != 0)
-					return decodeUInt64((8 * (int) (p & ~(1L << 31))), offset64);
+				final long p = decodeUInt32(mid4, offset32[levelOne]);
+				if ((p & IS_O64) != 0)
+					return decodeUInt64((8 * (int) (p & ~IS_O64)), offset64);
 				return p;
 			} else
 				low = mid + 1;

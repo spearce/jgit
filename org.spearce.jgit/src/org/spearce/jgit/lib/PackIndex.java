@@ -96,10 +96,12 @@ abstract class PackIndex {
 	 * @return unsigned integer value that matches the 32 bits read.
 	 */
 	protected static long decodeUInt32(final int offset, final byte[] intbuf) {
-		return ((long) (intbuf[offset + 0] & 0xff)) << 24
-				| (intbuf[offset + 1] & 0xff) << 16
-				| (intbuf[offset + 2] & 0xff) << 8
-				| (intbuf[offset + 3] & 0xff);
+		int low = (intbuf[offset + 1] & 0xff) << 8;
+		low |= (intbuf[offset + 2] & 0xff);
+		low <<= 8;
+
+		low |= (intbuf[offset + 3] & 0xff);
+		return ((long) (intbuf[offset] & 0xff)) << 24 | low;
 	}
 
 	/**
