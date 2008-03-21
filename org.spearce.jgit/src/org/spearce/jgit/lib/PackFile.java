@@ -65,7 +65,7 @@ public class PackFile {
 		deltaBaseCache = pack.cache.deltaBaseCache;
 	}
 
-	PackedObjectLoader resolveBase(final long ofs) throws IOException {
+	final PackedObjectLoader resolveBase(final long ofs) throws IOException {
 		return reader(ofs);
 	}
 
@@ -121,11 +121,11 @@ public class PackFile {
 		pack.close();
 	}
 
-	UnpackedObjectCache.Entry readCache(final long position) {
+	final UnpackedObjectCache.Entry readCache(final long position) {
 		return deltaBaseCache.get(pack, position);
 	}
 
-	void saveCache(final long position, final byte[] data, final int type) {
+	final void saveCache(final long position, final byte[] data, final int type) {
 		deltaBaseCache.store(pack, position, data, type);
 	}
 
