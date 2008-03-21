@@ -16,6 +16,7 @@
  */
 package org.spearce.jgit.revwalk;
 
+
 /** A queue of commits in LIFO order. */
 public class LIFORevQueue extends BlockRevQueue {
 	private Block head;
@@ -47,6 +48,15 @@ public class LIFORevQueue extends BlockRevQueue {
 	public void clear() {
 		head = null;
 		free.clear();
+	}
+
+	boolean everbodyHasFlag(final int f) {
+		for (Block b = head; b != null; b = b.next) {
+			for (int i = b.headIndex; i < b.tailIndex; i++)
+				if ((b.commits[i].flags & f) == 0)
+					return false;
+		}
+		return true;
 	}
 
 	public String toString() {

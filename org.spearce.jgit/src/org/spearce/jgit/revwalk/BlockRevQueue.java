@@ -16,31 +16,13 @@
  */
 package org.spearce.jgit.revwalk;
 
-abstract class BlockRevQueue {
+abstract class BlockRevQueue extends AbstractRevQueue {
 	protected BlockFreeList free;
 
 	/** Create an empty revision queue. */
 	protected BlockRevQueue() {
 		free = new BlockFreeList();
 	}
-
-	/**
-	 * Insert the commit pointer at the end of the queue.
-	 * 
-	 * @param c
-	 *            the commit to insert into the queue.
-	 */
-	public abstract void add(final RevCommit c);
-
-	/**
-	 * Remove the first commit from the queue.
-	 * 
-	 * @return the first commit of this queue.
-	 */
-	public abstract RevCommit pop();
-
-	/** Remove all entries from this queue. */
-	public abstract void clear();
 
 	/**
 	 * Reconfigure this queue to share the same free list as another.

@@ -17,17 +17,11 @@
 package org.spearce.jgit.revwalk;
 
 /** A queue of commits sorted by commit time order. */
-public class DateRevQueue {
+public class DateRevQueue extends AbstractRevQueue {
 	private Entry head;
 
 	private Entry free;
 
-	/**
-	 * Insert the commit pointer by commit time ordering.
-	 * 
-	 * @param c
-	 *            the commit to insert into the queue.
-	 */
 	public void add(final RevCommit c) {
 		Entry q = head;
 		final long when = c.commitTime;
@@ -46,12 +40,6 @@ public class DateRevQueue {
 		}
 	}
 
-	/**
-	 * Remove the newest commit from the queue.
-	 * 
-	 * @return the next commit with the highest (most recent) time; null if
-	 *         there are no more commits available in the queue.
-	 */
 	public RevCommit pop() {
 		final Entry q = head;
 		if (q == null)
@@ -70,7 +58,6 @@ public class DateRevQueue {
 		return head != null ? head.commit : null;
 	}
 
-	/** Remove all entries from this queue. */
 	public void clear() {
 		head = null;
 		free = null;

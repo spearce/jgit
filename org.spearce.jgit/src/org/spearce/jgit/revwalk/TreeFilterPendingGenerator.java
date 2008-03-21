@@ -49,7 +49,7 @@ class TreeFilterPendingGenerator extends AbstractPendingGenerator {
 
 	private final TreeWalk pathFilter;
 
-	TreeFilterPendingGenerator(final RevWalk w, final DateRevQueue p,
+	TreeFilterPendingGenerator(final RevWalk w, final AbstractRevQueue p,
 			final RevFilter f, final TreeFilter t) {
 		super(w, p, f);
 		pathFilter = new TreeWalk(w.db);

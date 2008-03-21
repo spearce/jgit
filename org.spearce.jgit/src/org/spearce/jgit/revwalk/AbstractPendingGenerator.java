@@ -36,11 +36,11 @@ import org.spearce.jgit.revwalk.filter.RevFilter;
 abstract class AbstractPendingGenerator extends Generator {
 	protected final RevWalk walker;
 
-	private final DateRevQueue pending;
+	private final AbstractRevQueue pending;
 
 	private final RevFilter filter;
 
-	AbstractPendingGenerator(final RevWalk w, final DateRevQueue p,
+	AbstractPendingGenerator(final RevWalk w, final AbstractRevQueue p,
 			final RevFilter f) {
 		walker = w;
 		pending = p;
@@ -49,7 +49,9 @@ abstract class AbstractPendingGenerator extends Generator {
 
 	@Override
 	int outputType() {
-		return SORT_COMMIT_TIME_DESC;
+		if (pending instanceof DateRevQueue)
+			return SORT_COMMIT_TIME_DESC;
+		return 0;
 	}
 
 	@Override

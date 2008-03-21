@@ -35,11 +35,11 @@ import org.spearce.jgit.treewalk.filter.TreeFilter;
 class StartGenerator extends Generator {
 	private final RevWalk walker;
 
-	private final DateRevQueue pending;
+	private final AbstractRevQueue pending;
 
 	StartGenerator(final RevWalk w) {
 		walker = w;
-		pending = new DateRevQueue();
+		pending = new LIFORevQueue();
 	}
 
 	@Override
@@ -61,11 +61,20 @@ class StartGenerator extends Generator {
 		final RevFilter rf = w.getRevFilter();
 		final TreeFilter tf = w.getTreeFilter();
 		final EnumSet<RevSort> sort = w.getRevSort();
+		AbstractRevQueue q = pending;
+
+		if (sort.contains(RevSort.COMMIT_TIME_DESC)) {
+			final DateRevQueue bydate = new DateRevQueue();
+			RevCommit c;
+			while ((c = q.pop()) != null)
+				bydate.add(c);
+			q = bydate;
+		}
 
 		if (tf != TreeFilter.ALL)
-			g = new TreeFilterPendingGenerator(w, pending, rf, tf);
+			g = new TreeFilterPendingGenerator(w, q, rf, tf);
 		else
-			g = new AbstractPendingGenerator(w, pending, rf) {
+			g = new AbstractPendingGenerator(w, q, rf) {
 				@Override
 				boolean include(final RevCommit c) {
 					return true;
