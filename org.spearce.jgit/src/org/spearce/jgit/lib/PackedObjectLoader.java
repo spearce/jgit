@@ -25,19 +25,17 @@ import java.io.IOException;
 abstract class PackedObjectLoader extends ObjectLoader {
 	protected final PackFile pack;
 
+	protected final WindowCursor curs;
+
 	protected final long dataOffset;
 
 	protected int objectType;
 
 	protected int objectSize;
 
-	/**
-	 * Constructor for a packed object loader in the specified pack file
-	 * at an offset
-	 * @param pr pack file
-	 * @param offset offset of object within pack file
-	 */
-	protected PackedObjectLoader(final PackFile pr, final long offset) {
+	PackedObjectLoader(final WindowCursor c, final PackFile pr,
+			final long offset) {
+		curs = c;
 		pack = pr;
 		dataOffset = offset;
 	}

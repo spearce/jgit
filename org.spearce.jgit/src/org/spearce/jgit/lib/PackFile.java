@@ -129,10 +129,10 @@ public class PackFile {
 		deltaBaseCache.store(pack, position, data, type);
 	}
 
-	byte[] decompress(final long position, final int totalSize)
-			throws DataFormatException, IOException {
+	final byte[] decompress(final long position, final int totalSize,
+			final WindowCursor curs) throws DataFormatException, IOException {
 		final byte[] dstbuf = new byte[totalSize];
-		pack.readCompressed(position, dstbuf, new WindowCursor());
+		pack.readCompressed(position, dstbuf, curs);
 		return dstbuf;
 	}
 
@@ -187,7 +187,7 @@ public class PackFile {
 		case Constants.OBJ_TREE:
 		case Constants.OBJ_BLOB:
 		case Constants.OBJ_TAG:
-			return new WholePackedObjectLoader(this, pos, typeCode,
+			return new WholePackedObjectLoader(curs, this, pos, typeCode,
 					(int) dataSize);
 
 		case Constants.OBJ_OFS_DELTA: {
@@ -201,12 +201,12 @@ public class PackFile {
 				ofs <<= 7;
 				ofs += (c & 127);
 			}
-			return new DeltaOfsPackedObjectLoader(this, pos + p,
+			return new DeltaOfsPackedObjectLoader(curs, this, pos + p,
 					(int) dataSize, objOffset - ofs);
 		}
 		case Constants.OBJ_REF_DELTA: {
 			pack.readFully(pos, ib, curs);
-			return new DeltaRefPackedObjectLoader(this, pos + ib.length,
+			return new DeltaRefPackedObjectLoader(curs, this, pos + ib.length,
 					(int) dataSize, ObjectId.fromRaw(ib));
 		}
 		default:

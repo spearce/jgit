@@ -9,9 +9,9 @@ import org.spearce.jgit.errors.CorruptObjectException;
 class WholePackedObjectLoader extends PackedObjectLoader {
 	private static final int OBJ_COMMIT = Constants.OBJ_COMMIT;
 
-	WholePackedObjectLoader(final PackFile pr, final long offset,
-			final int type, final int size) {
-		super(pr, offset);
+	WholePackedObjectLoader(final WindowCursor curs, final PackFile pr,
+			final long offset, final int type, final int size) {
+		super(curs, pr, offset);
 		objectType = type;
 		objectSize = size;
 	}
@@ -20,12 +20,15 @@ class WholePackedObjectLoader extends PackedObjectLoader {
 	public byte[] getCachedBytes() throws IOException {
 		if (objectType != OBJ_COMMIT) {
 			final UnpackedObjectCache.Entry cache = pack.readCache(dataOffset);
-			if (cache != null)
+			if (cache != null) {
+				curs.release();
 				return cache.data;
+			}
 		}
 
 		try {
-			final byte[] data = pack.decompress(dataOffset, objectSize);
+			final byte[] data = pack.decompress(dataOffset, objectSize, curs);
+			curs.release();
 			if (objectType != OBJ_COMMIT)
 				pack.saveCache(dataOffset, data, objectType);
 			return data;

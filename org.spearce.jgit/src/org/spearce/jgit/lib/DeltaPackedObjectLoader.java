@@ -11,9 +11,9 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 
 	private final int deltaSize;
 
-	DeltaPackedObjectLoader(final PackFile pr, final long offset,
-			final int deltaSz) {
-		super(pr, offset);
+	DeltaPackedObjectLoader(final WindowCursor curs, final PackFile pr,
+			final long offset, final int deltaSz) {
+		super(curs, pr, offset);
 		objectType = -1;
 		deltaSize = deltaSz;
 	}
@@ -35,6 +35,7 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 		if (objectType != OBJ_COMMIT) {
 			final UnpackedObjectCache.Entry cache = pack.readCache(dataOffset);
 			if (cache != null) {
+				curs.release();
 				objectType = cache.type;
 				objectSize = cache.data.length;
 				return cache.data;
@@ -44,7 +45,8 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 		try {
 			final PackedObjectLoader baseLoader = getBaseLoader();
 			final byte[] data = BinaryDelta.apply(baseLoader.getCachedBytes(),
-					pack.decompress(dataOffset, deltaSize));
+					pack.decompress(dataOffset, deltaSize, curs));
+			curs.release();
 			objectType = baseLoader.getType();
 			objectSize = data.length;
 			if (objectType != OBJ_COMMIT)
