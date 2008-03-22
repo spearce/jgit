@@ -403,7 +403,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	public RevCommit lookupCommit(final AnyObjectId id) {
 		RevCommit c = (RevCommit) objects.get(id);
 		if (c == null) {
-			c = new RevCommit(id);
+			c = createCommit(id);
 			objects.add(c);
 		}
 		return c;
@@ -426,7 +426,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		if (r == null) {
 			switch (type) {
 			case Constants.OBJ_COMMIT:
-				r = new RevCommit(id);
+				r = createCommit(id);
 				break;
 			case Constants.OBJ_TREE:
 				r = new RevTree(id);
@@ -502,7 +502,7 @@ public class RevWalk implements Iterable<RevCommit> {
 			final int type = ldr.getType();
 			switch (type) {
 			case Constants.OBJ_COMMIT: {
-				final RevCommit c = new RevCommit(ldr.getId());
+				final RevCommit c = createCommit(ldr.getId());
 				c.parseCanonical(this, data);
 				r = c;
 				break;
@@ -637,5 +637,16 @@ public class RevWalk implements Iterable<RevCommit> {
 		if (pending instanceof StartGenerator)
 			return;
 		throw new IllegalStateException("Output has already been started.");
+	}
+
+	/**
+	 * Construct a new unparsed commit for the given object.
+	 * 
+	 * @param id
+	 *            the object this walker requires a commit reference for.
+	 * @return a new unparsed reference for the object.
+	 */
+	protected RevCommit createCommit(final AnyObjectId id) {
+		return new RevCommit(id);
 	}
 }

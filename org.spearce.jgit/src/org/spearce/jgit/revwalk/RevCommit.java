@@ -117,7 +117,7 @@ public class RevCommit extends RevObject {
 	 * 
 	 * @return time, expressed as seconds since the epoch.
 	 */
-	public int getCommitTime() {
+	public final int getCommitTime() {
 		return commitTime;
 	}
 
@@ -128,7 +128,7 @@ public class RevCommit extends RevObject {
 	 *            revision walker owning this reference.
 	 * @return parsed commit.
 	 */
-	public Commit asCommit(final RevWalk walk) {
+	public final Commit asCommit(final RevWalk walk) {
 		return new Commit(walk.db, this, buffer);
 	}
 
@@ -137,7 +137,7 @@ public class RevCommit extends RevObject {
 	 * 
 	 * @return tree of this commit.
 	 */
-	public RevTree getTree() {
+	public final RevTree getTree() {
 		return tree;
 	}
 
@@ -146,7 +146,7 @@ public class RevCommit extends RevObject {
 	 * 
 	 * @return number of parents; always a positive value but can be 0.
 	 */
-	public int getParentCount() {
+	public final int getParentCount() {
 		return parents.length;
 	}
 
@@ -160,7 +160,7 @@ public class RevCommit extends RevObject {
 	 * @throws ArrayIndexOutOfBoundsException
 	 *             an invalid parent index was specified.
 	 */
-	public RevCommit getParent(final int nth) {
+	public final RevCommit getParent(final int nth) {
 		return parents[nth];
 	}
 
@@ -176,7 +176,7 @@ public class RevCommit extends RevObject {
 	 *         Altering the contents of this buffer may alter the walker's
 	 *         knowledge of this commit, and the results it produces.
 	 */
-	public byte[] getRawBuffer() {
+	public final byte[] getRawBuffer() {
 		return buffer;
 	}
 
