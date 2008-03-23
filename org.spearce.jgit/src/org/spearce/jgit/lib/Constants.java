@@ -16,6 +16,7 @@
  */
 package org.spearce.jgit.lib;
 
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -154,6 +155,9 @@ public final class Constants {
 	/** Native character encoding for commit messages, file names... */
 	public static final String CHARACTER_ENCODING = "UTF-8";
 
+	/** Native character encoding for commit messages, file names... */
+	public static final Charset CHARSET;
+
 	/**
 	 * Create a new digest function for objects.
 	 * 
@@ -231,6 +235,7 @@ public final class Constants {
 	static {
 		if (OBJECT_ID_LENGTH != newMessageDigest().getDigestLength())
 			throw new LinkageError("Incorrect OBJECT_ID_LENGTH.");
+		CHARSET = Charset.forName(CHARACTER_ENCODING);
 	}
 
 	private Constants() {
