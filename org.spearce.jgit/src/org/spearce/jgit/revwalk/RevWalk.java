@@ -166,6 +166,15 @@ public class RevWalk implements Iterable<RevCommit> {
 	}
 
 	/**
+	 * Get the repository this walker loads objects from.
+	 * 
+	 * @return the repository this walker was created to read.
+	 */
+	public Repository getRepository() {
+		return db;
+	}
+
+	/**
 	 * Mark a commit to start graph traversal from.
 	 * <p>
 	 * Callers are encouraged to use {@link #parseCommit(AnyObjectId)} to obtain
