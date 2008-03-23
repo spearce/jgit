@@ -19,6 +19,7 @@ package org.spearce.jgit.pgm;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevSort;
 import org.spearce.jgit.revwalk.RevWalk;
@@ -38,6 +39,8 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 	boolean parents = false;
 
 	boolean count = false;
+
+	char[] outbuffer = new char[Constants.OBJECT_ID_LENGTH * 2];
 
 	@Override
 	final void execute(String[] args) throws Exception {

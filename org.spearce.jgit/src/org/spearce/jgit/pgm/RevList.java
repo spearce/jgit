@@ -21,11 +21,11 @@ import org.spearce.jgit.revwalk.RevCommit;
 class RevList extends RevWalkTextBuiltin {
 	@Override
 	protected void show(final RevCommit c) throws Exception {
-		out.print(c.getId());
+		c.getId().copyTo(outbuffer, out);
 		if (parents)
 			for (int i = 0; i < c.getParentCount(); i++) {
 				out.print(' ');
-				out.print(c.getParent(i).getId());
+				c.getParent(i).getId().copyTo(outbuffer, out);
 			}
 		out.println();
 	}

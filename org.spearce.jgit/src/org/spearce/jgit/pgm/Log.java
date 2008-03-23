@@ -23,7 +23,7 @@ class Log extends RevWalkTextBuiltin {
 	@Override
 	protected void show(final RevCommit c) throws Exception {
 		out.print("commit ");
-		out.print(c.getId());
+		c.getId().copyTo(outbuffer, out);
 		out.println();
 
 		final Commit parsed = c.asCommit(walk);
