@@ -14,7 +14,7 @@
  *  License along with this library; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  */
-package org.spearce.jgit.revwalk.filter;
+package org.spearce.jgit.util;
 
 import org.spearce.jgit.lib.Constants;
 

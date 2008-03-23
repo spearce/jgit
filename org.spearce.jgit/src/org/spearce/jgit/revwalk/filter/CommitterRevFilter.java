@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.util.RawCharSequence;
+import org.spearce.jgit.util.RawParseUtils;
 
 /** Matches only commits whose committer name matches the pattern. */
 public class CommitterRevFilter {
