@@ -1,7 +1,23 @@
 #!/bin/sh
+
 cp=`dirname $0`
 cp="$cp/org.spearce.jgit/bin"
-exec java \
-	-classpath "$cp" \
-	org.spearce.jgit.pgm.Main \
-	"$@"
+
+# Cleanup paths for Cygwin.
+#
+case "`uname`" in
+CYGWIN*)
+	cp=`cygpath --windows --mixed --path "$cp"`
+	;;
+esac
+
+CLASSPATH="$cp"
+export CLASSPATH
+
+java=java
+if test -n "$JAVA_HOME"
+then
+	java="$JAVA_HOME/bin/java"
+fi
+
+exec "$java" org.spearce.jgit.pgm.Main "$@"
