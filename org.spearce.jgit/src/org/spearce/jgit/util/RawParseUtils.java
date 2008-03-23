@@ -342,6 +342,29 @@ public final class RawParseUtils {
 		return -1;
 	}
 
+	/**
+	 * Locate the end of a paragraph.
+	 * <p>
+	 * A paragraph is ended by two consecutive LF bytes.
+	 * 
+	 * @param b
+	 *            buffer to scan.
+	 * @param ptr
+	 *            position in buffer to start the scan at. Most callers will
+	 *            want to pass the first position of the commit message (as
+	 *            found by {@link #commitMessage(byte[], int)}.
+	 * @return position of the LF at the end of the paragraph;
+	 *         <code>b.length</code> if no paragraph end could be located.
+	 */
+	public static final int endOfParagraph(final byte[] b, int ptr) {
+		final int sz = b.length;
+		while (ptr < sz && b[ptr] != '\n')
+			ptr = next(b, ptr, '\n');
+		if (ptr < sz && b[ptr] == '\n')
+			return ptr - 1;
+		return sz;
+	}
+
 	private RawParseUtils() {
 		// Don't create instances of a static only utility.
 	}

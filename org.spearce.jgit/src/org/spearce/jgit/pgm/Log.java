@@ -16,30 +16,44 @@
  */
 package org.spearce.jgit.pgm;
 
-import org.spearce.jgit.lib.Commit;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
+
+import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.revwalk.RevCommit;
 
 class Log extends RevWalkTextBuiltin {
+	private final TimeZone myTZ = TimeZone.getDefault();
+
+	private final DateFormat fmt;
+
+	Log() {
+		fmt = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy ZZZZZ");
+	}
+
 	@Override
 	protected void show(final RevCommit c) throws Exception {
 		out.print("commit ");
 		c.getId().copyTo(outbuffer, out);
 		out.println();
 
-		final Commit parsed = c.asCommit(walk);
+		final PersonIdent author = c.getAuthorIdent();
 		out.print("Author: ");
-		out.print(parsed.getAuthor().getName());
+		out.print(author.getName());
 		out.print(" <");
-		out.print(parsed.getAuthor().getEmailAddress());
+		out.print(author.getEmailAddress());
 		out.print(">");
 		out.println();
 
+		final TimeZone authorTZ = author.getTimeZone();
+		fmt.setTimeZone(authorTZ != null ? authorTZ : myTZ);
 		out.print("Date:   ");
-		out.print(parsed.getAuthor().getWhen());
+		out.print(fmt.format(author.getWhen()));
 		out.println();
 
 		out.println();
-		final String[] lines = parsed.getMessage().split("\n");
+		final String[] lines = c.getFullMessage().split("\n");
 		for (final String s : lines) {
 			out.print("    ");
 			out.print(s);
@@ -47,5 +61,6 @@ class Log extends RevWalkTextBuiltin {
 		}
 
 		out.println();
+		out.flush();
 	}
 }
