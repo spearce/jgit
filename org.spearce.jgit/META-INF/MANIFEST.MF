@@ -7,6 +7,12 @@ Bundle-Localization: plugin
 Bundle-Vendor: %provider_name
 Export-Package: org.spearce.jgit.errors,
  org.spearce.jgit.lib,
- org.spearce.jgit.stgit
+ org.spearce.jgit.revplot,
+ org.spearce.jgit.revwalk,
+ org.spearce.jgit.revwalk.filter,
+ org.spearce.jgit.stgit,
+ org.spearce.jgit.treewalk,
+ org.spearce.jgit.treewalk.filter,
+ org.spearce.jgit.util
 Eclipse-LazyStart: true
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
