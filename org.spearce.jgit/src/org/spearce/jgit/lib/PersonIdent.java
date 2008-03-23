@@ -227,6 +227,16 @@ public class PersonIdent {
 		return new Date(when);
 	}
 
+	/**
+	 * @return this person's preferred time zone; null if time zone is unknown.
+	 */
+	public TimeZone getTimeZone() {
+		final String[] ids = TimeZone.getAvailableIDs(tzOffset * 60 * 1000);
+		if (ids.length == 0)
+			return null;
+		return TimeZone.getTimeZone(ids[0]);
+	}
+
 	public int hashCode() {
 		return getEmailAddress().hashCode() ^ (int) when;
 	}
