@@ -83,6 +83,24 @@ public abstract class RevFilter {
 		}
 	};
 
+	/** Default filter that always returns false (thread safe). */
+	public static final RevFilter NONE = new RevFilter() {
+		@Override
+		public boolean include(final RevWalk walker, final RevCommit c) {
+			return false;
+		}
+
+		@Override
+		public RevFilter clone() {
+			return this;
+		}
+
+		@Override
+		public String toString() {
+			return "NONE";
+		}
+	};
+
 	/** Excludes commits with more than one parent (thread safe). */
 	public static final RevFilter NO_MERGES = new RevFilter() {
 		@Override

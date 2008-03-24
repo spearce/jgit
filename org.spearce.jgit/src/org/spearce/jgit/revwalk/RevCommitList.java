@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.revwalk.filter.RevFilter;
 
 /**
  * An ordered list of {@link RevCommit} subclasses.
@@ -34,6 +35,199 @@ public class RevCommitList<E extends RevCommit> extends RevObjectList<E> {
 	public void clear() {
 		super.clear();
 		walker = null;
+	}
+
+	/**
+	 * Apply a flag to all commits matching the specified filter.
+	 * <p>
+	 * Same as <code>applyFlag(matching, flag, 0, size())</code>, but without
+	 * the incremental behavior.
+	 * 
+	 * @param matching
+	 *            the filter to test commits with. If the filter includes a
+	 *            commit it will have the flag set; if the filter does not
+	 *            include the commit the flag will be unset.
+	 * @param flag
+	 *            the flag to apply (or remove). Applications are responsible
+	 *            for allocating this flag from the source RevWalk.
+	 * @throws IOException
+	 *             revision filter needed to read additional objects, but an
+	 *             error occurred while reading the pack files or loose objects
+	 *             of the repository.
+	 * @throws IncorrectObjectTypeException
+	 *             revision filter needed to read additional objects, but an
+	 *             object was not of the correct type. Repository corruption may
+	 *             have occurred.
+	 * @throws MissingObjectException
+	 *             revision filter needed to read additional objects, but an
+	 *             object that should be present was not found. Repository
+	 *             corruption may have occurred.
+	 */
+	public void applyFlag(final RevFilter matching, final RevFlag flag)
+			throws MissingObjectException, IncorrectObjectTypeException,
+			IOException {
+		applyFlag(matching, flag, 0, size());
+	}
+
+	/**
+	 * Apply a flag to all commits matching the specified filter.
+	 * <p>
+	 * This version allows incremental testing and application, such as from a
+	 * background thread that needs to periodically halt processing and send
+	 * updates to the UI.
+	 * 
+	 * @param matching
+	 *            the filter to test commits with. If the filter includes a
+	 *            commit it will have the flag set; if the filter does not
+	 *            include the commit the flag will be unset.
+	 * @param flag
+	 *            the flag to apply (or remove). Applications are responsible
+	 *            for allocating this flag from the source RevWalk.
+	 * @param rangeBegin
+	 *            first commit within the list to begin testing at, inclusive.
+	 *            Must not be negative, but may be beyond the end of the list.
+	 * @param rangeEnd
+	 *            last commit within the list to end testing at, exclusive. If
+	 *            smaller than or equal to <code>rangeBegin</code> then no
+	 *            commits will be tested.
+	 * @throws IOException
+	 *             revision filter needed to read additional objects, but an
+	 *             error occurred while reading the pack files or loose objects
+	 *             of the repository.
+	 * @throws IncorrectObjectTypeException
+	 *             revision filter needed to read additional objects, but an
+	 *             object was not of the correct type. Repository corruption may
+	 *             have occurred.
+	 * @throws MissingObjectException
+	 *             revision filter needed to read additional objects, but an
+	 *             object that should be present was not found. Repository
+	 *             corruption may have occurred.
+	 */
+	public void applyFlag(final RevFilter matching, final RevFlag flag,
+			int rangeBegin, int rangeEnd) throws MissingObjectException,
+			IncorrectObjectTypeException, IOException {
+		final RevWalk w = flag.getRevWalk();
+		rangeEnd = Math.min(rangeEnd, size());
+		while (rangeBegin < rangeEnd) {
+			int index = rangeBegin;
+			Block s = contents;
+			while (s.shift > 0) {
+				final int i = index >> s.shift;
+				index -= i << s.shift;
+				s = (Block) s.contents[i];
+			}
+
+			while (rangeBegin++ < rangeEnd && index < BLOCK_SIZE) {
+				final RevCommit c = (RevCommit) s.contents[index++];
+				if (matching.include(w, c))
+					c.add(flag);
+				else
+					c.remove(flag);
+			}
+		}
+	}
+
+	/**
+	 * Remove the given flag from all commits.
+	 * <p>
+	 * Same as <code>clearFlag(flag, 0, size())</code>, but without the
+	 * incremental behavior.
+	 * 
+	 * @param flag
+	 *            the flag to remove. Applications are responsible for
+	 *            allocating this flag from the source RevWalk.
+	 */
+	public void clearFlag(final RevFlag flag) {
+		clearFlag(flag, 0, size());
+	}
+
+	/**
+	 * Remove the given flag from all commits.
+	 * <p>
+	 * This method is actually implemented in terms of:
+	 * <code>applyFlag(RevFilter.NONE, flag, rangeBegin, rangeEnd)</code>.
+	 * 
+	 * @param flag
+	 *            the flag to remove. Applications are responsible for
+	 *            allocating this flag from the source RevWalk.
+	 * @param rangeBegin
+	 *            first commit within the list to begin testing at, inclusive.
+	 *            Must not be negative, but may be beyond the end of the list.
+	 * @param rangeEnd
+	 *            last commit within the list to end testing at, exclusive. If
+	 *            smaller than or equal to <code>rangeBegin</code> then no
+	 *            commits will be tested.
+	 */
+	public void clearFlag(final RevFlag flag, final int rangeBegin,
+			final int rangeEnd) {
+		try {
+			applyFlag(RevFilter.NONE, flag, rangeBegin, rangeEnd);
+		} catch (IOException e) {
+			// Never happen. The filter we use does not throw any
+			// exceptions, for any reason.
+		}
+	}
+
+	/**
+	 * Find the next commit that has the given flag set.
+	 * 
+	 * @param flag
+	 *            the flag to test commits against.
+	 * @param begin
+	 *            first commit index to test at. Applications may wish to begin
+	 *            at 0, to test the first commit in the list.
+	 * @return index of the first commit at or after index <code>begin</code>
+	 *         that has the specified flag set on it; -1 if no match is found.
+	 */
+	public int indexOf(final RevFlag flag, int begin) {
+		while (begin < size()) {
+			int index = begin;
+			Block s = contents;
+			while (s.shift > 0) {
+				final int i = index >> s.shift;
+				index -= i << s.shift;
+				s = (Block) s.contents[i];
+			}
+
+			while (begin++ < size() && index < BLOCK_SIZE) {
+				final RevCommit c = (RevCommit) s.contents[index++];
+				if (c.has(flag))
+					return begin;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * Find the next commit that has the given flag set.
+	 * 
+	 * @param flag
+	 *            the flag to test commits against.
+	 * @param begin
+	 *            first commit index to test at. Applications may wish to begin
+	 *            at <code>size()-1</code>, to test the last commit in the
+	 *            list.
+	 * @return index of the first commit at or before index <code>begin</code>
+	 *         that has the specified flag set on it; -1 if no match is found.
+	 */
+	public int lastIndexOf(final RevFlag flag, int begin) {
+		begin = Math.min(begin, size() - 1);
+		while (begin >= 0) {
+			int index = begin;
+			Block s = contents;
+			while (s.shift > 0) {
+				final int i = index >> s.shift;
+				index -= i << s.shift;
+				s = (Block) s.contents[i];
+			}
+
+			while (begin-- >= 0 && index >= 0) {
+				final RevCommit c = (RevCommit) s.contents[index--];
+				if (c.has(flag))
+					return begin;
+			}
+		}
+		return -1;
 	}
 
 	/**
