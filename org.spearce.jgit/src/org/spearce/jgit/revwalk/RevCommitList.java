@@ -119,8 +119,6 @@ public class RevCommitList<E extends RevCommit> extends RevObjectList<E> {
 				enter(size++, (E) c);
 				dst[index++] = c;
 			}
-
-			filledBatch();
 		}
 	}
 
@@ -135,18 +133,6 @@ public class RevCommitList<E extends RevCommit> extends RevObjectList<E> {
 	 *            the object being added (or set) into the list.
 	 */
 	protected void enter(final int index, final E e) {
-		// Do nothing by default.
-	}
-
-	/**
-	 * Optional callback invoked per batch of commits added.
-	 * <p>
-	 * This method is only called during {@link #fillTo(int)}, and is invoked
-	 * once per every block of commits added. Applications might wish to
-	 * override this method to trigger a UI refresh once sufficient data is
-	 * loaded into the list.
-	 */
-	protected void filledBatch() {
 		// Do nothing by default.
 	}
 }

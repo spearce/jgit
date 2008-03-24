@@ -16,25 +16,16 @@
  */
 package org.spearce.egit.ui.internal.history;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Display;
-import org.spearce.jgit.errors.IncorrectObjectTypeException;
-import org.spearce.jgit.errors.MissingObjectException;
-import org.spearce.jgit.errors.StopWalkException;
 import org.spearce.jgit.revplot.PlotCommitList;
 import org.spearce.jgit.revplot.PlotLane;
 
 class SWTCommitList extends PlotCommitList<SWTCommitList.SWTLane> {
-	private GenerateHistoryJob job;
-
-	private IProgressMonitor monitor;
-
 	private final ArrayList<Color> allColors;
 
 	private final LinkedList<Color> availableColors;
@@ -61,27 +52,6 @@ class SWTCommitList extends PlotCommitList<SWTCommitList.SWTLane> {
 
 	private void repackColors() {
 		availableColors.addAll(allColors);
-	}
-
-	void fillTo(final GenerateHistoryJob j, final IProgressMonitor m,
-			final int max) throws MissingObjectException,
-			IncorrectObjectTypeException, IOException {
-		job = j;
-		monitor = m;
-		try {
-			fillTo(max);
-		} finally {
-			job = j;
-			monitor = null;
-		}
-	}
-
-	@Override
-	protected void filledBatch() {
-		super.filledBatch();
-		if (monitor.isCanceled())
-			throw StopWalkException.INSTANCE;
-		job.updateUI();
 	}
 
 	@Override

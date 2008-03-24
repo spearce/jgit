@@ -24,9 +24,10 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
-import org.spearce.jgit.errors.StopWalkException;
 
 class GenerateHistoryJob extends Job {
+	private static final int BATCH_SIZE = 256;
+
 	private final GitHistoryPage page;
 
 	private final SWTCommitList allCommits;
@@ -41,17 +42,20 @@ class GenerateHistoryJob extends Job {
 	protected IStatus run(final IProgressMonitor monitor) {
 		IStatus status = Status.OK_STATUS;
 		try {
-			boolean cancel = false;
 			try {
-				allCommits.fillTo(this, monitor, Integer.MAX_VALUE);
+				for (;;) {
+					final int oldsz = allCommits.size();
+					allCommits.fillTo(oldsz + BATCH_SIZE);
+					if (monitor.isCanceled() || oldsz == allCommits.size())
+						break;
+					updateUI();
+				}
 			} catch (IOException e) {
 				status = new Status(IStatus.ERROR, Activator.getPluginId(),
 						"Cannot compute Git history.", e);
-			} catch (StopWalkException swe) {
-				cancel = true;
 			}
 
-			if (cancel || monitor.isCanceled())
+			if (monitor.isCanceled())
 				return Status.CANCEL_STATUS;
 			updateUI();
 		} finally {
