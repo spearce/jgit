@@ -44,7 +44,7 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 
 	@Override
 	final void execute(String[] args) throws Exception {
-		walk = new RevWalk(db);
+		walk = createWalk();
 
 		final List<String> argList = new ArrayList<String>();
 		final List<RevFilter> revLimiter = new ArrayList<RevFilter>();
@@ -110,11 +110,7 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 		if (!have_revision)
 			walk.markStart(walk.parseCommit(resolve("HEAD")));
 
-		int n = 0;
-		for (final RevCommit c : walk) {
-			n++;
-			show(c);
-		}
+		int n = walkLoop();
 
 		if (count) {
 			final long end = System.currentTimeMillis();
@@ -124,6 +120,19 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 			System.err.print(" ms");
 			System.err.println();
 		}
+	}
+
+	protected RevWalk createWalk() {
+		return new RevWalk(db);
+	}
+
+	protected int walkLoop() throws Exception {
+		int n = 0;
+		for (final RevCommit c : walk) {
+			n++;
+			show(c);
+		}
+		return n;
 	}
 
 	protected abstract void show(final RevCommit c) throws Exception;
