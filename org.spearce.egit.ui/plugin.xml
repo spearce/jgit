@@ -145,6 +145,21 @@
       </decorator>
    </extension>
 
+   <extension point="org.eclipse.ui.themes">
+      <themeElementCategory
+            id="org.spearce.egit.ui.GitTheme"
+            label="%Theme_label"/>
+      <fontDefinition
+            id="org.spearce.egit.ui.CommitMessageFont"
+            categoryId="org.spearce.egit.ui.GitTheme"
+            label="%Theme_CommitMessageFont_label"
+            defaultsTo="org.eclipse.jface.textfont">
+         <description>
+            %Theme_CommitMessageFont_description
+         </description>
+      </fontDefinition>
+   </extension>
+
 <!-- ********** QuickDiff text editor support ************** -->
    <extension
          point="org.eclipse.ui.workbench.texteditor.quickDiffReferenceProvider">

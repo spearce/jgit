@@ -17,24 +17,31 @@
 package org.spearce.egit.ui;
 
 import org.eclipse.core.resources.IResource;
-import org.eclipse.team.ui.history.HistoryPage;
 import org.eclipse.team.ui.history.HistoryPageSource;
 import org.eclipse.ui.part.Page;
+import org.spearce.egit.core.ResourceList;
+import org.spearce.egit.ui.internal.history.GitHistoryPage;
 
 /**
- * A helper class for constructing the {@link HistoryPage}.
+ * A helper class for constructing the {@link GitHistoryPage}.
  */
 public class GitHistoryPageSource extends HistoryPageSource {
-
-	public Page createPage(Object object) {
-		return new GitHistoryPage(object);
+	public boolean canShowHistoryFor(final Object object) {
+		return GitHistoryPage.canShowHistoryFor(object);
 	}
 
-	public boolean canShowHistoryFor(Object object) {
-		return (object instanceof IResource 
-				&& (((IResource) object).getType() == IResource.FILE
-						|| ((IResource) object).getType() == IResource.FOLDER
-						|| ((IResource) object).getType() == IResource.PROJECT));
-	}
+	public Page createPage(final Object object) {
+		final ResourceList input;
 
+		if (object instanceof ResourceList)
+			input = (ResourceList) object;
+		else if (object instanceof IResource)
+			input = new ResourceList(new IResource[] { (IResource) object });
+		else
+			input = new ResourceList(new IResource[0]);
+
+		final GitHistoryPage pg = new GitHistoryPage();
+		pg.setInput(input);
+		return pg;
+	}
 }

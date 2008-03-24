@@ -41,4 +41,7 @@ public class UIPreferences {
 	public final static String FINDTOOLBAR_AUTHOR = "findtoolbar_author";
 	/** */
 	public final static String FINDTOOLBAR_COMMITTER = "findtoolbar_committer";
+
+	/** */
+	public final static String THEME_CommitMessageFont = "org.spearce.egit.ui.CommitMessageFont";
 }

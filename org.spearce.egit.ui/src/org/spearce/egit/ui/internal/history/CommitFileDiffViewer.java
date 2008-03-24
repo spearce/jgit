@@ -1,0 +1,110 @@
+/*
+ *  Copyright (C) 2008  Shawn Pearce <spearce@spearce.org>
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public
+ *  License, version 2, as published by the Free Software Foundation.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public
+ *  License along with this library; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ */
+package org.spearce.egit.ui.internal.history;
+
+import org.eclipse.compare.CompareUI;
+import org.eclipse.compare.ITypedElement;
+import org.eclipse.jface.viewers.ColumnWeightData;
+import org.eclipse.jface.viewers.IOpenListener;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.OpenEvent;
+import org.eclipse.jface.viewers.TableLayout;
+import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.team.internal.ui.history.FileRevisionTypedElement;
+import org.spearce.egit.ui.UIText;
+import org.spearce.egit.ui.internal.GitCompareFileRevisionEditorInput;
+import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.treewalk.TreeWalk;
+
+class CommitFileDiffViewer extends TableViewer {
+	private TreeWalk walker;
+
+	CommitFileDiffViewer(final Composite parent) {
+		super(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER
+				| SWT.FULL_SELECTION);
+
+		final Table rawTable = getTable();
+		rawTable.setHeaderVisible(true);
+		rawTable.setLinesVisible(true);
+
+		final TableLayout layout = new TableLayout();
+		rawTable.setLayout(layout);
+		createColumns(rawTable, layout);
+
+		setLabelProvider(new FileDiffLabelProvider());
+		setContentProvider(new FileDiffContentProvider());
+		addOpenListener(new IOpenListener() {
+			public void open(final OpenEvent event) {
+				final ISelection s = event.getSelection();
+				if (s.isEmpty() || !(s instanceof IStructuredSelection))
+					return;
+				final IStructuredSelection iss = (IStructuredSelection) s;
+				final FileDiff d = (FileDiff) iss.getFirstElement();
+				if (walker != null && d.blobs.length == 2)
+					showTwoWayFileDiff(d);
+			}
+		});
+	}
+
+	void showTwoWayFileDiff(final FileDiff d) {
+		final GitCompareFileRevisionEditorInput in;
+
+		final Repository db = walker.getRepository();
+		final String path = d.path;
+		final RevCommit c = d.commit;
+		final BlobFileRevision baseFile;
+		final BlobFileRevision nextFile;
+		final ITypedElement base;
+		final ITypedElement next;
+
+		baseFile = new BlobFileRevision(db, c.getParent(0), path, d.blobs[0]);
+		nextFile = new BlobFileRevision(db, c, path, d.blobs[1]);
+
+		base = new FileRevisionTypedElement(baseFile);
+		next = new FileRevisionTypedElement(nextFile);
+		in = new GitCompareFileRevisionEditorInput(base, next, null);
+		CompareUI.openCompareEditor(in);
+	}
+
+	TreeWalk getTreeWalk() {
+		return walker;
+	}
+
+	void setTreeWalk(final TreeWalk walk) {
+		walker = walk;
+	}
+
+	private void createColumns(final Table rawTable, final TableLayout layout) {
+		final TableColumn mode = new TableColumn(rawTable, SWT.NONE);
+		mode.setResizable(true);
+		mode.setText("");
+		mode.setWidth(5);
+		layout.addColumnData(new ColumnWeightData(1, true));
+
+		final TableColumn path = new TableColumn(rawTable, SWT.NONE);
+		path.setResizable(true);
+		path.setText(UIText.HistoryPage_pathnameColumn);
+		path.setWidth(250);
+		layout.addColumnData(new ColumnWeightData(20, true));
+	}
+}

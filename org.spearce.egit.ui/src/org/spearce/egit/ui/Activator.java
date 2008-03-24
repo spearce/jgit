@@ -20,7 +20,9 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.eclipse.ui.themes.ITheme;
 import org.osgi.framework.BundleContext;
 
 /**
@@ -45,9 +47,11 @@ public class Activator extends AbstractUIPlugin {
 
 	/**
 	 * Instantiate an error exception.
-	 *
-	 * @param message description of the error
-	 * @param thr cause of the error or null
+	 * 
+	 * @param message
+	 *            description of the error
+	 * @param thr
+	 *            cause of the error or null
 	 * @return an initialized {@link CoreException}
 	 */
 	public static CoreException error(final String message, final Throwable thr) {
@@ -57,8 +61,10 @@ public class Activator extends AbstractUIPlugin {
 
 	/**
 	 * Log an error via the Eclipse logging routines.
+	 * 
 	 * @param message
-	 * @param thr cause of error
+	 * @param thr
+	 *            cause of error
 	 */
 	public static void logError(final String message, final Throwable thr) {
 		getDefault().getLog().log(
@@ -66,7 +72,8 @@ public class Activator extends AbstractUIPlugin {
 	}
 
 	/**
-	 * @param optionId name of debug option
+	 * @param optionId
+	 *            name of debug option
 	 * @return whether a named debug option is set
 	 */
 	private static boolean isOptionSet(final String optionId) {
@@ -77,12 +84,35 @@ public class Activator extends AbstractUIPlugin {
 
 	/**
 	 * Log a debug message
-	 * @param what message to log
+	 * 
+	 * @param what
+	 *            message to log
 	 */
 	public static void trace(final String what) {
 		if (getDefault().traceVerbose) {
 			System.out.println("[" + getPluginId() + "] " + what);
 		}
+	}
+
+	/**
+	 * Get the theme used by this plugin.
+	 * 
+	 * @return our theme.
+	 */
+	public static ITheme getTheme() {
+		return plugin.getWorkbench().getThemeManager().getCurrentTheme();
+	}
+
+	/**
+	 * Get a font known to this plugin.
+	 * 
+	 * @param id
+	 *            one of our THEME_* font preference ids (see
+	 *            {@link UIPreferences});
+	 * @return the configured font, borrewed from the registry.
+	 */
+	public static Font getFont(final String id) {
+		return getTheme().getFontRegistry().get(id);
 	}
 
 	private boolean traceVerbose;

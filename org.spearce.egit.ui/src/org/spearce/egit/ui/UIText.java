@@ -62,6 +62,15 @@ public class UIText extends NLS {
 	/** */
 	public static String ResourceHistory_toggleTooltips;
 
+	/** */
+	public static String HistoryPage_authorColumn;
+	/** */
+	public static String HistoryPage_dateColumn;
+	/** */
+	public static String HistoryPage_pathnameColumn;
+	/** */
+	public static String HistoryPage_refreshJob;
+
 	static {
 		initializeMessages(UIText.class.getPackage().getName() + ".uitext",
 				UIText.class);

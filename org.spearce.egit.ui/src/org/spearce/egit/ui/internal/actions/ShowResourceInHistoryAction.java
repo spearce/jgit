@@ -21,6 +21,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.team.internal.ui.actions.TeamAction;
 import org.eclipse.team.ui.TeamUI;
 import org.eclipse.team.ui.history.HistoryPageSaveablePart;
+import org.spearce.egit.core.ResourceList;
 
 /**
  * An action to update the history view for the selected
@@ -42,7 +43,8 @@ public class ShowResourceInHistoryAction extends TeamAction {
 
 	@Override
 	public void run(IAction action) {
-		TeamUI.getHistoryView().showHistoryFor(getSelectedResources()[0]);
+		TeamUI.getHistoryView().showHistoryFor(
+				new ResourceList(getSelectedResources()));
 	}
 
 	void showCompareInDialog(Shell shell, Object object) {
