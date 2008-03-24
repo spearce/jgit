@@ -61,12 +61,26 @@ public abstract class RevObject extends ObjectId {
 
 	/**
 	 * Add a flag to this object.
+	 * <p>
+	 * If the flag is already set on this object then the method has no effect.
 	 * 
 	 * @param flag
 	 *            the flag to mark on this object, for later testing.
 	 */
 	public void add(final RevFlag flag) {
 		flags |= flag.mask;
+	}
+
+	/**
+	 * Remove a flag from this object.
+	 * <p>
+	 * If the flag is not set on this object then the method has no effect.
+	 * 
+	 * @param flag
+	 *            the flag to remove from this object.
+	 */
+	public void remove(final RevFlag flag) {
+		flags &= ~flag.mask;
 	}
 
 	/** Release as much memory as possible from this object. */
