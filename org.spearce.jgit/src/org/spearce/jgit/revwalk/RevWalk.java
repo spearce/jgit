@@ -555,7 +555,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		if (nextFlagBit == 32)
 			throw new IllegalArgumentException(32 - RESERVED_FLAGS
 					+ " flags already created.");
-		return new RevFlag(name, 1 << nextFlagBit++);
+		return new RevFlag(this, name, 1 << nextFlagBit++);
 	}
 
 	/** Resets internal state and allows this instance to be used again. */

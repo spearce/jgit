@@ -22,13 +22,25 @@ package org.spearce.jgit.revwalk;
  * To create a flag use {@link RevWalk#newFlag(String)}.
  */
 public class RevFlag {
+	final RevWalk walker;
+
 	final String name;
 
 	final int mask;
 
-	RevFlag(final String n, final int m) {
+	RevFlag(final RevWalk w, final String n, final int m) {
+		walker = w;
 		name = n;
 		mask = m;
+	}
+
+	/**
+	 * Get the revision walk instance this flag was created from.
+	 * 
+	 * @return the walker this flag was allocated out of, and belongs to.
+	 */
+	public RevWalk getRevWalk() {
+		return walker;
 	}
 
 	public String toString() {
