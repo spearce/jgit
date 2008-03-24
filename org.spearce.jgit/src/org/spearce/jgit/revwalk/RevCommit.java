@@ -287,6 +287,17 @@ public class RevCommit extends RevObject {
 		return false;
 	}
 
+	/**
+	 * Reset this commit to allow another RevWalk with the same instances.
+	 * <p>
+	 * Subclasses <b>must</b> call <code>super.reset()</code> to ensure the
+	 * basic information can be correctly cleared out.
+	 */
+	public void reset() {
+		flags &= PARSED;
+		inDegree = 0;
+	}
+
 	public void dispose() {
 		flags &= ~PARSED;
 		buffer = null;

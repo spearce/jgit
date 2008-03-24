@@ -564,8 +564,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		for (final RevCommit c : roots) {
 			if ((c.flags & SEEN) == 0)
 				continue;
-			c.flags &= PARSED;
-			c.inDegree = 0;
+			c.reset();
 			q.add(c);
 		}
 
@@ -576,8 +575,7 @@ public class RevWalk implements Iterable<RevCommit> {
 			for (final RevCommit p : c.parents) {
 				if ((p.flags & SEEN) == 0)
 					continue;
-				p.flags &= PARSED;
-				p.inDegree = 0;
+				p.reset();
 				q.add(p);
 			}
 		}
