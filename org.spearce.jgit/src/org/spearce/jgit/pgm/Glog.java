@@ -16,7 +16,6 @@ import javax.swing.JScrollPane;
 import org.spearce.jgit.awtui.CommitGraphPane;
 import org.spearce.jgit.revplot.PlotWalk;
 import org.spearce.jgit.revwalk.RevCommit;
-import org.spearce.jgit.revwalk.RevSort;
 import org.spearce.jgit.revwalk.RevWalk;
 
 class Glog extends RevWalkTextBuiltin {
@@ -56,8 +55,6 @@ class Glog extends RevWalkTextBuiltin {
 
 	@Override
 	protected int walkLoop() throws Exception {
-		walk.sort(RevSort.TOPO, true);
-
 		graphPane.getCommitList().source(walk);
 		graphPane.getCommitList().fillTo(Integer.MAX_VALUE);
 

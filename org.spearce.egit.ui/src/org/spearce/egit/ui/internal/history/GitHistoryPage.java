@@ -241,7 +241,6 @@ public class GitHistoryPage extends HistoryPage {
 		if (currentWalk == null || currentWalk.getRepository() != db
 				|| pathChange(pathFilters, paths)) {
 			currentWalk = new SWTWalk(db);
-			currentWalk.sort(RevSort.TOPO, true);
 			currentWalk.sort(RevSort.COMMIT_TIME_DESC, true);
 		} else {
 			currentWalk.reset();
