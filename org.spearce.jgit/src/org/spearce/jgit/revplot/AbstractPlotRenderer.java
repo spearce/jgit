@@ -68,10 +68,7 @@ public abstract class AbstractPlotRenderer<TLane extends PlotLane, TColor> {
 		for (final TLane passingLane : (TLane[]) commit.passingLanes) {
 			final int cx = laneC(passingLane);
 			final TColor c = laneColor(passingLane);
-			if (commit.isLaneCutToParent(passingLane))
-				/* no paint */;
-			else
-				drawLine(c, cx, 0, cx, h);
+			drawLine(c, cx, 0, cx, h);
 			maxCenter = Math.max(maxCenter, cx);
 		}
 

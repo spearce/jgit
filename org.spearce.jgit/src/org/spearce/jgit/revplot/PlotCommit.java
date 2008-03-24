@@ -130,28 +130,4 @@ public class PlotCommit<L extends PlotLane> extends RevCommit {
 		lane = null;
 		super.reset();
 	}
-
-	/**
-	 * Determine if this lane ends at this commit, but continues further.
-	 * 
-	 * @param lane
-	 *            the lane to test.
-	 * @return true if this lane is should be cut off here at this commit to
-	 *         conserve lane space; false if it should continue through.
-	 */
-	public final boolean isLaneCutToParent(final PlotLane lane) {
-		return false;
-	}
-
-	/**
-	 * Determine if this lane ends at this commit, but continues further.
-	 * 
-	 * @param lane
-	 *            the lane to test.
-	 * @return true if this lane is should be cut off here at this commit to
-	 *         conserve lane space; false if it should continue through.
-	 */
-	public final boolean isLaneCutFromChild(final PlotLane lane) {
-		return false;
-	}
 }
