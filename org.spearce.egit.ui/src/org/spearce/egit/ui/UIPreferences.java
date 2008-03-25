@@ -45,5 +45,7 @@ public class UIPreferences {
 	/** */
 	public final static String THEME_CommitGraphNormalFont = "org.spearce.egit.ui.CommitGraphNormalFont";
 	/** */
+	public final static String THEME_CommitGraphHighlightFont = "org.spearce.egit.ui.CommitGraphHighlightFont";
+	/** */
 	public final static String THEME_CommitMessageFont = "org.spearce.egit.ui.CommitMessageFont";
 }

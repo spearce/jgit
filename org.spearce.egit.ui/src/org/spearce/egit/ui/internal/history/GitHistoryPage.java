@@ -43,6 +43,7 @@ import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.revplot.PlotCommit;
 import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.revwalk.RevFlag;
 import org.spearce.jgit.revwalk.RevSort;
 import org.spearce.jgit.revwalk.filter.RevFilter;
 import org.spearce.jgit.treewalk.TreeWalk;
@@ -102,6 +103,8 @@ public class GitHistoryPage extends HistoryPage {
 	private GenerateHistoryJob job;
 
 	private SWTWalk currentWalk;
+
+	private RevFlag highlightFlag;
 
 	private List<String> pathFilters;
 
@@ -242,6 +245,7 @@ public class GitHistoryPage extends HistoryPage {
 				|| pathChange(pathFilters, paths)) {
 			currentWalk = new SWTWalk(db);
 			currentWalk.sort(RevSort.COMMIT_TIME_DESC, true);
+			highlightFlag = currentWalk.newFlag("highlight");
 		} else {
 			currentWalk.reset();
 		}
@@ -271,7 +275,7 @@ public class GitHistoryPage extends HistoryPage {
 			fileWalker.setFilter(TreeFilter.ANY_DIFF);
 		}
 		fileViewer.setTreeWalk(fileWalker);
-		graph.setInput(null, null);
+		graph.setInput(highlightFlag, null, null);
 
 		final SWTCommitList list;
 		list = new SWTCommitList(graph.getControl().getDisplay());
@@ -310,7 +314,7 @@ public class GitHistoryPage extends HistoryPage {
 		graph.getControl().getDisplay().asyncExec(new Runnable() {
 			public void run() {
 				if (!graph.getControl().isDisposed() && job == j)
-					graph.setInput(list, asArray);
+					graph.setInput(highlightFlag, list, asArray);
 			}
 		});
 	}

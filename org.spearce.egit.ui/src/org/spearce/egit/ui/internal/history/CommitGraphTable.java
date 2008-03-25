@@ -24,6 +24,7 @@ import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -37,18 +38,41 @@ import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIPreferences;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.revwalk.RevFlag;
 
 class CommitGraphTable {
+	private static Font highlightFont() {
+		final Font n, h;
+
+		n = Activator.getFont(UIPreferences.THEME_CommitGraphNormalFont);
+		h = Activator.getFont(UIPreferences.THEME_CommitGraphHighlightFont);
+
+		final FontData[] nData = n.getFontData();
+		final FontData[] hData = h.getFontData();
+		if (nData.length != hData.length)
+			return h;
+		for (int i = 0; i < nData.length; i++)
+			if (!nData[i].equals(hData[i]))
+				return h;
+
+		return Activator.getBoldFont(UIPreferences.THEME_CommitGraphNormalFont);
+	}
+
 	private final TableViewer table;
 
 	private final SWTPlotRenderer renderer;
 
 	private final Font nFont;
 
+	private final Font hFont;
+
 	private SWTCommitList allCommits;
+
+	private RevFlag highlight;
 
 	CommitGraphTable(final Composite parent) {
 		nFont = Activator.getFont(UIPreferences.THEME_CommitGraphNormalFont);
+		hFont = highlightFont();
 
 		final Table rawTable = new Table(parent, SWT.MULTI | SWT.H_SCROLL
 				| SWT.V_SCROLL | SWT.BORDER | SWT.FULL_SELECTION);
@@ -93,8 +117,10 @@ class CommitGraphTable {
 		table.removePostSelectionChangedListener(l);
 	}
 
-	void setInput(final SWTCommitList list, final SWTCommit[] asArray) {
+	void setInput(final RevFlag hFlag, final SWTCommitList list,
+			final SWTCommit[] asArray) {
 		final SWTCommitList oldList = allCommits;
+		highlight = hFlag;
 		allCommits = list;
 		table.setInput(asArray);
 		if (asArray != null && asArray.length > 0) {
@@ -144,8 +170,10 @@ class CommitGraphTable {
 
 	void doPaint(final Event event) {
 		final RevCommit c = (RevCommit) ((TableItem) event.item).getData();
-
-		event.gc.setFont(nFont);
+		if (highlight != null && c.has(highlight))
+			event.gc.setFont(hFont);
+		else
+			event.gc.setFont(nFont);
 
 		if (event.index == 0) {
 			renderer.paint(event);

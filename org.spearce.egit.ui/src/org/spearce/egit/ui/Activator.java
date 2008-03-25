@@ -109,10 +109,22 @@ public class Activator extends AbstractUIPlugin {
 	 * @param id
 	 *            one of our THEME_* font preference ids (see
 	 *            {@link UIPreferences});
-	 * @return the configured font, borrewed from the registry.
+	 * @return the configured font, borrowed from the registry.
 	 */
 	public static Font getFont(final String id) {
 		return getTheme().getFontRegistry().get(id);
+	}
+
+	/**
+	 * Get a font known to this plugin, but with bold style applied over top.
+	 * 
+	 * @param id
+	 *            one of our THEME_* font preference ids (see
+	 *            {@link UIPreferences});
+	 * @return the configured font, borrowed from the registry.
+	 */
+	public static Font getBoldFont(final String id) {
+		return getTheme().getFontRegistry().getBold(id);
 	}
 
 	private boolean traceVerbose;
