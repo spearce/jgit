@@ -214,6 +214,18 @@ public class GitHistoryPage extends HistoryPage {
 		return ourControl;
 	}
 
+	public Object getInput() {
+		final ResourceList r = (ResourceList) super.getInput();
+		if (r == null)
+			return null;
+		final IResource[] in = r.getItems();
+		if (in == null || in.length == 0)
+			return null;
+		if (in.length == 1)
+			return in[0];
+		return r;
+	}
+
 	public boolean setInput(final Object o) {
 		final Object in;
 		if (o instanceof IResource)
@@ -232,7 +244,7 @@ public class GitHistoryPage extends HistoryPage {
 		if (graph == null)
 			return false;
 
-		final IResource[] in = ((ResourceList) getInput()).getItems();
+		final IResource[] in = ((ResourceList) super.getInput()).getItems();
 		if (in == null || in.length == 0)
 			return false;
 
@@ -381,7 +393,7 @@ public class GitHistoryPage extends HistoryPage {
 	}
 
 	public String getName() {
-		final ResourceList in = (ResourceList) getInput();
+		final ResourceList in = (ResourceList) super.getInput();
 		if (currentWalk == null || in == null)
 			return "";
 		final IResource[] items = in.getItems();
