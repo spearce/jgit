@@ -81,6 +81,9 @@ public abstract class AbstractPlotRenderer<TLane extends PlotLane, TColor> {
 
 			p = (PlotCommit<TLane>) commit.getParent(i);
 			pLane = p.getLane();
+			if (pLane == null)
+				continue;
+
 			pColor = laneColor(pLane);
 			cx = laneC(pLane);
 
