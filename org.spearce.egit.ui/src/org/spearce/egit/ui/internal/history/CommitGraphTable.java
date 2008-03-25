@@ -86,11 +86,11 @@ class CommitGraphTable {
 	}
 
 	void addSelectionChangedListener(final ISelectionChangedListener l) {
-		table.addSelectionChangedListener(l);
+		table.addPostSelectionChangedListener(l);
 	}
 
 	void removeSelectionChangedListener(final ISelectionChangedListener l) {
-		table.removeSelectionChangedListener(l);
+		table.removePostSelectionChangedListener(l);
 	}
 
 	void setInput(final SWTCommitList list, final SWTCommit[] asArray) {
