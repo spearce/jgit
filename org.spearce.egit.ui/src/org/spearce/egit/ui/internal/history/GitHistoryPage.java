@@ -92,20 +92,38 @@ public class GitHistoryPage extends HistoryPage {
 		return false;
 	}
 
+	/** Overall composite hosting all of our controls. */
 	private Composite ourControl;
 
+	/** The table showing the DAG, first "paragraph", author, author date. */
 	private CommitGraphTable graph;
 
+	/** Viewer displaying the currently selected commit of {@link #graph}. */
 	private CommitMessageViewer commentViewer;
 
+	/** Viewer displaying file difference implied by {@link #graph}'s commit. */
 	private CommitFileDiffViewer fileViewer;
 
+	/** Job that is updating our history view, if we are refreshing. */
 	private GenerateHistoryJob job;
 
+	/** Revision walker that allocated our graph's commit nodes. */
 	private SWTWalk currentWalk;
 
+	/**
+	 * Highlight flag that can be applied to commits to make them stand out.
+	 * <p>
+	 * Allocated at the same time as {@link #currentWalk}. If the walk
+	 * rebuilds, so must this flag.
+	 */
 	private RevFlag highlightFlag;
 
+	/**
+	 * List of paths we used to limit {@link #currentWalk}; null if no paths.
+	 * <p>
+	 * Note that a change in this list requires that {@link #currentWalk} and
+	 * all of its associated commits.
+	 */
 	private List<String> pathFilters;
 
 	@Override
