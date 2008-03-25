@@ -18,17 +18,23 @@ package org.spearce.egit.ui.internal.history;
 
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Widget;
+import org.spearce.egit.ui.Activator;
+import org.spearce.egit.ui.UIPreferences;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.revwalk.RevCommit;
 
@@ -37,13 +43,18 @@ class CommitGraphTable {
 
 	private final SWTPlotRenderer renderer;
 
+	private final Font nFont;
+
 	private SWTCommitList allCommits;
 
 	CommitGraphTable(final Composite parent) {
+		nFont = Activator.getFont(UIPreferences.THEME_CommitGraphNormalFont);
+
 		final Table rawTable = new Table(parent, SWT.MULTI | SWT.H_SCROLL
 				| SWT.V_SCROLL | SWT.BORDER | SWT.FULL_SELECTION);
 		rawTable.setHeaderVisible(true);
 		rawTable.setLinesVisible(false);
+		rawTable.setFont(nFont);
 
 		final TableLayout layout = new TableLayout();
 		rawTable.setLayout(layout);
@@ -118,18 +129,37 @@ class CommitGraphTable {
 		// Tell SWT we will completely handle painting for some columns.
 		//
 		rawTable.addListener(SWT.EraseItem, new Listener() {
-			public void handleEvent(Event event) {
-				if (event.index == 0)
+			public void handleEvent(final Event event) {
+				if (0 <= event.index && event.index <= 2)
 					event.detail &= ~SWT.FOREGROUND;
 			}
 		});
 
 		rawTable.addListener(SWT.PaintItem, new Listener() {
 			public void handleEvent(final Event event) {
-				if (event.index == 0)
-					renderer.paint(event);
+				doPaint(event);
 			}
 		});
 	}
 
+	void doPaint(final Event event) {
+		final RevCommit c = (RevCommit) ((TableItem) event.item).getData();
+
+		event.gc.setFont(nFont);
+
+		if (event.index == 0) {
+			renderer.paint(event);
+			return;
+		}
+
+		final ITableLabelProvider lbl;
+		final String txt;
+
+		lbl = (ITableLabelProvider) table.getLabelProvider();
+		txt = lbl.getColumnText(c, event.index);
+
+		final Point textsz = event.gc.textExtent(txt);
+		final int texty = (event.height - textsz.y) / 2;
+		event.gc.drawString(txt, event.x, event.y + texty);
+	}
 }

@@ -150,6 +150,15 @@
             id="org.spearce.egit.ui.GitTheme"
             label="%Theme_label"/>
       <fontDefinition
+            id="org.spearce.egit.ui.CommitGraphNormalFont"
+            categoryId="org.spearce.egit.ui.GitTheme"
+            label="%Theme_CommitGraphNormalFont_label"
+            defaultsTo="org.eclipse.jface.dialogfont">
+         <description>
+            %Theme_CommitGraphNormalFont_description
+         </description>
+      </fontDefinition>
+      <fontDefinition
             id="org.spearce.egit.ui.CommitMessageFont"
             categoryId="org.spearce.egit.ui.GitTheme"
             label="%Theme_CommitMessageFont_label"
