@@ -21,7 +21,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -299,8 +301,23 @@ public class GitHistoryPage extends HistoryPage {
 		list = new SWTCommitList(graph.getControl().getDisplay());
 		list.source(currentWalk);
 
-		job = new GenerateHistoryJob(this, list);
-		schedule(job);
+		final GenerateHistoryJob rj = new GenerateHistoryJob(this, list);
+		rj.addJobChangeListener(new JobChangeAdapter() {
+			@Override
+			public void done(final IJobChangeEvent event) {
+				final Control graphctl = graph.getControl();
+				if (job != rj || graphctl.isDisposed())
+					return;
+				graphctl.getDisplay().asyncExec(new Runnable() {
+					public void run() {
+						if (job == rj)
+							job = null;
+					}
+				});
+			}
+		});
+		job = rj;
+		schedule(rj);
 		return true;
 	}
 
