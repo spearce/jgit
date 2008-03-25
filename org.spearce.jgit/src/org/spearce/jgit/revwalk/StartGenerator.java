@@ -39,7 +39,7 @@ class StartGenerator extends Generator {
 
 	StartGenerator(final RevWalk w) {
 		walker = w;
-		pending = new LIFORevQueue();
+		pending = new FIFORevQueue();
 	}
 
 	@Override
