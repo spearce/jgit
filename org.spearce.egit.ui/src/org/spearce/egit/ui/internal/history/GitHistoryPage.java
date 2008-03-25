@@ -196,8 +196,7 @@ public class GitHistoryPage extends HistoryPage {
 	}
 
 	public void dispose() {
-		if (job != null && job.getState() != Job.NONE)
-			job.cancel();
+		cancelRefreshJob();
 		super.dispose();
 	}
 
@@ -228,11 +227,7 @@ public class GitHistoryPage extends HistoryPage {
 
 	@Override
 	public boolean inputSet() {
-		if (job != null && job.getState() != Job.NONE) {
-			job.cancel();
-			job = null;
-			currentWalk = null;
-		}
+		cancelRefreshJob();
 
 		if (graph == null)
 			return false;
@@ -319,6 +314,24 @@ public class GitHistoryPage extends HistoryPage {
 		job = rj;
 		schedule(rj);
 		return true;
+	}
+
+	private void cancelRefreshJob() {
+		if (job != null && job.getState() != Job.NONE) {
+			job.cancel();
+
+			// As the job had to be canceled but was working on
+			// the data connected with the currentWalk we cannot
+			// be sure it really finished. Since the walk is not
+			// thread safe we must throw it away and build a new
+			// one to start another walk. Clearing our field will
+			// ensure that happens.
+			//
+			job = null;
+			currentWalk = null;
+			highlightFlag = null;
+			pathFilters = null;
+		}
 	}
 
 	private boolean pathChange(final List<String> o, final List<String> n) {
