@@ -32,6 +32,10 @@ class GenerateHistoryJob extends Job {
 
 	private final SWTCommitList allCommits;
 
+	private int lastUpdateCnt;
+
+	private long lastUpdateAt;
+
 	GenerateHistoryJob(final GitHistoryPage ghp, final SWTCommitList list) {
 		super(UIText.HistoryPage_refreshJob);
 		page = ghp;
@@ -45,10 +49,15 @@ class GenerateHistoryJob extends Job {
 			try {
 				for (;;) {
 					final int oldsz = allCommits.size();
-					allCommits.fillTo(oldsz + BATCH_SIZE);
+					allCommits.fillTo(oldsz + BATCH_SIZE - 1);
 					if (monitor.isCanceled() || oldsz == allCommits.size())
 						break;
+
+					final long now = System.currentTimeMillis();
+					if (now - lastUpdateAt < 250)
+						continue;
 					updateUI();
+					lastUpdateAt = now;
 				}
 			} catch (IOException e) {
 				status = new Status(IStatus.ERROR, Activator.getPluginId(),
@@ -65,8 +74,12 @@ class GenerateHistoryJob extends Job {
 	}
 
 	void updateUI() {
+		if (allCommits.size() == lastUpdateCnt)
+			return;
+
 		final SWTCommit[] asArray = new SWTCommit[allCommits.size()];
 		allCommits.toArray(asArray);
 		page.showCommitList(this, allCommits, asArray);
+		lastUpdateCnt = allCommits.size();
 	}
 }
