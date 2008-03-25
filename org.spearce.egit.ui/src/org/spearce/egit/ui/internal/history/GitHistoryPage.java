@@ -35,6 +35,8 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -68,6 +70,10 @@ public class GitHistoryPage extends HistoryPage {
 	private static final String SHOW_COMMENT = UIPreferences.RESOURCEHISTORY_SHOW_REV_COMMENT;
 
 	private static final String SHOW_FILES = UIPreferences.RESOURCEHISTORY_SHOW_REV_DETAIL;
+
+	private static final String SPLIT_GRAPH = UIPreferences.RESOURCEHISTORY_GRAPH_SPLIT;
+
+	private static final String SPLIT_INFO = UIPreferences.RESOURCEHISTORY_REV_SPLIT;
 
 	/**
 	 * Determine if the input can be shown in this viewer.
@@ -177,10 +183,23 @@ public class GitHistoryPage extends HistoryPage {
 		commentViewer = new CommitMessageViewer(revInfoSplit);
 		fileViewer = new CommitFileDiffViewer(revInfoSplit);
 
+		layoutSashForm(graphDetailSplit, SPLIT_GRAPH);
+		layoutSashForm(revInfoSplit, SPLIT_INFO);
+
 		attachCommitSelectionChanged();
 		createViewMenu();
 
 		layout();
+	}
+
+	private void layoutSashForm(final SashForm sf, final String key) {
+		sf.addDisposeListener(new DisposeListener() {
+			public void widgetDisposed(DisposeEvent e) {
+				final int[] w = sf.getWeights();
+				UIPreferences.setValue(prefs, key, w);
+			}
+		});
+		sf.setWeights(UIPreferences.getIntArray(prefs, key, 2));
 	}
 
 	private Composite createMainPanel(final Composite parent) {

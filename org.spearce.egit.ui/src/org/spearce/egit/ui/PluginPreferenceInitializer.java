@@ -36,11 +36,19 @@ public class PluginPreferenceInitializer extends AbstractPreferenceInitializer {
 	 */
 	public void initializeDefaultPreferences() {
 		Preferences prefs = Activator.getDefault().getPluginPreferences();
+		int[] w;
 
 		prefs.setDefault(UIPreferences.RESOURCEHISTORY_SHOW_COMMENT_WRAP, true);
 		prefs.setDefault(UIPreferences.RESOURCEHISTORY_SHOW_REV_DETAIL, true);
 		prefs.setDefault(UIPreferences.RESOURCEHISTORY_SHOW_REV_COMMENT, true);
 		prefs.setDefault(UIPreferences.RESOURCEHISTORY_SHOW_TOOLTIPS, false);
+
+		w = new int[] { 500, 500 };
+		UIPreferences.setDefault(prefs,
+				UIPreferences.RESOURCEHISTORY_GRAPH_SPLIT, w);
+		w = new int[] { 700, 300 };
+		UIPreferences.setDefault(prefs,
+				UIPreferences.RESOURCEHISTORY_REV_SPLIT, w);
 
 		prefs.setDefault(UIPreferences.FINDTOOLBAR_IGNORE_CASE, true);
 		prefs.setDefault(UIPreferences.FINDTOOLBAR_COMMIT_ID, true);
