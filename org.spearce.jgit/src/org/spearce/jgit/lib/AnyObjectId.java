@@ -369,6 +369,29 @@ public abstract class AnyObjectId implements Comparable {
 
 	/**
 	 * Obtain an immutable copy of this current object name value.
+	 * <p>
+	 * Only returns <code>this</code> if this instance is an unsubclassed
+	 * instance of {@link ObjectId}; otherwise a new instance is returned
+	 * holding the same value.
+	 * <p>
+	 * This method is useful to shed any additional memory that may be tied to
+	 * the subclass, yet retain the unique identity of the object id for future
+	 * lookups within maps and repositories.
+	 * 
+	 * @return an immutable copy, using the smallest memory footprint possible.
+	 */
+	public final ObjectId copy() {
+		if (getClass() == ObjectId.class)
+			return (ObjectId) this;
+		return new ObjectId(this);
+	}
+
+	/**
+	 * Obtain an immutable copy of this current object name value.
+	 * <p>
+	 * See {@link #copy()} if <code>this</code> is a possibly subclassed (but
+	 * immutable) identity and the application needs a lightweight identity
+	 * <i>only</i> reference.
 	 * 
 	 * @return an immutable copy. May be <code>this</code> if this is already
 	 *         an immutable instance.
