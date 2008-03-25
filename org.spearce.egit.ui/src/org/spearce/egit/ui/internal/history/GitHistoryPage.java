@@ -28,6 +28,7 @@ import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -63,6 +64,10 @@ import org.spearce.jgit.treewalk.filter.TreeFilter;
 /** Graphical commit history viewer. */
 public class GitHistoryPage extends HistoryPage {
 	private static final String PREF_COMMENT_WRAP = UIPreferences.RESOURCEHISTORY_SHOW_COMMENT_WRAP;
+
+	private static final String SHOW_COMMENT = UIPreferences.RESOURCEHISTORY_SHOW_REV_COMMENT;
+
+	private static final String SHOW_FILES = UIPreferences.RESOURCEHISTORY_SHOW_REV_DETAIL;
 
 	/**
 	 * Determine if the input can be shown in this viewer.
@@ -109,6 +114,12 @@ public class GitHistoryPage extends HistoryPage {
 	/** Overall composite hosting all of our controls. */
 	private Composite ourControl;
 
+	/** Split between {@link #graph} and {@link #revInfoSplit}. */
+	private SashForm graphDetailSplit;
+
+	/** Split between {@link #commentViewer} and {@link #fileViewer}. */
+	private SashForm revInfoSplit;
+
 	/** The table showing the DAG, first "paragraph", author, author date. */
 	private CommitGraphTable graph;
 
@@ -143,8 +154,6 @@ public class GitHistoryPage extends HistoryPage {
 	@Override
 	public void createControl(final Composite parent) {
 		GridData gd;
-		final SashForm graphDetailSplit;
-		final SashForm revInfoSplit;
 
 		prefs = Activator.getDefault().getPluginPreferences();
 		ourControl = createMainPanel(parent);
@@ -170,6 +179,8 @@ public class GitHistoryPage extends HistoryPage {
 
 		attachCommitSelectionChanged();
 		createViewMenu();
+
+		layout();
 	}
 
 	private Composite createMainPanel(final Composite parent) {
@@ -180,6 +191,24 @@ public class GitHistoryPage extends HistoryPage {
 		parentLayout.verticalSpacing = 0;
 		c.setLayout(parentLayout);
 		return c;
+	}
+
+	private void layout() {
+		final boolean showComment = prefs.getBoolean(SHOW_COMMENT);
+		final boolean showFiles = prefs.getBoolean(SHOW_FILES);
+
+		if (showComment && showFiles) {
+			graphDetailSplit.setMaximizedControl(null);
+			revInfoSplit.setMaximizedControl(null);
+		} else if (showComment && !showFiles) {
+			graphDetailSplit.setMaximizedControl(null);
+			revInfoSplit.setMaximizedControl(commentViewer.getControl());
+		} else if (!showComment && showFiles) {
+			graphDetailSplit.setMaximizedControl(null);
+			revInfoSplit.setMaximizedControl(fileViewer.getControl());
+		} else if (!showComment && !showFiles) {
+			graphDetailSplit.setMaximizedControl(graph.getControl());
+		}
 	}
 
 	private void attachCommitSelectionChanged() {
@@ -213,6 +242,9 @@ public class GitHistoryPage extends HistoryPage {
 		final IActionBars actionBars = getSite().getActionBars();
 		final IMenuManager menuManager = actionBars.getMenuManager();
 		menuManager.add(createCommentWrap());
+		menuManager.add(new Separator());
+		menuManager.add(createShowComment());
+		menuManager.add(createShowFiles());
 	}
 
 	private IAction createCommentWrap() {
@@ -226,6 +258,28 @@ public class GitHistoryPage extends HistoryPage {
 		final boolean wrap = prefs.getBoolean(PREF_COMMENT_WRAP);
 		r.setChecked(wrap);
 		commentViewer.getTextWidget().setWordWrap(wrap);
+		return r;
+	}
+
+	private IAction createShowComment() {
+		final IAction r = new Action(UIText.ResourceHistory_toggleRevComment) {
+			public void run() {
+				prefs.setValue(SHOW_COMMENT, isChecked());
+				layout();
+			}
+		};
+		r.setChecked(prefs.getBoolean(SHOW_COMMENT));
+		return r;
+	}
+
+	private IAction createShowFiles() {
+		final IAction r = new Action(UIText.ResourceHistory_toggleRevDetail) {
+			public void run() {
+				prefs.setValue(SHOW_FILES, isChecked());
+				layout();
+			}
+		};
+		r.setChecked(prefs.getBoolean(SHOW_FILES));
 		return r;
 	}
 
