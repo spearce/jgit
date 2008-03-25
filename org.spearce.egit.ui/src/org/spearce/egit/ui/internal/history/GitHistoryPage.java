@@ -21,9 +21,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.Preferences;
 import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
+import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IAction;
+import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -35,12 +39,15 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.team.ui.history.HistoryPage;
+import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchPartSite;
 import org.eclipse.ui.progress.IWorkbenchSiteProgressService;
 import org.spearce.egit.core.ResourceList;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.Activator;
+import org.spearce.egit.ui.UIPreferences;
+import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.revplot.PlotCommit;
@@ -55,6 +62,8 @@ import org.spearce.jgit.treewalk.filter.TreeFilter;
 
 /** Graphical commit history viewer. */
 public class GitHistoryPage extends HistoryPage {
+	private static final String PREF_COMMENT_WRAP = UIPreferences.RESOURCEHISTORY_SHOW_COMMENT_WRAP;
+
 	/**
 	 * Determine if the input can be shown in this viewer.
 	 * 
@@ -93,6 +102,9 @@ public class GitHistoryPage extends HistoryPage {
 		}
 		return false;
 	}
+
+	/** Plugin private preference store for the current workspace. */
+	private Preferences prefs;
 
 	/** Overall composite hosting all of our controls. */
 	private Composite ourControl;
@@ -134,6 +146,7 @@ public class GitHistoryPage extends HistoryPage {
 		final SashForm graphDetailSplit;
 		final SashForm revInfoSplit;
 
+		prefs = Activator.getDefault().getPluginPreferences();
 		ourControl = createMainPanel(parent);
 		gd = new GridData();
 		gd.verticalAlignment = SWT.FILL;
@@ -156,6 +169,7 @@ public class GitHistoryPage extends HistoryPage {
 		fileViewer = new CommitFileDiffViewer(revInfoSplit);
 
 		attachCommitSelectionChanged();
+		createViewMenu();
 	}
 
 	private Composite createMainPanel(final Composite parent) {
@@ -195,8 +209,29 @@ public class GitHistoryPage extends HistoryPage {
 				});
 	}
 
+	private void createViewMenu() {
+		final IActionBars actionBars = getSite().getActionBars();
+		final IMenuManager menuManager = actionBars.getMenuManager();
+		menuManager.add(createCommentWrap());
+	}
+
+	private IAction createCommentWrap() {
+		final IAction r = new Action(UIText.ResourceHistory_toggleCommentWrap) {
+			public void run() {
+				final boolean wrap = isChecked();
+				commentViewer.getTextWidget().setWordWrap(wrap);
+				prefs.setValue(PREF_COMMENT_WRAP, wrap);
+			}
+		};
+		final boolean wrap = prefs.getBoolean(PREF_COMMENT_WRAP);
+		r.setChecked(wrap);
+		commentViewer.getTextWidget().setWordWrap(wrap);
+		return r;
+	}
+
 	public void dispose() {
 		cancelRefreshJob();
+		Activator.getDefault().savePluginPreferences();
 		super.dispose();
 	}
 
