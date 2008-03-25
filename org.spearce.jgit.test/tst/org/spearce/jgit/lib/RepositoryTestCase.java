@@ -137,4 +137,22 @@ public abstract class RepositoryTestCase extends TestCase {
 		db.close();
 		super.tearDown();
 	}
+
+	/**
+	 * Helper for creating extra empty repos
+	 *
+	 * @return a new empty git repository for testing purposes
+	 *
+	 * @throws IOException
+	 */
+	protected Repository createNewEmptyRepo() throws IOException {
+		File newTestRepo = new File(trashParent, "new"+System.currentTimeMillis()+"/.git");
+		assertFalse(newTestRepo.exists());
+		File unusedDir = new File(trashParent, "tmp"+System.currentTimeMillis());
+		assertTrue(unusedDir.mkdirs());
+		final Repository newRepo = new Repository(newTestRepo);
+		newRepo.create();
+		return newRepo;
+	}
+
 }
