@@ -27,7 +27,9 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
+import org.eclipse.jface.action.IContributionItem;
 import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.text.ITextOperationTarget;
 import org.eclipse.jface.viewers.ISelection;
@@ -46,9 +48,13 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.team.ui.history.HistoryPage;
 import org.eclipse.ui.IActionBars;
+import org.eclipse.ui.IPartListener;
+import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchPartSite;
 import org.eclipse.ui.actions.ActionFactory;
+import org.eclipse.ui.actions.ActionFactory.IWorkbenchAction;
+import org.eclipse.ui.part.IPageSite;
 import org.eclipse.ui.progress.IWorkbenchSiteProgressService;
 import org.spearce.egit.core.ResourceList;
 import org.spearce.egit.core.project.RepositoryMapping;
@@ -78,6 +84,8 @@ public class GitHistoryPage extends HistoryPage {
 	private static final String SPLIT_GRAPH = UIPreferences.RESOURCEHISTORY_GRAPH_SPLIT;
 
 	private static final String SPLIT_INFO = UIPreferences.RESOURCEHISTORY_REV_SPLIT;
+
+	private static final String POPUP_ID = "org.spearce.egit.ui.historyPageContributions";
 
 	/**
 	 * Determine if the input can be shown in this viewer.
@@ -139,6 +147,9 @@ public class GitHistoryPage extends HistoryPage {
 	/** Viewer displaying file difference implied by {@link #graph}'s commit. */
 	private CommitFileDiffViewer fileViewer;
 
+	/** Our context menu manager for the entire page. */
+	private MenuManager popupMgr;
+
 	/** Job that is updating our history view, if we are refreshing. */
 	private GenerateHistoryJob job;
 
@@ -190,11 +201,28 @@ public class GitHistoryPage extends HistoryPage {
 		layoutSashForm(graphDetailSplit, SPLIT_GRAPH);
 		layoutSashForm(revInfoSplit, SPLIT_INFO);
 
+		popupMgr = new MenuManager(POPUP_ID);
 		attachCommitSelectionChanged();
-		createViewMenu();
 		createStandardActions();
+		createViewMenu();
+
+		finishContextMenu();
+		attachContextMenu(graph.getControl());
+		attachContextMenu(commentViewer.getControl());
+		attachContextMenu(fileViewer.getControl());
 
 		layout();
+	}
+
+	private void finishContextMenu() {
+		popupMgr.add(new Separator());
+		popupMgr.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
+		getSite().registerContextMenu(POPUP_ID, popupMgr,
+				getSite().getSelectionProvider());
+	}
+
+	private void attachContextMenu(final Control c) {
+		c.setMenu(popupMgr.createContextMenu(c));
 	}
 
 	private void layoutSashForm(final SashForm sf, final String key) {
@@ -265,10 +293,25 @@ public class GitHistoryPage extends HistoryPage {
 	private void createViewMenu() {
 		final IActionBars actionBars = getSite().getActionBars();
 		final IMenuManager menuManager = actionBars.getMenuManager();
-		menuManager.add(createCommentWrap());
+		IAction a;
+
+		a = createCommentWrap();
+		menuManager.add(a);
+		popupMgr.add(a);
+
 		menuManager.add(new Separator());
-		menuManager.add(createShowComment());
-		menuManager.add(createShowFiles());
+		popupMgr.add(new Separator());
+
+		a = createShowComment();
+		menuManager.add(a);
+		popupMgr.add(a);
+
+		a = createShowFiles();
+		menuManager.add(a);
+		popupMgr.add(a);
+
+		menuManager.add(new Separator());
+		popupMgr.add(new Separator());
 	}
 
 	private IAction createCommentWrap() {
@@ -329,10 +372,28 @@ public class GitHistoryPage extends HistoryPage {
 		final IActionBars b = getSite().getActionBars();
 		b.setGlobalActionHandler(ActionFactory.COPY.getId(), copy);
 		b.setGlobalActionHandler(ActionFactory.SELECT_ALL.getId(), sAll);
+
+		popupMgr.add(createStandardAction(ActionFactory.COPY));
+		popupMgr.add(createStandardAction(ActionFactory.SELECT_ALL));
+		popupMgr.add(new Separator());
+	}
+
+	private IAction createStandardAction(final ActionFactory af) {
+		final IPageSite s = getSite();
+		final IWorkbenchAction a = af.create(s.getWorkbenchWindow());
+		if (af instanceof IPartListener)
+			((IPartListener) a).partActivated(s.getPage().getActivePart());
+		return a;
 	}
 
 	public void dispose() {
 		cancelRefreshJob();
+		if (popupMgr != null) {
+			for (final IContributionItem i : popupMgr.getItems()) {
+				if (i instanceof ActionFactory.IWorkbenchAction)
+					((ActionFactory.IWorkbenchAction) i).dispose();
+			}
+		}
 		Activator.getDefault().savePluginPreferences();
 		super.dispose();
 	}
