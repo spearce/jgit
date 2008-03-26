@@ -7,10 +7,8 @@ import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 
-import org.spearce.jgit.fetch.FetchClient;
-import org.spearce.jgit.fetch.IndexPack;
+import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Repository;
-import org.spearce.jgit.lib.TextProgressMonitor;
 
 /**
  * This is does-it-all fetch implementation.
@@ -22,27 +20,28 @@ public class FullFetchClient extends FetchClient {
 	Thread fetchThread;
 	private String remote;
 
-	Thread indexThread = new Thread() {
-		@Override
-		public void run() {
-			IndexPack pack;
-			try {
-				pack = new IndexPack(pi, new File("tmp_pack1"));
-				pack.index(new TextProgressMonitor());
-				pack.renamePack(repository);
-			} catch (Throwable e) {
-				e.printStackTrace();
-				fetchThread.interrupt();
-				threadError[0] = e;
-			}
-		}
-	};
+	Thread indexThread;
 
-	public void run() throws IOException {
+	public void run(final ProgressMonitor monitor) throws IOException {
 		try {
+			indexThread = new Thread() {
+				@Override
+				public void run() {
+					IndexPack pack;
+					try {
+						pack = new IndexPack(pi, new File("tmp_pack1"));
+						pack.index(monitor);
+						pack.renamePack(repository);
+					} catch (Throwable e) {
+						e.printStackTrace();
+						fetchThread.interrupt();
+						threadError[0] = e;
+					}
+				}
+			};
 			fetchThread = Thread.currentThread();
 			indexThread.start();
-			super.run();
+			super.run(monitor);
 			os.close();
 			indexThread.join();
 			repository.scanForPacks();

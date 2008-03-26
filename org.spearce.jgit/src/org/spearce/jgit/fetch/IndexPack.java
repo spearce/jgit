@@ -137,7 +137,7 @@ public class IndexPack {
 		try {
 			try {
 				readPackHeader();
-				progress.beginTask("Downloading / Indexing", (int) objectCount*2); // < 2G objects
+				progress.setMessage("Downloading / Indexing");
 
 				entries = new ObjectEntry[(int) objectCount];
 				baseById = new ObjectIdMap<ArrayList<UnresolvedDelta>>();
@@ -164,8 +164,6 @@ public class IndexPack {
 				if (dstIdx != null)
 					writeIdx();
 
-				progress.done();
-
 			} finally {
 				if (packOut != null)
 					packOut.close();
@@ -182,10 +180,11 @@ public class IndexPack {
 
 	private void resolveDeltas(final ProgressMonitor progress) throws IOException {
 		progress.setMessage("Resolving deltas");
+		progress.worked((int) (2*objectCount - progress.getWorked()));
 		final int last = entryCount;
 		for (int i = 0; i < last; i++) {
 			resolveDeltas(entries[i]);
-			progress.worked(1);
+			progress.worked((int) (2*objectCount + (i*entryCount / objectCount) - progress.getWorked()));
 			if (progress.isCancelled())
 				throw new IOException("Download cancelled during indexing");
 		}

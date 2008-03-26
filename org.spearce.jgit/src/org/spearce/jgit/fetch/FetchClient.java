@@ -29,11 +29,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdMap;
+import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.RefLock;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tag;
@@ -148,6 +151,8 @@ public class FetchClient {
 
 	private String flags = defaultflags;
 	private String[] fetchList;
+	private ProgressMonitor monitor;
+	private int scale;
 
 	/**
 	 * Request data.
@@ -202,8 +207,16 @@ public class FetchClient {
 				have.add(id);
 			}
 		}
+		monitor.beginTask("Negotiating commits", 1000000);
+
 		final ObjectIdMap<Boolean> reported = new ObjectIdMap<Boolean>();
+
 		for (Iterator<ObjectId> nextCommit = todo.iterator(); nextCommit.hasNext(); nextCommit = todo.iterator()) {
+
+			monitor.worked(1);
+			if (monitor.isCancelled())
+				break;
+
 			ObjectId id = nextCommit.next();
 			nextCommit.remove();
 			if (reported.containsKey(id))
@@ -251,11 +264,36 @@ public class FetchClient {
 				os.write(data,1,data.length-1);
 			} else {
 				System.out.println("Progress "+new String(data,1,data.length-1));
+				String msg = new String(data, 1, data.length - 1);
+				Matcher matcher = progress.matcher(msg);
+				if (matcher.matches()) {
+					String group = matcher.group(2);
+					if (group != null) {
+						int amount = Integer.parseInt(group);
+						int stage = 0;
+						if (msg.startsWith("Compressing "))
+							stage = 1;
+						monitor.worked(stage * scale + scale*amount / 100 - monitor.getWorked());
+						monitor.setTask(matcher.group(1));
+					}
+				} else {
+					Matcher cmatcher = counting.matcher(msg);
+					if (cmatcher.matches()) {
+						monitor.worked(1000);
+						String scales = cmatcher.group(1);
+						scale = Integer.parseInt(scales);
+						monitor.setTotalWork(scale * 4);
+						monitor.worked(scale - monitor.getWorked());
+					}
+				}
 			}
 			os.flush();
 		}
 		os.flush();
 	}
+
+	static Pattern counting = Pattern.compile(".*Counting objects: (\\d+)(, done)*\\..*", Pattern.DOTALL);
+	static Pattern progress = Pattern.compile(".*?([\\w ]+): +(\\d+)%.*", Pattern.DOTALL);
 
 	private boolean readWantResponse() throws IOException {
 		final byte[] lenbuf = new byte[4];
@@ -359,22 +397,30 @@ public class FetchClient {
 	/**
 	 * Execute the fetch process.
 	 *
+	 * @param aMonitor progress reporting interface
+	 *
 	 * @throws IOException
 	 */
-	public void run() throws IOException {
+	public void run(ProgressMonitor aMonitor) throws IOException {
+		monitor = aMonitor;
+		monitor.setTask("Negotiating with server");
+		monitor.worked(5);
 		if (initialCommand != null) {
 			writeServer(initialCommand);
 			toServer.flush();
 		}
 		while (readHasLine())
 			;
+
+		monitor.worked(10);
+
 		pruneWhatWeHave();
 
 		request();
-
 		toServer.close();
 		if (false)
 			whatwehave();
+
 	}
 
 	/**
