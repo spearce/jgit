@@ -54,7 +54,7 @@ class GenerateHistoryJob extends Job {
 						break;
 
 					final long now = System.currentTimeMillis();
-					if (now - lastUpdateAt < 250)
+					if (now - lastUpdateAt < 2000 && lastUpdateCnt > 0)
 						continue;
 					updateUI();
 					lastUpdateAt = now;
