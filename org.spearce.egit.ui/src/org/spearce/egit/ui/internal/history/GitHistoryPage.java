@@ -29,6 +29,7 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.text.ITextOperationTarget;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -37,6 +38,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -45,6 +48,7 @@ import org.eclipse.team.ui.history.HistoryPage;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchPartSite;
+import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.progress.IWorkbenchSiteProgressService;
 import org.spearce.egit.core.ResourceList;
 import org.spearce.egit.core.project.RepositoryMapping;
@@ -188,6 +192,7 @@ public class GitHistoryPage extends HistoryPage {
 
 		attachCommitSelectionChanged();
 		createViewMenu();
+		createStandardActions();
 
 		layout();
 	}
@@ -300,6 +305,30 @@ public class GitHistoryPage extends HistoryPage {
 		};
 		r.setChecked(prefs.getBoolean(SHOW_FILES));
 		return r;
+	}
+
+	private void createStandardActions() {
+		final TextAction copy = new TextAction(ITextOperationTarget.COPY);
+		final TextAction sAll = new TextAction(ITextOperationTarget.SELECT_ALL);
+
+		graph.getControl().addFocusListener(copy);
+		graph.getControl().addFocusListener(sAll);
+		graph.addSelectionChangedListener(copy);
+		graph.addSelectionChangedListener(sAll);
+
+		commentViewer.getControl().addFocusListener(copy);
+		commentViewer.getControl().addFocusListener(sAll);
+		commentViewer.addSelectionChangedListener(copy);
+		commentViewer.addSelectionChangedListener(sAll);
+
+		fileViewer.getControl().addFocusListener(copy);
+		fileViewer.getControl().addFocusListener(sAll);
+		fileViewer.addSelectionChangedListener(copy);
+		fileViewer.addSelectionChangedListener(sAll);
+
+		final IActionBars b = getSite().getActionBars();
+		b.setGlobalActionHandler(ActionFactory.COPY.getId(), copy);
+		b.setGlobalActionHandler(ActionFactory.SELECT_ALL.getId(), sAll);
 	}
 
 	public void dispose() {
@@ -526,5 +555,76 @@ public class GitHistoryPage extends HistoryPage {
 
 	public String getDescription() {
 		return getName();
+	}
+
+	private class TextAction extends Action implements FocusListener,
+			ISelectionChangedListener {
+		private final int op;
+
+		TextAction(final int operationCode) {
+			op = operationCode;
+			setEnabled(false);
+		}
+
+		public void run() {
+			if (commentViewer.getTextWidget().isFocusControl()) {
+				if (commentViewer.canDoOperation(op))
+					commentViewer.doOperation(op);
+			} else if (fileViewer.getTable().isFocusControl()) {
+				switch (op) {
+				case ITextOperationTarget.COPY:
+					fileViewer.doCopy();
+					break;
+				case ITextOperationTarget.SELECT_ALL:
+					fileViewer.doSelectAll();
+					break;
+				}
+			} else if (graph.getControl().isFocusControl()) {
+				switch (op) {
+				case ITextOperationTarget.COPY:
+					graph.doCopy();
+					break;
+				}
+			}
+		}
+
+		private void update() {
+			if (commentViewer.getTextWidget().isFocusControl()) {
+				setEnabled(commentViewer.canDoOperation(op));
+			} else if (fileViewer.getTable().isFocusControl()) {
+				switch (op) {
+				case ITextOperationTarget.COPY:
+					setEnabled(!fileViewer.getSelection().isEmpty());
+					break;
+				case ITextOperationTarget.SELECT_ALL:
+					setEnabled(fileViewer.getTable().getItemCount() > 0);
+					break;
+				}
+			} else if (graph.getControl().isFocusControl()) {
+				switch (op) {
+				case ITextOperationTarget.COPY:
+					setEnabled(graph.canDoCopy());
+					break;
+				case ITextOperationTarget.SELECT_ALL:
+					setEnabled(false);
+					break;
+				}
+			}
+		}
+
+		public void focusGained(final FocusEvent e) {
+			update();
+		}
+
+		public void selectionChanged(final SelectionChangedEvent event) {
+			update();
+		}
+
+		public void focusLost(final FocusEvent e) {
+			// Ignore lost events. If focus leaves our page then the
+			// workbench will update the global action away from us.
+			// If focus stays in our page someone else should have
+			// gained it from us.
+		}
 	}
 }

@@ -16,16 +16,26 @@
  */
 package org.spearce.egit.ui.internal.history;
 
+import java.util.Iterator;
+
 import org.eclipse.compare.CompareUI;
 import org.eclipse.compare.ITypedElement;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.IOpenListener;
 import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.OpenEvent;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.DND;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
@@ -38,6 +48,8 @@ import org.spearce.jgit.treewalk.TreeWalk;
 
 class CommitFileDiffViewer extends TableViewer {
 	private TreeWalk walker;
+
+	private Clipboard clipboard;
 
 	CommitFileDiffViewer(final Composite parent) {
 		super(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER
@@ -62,6 +74,13 @@ class CommitFileDiffViewer extends TableViewer {
 				final FileDiff d = (FileDiff) iss.getFirstElement();
 				if (walker != null && d.blobs.length == 2)
 					showTwoWayFileDiff(d);
+			}
+		});
+
+		clipboard = new Clipboard(rawTable.getDisplay());
+		rawTable.addDisposeListener(new DisposeListener() {
+			public void widgetDisposed(final DisposeEvent e) {
+				clipboard.dispose();
 			}
 		});
 	}
@@ -92,6 +111,37 @@ class CommitFileDiffViewer extends TableViewer {
 
 	void setTreeWalk(final TreeWalk walk) {
 		walker = walk;
+	}
+
+	void doSelectAll() {
+		final IStructuredContentProvider cp;
+		final Object in = getInput();
+		if (in == null)
+			return;
+
+		cp = ((IStructuredContentProvider) getContentProvider());
+		final Object[] el = cp.getElements(in);
+		if (el == null || el.length == 0)
+			return;
+		setSelection(new StructuredSelection(el));
+	}
+
+	void doCopy() {
+		final ISelection s = getSelection();
+		if (s.isEmpty() || !(s instanceof IStructuredSelection))
+			return;
+		final IStructuredSelection iss = (IStructuredSelection) s;
+		final Iterator<FileDiff> itr = iss.iterator();
+		final StringBuilder r = new StringBuilder();
+		while (itr.hasNext()) {
+			final FileDiff d = itr.next();
+			if (r.length() > 0)
+				r.append("\n");
+			r.append(d.path);
+		}
+
+		clipboard.setContents(new Object[] { r.toString() },
+				new Transfer[] { TextTransfer.getInstance() }, DND.CLIPBOARD);
 	}
 
 	private void createColumns(final Table rawTable, final TableLayout layout) {

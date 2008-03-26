@@ -16,13 +16,23 @@
  */
 package org.spearce.egit.ui.internal.history;
 
+import java.util.Iterator;
+
 import org.eclipse.jface.viewers.ColumnWeightData;
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.DND;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Point;
@@ -37,6 +47,7 @@ import org.eclipse.swt.widgets.Widget;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIPreferences;
 import org.spearce.egit.ui.UIText;
+import org.spearce.jgit.revplot.PlotCommit;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevFlag;
 
@@ -59,6 +70,8 @@ class CommitGraphTable {
 	}
 
 	private final TableViewer table;
+
+	private Clipboard clipboard;
 
 	private final SWTPlotRenderer renderer;
 
@@ -98,6 +111,13 @@ class CommitGraphTable {
 		table.setLabelProvider(new GraphLabelProvider());
 		table.setContentProvider(new GraphContentProvider());
 		renderer = new SWTPlotRenderer(rawTable.getDisplay());
+
+		clipboard = new Clipboard(rawTable.getDisplay());
+		rawTable.addDisposeListener(new DisposeListener() {
+			public void widgetDisposed(final DisposeEvent e) {
+				clipboard.dispose();
+			}
+		});
 	}
 
 	Control getControl() {
@@ -115,6 +135,28 @@ class CommitGraphTable {
 
 	void removeSelectionChangedListener(final ISelectionChangedListener l) {
 		table.removePostSelectionChangedListener(l);
+	}
+
+	boolean canDoCopy() {
+		return !table.getSelection().isEmpty();
+	}
+
+	void doCopy() {
+		final ISelection s = table.getSelection();
+		if (s.isEmpty() || !(s instanceof IStructuredSelection))
+			return;
+		final IStructuredSelection iss = (IStructuredSelection) s;
+		final Iterator<PlotCommit> itr = iss.iterator();
+		final StringBuilder r = new StringBuilder();
+		while (itr.hasNext()) {
+			final PlotCommit d = itr.next();
+			if (r.length() > 0)
+				r.append("\n");
+			r.append(d.getId().toString());
+		}
+
+		clipboard.setContents(new Object[] { r.toString() },
+				new Transfer[] { TextTransfer.getInstance() }, DND.CLIPBOARD);
 	}
 
 	void setInput(final RevFlag hFlag, final SWTCommitList list,
