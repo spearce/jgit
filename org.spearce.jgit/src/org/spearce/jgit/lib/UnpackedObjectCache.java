@@ -44,8 +44,8 @@ class UnpackedObjectCache {
 
 	private int openByteCount;
 
-	UnpackedObjectCache(final RepositoryConfig cfg) {
-		maxByteCount = cfg.getCore().getDeltaBaseCacheLimit();
+	UnpackedObjectCache(final int deltaBaseCacheLimit) {
+		maxByteCount = deltaBaseCacheLimit;
 
 		cache = new Slot[CACHE_SZ];
 		for (int i = 0; i < CACHE_SZ; i++)

@@ -19,8 +19,8 @@ package org.spearce.egit.core;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.Plugin;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 import org.spearce.egit.core.project.GitProjectData;
 
@@ -28,7 +28,7 @@ import org.spearce.egit.core.project.GitProjectData;
  * The plugin class for the org.spearce.egit.core plugin. This
  * is a singleton class.
  */
-public class Activator extends Plugin {
+public class Activator extends AbstractUIPlugin {
 	private static Activator plugin;
 
 	/**

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2006  Shawn Pearce <spearce@spearce.org>
+ *  Copyright (C) 2008  Shawn Pearce <spearce@spearce.org>
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -16,26 +16,27 @@
  */
 package org.spearce.egit.ui.internal.preferences;
 
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
+import org.spearce.egit.ui.Activator;
 
-/**
- * Git preference page.
- */
-public class GitPreferencePage extends PreferencePage implements
+/** Root preference page for the all of our workspace preferences. */
+public class GitPreferenceRoot extends PreferencePage implements
 		IWorkbenchPreferencePage {
-	protected Control createContents(final Composite parent) {
-		final Label b = new Label(parent, SWT.NONE);
-		b.setText("Hi.  I'm an empty preference page.");
-		return b;
+	protected Control createContents(Composite parent) {
+		return new Composite(parent, SWT.NULL);
+	}
+
+	protected IPreferenceStore doGetPreferenceStore() {
+		return Activator.getDefault().getPreferenceStore();
 	}
 
 	public void init(final IWorkbench workbench) {
-		// Empty
+		// Do nothing.
 	}
 }

@@ -68,15 +68,34 @@ public class WindowCache {
 	 *            configuration they will use default values.
 	 */
 	public WindowCache(final RepositoryConfig cfg) {
-		maxByteCount = cfg.getCore().getPackedGitLimit();
-		szb = bits(cfg.getCore().getPackedGitWindowSize());
+		this(cfg.getCore().getPackedGitLimit(), cfg.getCore()
+				.getPackedGitWindowSize(), cfg.getCore().isPackedGitMMAP(), cfg
+				.getCore().getDeltaBaseCacheLimit());
+	}
+
+	/**
+	 * Create a new window cache, using specified values.
+	 * 
+	 * @param packedGitLimit
+	 *            maximum number of bytes to hold within this instance.
+	 * @param packedGitWindowSize
+	 *            number of bytes per window within the cache.
+	 * @param packedGitMMAP
+	 *            true to enable use of mmap when creating windows.
+	 * @param deltaBaseCacheLimit
+	 *            number of bytes to hold in the delta base cache.
+	 */
+	public WindowCache(final int packedGitLimit, final int packedGitWindowSize,
+			final boolean packedGitMMAP, final int deltaBaseCacheLimit) {
+		maxByteCount = packedGitLimit;
+		szb = bits(packedGitWindowSize);
 		sz = 1 << szb;
 		szm = (1 << szb) - 1;
-		mmap = cfg.getCore().isPackedGitMMAP();
+		mmap = packedGitMMAP;
 		windows = new ByteWindow[maxByteCount / sz];
 		inflaterCache = new Inflater[4];
 		clearedWindowQueue = new ReferenceQueue<Object>();
-		deltaBaseCache = new UnpackedObjectCache(cfg);
+		deltaBaseCache = new UnpackedObjectCache(deltaBaseCacheLimit);
 	}
 
 	synchronized Inflater borrowInflater() {

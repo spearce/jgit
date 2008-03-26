@@ -71,6 +71,24 @@ public class UIText extends NLS {
 	/** */
 	public static String HistoryPage_refreshJob;
 
+	/** */
+	public static String HistoryPreferencePage_title;
+
+	/** */
+	public static String WindowCachePreferencePage_title;
+	/** */
+	public static String WindowCachePreferencePage_packedGitWindowSize;
+	/** */
+	public static String WindowCachePreferencePage_packedGitLimit;
+	/** */
+	public static String WindowCachePreferencePage_deltaBaseCacheLimit;
+	/** */
+	public static String WindowCachePreferencePage_packedGitMMAP;
+	/** */
+	public static String WindowCachePreferencePage_note;
+	/** */
+	public static String WindowCachePreferencePage_needRestart;
+
 	static {
 		initializeMessages(UIText.class.getPackage().getName() + ".uitext",
 				UIText.class);

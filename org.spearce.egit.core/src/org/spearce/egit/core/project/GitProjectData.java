@@ -41,13 +41,14 @@ import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.Preferences;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
+import org.spearce.egit.core.GitCorePreferences;
 import org.spearce.egit.core.GitProvider;
 import org.spearce.jgit.lib.Repository;
-import org.spearce.jgit.lib.RepositoryConfig;
 import org.spearce.jgit.lib.WindowCache;
 
 /**
@@ -242,16 +243,12 @@ public class GitProjectData {
 	 */
 	public static synchronized WindowCache getWindowCache() {
 		if (windows == null) {
-			final RepositoryConfig usr = RepositoryConfig.openUserConfig();
-			try {
-				usr.load();
-			} catch (FileNotFoundException fnfe){
-				usr.create();
-			} catch (IOException err) {
-				usr.create();
-				Activator.logError("Cannot read user .gitconfig", err);
-			}
-			windows = new WindowCache(usr);
+			Preferences p = Activator.getDefault().getPluginPreferences();
+			int wLimit = p.getInt(GitCorePreferences.core_packedGitLimit);
+			int wSize = p.getInt(GitCorePreferences.core_packedGitWindowSize);
+			boolean mmap = p.getBoolean(GitCorePreferences.core_packedGitMMAP);
+			int dbLimit = p.getInt(GitCorePreferences.core_deltaBaseCacheLimit);
+			windows = new WindowCache(wLimit, wSize, mmap, dbLimit);
 		}
 		return windows;
 	}

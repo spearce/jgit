@@ -121,10 +121,19 @@
    </extension>
    
    <extension point="org.eclipse.ui.preferencePages">
-      <page name="%PreferencePage_name"
+      <page name="%GitPreferences_name"
             category="org.eclipse.team.ui.TeamPreferences"
-            class="org.spearce.egit.ui.internal.preferences.GitPreferencePage"
-            id="org.spearce.egit.ui.internal.preferences.GitPreferencePage" />
+            class="org.spearce.egit.ui.internal.preferences.GitPreferenceRoot"
+            id="org.spearce.egit.ui.GitPreferences" />
+
+      <page name="%GitPreferences_HistoryPreferencePage_name"
+            category="org.eclipse.team.ui.TeamPreferences/org.spearce.egit.ui.GitPreferences"
+            class="org.spearce.egit.ui.internal.preferences.HistoryPreferencePage"
+            id="org.spearce.egit.ui.internal.preferences.HistoryPreferencePage" />
+      <page name="%GitPreferences_WindowCachePreferencePage_name"
+            category="org.eclipse.team.ui.TeamPreferences/org.spearce.egit.ui.GitPreferences"
+            class="org.spearce.egit.ui.internal.preferences.WindowCachePreferencePage"
+            id="org.spearce.egit.ui.internal.preferences.WindowCachePreferencePage" />
    </extension>
 
    <extension point="org.eclipse.ui.decorators">
