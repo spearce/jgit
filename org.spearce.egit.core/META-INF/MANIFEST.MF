@@ -12,9 +12,8 @@ Require-Bundle: org.eclipse.core.runtime,
  org.spearce.jgit,
  org.eclipse.core.filesystem,
  org.eclipse.ui
-Export-Package: org.spearce.egit.core.internal.mapping;x-friends:="org.spearce.egit.ui",
+Export-Package: org.spearce.egit.core.internal.storage;x-friends:="org.spearce.egit.ui",
  org.spearce.egit.core,
- org.spearce.egit.core.internal.mapping,
  org.spearce.egit.core.op,
  org.spearce.egit.core.project
 Eclipse-LazyStart: true

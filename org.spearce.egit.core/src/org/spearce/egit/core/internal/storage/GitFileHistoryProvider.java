@@ -14,56 +14,32 @@
  *  License along with this library; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  */
-package org.spearce.egit.core.internal.mapping;
+package org.spearce.egit.core.internal.storage;
 
 import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.team.core.history.IFileHistory;
-import org.eclipse.team.core.history.IFileHistoryProvider;
 import org.eclipse.team.core.history.IFileRevision;
 import org.eclipse.team.core.history.provider.FileHistoryProvider;
-import org.spearce.egit.core.GitWorkspaceFileRevision;
 
 /**
- * A {@link FileHistoryProvider} for Git. This class has methods for
- * retrieving specific versions of a tracked resource.
+ * A {@link FileHistoryProvider} for Git. This class has methods for retrieving
+ * specific versions of a tracked resource.
  */
-public class GitFileHistoryProvider extends FileHistoryProvider implements
-		IFileHistoryProvider {
-
+public class GitFileHistoryProvider extends FileHistoryProvider {
 	public IFileHistory getFileHistoryFor(IResource resource, int flags,
 			IProgressMonitor monitor) {
-		return new GitFileHistory(resource, flags, monitor, false);
+		return new GitFileHistory(resource, flags, monitor);
 	}
 
 	public IFileRevision getWorkspaceFileRevision(IResource resource) {
-		return new GitWorkspaceFileRevision(resource, -1);
+		return new WorkspaceFileRevision(resource);
 	}
 
 	public IFileHistory getFileHistoryFor(IFileStore store, int flags,
 			IProgressMonitor monitor) {
-		// TODO: implement flags and monitor
+		// TODO: implement getFileHistoryFor(IFileStore ...)
 		return null;
 	}
-
-	/**
-	 * Get the history for a given resource as viewed using the specified
-	 * filtering flags.
-	 *
-	 * @param resource
-	 * @param flags
-	 *            See {@link IFileHistoryProvider}
-	 * @param monitor
-	 *            progress monitor
-	 * @param returnAll
-	 *            true if all revisions are returned and interesting revisions marked.
-	 *
-	 * @return a {@link GitFileHistory} object.
-	 *
-	 */
-	public GitFileHistory getHistoryFor(IResource resource, int flags, IProgressMonitor monitor, boolean returnAll) {
-		return new GitFileHistory(resource, flags, monitor, returnAll); // TODO: implement flags
-	}
-
 }

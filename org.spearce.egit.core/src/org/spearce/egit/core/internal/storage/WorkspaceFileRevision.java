@@ -14,37 +14,25 @@
  *  License along with this library; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  */
-package org.spearce.egit.core;
+package org.spearce.egit.core.internal.storage;
 
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IStorage;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.team.core.history.IFileRevision;
-import org.spearce.egit.core.internal.mapping.GitFileRevision;
 
-/**
- * An {@link IFileRevision} for the version in workspace.
- */
-public class GitWorkspaceFileRevision extends GitFileRevision implements
-		IFileRevision {
+/** An {@link IFileRevision} for the current version in the workspace. */
+class WorkspaceFileRevision extends GitFileRevision implements IFileRevision {
+	private final IResource rsrc;
 
-	/**
-	 * Construct a GitWorkspaceFileRevision matching a certain resource. This is
-	 * the same as the resource, which the possible distinction that this is the
-	 * version on disk when unsaved.
-	 *
-	 * @param resource
-	 *            The corresponding workspace resource
-	 * @param count
-	 *            index into the full list of results
-	 */
-	public GitWorkspaceFileRevision(IResource resource, int count) {
-		super(resource, count);
+	WorkspaceFileRevision(final IResource resource) {
+		super(resource.getName());
+		rsrc = resource;
 	}
 
 	public IStorage getStorage(IProgressMonitor monitor) throws CoreException {
-		return new GitStorage(null, getResource());
+		return rsrc instanceof IStorage ? (IStorage) rsrc : null;
 	}
 
 	public boolean isPropertyMissing() {
@@ -69,6 +57,6 @@ public class GitWorkspaceFileRevision extends GitFileRevision implements
 	}
 
 	public String getContentIdentifier() {
-		return "Workspace";
+		return WORKSPACE;
 	}
 }

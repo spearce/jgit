@@ -39,7 +39,9 @@ import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.team.core.history.IFileRevision;
 import org.eclipse.team.internal.ui.history.FileRevisionTypedElement;
+import org.spearce.egit.core.internal.storage.GitFileRevision;
 import org.spearce.egit.ui.UIText;
 import org.spearce.egit.ui.internal.GitCompareFileRevisionEditorInput;
 import org.spearce.jgit.lib.Repository;
@@ -89,15 +91,15 @@ class CommitFileDiffViewer extends TableViewer {
 		final GitCompareFileRevisionEditorInput in;
 
 		final Repository db = walker.getRepository();
-		final String path = d.path;
+		final String p = d.path;
 		final RevCommit c = d.commit;
-		final BlobFileRevision baseFile;
-		final BlobFileRevision nextFile;
+		final IFileRevision baseFile;
+		final IFileRevision nextFile;
 		final ITypedElement base;
 		final ITypedElement next;
 
-		baseFile = new BlobFileRevision(db, c.getParent(0), path, d.blobs[0]);
-		nextFile = new BlobFileRevision(db, c, path, d.blobs[1]);
+		baseFile = GitFileRevision.inCommit(db, c.getParent(0), p, d.blobs[0]);
+		nextFile = GitFileRevision.inCommit(db, c, p, d.blobs[1]);
 
 		base = new FileRevisionTypedElement(baseFile);
 		next = new FileRevisionTypedElement(nextFile);

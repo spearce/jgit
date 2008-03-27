@@ -105,7 +105,7 @@
    <extension
          point="org.eclipse.core.runtime.adapters">
          <factory
-               adaptableType="org.spearce.egit.core.internal.mapping.GitFileHistoryProvider"
+               adaptableType="org.spearce.egit.core.internal.storage.GitFileHistoryProvider"
                class="org.spearce.egit.ui.internal.factories.GitAdapterFactory">
             <adapter
                   type="org.eclipse.team.ui.history.IHistoryPageSource">

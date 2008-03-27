@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2007  Robin Rosenberg
+ *  Copyright (C) 2008  Shawn Pearce <spearce@spearce.org>
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public
@@ -14,28 +14,20 @@
  *  License along with this library; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  */
-package org.spearce.jgit.lib;
+package org.spearce.egit.core.internal.storage;
 
-import java.util.Arrays;
-import java.util.List;
+import org.spearce.jgit.lib.AnyObjectId;
+import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.revwalk.RevWalk;
 
-import junit.framework.TestCase;
+class KidWalk extends RevWalk {
+	KidWalk(final Repository repo) {
+		super(repo);
+	}
 
-public class MappedListTest extends TestCase {
-
-	public void testIt() {
-		List<Integer> x = new MappedList<Float, Integer>(Arrays
-				.asList(new Float[] { new Float(1f), new Float(2.5f),
-						new Float(3.14f) })) {
-			@Override
-			protected Integer map(Float from) {
-				return new Integer((int) from.floatValue() * 2);
-			}
-		};
-
-		assertEquals(3, x.toArray().length);
-		assertEquals(new Integer(2), x.toArray()[0]);
-		assertEquals(new Integer(4), x.toArray()[1]);
-		assertEquals(new Integer(6), x.toArray()[2]);
+	@Override
+	protected RevCommit createCommit(final AnyObjectId id) {
+		return new KidCommit(id);
 	}
 }

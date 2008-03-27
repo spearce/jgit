@@ -20,7 +20,7 @@ import org.eclipse.core.resources.team.IMoveDeleteHook;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.team.core.RepositoryProvider;
 import org.eclipse.team.core.history.IFileHistoryProvider;
-import org.spearce.egit.core.internal.mapping.GitFileHistoryProvider;
+import org.spearce.egit.core.internal.storage.GitFileHistoryProvider;
 import org.spearce.egit.core.project.GitProjectData;
 
 /**
