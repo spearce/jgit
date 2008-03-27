@@ -464,4 +464,11 @@ public class FetchClient {
 			lockRef.commit();
 		}
 	}
+
+	/**
+	 * @return the {@link Repository} we fetch into
+	 */
+	public Repository getRepository() {
+		return repository;
+	}
 }
