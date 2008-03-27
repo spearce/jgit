@@ -22,14 +22,11 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.ObjectWritingException;
@@ -73,9 +70,6 @@ public class Repository {
 	private PackFile[] packs;
 
 	private final WindowCache windows;
-
-	private Map<ObjectId,Reference<Tree>> treeCache = new WeakHashMap<ObjectId,Reference<Tree>>(30000);
-	private Map<ObjectId,Reference<Commit>> commitCache = new WeakHashMap<ObjectId,Reference<Commit>>(30000);
 
 	private GitIndex index;
 
@@ -347,25 +341,12 @@ public class Repository {
 	 * @throws IOException for I/O error or unexpected object type.
 	 */
 	public Commit mapCommit(final ObjectId id) throws IOException {
-		Reference<Commit> retr = commitCache.get(id);
-		if (retr != null) {
-			Commit ret = retr.get();
-			if (ret != null)
-				return ret;
-//			System.out.println("Found a null id, size was "+commitCache.size());
-		}
-
 		final ObjectLoader or = openObject(id);
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
-		if (Constants.OBJ_COMMIT == or.getType()) {
-			Commit ret = new Commit(this, id, raw);
-			// The key must not be the referenced strongly
-			// by the value in WeakHashMaps
-			commitCache.put(id, new SoftReference<Commit>(ret));
-			return ret;
-		}
+		if (Constants.OBJ_COMMIT == or.getType())
+			return new Commit(this, id, raw);
 		throw new IncorrectObjectTypeException(id, Constants.TYPE_COMMIT);
 	}
 
@@ -392,21 +373,12 @@ public class Repository {
 	 * @throws IOException for I/O error or unexpected object type.
 	 */
 	public Tree mapTree(final ObjectId id) throws IOException {
-		Reference<Tree> wret = treeCache.get(id);
-		if (wret != null) {
-			Tree ret = wret.get();
-			if (ret != null)
-				return ret;
-		}
-
 		final ObjectLoader or = openObject(id);
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
 		if (Constants.OBJ_TREE == or.getType()) {
-			Tree ret = new Tree(this, id, raw);
-			treeCache.put(id, new SoftReference<Tree>(ret));
-			return ret;
+			return new Tree(this, id, raw);
 		}
 		if (Constants.OBJ_COMMIT == or.getType())
 			return mapTree(ObjectId.fromString(raw, 5));
