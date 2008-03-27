@@ -29,8 +29,6 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.GitProvider;
-import org.spearce.jgit.errors.MissingObjectException;
-import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
@@ -108,16 +106,6 @@ public class RepositoryMapping {
 		}
 
 		subset = "".equals(subsetRoot) ? null : subsetRoot;
-
-		p = "refs/eclipse/"
-				+ container.getWorkspace().getRoot().getLocation()
-						.lastSegment() + "/";
-		IPath r = container.getFullPath();
-		for (int j = 0; j < r.segmentCount(); j++) {
-			if (j > 0)
-				p += "-";
-			p += r.segment(j);
-		}
 	}
 
 	IPath getContainerPath() {
@@ -179,30 +167,6 @@ public class RepositoryMapping {
 	 */
 	public synchronized void recomputeMerge() {
 		GitProjectData.fireRepositoryChanged(this);
-	}
-
-	/**
-	 * Retrieve the Git tree object matching the currently
-	 * checked out version.
-	 *
-	 * @return the Git Tree matching the container mapped
-	 * @throws IOException on general problems accessing the repository
-	 * @throws MissingObjectException something is missing
-	 */
-	public synchronized Tree mapHEADTree() throws IOException,
-			MissingObjectException {
-		Tree head = getRepository().mapTree(Constants.HEAD);
-		if (head != null) {
-			if (getSubset() != null) {
-				final TreeEntry e = head.findTreeMember(getSubset());
-				e.detachParent();
-				head = e instanceof Tree ? (Tree) e : null;
-			}
-		}
-		if (head == null) {
-			head = new Tree(getRepository());
-		}
-		return head;
 	}
 
 	synchronized void store(final Properties p) {
