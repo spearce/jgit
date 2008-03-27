@@ -186,7 +186,7 @@ public class CommitAction implements IObjectActionDelegate {
 			throw new TeamException("Committing changes", e);
 		}
 		for (IProject proj : listProjects()) {
-			RepositoryMapping.getMapping(proj).recomputeMerge();
+			RepositoryMapping.getMapping(proj).fireRepositoryChanged();
 		}
 	}
 

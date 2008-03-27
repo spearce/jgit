@@ -556,7 +556,7 @@ public class GitProjectData {
 			return;
 		}
 
-		m.recomputeMerge();
+		m.fireRepositoryChanged();
 
 		trace("map " + c + " -> " + m.getRepository());
 		c2mapping.put(c, m);

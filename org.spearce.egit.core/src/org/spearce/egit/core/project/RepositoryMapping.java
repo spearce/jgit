@@ -162,10 +162,11 @@ public class RepositoryMapping {
 	}
 
 	/**
-	 * @deprecated, leftover from the old "index"
-	 * TODO: rename or replace
+	 * Notify registered {@link RepositoryChangeListener}s of a change.
+	 * 
+	 * @see GitProjectData#addRepositoryChangeListener(RepositoryChangeListener)
 	 */
-	public synchronized void recomputeMerge() {
+	public void fireRepositoryChanged() {
 		GitProjectData.fireRepositoryChanged(this);
 	}
 
