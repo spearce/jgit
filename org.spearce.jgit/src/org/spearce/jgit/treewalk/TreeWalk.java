@@ -18,6 +18,7 @@ package org.spearce.jgit.treewalk;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Collections;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
@@ -27,6 +28,8 @@ import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.revwalk.RevTree;
+import org.spearce.jgit.treewalk.filter.PathFilterGroup;
 import org.spearce.jgit.treewalk.filter.TreeFilter;
 
 /**
@@ -48,6 +51,73 @@ import org.spearce.jgit.treewalk.filter.TreeFilter;
  * permitted, even from concurrent threads.
  */
 public class TreeWalk {
+	/**
+	 * Open a tree walk and filter to exactly one path.
+	 * <p>
+	 * The returned tree walk is already positioned on the requested path, so
+	 * the caller should not need to invoke {@link #next()} unless they are
+	 * looking for a possible directory/file name conflict.
+	 * 
+	 * @param db
+	 *            repository to read tree object data from.
+	 * @param path
+	 *            single path to advance the tree walk instance into.
+	 * @param trees
+	 *            one or more trees to walk through.
+	 * @return a new tree walk configured for exactly this one path; null if no
+	 *         path was found in any of the trees.
+	 * @throws IOException
+	 *             reading a pack file or loose object failed.
+	 * @throws CorruptObjectException
+	 *             an tree object could not be read as its data stream did not
+	 *             appear to be a tree, or could not be inflated.
+	 * @throws IncorrectObjectTypeException
+	 *             an object we expected to be a tree was not a tree.
+	 * @throws MissingObjectException
+	 *             a tree object was not found.
+	 */
+	public static TreeWalk forPath(final Repository db, final String path,
+			final ObjectId[] trees) throws MissingObjectException,
+			IncorrectObjectTypeException, CorruptObjectException, IOException {
+		final TreeWalk r = new TreeWalk(db);
+		r.setFilter(PathFilterGroup.createFromStrings(Collections
+				.singleton(path)));
+		r.setRecursive(r.getFilter().shouldBeRecursive());
+		r.reset(trees);
+		return r.next() ? r : null;
+	}
+
+	/**
+	 * Open a tree walk and filter to exactly one path.
+	 * <p>
+	 * The returned tree walk is already positioned on the requested path, so
+	 * the caller should not need to invoke {@link #next()} unless they are
+	 * looking for a possible directory/file name conflict.
+	 * 
+	 * @param db
+	 *            repository to read tree object data from.
+	 * @param path
+	 *            single path to advance the tree walk instance into.
+	 * @param tree
+	 *            the single tree to walk through.
+	 * @return a new tree walk configured for exactly this one path; null if no
+	 *         path was found in any of the trees.
+	 * @throws IOException
+	 *             reading a pack file or loose object failed.
+	 * @throws CorruptObjectException
+	 *             an tree object could not be read as its data stream did not
+	 *             appear to be a tree, or could not be inflated.
+	 * @throws IncorrectObjectTypeException
+	 *             an object we expected to be a tree was not a tree.
+	 * @throws MissingObjectException
+	 *             a tree object was not found.
+	 */
+	public static TreeWalk forPath(final Repository db, final String path,
+			final RevTree tree) throws MissingObjectException,
+			IncorrectObjectTypeException, CorruptObjectException, IOException {
+		return forPath(db, path, new ObjectId[] { tree });
+	}
+
 	private final Repository db;
 
 	private TreeFilter filter;
