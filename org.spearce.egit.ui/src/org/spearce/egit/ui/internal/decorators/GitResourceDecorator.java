@@ -73,7 +73,6 @@ public class GitResourceDecorator extends LabelProvider implements
 		private boolean requested;
 
 		public synchronized void run() {
-			Activator.trace("Invoking decorator");
 			requested = false;
 			PlatformUI.getWorkbench().getDecoratorManager().update(
 					GitResourceDecorator.class.getName());
@@ -110,23 +109,17 @@ public class GitResourceDecorator extends LabelProvider implements
 
 	static class ResCL implements IResourceChangeListener {
 		public void resourceChanged(IResourceChangeEvent event) {
-			Activator.trace("resourceChanged(buildKind="
-					+ event.getBuildKind() + ",type=" + event.getType()
-					+ ",source=" + event.getSource());
 			if (event.getType() != IResourceChangeEvent.POST_CHANGE) {
 				return;
 			}
-			Activator.trace("CLEARING:"+event.getDelta().getResource().getFullPath().toOSString());
 			try {
 				event.getDelta().accept(new IResourceDeltaVisitor() {
 
 					public boolean visit(IResourceDelta delta)
 							throws CoreException {
-						Activator.trace("VCLEARING:"+delta.getResource().getFullPath().toOSString());
 						for (IResource r = delta.getResource(); r.getType() != IResource.ROOT; r = r
 								.getParent()) {
 							try {
-								// Activator.trace("VCLEARING:"+r.getFullPath().toOSString());
 								clearDecorationState(r);
 							} catch (CoreException e) {
 								// TODO Auto-generated catch block
@@ -190,7 +183,6 @@ public class GitResourceDecorator extends LabelProvider implements
 	static final int CHANGED = 1;
 
 	private Boolean isDirty(IResource rsrc) {
-//		Activator.trace("isDirty(" + rsrc.getFullPath().toOSString() +")");
 		try {
 			if (rsrc.getType() == IResource.FILE && Team.isIgnored((IFile)rsrc))
 				return Boolean.FALSE;
@@ -233,8 +225,6 @@ public class GitResourceDecorator extends LabelProvider implements
 		}
 
 		RepositoryMapping mapped = RepositoryMapping.getMapping(rsrc);
-
-		Activator.trace("decorate: " + element);
 
 		// TODO: How do I see a renamed resource?
 		// TODO: Even trickier: when a path change from being blob to tree?
@@ -356,8 +346,6 @@ public class GitResourceDecorator extends LabelProvider implements
 	}
 
 	private void orState(final IResource rsrc, int flag) {
-		// Activator.trace("orState "+rsrc.getFullPath().toOSString()+
-		// ","+flag);
 		if (rsrc == null || rsrc.getType() == IResource.ROOT) {
 			return;
 		}
@@ -366,11 +354,9 @@ public class GitResourceDecorator extends LabelProvider implements
 			Integer dirty = (Integer) rsrc.getSessionProperty(GITFOLDERDIRTYSTATEPROPERTY);
 			if (dirty == null) {
 				rsrc.setSessionProperty(GITFOLDERDIRTYSTATEPROPERTY, new Integer(flag));
-				Activator.trace("SETTING:"+rsrc.getFullPath().toOSString()+" => "+flag);
 				orState(rsrc.getParent(), flag);
 				Display.getDefault().asyncExec(new Runnable() {
 					public void run() {
-						Activator.trace("firing on " + rsrc);
 						// Async could be called after a
 						// project is closed or a
 						// resource is deleted
@@ -384,11 +370,9 @@ public class GitResourceDecorator extends LabelProvider implements
 				if ((dirty.intValue() | flag) != dirty.intValue()) {
 					dirty = new Integer(dirty.intValue() | flag);
 					rsrc.setSessionProperty(GITFOLDERDIRTYSTATEPROPERTY, dirty);
-					Activator.trace("SETTING:"+rsrc.getFullPath().toOSString()+" => "+dirty);
 					orState(rsrc.getParent(), dirty.intValue());
 					Display.getDefault().asyncExec(new Runnable() {
 						public void run() {
-							Activator.trace("firing on " + rsrc);
 							// Async could be called after a
 							// project is closed or a
 							// resource is deleted
@@ -408,7 +392,6 @@ public class GitResourceDecorator extends LabelProvider implements
 	
 	@Override
 	public boolean isLabelProperty(Object element, String property) {
-		Activator.trace("isLabelProperty("+element+","+property+")");
 		return super.isLabelProperty(element, property);
 	}
 }
