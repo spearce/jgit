@@ -28,13 +28,6 @@
                id="org.spearce.egit.ui.internal.actions.Disconnect">
          </action>
          <action
-               class="org.spearce.egit.ui.internal.actions.CheckpointAction"
-               tooltip="%CheckpointAction_tooltip"
-               label="%CheckpointAction_label"
-               menubarPath="team.main/group1"
-               id="org.spearce.egit.ui.internal.actions.CheckpointAction">
-         </action>
-         <action
                class="org.spearce.egit.ui.internal.actions.ResetAction"
                id="org.spearce.egit.ui.internal.actions.ResetAction"
                label="%ResetAction_label"
