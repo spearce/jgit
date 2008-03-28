@@ -16,19 +16,22 @@
  */
 package org.spearce.jgit.pgm;
 
+import java.io.File;
+
 import org.spearce.jgit.lib.FileMode;
+import org.spearce.jgit.treewalk.FileTreeIterator;
 import org.spearce.jgit.treewalk.TreeWalk;
 
 class LsTree extends TextBuiltin {
 	@Override
 	void execute(final String[] args) throws Exception {
 		final TreeWalk walk = new TreeWalk(db);
-		final String name;
 		if (args.length == 0)
-			name = "HEAD^{tree}";
+			walk.addTree(resolve("HEAD^{tree}"));
+		else if (new File(args[0]).isDirectory())
+			walk.addTree(new FileTreeIterator(new File(args[0])));
 		else
-			name = args[0];
-		walk.addTree(resolve(name));
+			walk.addTree(resolve(args[0]));
 		walk.setRecursive(true);
 
 		while (walk.next()) {
