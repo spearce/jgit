@@ -31,6 +31,7 @@ import java.util.Set;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.ObjectWritingException;
 import org.spearce.jgit.stgit.StGitPatch;
+import org.spearce.jgit.util.FS;
 
 /**
  * Represents a Git repository. A repository holds all objects and refs used for
@@ -64,6 +65,8 @@ public class Repository {
 	private final File[] objectsDirs;
 
 	private final File refsDir;
+
+	private final File packedRefsFile;
 
 	private final RepositoryConfig config;
 
@@ -101,13 +104,15 @@ public class Repository {
 	public Repository(final WindowCache wc, final File d) throws IOException {
 		gitDir = d.getAbsoluteFile();
 		try {
-			objectsDirs = readObjectsDirs(new File(gitDir, "objects"), new ArrayList<File>()).toArray(new File[0]);
+			objectsDirs = readObjectsDirs(FS.resolve(gitDir, "objects"),
+					new ArrayList<File>()).toArray(new File[0]);
 		} catch (IOException e) {
 			IOException ex = new IOException("Cannot find all object dirs for " + gitDir);
 			ex.initCause(e);
 			throw ex;
 		}
-		refsDir = new File(gitDir, "refs");
+		refsDir = FS.resolve(gitDir, "refs");
+		packedRefsFile = FS.resolve(gitDir, "packed-refs");
 		packs = new PackFile[0];
 		config = new RepositoryConfig(this);
 
@@ -130,11 +135,11 @@ public class Repository {
 
 	private Collection<File> readObjectsDirs(File objectsDir, Collection<File> ret) throws IOException {
 		ret.add(objectsDir);
-		File alternatesFile = new File(objectsDir,"info/alternates");
-		if (alternatesFile.exists()) {
-			BufferedReader ar = new BufferedReader(new FileReader(alternatesFile));
+		final File altFile = FS.resolve(objectsDir, "info/alternates");
+		if (altFile.exists()) {
+			BufferedReader ar = new BufferedReader(new FileReader(altFile));
 			for (String alt=ar.readLine(); alt!=null; alt=ar.readLine()) {
-				readObjectsDirs(new File(alt), ret);
+				readObjectsDirs(FS.resolve(objectsDir, alt), ret);
 			}
 			ar.close();
 		}
@@ -423,7 +428,7 @@ public class Repository {
 	 */
 	public RefLock lockRef(final String ref) throws IOException {
 		final Ref r = readRef(ref, true);
-		final RefLock l = new RefLock(new File(gitDir, r.getName()));
+		final RefLock l = new RefLock(fileForRef(r.getName()));
 		return l.lock() ? l : null;
 	}
 
@@ -629,7 +634,7 @@ public class Repository {
     public void writeSymref(final String name, final String target)
 			throws IOException {
 		final byte[] content = ("ref: " + target + "\n").getBytes("UTF-8");
-		final RefLock lck = new RefLock(new File(gitDir, name));
+		final RefLock lck = new RefLock(fileForRef(name));
 		if (!lck.lock())
 			throw new ObjectWritingException("Unable to lock " + name);
 		try {
@@ -657,7 +662,7 @@ public class Repository {
 		int depth = 0;
 		REF_READING: do {
 			// prefer unpacked ref to packed ref
-			final File f = new File(getDirectory(), name);
+			final File f = fileForRef(name);
 			if (!f.isFile()) {
 				// look for packed ref, since this one doesn't exist
 				ObjectId id = packedRefs.get(name);
@@ -684,6 +689,12 @@ public class Repository {
 			}
 		} while (depth++ < 5);
 		throw new IOException("Exceed maximum ref depth.  Circular reference?");
+	}
+
+	private File fileForRef(final String name) {
+		if (name.startsWith("refs/"))
+			return new File(refsDir, name.substring("refs/".length()));
+		return new File(gitDir, name);
 	}
 
 	public String toString() {
@@ -803,18 +814,17 @@ public class Repository {
 	private long packedrefstime = 0;
 
 	private void refreshPackedRefsCache() {
-		File file = new File(gitDir, "packed-refs");
-		if (!file.exists()) {
+		if (!packedRefsFile.exists()) {
 			if (packedRefs.size() > 0)
 				packedRefs = new HashMap<String,ObjectId>();
 			return;
 		}
-		if (file.lastModified() == packedrefstime)
+		if (packedRefsFile.lastModified() == packedrefstime)
 			return;
 		Map<String,ObjectId> newPackedRefs = new HashMap<String,ObjectId>();
 		FileReader fileReader = null;
 		try {
-			fileReader = new FileReader(file);
+			fileReader = new FileReader(packedRefsFile);
 			BufferedReader b=new BufferedReader(fileReader);
 			String p;
 			while ((p = b.readLine()) != null) {

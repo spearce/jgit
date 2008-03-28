@@ -32,6 +32,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.spearce.jgit.util.FS;
+
 /**
  * An object representing the Git config file.
  *
@@ -69,7 +71,7 @@ public class RepositoryConfig {
 	private static final String MAGIC_EMPTY_VALUE = "%%magic%%empty%%";
 
 	RepositoryConfig(final Repository repo) {
-		this(openUserConfig(), new File(repo.getDirectory(), "config"));
+		this(openUserConfig(), FS.resolve(repo.getDirectory(), "config"));
 	}
 
 	/**
