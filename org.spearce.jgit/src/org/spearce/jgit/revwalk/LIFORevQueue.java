@@ -16,10 +16,24 @@
  */
 package org.spearce.jgit.revwalk;
 
+import java.io.IOException;
+
+import org.spearce.jgit.errors.IncorrectObjectTypeException;
+import org.spearce.jgit.errors.MissingObjectException;
 
 /** A queue of commits in LIFO order. */
 public class LIFORevQueue extends BlockRevQueue {
 	private Block head;
+
+	/** Create an empty LIFO queue. */
+	public LIFORevQueue() {
+		super();
+	}
+
+	LIFORevQueue(final Generator s) throws MissingObjectException,
+			IncorrectObjectTypeException, IOException {
+		super(s);
+	}
 
 	public void add(final RevCommit c) {
 		Block b = head;
@@ -32,7 +46,7 @@ public class LIFORevQueue extends BlockRevQueue {
 		b.unpop(c);
 	}
 
-	public RevCommit pop() {
+	public RevCommit next() {
 		final Block b = head;
 		if (b == null)
 			return null;

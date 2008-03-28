@@ -31,7 +31,7 @@ import org.spearce.jgit.errors.MissingObjectException;
  * <p>
  * This generator is the second phase of a path limited revision walk and
  * assumes it is receiving RevCommits from {@link TreeFilterPendingGenerator},
- * after they have been fully buffered by {@link BufferGenerator}. The full
+ * after they have been fully buffered by {@link AbstractRevQueue}. The full
  * buffering is necessary to allow the simple loop used within our own
  * {@link #rewrite(RevCommit)} to pull completely through a strand of
  * {@link RevWalk#REWRITE} colored commits and come up with a simplification
@@ -40,7 +40,6 @@ import org.spearce.jgit.errors.MissingObjectException;
  * correctly.
  * 
  * @see TreeFilterPendingGenerator
- * @see BufferGenerator
  */
 class RewriteGenerator extends Generator {
 	private static final int REWRITE = RevWalk.REWRITE;

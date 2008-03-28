@@ -63,14 +63,8 @@ class StartGenerator extends Generator {
 		final EnumSet<RevSort> sort = w.getRevSort();
 		AbstractRevQueue q = pending;
 
-		if (sort.contains(RevSort.COMMIT_TIME_DESC)) {
-			final DateRevQueue bydate = new DateRevQueue();
-			RevCommit c;
-			while ((c = q.pop()) != null)
-				bydate.add(c);
-			q = bydate;
-		}
-
+		if (sort.contains(RevSort.COMMIT_TIME_DESC))
+			q = new DateRevQueue(q);
 		if (tf != TreeFilter.ALL)
 			g = new TreeFilterPendingGenerator(w, q, rf, tf);
 		else
@@ -87,14 +81,14 @@ class StartGenerator extends Generator {
 			// pull through the rewrite chain and produce a dense
 			// output graph.
 			//
-			g = new BufferGenerator(g);
+			g = new FIFORevQueue(g);
 			g = new RewriteGenerator(g);
 		}
 
 		if (sort.contains(RevSort.TOPO) && (g.outputType() & SORT_TOPO) == 0)
 			g = new TopoSortGenerator(g);
 		if (sort.contains(RevSort.REVERSE))
-			g = new BufferGenerator(g, new LIFORevQueue());
+			g = new LIFORevQueue(q);
 
 		w.pending = g;
 		return g.next();

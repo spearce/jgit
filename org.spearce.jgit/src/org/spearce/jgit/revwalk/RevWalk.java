@@ -569,7 +569,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		}
 
 		for (;;) {
-			final RevCommit c = q.pop();
+			final RevCommit c = q.next();
 			if (c == null)
 				break;
 			for (final RevCommit p : c.parents) {

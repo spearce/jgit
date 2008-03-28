@@ -63,7 +63,7 @@ abstract class AbstractPendingGenerator extends Generator {
 			IncorrectObjectTypeException, IOException {
 		try {
 			for (;;) {
-				final RevCommit c = pending.pop();
+				final RevCommit c = pending.next();
 				if (c == null) {
 					walker.curs.release();
 					return null;

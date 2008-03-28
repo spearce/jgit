@@ -16,12 +16,26 @@
  */
 package org.spearce.jgit.revwalk;
 
+import java.io.IOException;
+
+import org.spearce.jgit.errors.IncorrectObjectTypeException;
+import org.spearce.jgit.errors.MissingObjectException;
 
 /** A queue of commits in FIFO order. */
 public class FIFORevQueue extends BlockRevQueue {
 	private Block head;
 
 	private Block tail;
+
+	/** Create an empty FIFO queue. */
+	public FIFORevQueue() {
+		super();
+	}
+
+	FIFORevQueue(final Generator s) throws MissingObjectException,
+			IncorrectObjectTypeException, IOException {
+		super(s);
+	}
 
 	public void add(final RevCommit c) {
 		Block b = tail;
@@ -66,7 +80,7 @@ public class FIFORevQueue extends BlockRevQueue {
 		head = b;
 	}
 
-	public RevCommit pop() {
+	public RevCommit next() {
 		final Block b = head;
 		if (b == null)
 			return null;

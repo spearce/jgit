@@ -16,24 +16,24 @@
  */
 package org.spearce.jgit.revwalk;
 
-abstract class AbstractRevQueue {
-	/**
-	 * Insert the commit pointer at the end of the queue.
-	 * 
-	 * @param c
-	 *            the commit to insert into the queue.
-	 */
-	public abstract void add(final RevCommit c);
+abstract class AbstractRevQueue extends Generator {
+	/** Current output flags set for this generator instance. */
+	int outputType;
 
 	/**
 	 * Remove the first commit from the queue.
 	 * 
 	 * @return the first commit of this queue.
 	 */
-	public abstract RevCommit pop();
+	public abstract RevCommit next();
 
 	/** Remove all entries from this queue. */
 	public abstract void clear();
 
 	abstract boolean everbodyHasFlag(int f);
+
+	@Override
+	int outputType() {
+		return outputType;
+	}
 }

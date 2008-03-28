@@ -16,12 +16,30 @@
  */
 package org.spearce.jgit.revwalk;
 
+import java.io.IOException;
+
+import org.spearce.jgit.errors.IncorrectObjectTypeException;
+import org.spearce.jgit.errors.MissingObjectException;
+
 abstract class BlockRevQueue extends AbstractRevQueue {
 	protected BlockFreeList free;
 
 	/** Create an empty revision queue. */
 	protected BlockRevQueue() {
 		free = new BlockFreeList();
+	}
+
+	BlockRevQueue(final Generator s) throws MissingObjectException,
+			IncorrectObjectTypeException, IOException {
+		free = new BlockFreeList();
+		outputType = s.outputType();
+		s.shareFreeList(this);
+		for (;;) {
+			final RevCommit c = s.next();
+			if (c == null)
+				break;
+			add(c);
+		}
 	}
 
 	/**

@@ -16,11 +16,31 @@
  */
 package org.spearce.jgit.revwalk;
 
+import java.io.IOException;
+
+import org.spearce.jgit.errors.IncorrectObjectTypeException;
+import org.spearce.jgit.errors.MissingObjectException;
+
 /** A queue of commits sorted by commit time order. */
 public class DateRevQueue extends AbstractRevQueue {
 	private Entry head;
 
 	private Entry free;
+
+	/** Create an empty date queue. */
+	public DateRevQueue() {
+		super();
+	}
+
+	DateRevQueue(final Generator s) throws MissingObjectException,
+			IncorrectObjectTypeException, IOException {
+		for (;;) {
+			final RevCommit c = s.next();
+			if (c == null)
+				break;
+			add(c);
+		}
+	}
 
 	public void add(final RevCommit c) {
 		Entry q = head;
@@ -40,7 +60,7 @@ public class DateRevQueue extends AbstractRevQueue {
 		}
 	}
 
-	public RevCommit pop() {
+	public RevCommit next() {
 		final Entry q = head;
 		if (q == null)
 			return null;
@@ -69,6 +89,11 @@ public class DateRevQueue extends AbstractRevQueue {
 				return false;
 		}
 		return true;
+	}
+
+	@Override
+	int outputType() {
+		return outputType | SORT_COMMIT_TIME_DESC;
 	}
 
 	public String toString() {

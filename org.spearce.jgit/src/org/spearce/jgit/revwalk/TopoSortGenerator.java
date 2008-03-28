@@ -71,7 +71,7 @@ class TopoSortGenerator extends Generator {
 	RevCommit next() throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
 		for (;;) {
-			final RevCommit c = pending.pop();
+			final RevCommit c = pending.next();
 			if (c == null)
 				return null;
 
