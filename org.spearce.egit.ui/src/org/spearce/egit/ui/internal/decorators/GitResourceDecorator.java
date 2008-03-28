@@ -199,7 +199,7 @@ public class GitResourceDecorator extends LabelProvider implements
 					return Boolean.FALSE;
 				}
 
-				return new Boolean(mapped.isResourceChanged(rsrc));
+				return Boolean.valueOf(mapped.isResourceChanged(rsrc));
 			}
 			return null; // not mapped
 		} catch (CoreException e) {
@@ -242,7 +242,7 @@ public class GitResourceDecorator extends LabelProvider implements
 							Integer df = (Integer) rsrc
 									.getSessionProperty(GITFOLDERDIRTYSTATEPROPERTY);
 							Boolean f = df == null ? isDirty(rsrc)
-									: new Boolean(df.intValue() == CHANGED);
+									: Boolean.valueOf(df.intValue() == CHANGED);
 							if (f != null) {
 								if (f.booleanValue()) {
 									decoration.addPrefix(">"); // Have not
