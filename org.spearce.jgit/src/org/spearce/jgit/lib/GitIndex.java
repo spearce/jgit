@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
@@ -23,6 +21,7 @@ import java.util.TreeMap;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.NotSupportedException;
+import org.spearce.jgit.util.FS;
 
 /**
  * A representation of the Git index.
@@ -248,58 +247,16 @@ public class GitIndex {
 		}
 	}
 
-	static Method canExecute;
-	static Method setExecute;
-	static {
-		try {
-			canExecute = File.class.getMethod("canExecute", (Class[]) null);
-			setExecute = File.class.getMethod("setExecutable", new Class[] { Boolean.TYPE });
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (NoSuchMethodException e) {
-			System.out.println("This vm cannot handle execute file permission. Feature disabled");
-		}
+	static boolean File_canExecute( File f){
+		return FS.INSTANCE.canExecute(f);
 	}
 
-	/*
-	 * JDK1.6 has file.canExecute
-	 *
-	 * if (file.canExecute() != FileMode.EXECUTABLE_FILE.equals(mode))
-	 * return true;
-	 */
-	boolean File_canExecute(File f) {
-		if (canExecute != null) {
-			try {
-				return ((Boolean) canExecute.invoke(f, (Object[]) null))
-						.booleanValue();
-			} catch (IllegalArgumentException e) {
-				throw new Error(e);
-			} catch (IllegalAccessException e) {
-				throw new Error(e);
-			} catch (InvocationTargetException e) {
-				throw new Error(e);
-			}
-		} else
-			return false;
+	static boolean File_setExecute(File f, boolean value) {
+		return FS.INSTANCE.setExecute(f, value);
 	}
 
-	/*
-	 * JDK1.6 has file.setExecute
-	 */
-	boolean File_setExecute(File f,boolean value) {
-		if (setExecute != null) {
-			try {
-				return ((Boolean) setExecute.invoke(f,
-						new Object[] { new Boolean(value) })).booleanValue();
-			} catch (IllegalArgumentException e) {
-				throw new Error(e);
-			} catch (IllegalAccessException e) {
-				throw new Error(e);
-			} catch (InvocationTargetException e) {
-				throw new Error(e);
-			}
-		} else
-			return false;
+	static boolean File_hasExecute() {
+		return FS.INSTANCE.supportsExecute();
 	}
 
 	static byte[] makeKey(File wd, File f) {
@@ -508,13 +465,13 @@ public class GitIndex {
 					^ FileMode.REGULAR_FILE.getBits();
 
 			if (config_filemode() && FileMode.EXECUTABLE_FILE.equals(mode)) {
-				if (!File_canExecute(file)&& canExecute != null)
+				if (!File_canExecute(file)&& File_hasExecute())
 					return true;
 			} else {
 				if (FileMode.REGULAR_FILE.equals(mode&~exebits)) {
 					if (!file.isFile())
 						return true;
-					if (config_filemode() && File_canExecute(file) && canExecute != null)
+					if (config_filemode() && File_canExecute(file) && File_hasExecute())
 						return true;
 				} else {
 					if (FileMode.SYMLINK.equals(mode)) {
@@ -778,7 +735,7 @@ public class GitIndex {
 		if (j != bytes.length)
 			throw new IOException("Could not write file " + file);
 		channel.close();
-		if (config_filemode() && canExecute != null) {
+		if (config_filemode() && File_hasExecute()) {
 			if (FileMode.EXECUTABLE_FILE.equals(e.mode)) {
 				if (!File_canExecute(file))
 					File_setExecute(file, true);
