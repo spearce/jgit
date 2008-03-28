@@ -339,8 +339,6 @@ public class GitResourceDecorator extends LabelProvider implements
 			//
 			throw new RuntimeException(UIText.Decorator_failedLazyLoading, e);
 		} catch (CoreException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 			throw new RuntimeException(UIText.Decorator_failedLazyLoading, e);
 		}
 	}
