@@ -496,7 +496,10 @@ public class RepositoryConfig {
 					}
 				}
 				break;
-			} else if (Character.isLetterOrDigit((char) c)) {
+			} else if (Character.isLetterOrDigit((char) c) || c == '-') {
+				// From the git-config man page:
+				//     The variable names are case-insensitive and only
+				//     alphanumeric characters and - are allowed.
 				name.append((char) c);
 			} else if ('\n' == c) {
 				r.reset();
