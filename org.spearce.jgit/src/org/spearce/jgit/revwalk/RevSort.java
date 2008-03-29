@@ -47,5 +47,13 @@ public enum RevSort {
 	 * This strategy can be combined with the others described by this type as
 	 * it is usually performed at the very end.
 	 */
-	REVERSE;
+	REVERSE,
+
+	/**
+	 * Include {@link RevFlag#UNINTERESTING} boundary commits after all others.
+	 * <p>
+	 * A boundary commit is a UNINTERESTING parent of an interesting commit that
+	 * was previously output.
+	 */
+	BOUNDARY;
 }

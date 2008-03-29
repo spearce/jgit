@@ -17,10 +17,13 @@
 package org.spearce.jgit.pgm;
 
 import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.revwalk.RevFlag;
 
 class RevList extends RevWalkTextBuiltin {
 	@Override
 	protected void show(final RevCommit c) throws Exception {
+		if (c.has(RevFlag.UNINTERESTING))
+			out.print('-');
 		c.getId().copyTo(outbuffer, out);
 		if (parents)
 			for (int i = 0; i < c.getParentCount(); i++) {

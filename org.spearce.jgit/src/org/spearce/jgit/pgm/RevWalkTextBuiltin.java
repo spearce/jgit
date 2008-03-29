@@ -69,6 +69,8 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 				walk.sort(RevSort.TOPO, true);
 			else if ("--reverse".equals(a))
 				walk.sort(RevSort.REVERSE, true);
+			else if ("--boundary".equals(a))
+				walk.sort(RevSort.BOUNDARY, true);
 			else if ("--parents".equals(a))
 				parents = true;
 			else if ("--total-count".equals(a))

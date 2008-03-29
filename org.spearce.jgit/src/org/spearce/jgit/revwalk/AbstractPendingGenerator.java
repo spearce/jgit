@@ -44,11 +44,14 @@ abstract class AbstractPendingGenerator extends Generator {
 
 	private final RevFilter filter;
 
+	boolean canDispose;
+
 	AbstractPendingGenerator(final RevWalk w, final AbstractRevQueue p,
 			final RevFilter f) {
 		walker = w;
 		pending = p;
 		filter = f;
+		canDispose = true;
 	}
 
 	@Override
@@ -101,7 +104,7 @@ abstract class AbstractPendingGenerator extends Generator {
 
 				if (produce)
 					return c;
-				else
+				else if (canDispose)
 					c.dispose();
 			}
 		} catch (StopWalkException swe) {

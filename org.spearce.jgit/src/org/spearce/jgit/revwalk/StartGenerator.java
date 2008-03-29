@@ -62,6 +62,7 @@ class StartGenerator extends Generator {
 		final TreeFilter tf = w.getTreeFilter();
 		final EnumSet<RevSort> sort = w.getRevSort();
 		AbstractRevQueue q = pending;
+		boolean boundary = sort.contains(RevSort.BOUNDARY);
 
 		if (sort.contains(RevSort.COMMIT_TIME_DESC))
 			q = new DateRevQueue(q);
@@ -74,6 +75,14 @@ class StartGenerator extends Generator {
 					return true;
 				}
 			};
+
+		if (boundary) {
+			// Because the boundary generator may produce uninteresting
+			// commits we cannot allow the pending generator to dispose
+			// of them early.
+			//
+			((AbstractPendingGenerator) g).canDispose = false;
+		}
 
 		if ((g.outputType() & NEEDS_REWRITE) != 0) {
 			// Correction for an upstream NEEDS_REWRITE is to buffer
@@ -89,6 +98,8 @@ class StartGenerator extends Generator {
 			g = new TopoSortGenerator(g);
 		if (sort.contains(RevSort.REVERSE))
 			g = new LIFORevQueue(q);
+		if (boundary)
+			g = new BoundaryGenerator(w, g);
 
 		w.pending = g;
 		return g.next();

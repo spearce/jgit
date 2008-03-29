@@ -22,6 +22,19 @@ package org.spearce.jgit.revwalk;
  * To create a flag use {@link RevWalk#newFlag(String)}.
  */
 public class RevFlag {
+	/**
+	 * Uninteresting by {@link RevWalk#markUninteresting(RevCommit)}.
+	 * <p>
+	 * We flag commits as uninteresting if the caller does not want commits
+	 * reachable from a commit to {@link RevWalk#markUninteresting(RevCommit)}.
+	 * This flag is always carried into the commit's parents and is a key part
+	 * of the "rev-list B --not A" feature; A is marked UNINTERESTING.
+	 * <p>
+	 * This is a static flag. Its RevWalk is not available.
+	 */
+	public static final RevFlag UNINTERESTING = new StaticRevFlag(
+			"UNINTERESTING", RevWalk.UNINTERESTING);
+
 	final RevWalk walker;
 
 	final String name;
@@ -45,5 +58,17 @@ public class RevFlag {
 
 	public String toString() {
 		return name;
+	}
+
+	static class StaticRevFlag extends RevFlag {
+		StaticRevFlag(final String n, final int m) {
+			super(null, n, m);
+		}
+
+		@Override
+		public RevWalk getRevWalk() {
+			throw new UnsupportedOperationException(toString()
+					+ " is a static flag and has no RevWalk instance");
+		}
 	}
 }

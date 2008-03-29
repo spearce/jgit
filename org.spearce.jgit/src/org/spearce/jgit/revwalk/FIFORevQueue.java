@@ -110,6 +110,14 @@ public class FIFORevQueue extends BlockRevQueue {
 		return true;
 	}
 
+	void removeFlag(final int f) {
+		final int not_f = ~f;
+		for (Block b = head; b != null; b = b.next) {
+			for (int i = b.headIndex; i < b.tailIndex; i++)
+				b.commits[i].flags &= not_f;
+		}
+	}
+
 	public String toString() {
 		final StringBuffer s = new StringBuffer();
 		for (Block q = head; q != null; q = q.next) {

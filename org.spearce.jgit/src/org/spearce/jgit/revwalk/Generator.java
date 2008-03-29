@@ -45,6 +45,9 @@ abstract class Generator {
 	/** Topological ordering is enforced (all children before parents). */
 	static final int SORT_TOPO = 1 << 3;
 
+	/** Output may have {@link RevWalk#UNINTERESTING} marked on it. */
+	static final int HAS_UNINTERESTING = 1 << 4;
+
 	/**
 	 * Register a commit as a starting point.
 	 * <p>
