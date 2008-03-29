@@ -16,6 +16,7 @@ import javax.swing.JScrollPane;
 import org.spearce.jgit.awtui.CommitGraphPane;
 import org.spearce.jgit.revplot.PlotWalk;
 import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.revwalk.RevSort;
 import org.spearce.jgit.revwalk.RevWalk;
 
 class Glog extends RevWalkTextBuiltin {
@@ -71,7 +72,9 @@ class Glog extends RevWalkTextBuiltin {
 
 	@Override
 	protected RevWalk createWalk() {
-		return new PlotWalk(db);
+		final PlotWalk w = new PlotWalk(db);
+		w.sort(RevSort.BOUNDARY, true);
+		return w;
 	}
 
 	private String repoName() {

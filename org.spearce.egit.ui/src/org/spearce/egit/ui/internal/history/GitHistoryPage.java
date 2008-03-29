@@ -470,6 +470,7 @@ public class GitHistoryPage extends HistoryPage {
 				|| pathChange(pathFilters, paths)) {
 			currentWalk = new SWTWalk(db);
 			currentWalk.sort(RevSort.COMMIT_TIME_DESC, true);
+			currentWalk.sort(RevSort.BOUNDARY, true);
 			highlightFlag = currentWalk.newFlag("highlight");
 		} else {
 			currentWalk.reset();

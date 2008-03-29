@@ -226,6 +226,13 @@ public class CommitGraphPane extends JTable {
 		}
 
 		@Override
+		protected void drawBoundaryDot(final int x, final int y, final int w,
+				final int h) {
+			g.setColor(Color.lightGray);
+			g.drawOval(x, y, w, h);
+		}
+
+		@Override
 		protected void drawText(final String msg, final int x, final int y) {
 			final int texty = g.getFontMetrics().getHeight()
 					- g.getFontMetrics().getDescent();

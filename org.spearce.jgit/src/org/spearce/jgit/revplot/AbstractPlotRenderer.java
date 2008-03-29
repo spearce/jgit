@@ -16,6 +16,8 @@
  */
 package org.spearce.jgit.revplot;
 
+import org.spearce.jgit.revwalk.RevFlag;
+
 /**
  * Basic commit graph renderer for graphical user interfaces.
  * <p>
@@ -108,7 +110,10 @@ public abstract class AbstractPlotRenderer<TLane extends PlotLane, TColor> {
 
 		if (commit.getChildCount() > 0)
 			drawLine(laneColor(myLane), myLaneX, 0, myLaneX, dotY);
-		drawCommitDot(dotX, dotY, dotSize, dotSize);
+		if (commit.has(RevFlag.UNINTERESTING))
+			drawBoundaryDot(dotX, dotY, dotSize, dotSize);
+		else
+			drawCommitDot(dotX, dotY, dotSize, dotSize);
 
 		final String msg = commit.getShortMessage();
 		final int textx = Math.max(maxCenter + LANE_WIDTH / 2, dotX + dotSize) + 8;
@@ -164,6 +169,22 @@ public abstract class AbstractPlotRenderer<TLane extends PlotLane, TColor> {
 	 *            height of the oval's bounding box.
 	 */
 	protected abstract void drawCommitDot(int x, int y, int w, int h);
+
+	/**
+	 * Draw a single boundary commit (aka uninteresting commit) dot.
+	 * <p>
+	 * Usually a boundary commit dot is a light gray oval with a white center.
+	 * 
+	 * @param x
+	 *            upper left of the oval's bounding box.
+	 * @param y
+	 *            upper left of the oval's bounding box.
+	 * @param w
+	 *            width of the oval's bounding box.
+	 * @param h
+	 *            height of the oval's bounding box.
+	 */
+	protected abstract void drawBoundaryDot(int x, int y, int w, int h);
 
 	/**
 	 * Draw a single line of text.
