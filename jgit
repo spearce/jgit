@@ -2,12 +2,24 @@
 
 cp=`dirname $0`
 cp="$cp/org.spearce.jgit/bin"
+java_args=
 
 # Cleanup paths for Cygwin.
 #
 case "`uname`" in
 CYGWIN*)
 	cp=`cygpath --windows --mixed --path "$cp"`
+	;;
+Darwin)
+	if test -e /System/Library/Frameworks/JavaVM.framework
+	then
+		java_args='
+			-Dcom.apple.mrj.application.apple.menu.about.name=JGit
+			-Dcom.apple.mrj.application.growbox.intrudes=false
+			-Dapple.laf.useScreenMenuBar=true
+			-Xdock:name=JGit
+		'
+	fi
 	;;
 esac
 
@@ -20,4 +32,4 @@ then
 	java="$JAVA_HOME/bin/java"
 fi
 
-exec "$java" org.spearce.jgit.pgm.Main "$@"
+exec "$java" $java_args org.spearce.jgit.pgm.Main "$@"
