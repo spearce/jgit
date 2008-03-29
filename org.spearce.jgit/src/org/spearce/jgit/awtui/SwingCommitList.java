@@ -16,8 +16,8 @@ class SwingCommitList extends PlotCommitList<SwingCommitList.SwingLane> {
 
 	private void repackColors() {
 		colors.add(Color.green);
-		colors.add(Color.red);
 		colors.add(Color.blue);
+		colors.add(Color.red);
 		colors.add(Color.magenta);
 		colors.add(Color.darkGray);
 		colors.add(Color.yellow.darker());
