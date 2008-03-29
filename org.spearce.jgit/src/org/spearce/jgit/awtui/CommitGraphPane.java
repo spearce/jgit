@@ -228,8 +228,16 @@ public class CommitGraphPane extends JTable {
 		}
 
 		@Override
-		protected void drawLine(final Color color, final int x1, final int y1,
-				final int x2, final int y2, int width) {
+		protected void drawLine(final Color color, int x1, int y1, int x2,
+				int y2, int width) {
+			if (y1 == y2) {
+				x1 -= width / 2;
+				x2 -= width / 2;
+			} else if (x1 == x2) {
+				y1 -= width / 2;
+				y2 -= width / 2;
+			}
+
 			g.setColor(color);
 			g.setStroke(stroke(width));
 			g.drawLine(x1, y1, x2, y2);

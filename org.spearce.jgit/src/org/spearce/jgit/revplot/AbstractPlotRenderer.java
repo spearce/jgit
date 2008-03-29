@@ -64,7 +64,7 @@ public abstract class AbstractPlotRenderer<TLane extends PlotLane, TColor> {
 	 *            total height (in pixels) of this cell.
 	 */
 	protected void paintCommit(final PlotCommit<TLane> commit, final int h) {
-		final int dotSize = Math.max(0, Math.min(LANE_WIDTH - 2, h - 8)) + 1;
+		final int dotSize = computeDotSize(h);
 		final TLane myLane = commit.getLane();
 		final int myLaneX = laneC(myLane);
 		final TColor myColor = laneColor(myLane);
@@ -122,6 +122,12 @@ public abstract class AbstractPlotRenderer<TLane extends PlotLane, TColor> {
 		final String msg = commit.getShortMessage();
 		final int textx = Math.max(maxCenter + LANE_WIDTH / 2, dotX + dotSize) + 8;
 		drawText(msg, textx, h / 2);
+	}
+
+	private int computeDotSize(final int h) {
+		int d = (int) (Math.min(h, LANE_WIDTH) * 0.50f);
+		d += (d & 1);
+		return d;
 	}
 
 	/**
