@@ -22,6 +22,8 @@ import java.util.List;
 
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.Preferences;
+import org.eclipse.core.runtime.Preferences.IPropertyChangeListener;
+import org.eclipse.core.runtime.Preferences.PropertyChangeEvent;
 import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
@@ -315,39 +317,32 @@ public class GitHistoryPage extends HistoryPage {
 	}
 
 	private IAction createCommentWrap() {
-		final IAction r = new Action(UIText.ResourceHistory_toggleCommentWrap) {
-			public void run() {
-				final boolean wrap = isChecked();
+		final BooleanPrefAction a = new BooleanPrefAction(PREF_COMMENT_WRAP,
+				UIText.ResourceHistory_toggleCommentWrap) {
+			void apply(boolean wrap) {
 				commentViewer.getTextWidget().setWordWrap(wrap);
-				prefs.setValue(PREF_COMMENT_WRAP, wrap);
 			}
 		};
-		final boolean wrap = prefs.getBoolean(PREF_COMMENT_WRAP);
-		r.setChecked(wrap);
-		commentViewer.getTextWidget().setWordWrap(wrap);
-		return r;
+		a.apply(a.isChecked());
+		return a;
 	}
 
 	private IAction createShowComment() {
-		final IAction r = new Action(UIText.ResourceHistory_toggleRevComment) {
-			public void run() {
-				prefs.setValue(SHOW_COMMENT, isChecked());
+		return new BooleanPrefAction(SHOW_COMMENT,
+				UIText.ResourceHistory_toggleRevComment) {
+			void apply(final boolean value) {
 				layout();
 			}
 		};
-		r.setChecked(prefs.getBoolean(SHOW_COMMENT));
-		return r;
 	}
 
 	private IAction createShowFiles() {
-		final IAction r = new Action(UIText.ResourceHistory_toggleRevDetail) {
-			public void run() {
-				prefs.setValue(SHOW_FILES, isChecked());
+		return new BooleanPrefAction(SHOW_FILES,
+				UIText.ResourceHistory_toggleRevDetail) {
+			void apply(final boolean value) {
 				layout();
 			}
 		};
-		r.setChecked(prefs.getBoolean(SHOW_FILES));
-		return r;
 	}
 
 	private void createStandardActions() {
@@ -390,6 +385,11 @@ public class GitHistoryPage extends HistoryPage {
 		cancelRefreshJob();
 		if (popupMgr != null) {
 			for (final IContributionItem i : popupMgr.getItems()) {
+				if (i instanceof ActionFactory.IWorkbenchAction)
+					((ActionFactory.IWorkbenchAction) i).dispose();
+			}
+			for (final IContributionItem i : getSite().getActionBars()
+					.getMenuManager().getItems()) {
 				if (i instanceof ActionFactory.IWorkbenchAction)
 					((ActionFactory.IWorkbenchAction) i).dispose();
 			}
@@ -617,6 +617,36 @@ public class GitHistoryPage extends HistoryPage {
 
 	public String getDescription() {
 		return getName();
+	}
+
+	private abstract class BooleanPrefAction extends Action implements
+			IPropertyChangeListener, ActionFactory.IWorkbenchAction {
+		private final String prefName;
+
+		BooleanPrefAction(final String pn, final String text) {
+			setText(text);
+			prefName = pn;
+			prefs.addPropertyChangeListener(this);
+			setChecked(prefs.getBoolean(prefName));
+		}
+
+		public void run() {
+			prefs.setValue(prefName, isChecked());
+			apply(isChecked());
+		}
+
+		abstract void apply(boolean value);
+
+		public void propertyChange(final PropertyChangeEvent event) {
+			if (prefName.equals(event.getProperty())) {
+				setChecked(prefs.getBoolean(prefName));
+				apply(isChecked());
+			}
+		}
+
+		public void dispose() {
+			prefs.removePropertyChangeListener(this);
+		}
 	}
 
 	private class TextAction extends Action implements FocusListener,
