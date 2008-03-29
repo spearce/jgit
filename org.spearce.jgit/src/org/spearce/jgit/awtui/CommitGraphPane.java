@@ -1,9 +1,12 @@
 package org.spearce.jgit.awtui;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Polygon;
+import java.awt.Stroke;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -186,17 +189,32 @@ public class CommitGraphPane extends JTable {
 		}
 	}
 
+	static final Stroke[] strokeCache;
+
+	static {
+		strokeCache = new Stroke[4];
+		for (int i = 1; i < strokeCache.length; i++)
+			strokeCache[i] = new BasicStroke(i);
+	}
+
+	static Stroke stroke(final int width) {
+		if (width < strokeCache.length)
+			return strokeCache[width];
+		return new BasicStroke(width);
+	}
+
 	final class AWTPlotRenderer extends AbstractPlotRenderer<SwingLane, Color> {
+
 		final GraphCellRender cell;
 
-		Graphics g;
+		Graphics2D g;
 
 		AWTPlotRenderer(final GraphCellRender c) {
 			cell = c;
 		}
 
 		void paint(final Graphics in, final PlotCommit<SwingLane> commit) {
-			g = in.create();
+			g = (Graphics2D) in.create();
 			try {
 				final int h = cell.getHeight();
 				g.setColor(cell.getBackground());
@@ -211,8 +229,9 @@ public class CommitGraphPane extends JTable {
 
 		@Override
 		protected void drawLine(final Color color, final int x1, final int y1,
-				final int x2, final int y2) {
+				final int x2, final int y2, int width) {
 			g.setColor(color);
+			g.setStroke(stroke(width));
 			g.drawLine(x1, y1, x2, y2);
 		}
 
@@ -220,6 +239,7 @@ public class CommitGraphPane extends JTable {
 		protected void drawCommitDot(final int x, final int y, final int w,
 				final int h) {
 			g.setColor(Color.blue);
+			g.setStroke(strokeCache[1]);
 			g.fillOval(x, y, w, h);
 			g.setColor(Color.black);
 			g.drawOval(x, y, w, h);
@@ -228,7 +248,10 @@ public class CommitGraphPane extends JTable {
 		@Override
 		protected void drawBoundaryDot(final int x, final int y, final int w,
 				final int h) {
-			g.setColor(Color.lightGray);
+			g.setColor(cell.getBackground());
+			g.setStroke(strokeCache[1]);
+			g.fillOval(x, y, w, h);
+			g.setColor(Color.black);
 			g.drawOval(x, y, w, h);
 		}
 

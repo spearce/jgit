@@ -62,8 +62,9 @@ class SWTPlotRenderer extends AbstractPlotRenderer<SWTLane, Color> {
 	}
 
 	protected void drawLine(final Color color, final int x1, final int y1,
-			final int x2, final int y2) {
+			final int x2, final int y2, final int width) {
 		g.setForeground(color);
+		g.setLineWidth(width);
 		g.drawLine(cellX + x1, cellY + y1, cellX + x2, cellY + y2);
 	}
 
@@ -71,6 +72,7 @@ class SWTPlotRenderer extends AbstractPlotRenderer<SWTLane, Color> {
 			final int h) {
 		g.setBackground(sys_blue);
 		g.setForeground(sys_black);
+		g.setLineWidth(1);
 		g.fillOval(cellX + x, cellY + y, w, h);
 		g.drawOval(cellX + x, cellY + y, w, h);
 	}
@@ -78,6 +80,9 @@ class SWTPlotRenderer extends AbstractPlotRenderer<SWTLane, Color> {
 	protected void drawBoundaryDot(final int x, final int y, final int w,
 			final int h) {
 		g.setForeground(sys_gray);
+		g.setBackground(cellBG);
+		g.setLineWidth(1);
+		g.fillOval(cellX + x, cellY + y, w, h);
 		g.drawOval(cellX + x, cellY + y, w, h);
 	}
 

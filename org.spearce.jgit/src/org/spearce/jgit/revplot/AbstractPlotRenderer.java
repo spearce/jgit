@@ -49,7 +49,9 @@ import org.spearce.jgit.revwalk.RevFlag;
  *            type of color object used by the graphics library.
  */
 public abstract class AbstractPlotRenderer<TLane extends PlotLane, TColor> {
-	private static final int LANE_WIDTH = 15;
+	private static final int LANE_WIDTH = 14;
+
+	private static final int LINE_WIDTH = 2;
 
 	private static final int LEFT_PAD = 2;
 
@@ -62,15 +64,16 @@ public abstract class AbstractPlotRenderer<TLane extends PlotLane, TColor> {
 	 *            total height (in pixels) of this cell.
 	 */
 	protected void paintCommit(final PlotCommit<TLane> commit, final int h) {
-		final int dotSize = Math.max(0, Math.min(LANE_WIDTH - 2, h - 6));
+		final int dotSize = Math.max(0, Math.min(LANE_WIDTH - 2, h - 8)) + 1;
 		final TLane myLane = commit.getLane();
 		final int myLaneX = laneC(myLane);
+		final TColor myColor = laneColor(myLane);
 
 		int maxCenter = 0;
 		for (final TLane passingLane : (TLane[]) commit.passingLanes) {
 			final int cx = laneC(passingLane);
 			final TColor c = laneColor(passingLane);
-			drawLine(c, cx, 0, cx, h);
+			drawLine(c, cx, 0, cx, h, LINE_WIDTH);
 			maxCenter = Math.max(maxCenter, cx);
 		}
 
@@ -92,24 +95,25 @@ public abstract class AbstractPlotRenderer<TLane extends PlotLane, TColor> {
 			if (Math.abs(myLaneX - cx) > LANE_WIDTH) {
 				if (myLaneX < cx) {
 					final int ix = cx - LANE_WIDTH / 2;
-					drawLine(pColor, myLaneX, h / 2, ix, h / 2);
-					drawLine(pColor, ix, h / 2, cx, h);
+					drawLine(pColor, myLaneX, h / 2, ix, h / 2, LINE_WIDTH);
+					drawLine(pColor, ix, h / 2, cx, h, LINE_WIDTH);
 				} else {
 					final int ix = cx + LANE_WIDTH / 2;
-					drawLine(pColor, myLaneX, h / 2, ix, h / 2);
-					drawLine(pColor, ix, h / 2, cx, h);
+					drawLine(pColor, myLaneX, h / 2, ix, h / 2, LINE_WIDTH);
+					drawLine(pColor, ix, h / 2, cx, h, LINE_WIDTH);
 				}
 			} else {
-				drawLine(pColor, myLaneX, h / 2, cx, h);
+				drawLine(pColor, myLaneX, h / 2, cx, h, LINE_WIDTH);
 			}
 			maxCenter = Math.max(maxCenter, cx);
 		}
 
-		final int dotX = myLaneX - dotSize / 2;
+		final int dotX = myLaneX - dotSize / 2 - 1;
 		final int dotY = (h - dotSize) / 2;
 
 		if (commit.getChildCount() > 0)
-			drawLine(laneColor(myLane), myLaneX, 0, myLaneX, dotY);
+			drawLine(myColor, myLaneX, 0, myLaneX, dotY, LINE_WIDTH);
+
 		if (commit.has(RevFlag.UNINTERESTING))
 			drawBoundaryDot(dotX, dotY, dotSize, dotSize);
 		else
@@ -149,9 +153,11 @@ public abstract class AbstractPlotRenderer<TLane extends PlotLane, TColor> {
 	 *            ending X coordinate, 0 based.
 	 * @param y2
 	 *            ending Y coordinate, 0 based.
+	 * @param width
+	 *            number of pixels wide for the line. Always at least 1.
 	 */
 	protected abstract void drawLine(TColor color, int x1, int y1, int x2,
-			int y2);
+			int y2, int width);
 
 	/**
 	 * Draw a single commit dot.
