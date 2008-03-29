@@ -64,6 +64,14 @@ class StartGenerator extends Generator {
 		AbstractRevQueue q = pending;
 		boolean boundary = sort.contains(RevSort.BOUNDARY);
 
+		if (boundary && !q.anybodyHasFlag(RevWalk.UNINTERESTING)) {
+			// If we were not fed uninteresting commits we will never
+			// construct a boundary. There is no reason to include the
+			// extra overhead associated with that in our pipeline.
+			//
+			boundary = false;
+		}
+
 		if (sort.contains(RevSort.COMMIT_TIME_DESC))
 			q = new DateRevQueue(q);
 		if (tf != TreeFilter.ALL)

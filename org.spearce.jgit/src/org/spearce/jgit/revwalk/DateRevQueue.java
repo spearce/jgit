@@ -91,6 +91,14 @@ public class DateRevQueue extends AbstractRevQueue {
 		return true;
 	}
 
+	boolean anybodyHasFlag(final int f) {
+		for (Entry q = head; q != null; q = q.next) {
+			if ((q.commit.flags & f) != 0)
+				return true;
+		}
+		return false;
+	}
+
 	@Override
 	int outputType() {
 		return outputType | SORT_COMMIT_TIME_DESC;

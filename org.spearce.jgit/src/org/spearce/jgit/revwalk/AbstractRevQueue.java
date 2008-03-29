@@ -32,6 +32,8 @@ abstract class AbstractRevQueue extends Generator {
 
 	abstract boolean everbodyHasFlag(int f);
 
+	abstract boolean anybodyHasFlag(int f);
+
 	@Override
 	int outputType() {
 		return outputType;
