@@ -147,7 +147,8 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 				contentDigest.update(hblob);
 				contentDigest.update((byte) ' ');
 
-				long sz = e.getLength();
+				final long blobLength = e.getLength();
+				long sz = blobLength;
 				if (sz == 0) {
 					contentDigest.update((byte) '0');
 				} else {
@@ -166,7 +167,10 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 					if (r <= 0)
 						break;
 					contentDigest.update(contentReadBuffer, 0, r);
+					sz += r;
 				}
+				if (sz != blobLength)
+					return zeroid;
 				return contentDigest.digest();
 			} finally {
 				try {
