@@ -87,9 +87,12 @@ public class FileTreeIterator extends WorkingTreeIterator {
 		FileEntry(final File f) {
 			file = f;
 
-			if (f.isDirectory())
-				mode = FileMode.TREE;
-			else if (FS.INSTANCE.canExecute(file))
+			if (f.isDirectory()) {
+				if (new File(f, ".git").isDirectory())
+					mode = FileMode.GITLINK;
+				else
+					mode = FileMode.TREE;
+			} else if (FS.INSTANCE.canExecute(file))
 				mode = FileMode.EXECUTABLE_FILE;
 			else
 				mode = FileMode.REGULAR_FILE;
