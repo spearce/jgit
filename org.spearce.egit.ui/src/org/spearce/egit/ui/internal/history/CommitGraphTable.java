@@ -88,7 +88,7 @@ class CommitGraphTable {
 		hFont = highlightFont();
 
 		final Table rawTable = new Table(parent, SWT.MULTI | SWT.H_SCROLL
-				| SWT.V_SCROLL | SWT.BORDER | SWT.FULL_SELECTION);
+				| SWT.V_SCROLL | SWT.BORDER | SWT.FULL_SELECTION | SWT.VIRTUAL);
 		rawTable.setHeaderVisible(true);
 		rawTable.setLinesVisible(false);
 		rawTable.setFont(nFont);
