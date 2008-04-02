@@ -126,6 +126,31 @@ public final class NB {
 				| decodeUInt32(intbuf, offset + 4);
 	}
 
+	/**
+	 * Write a 32 bit integer as a sequence of 4 bytes (network byte order).
+	 * 
+	 * @param intbuf
+	 *            buffer to write the 4 bytes of data into.
+	 * @param offset
+	 *            position within the buffer to begin writing to. This position
+	 *            and the next 3 bytes after it (for a total of 4 bytes) will be
+	 *            replaced.
+	 * @param v
+	 *            the value to write.
+	 */
+	public static void encodeInt32(final byte[] intbuf, final int offset, int v) {
+		intbuf[offset + 3] = (byte) v;
+		v >>>= 8;
+
+		intbuf[offset + 2] = (byte) v;
+		v >>>= 8;
+
+		intbuf[offset + 1] = (byte) v;
+		v >>>= 8;
+
+		intbuf[offset] = (byte) v;
+	}
+
 	private NB() {
 		// Don't create instances of a static only utility.
 	}
