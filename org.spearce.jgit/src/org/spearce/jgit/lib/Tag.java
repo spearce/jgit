@@ -177,7 +177,7 @@ public class Tag {
 		} else {
 			id = objId;
 		}
-		final RefLock lck = objdb.lockRef("refs/tags/" + getTag());
+		final LockFile lck = objdb.lockRef("refs/tags/" + getTag());
 		if (lck == null)
 			throw new ObjectWritingException("Unable to lock tag " + getTag());
 		lck.write(id);

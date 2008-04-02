@@ -51,7 +51,7 @@ import org.spearce.jgit.lib.IndexDiff;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.PersonIdent;
-import org.spearce.jgit.lib.RefLock;
+import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.RefLogWriter;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
@@ -235,7 +235,7 @@ public class CommitAction implements IObjectActionDelegate {
 			commit.setCommitId(writer.writeCommit(commit));
 			System.out.println("Commit iD: " + commit.getCommitId());
 
-			RefLock lockRef = repo.lockRef("HEAD");
+			LockFile lockRef = repo.lockRef("HEAD");
 			lockRef.write(commit.getCommitId());
 			if (lockRef.commit()) {
 				System.out.println("Success!!!!");

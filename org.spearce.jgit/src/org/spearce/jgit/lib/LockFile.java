@@ -34,7 +34,7 @@ import java.nio.channels.OverlappingFileLockException;
  * once Git tries to atomically create the new temporary file under a well-known
  * name.
  */
-public class RefLock {
+public class LockFile {
 	private final File ref;
 
 	private final File lck;
@@ -51,7 +51,7 @@ public class RefLock {
 	 * @param f
 	 *            the file that will be locked.
 	 */
-	public RefLock(final File f) {
+	public LockFile(final File f) {
 		ref = f;
 		lck = new File(ref.getParentFile(), ref.getName() + ".lock");
 	}

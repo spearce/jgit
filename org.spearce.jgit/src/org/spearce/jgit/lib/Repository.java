@@ -426,9 +426,9 @@ public class Repository {
 	 * @return a locked ref
 	 * @throws IOException
 	 */
-	public RefLock lockRef(final String ref) throws IOException {
+	public LockFile lockRef(final String ref) throws IOException {
 		final Ref r = readRef(ref, true);
-		final RefLock l = new RefLock(fileForRef(r.getName()));
+		final LockFile l = new LockFile(fileForRef(r.getName()));
 		return l.lock() ? l : null;
 	}
 
@@ -634,7 +634,7 @@ public class Repository {
     public void writeSymref(final String name, final String target)
 			throws IOException {
 		final byte[] content = ("ref: " + target + "\n").getBytes("UTF-8");
-		final RefLock lck = new RefLock(fileForRef(name));
+		final LockFile lck = new LockFile(fileForRef(name));
 		if (!lck.lock())
 			throw new ObjectWritingException("Unable to lock " + name);
 		try {

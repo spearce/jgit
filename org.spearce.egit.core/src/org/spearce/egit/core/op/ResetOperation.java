@@ -29,7 +29,7 @@ import org.eclipse.team.core.TeamException;
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.ObjectId;
-import org.spearce.jgit.lib.RefLock;
+import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.RefLogWriter;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tag;
@@ -171,7 +171,7 @@ public class ResetOperation implements IWorkspaceRunnable {
 	}
 
 	private void writeRef() throws TeamException {
-		RefLock lockRef;
+		LockFile lockRef;
 		try {
 			lockRef = repository.lockRef("HEAD");
 		} catch (IOException e) {
