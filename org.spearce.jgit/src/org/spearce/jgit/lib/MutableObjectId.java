@@ -18,6 +18,8 @@ package org.spearce.jgit.lib;
 
 import java.io.UnsupportedEncodingException;
 
+import org.spearce.jgit.util.NB;
+
 /**
  * A mutable SHA-1 abstraction.
  */
@@ -43,11 +45,11 @@ public class MutableObjectId extends AnyObjectId {
 	 *            position to read the first byte of data from.
 	 */
 	public void fromRaw(final byte[] bs, final int p) {
-		w1 = rawUInt32(bs, p);
-		w2 = rawUInt32(bs, p + 4);
-		w3 = rawUInt32(bs, p + 8);
-		w4 = rawUInt32(bs, p + 12);
-		w5 = rawUInt32(bs, p + 16);
+		w1 = NB.decodeInt32(bs, p);
+		w2 = NB.decodeInt32(bs, p + 4);
+		w3 = NB.decodeInt32(bs, p + 8);
+		w4 = NB.decodeInt32(bs, p + 12);
+		w5 = NB.decodeInt32(bs, p + 16);
 	}
 
 	/**

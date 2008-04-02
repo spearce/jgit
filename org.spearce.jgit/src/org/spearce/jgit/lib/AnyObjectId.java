@@ -22,6 +22,8 @@ import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import org.spearce.jgit.util.NB;
+
 /**
  * A (possibly mutable) SHA-1 abstraction.
  * <p>
@@ -75,16 +77,6 @@ public abstract class AnyObjectId implements Comparable {
 				&& firstObjectId.w4 == secondObjectId.w4
 				&& firstObjectId.w5 == secondObjectId.w5
 				&& firstObjectId.w1 == secondObjectId.w1;
-	}
-
-	static final int rawUInt32(final byte[] rawBuffer, int offset) {
-		int r = rawBuffer[offset] << 8;
-
-		r |= rawBuffer[offset + 1] & 0xff;
-		r <<= 8;
-
-		r |= rawBuffer[offset + 2] & 0xff;
-		return (r << 8) | (rawBuffer[offset + 3] & 0xff);
 	}
 
 	static final int hexUInt32(final byte[] bs, final int p) {
@@ -141,23 +133,23 @@ public abstract class AnyObjectId implements Comparable {
 
 		int cmp;
 
-		cmp = compareUInt32(w1, other.w1);
+		cmp = NB.compareUInt32(w1, other.w1);
 		if (cmp != 0)
 			return cmp;
 
-		cmp = compareUInt32(w2, other.w2);
+		cmp = NB.compareUInt32(w2, other.w2);
 		if (cmp != 0)
 			return cmp;
 
-		cmp = compareUInt32(w3, other.w3);
+		cmp = NB.compareUInt32(w3, other.w3);
 		if (cmp != 0)
 			return cmp;
 
-		cmp = compareUInt32(w4, other.w4);
+		cmp = NB.compareUInt32(w4, other.w4);
 		if (cmp != 0)
 			return cmp;
 
-		return compareUInt32(w5, other.w5);
+		return NB.compareUInt32(w5, other.w5);
 	}
 
 	public int compareTo(final Object other) {
@@ -167,52 +159,45 @@ public abstract class AnyObjectId implements Comparable {
 	int compareTo(final byte[] bs, final int p) {
 		int cmp;
 
-		cmp = compareUInt32(w1, rawUInt32(bs, p));
+		cmp = NB.compareUInt32(w1, NB.decodeInt32(bs, p));
 		if (cmp != 0)
 			return cmp;
 
-		cmp = compareUInt32(w2, rawUInt32(bs, p + 4));
+		cmp = NB.compareUInt32(w2, NB.decodeInt32(bs, p + 4));
 		if (cmp != 0)
 			return cmp;
 
-		cmp = compareUInt32(w3, rawUInt32(bs, p + 8));
+		cmp = NB.compareUInt32(w3, NB.decodeInt32(bs, p + 8));
 		if (cmp != 0)
 			return cmp;
 
-		cmp = compareUInt32(w4, rawUInt32(bs, p + 12));
+		cmp = NB.compareUInt32(w4, NB.decodeInt32(bs, p + 12));
 		if (cmp != 0)
 			return cmp;
 
-		return compareUInt32(w5, rawUInt32(bs, p + 16));
+		return NB.compareUInt32(w5, NB.decodeInt32(bs, p + 16));
 	}
 
 	int compareTo(final int[] bs, final int p) {
 		int cmp;
 
-		cmp = compareUInt32(w1, bs[p]);
+		cmp = NB.compareUInt32(w1, bs[p]);
 		if (cmp != 0)
 			return cmp;
 
-		cmp = compareUInt32(w2, bs[p + 1]);
+		cmp = NB.compareUInt32(w2, bs[p + 1]);
 		if (cmp != 0)
 			return cmp;
 
-		cmp = compareUInt32(w3, bs[p + 2]);
+		cmp = NB.compareUInt32(w3, bs[p + 2]);
 		if (cmp != 0)
 			return cmp;
 
-		cmp = compareUInt32(w4, bs[p + 3]);
+		cmp = NB.compareUInt32(w4, bs[p + 3]);
 		if (cmp != 0)
 			return cmp;
 
-		return compareUInt32(w5, bs[p + 4]);
-	}
-
-	private static final int compareUInt32(final int a, final int b) {
-		final int cmp = (a >>> 1) - (b >>> 1);
-		if (cmp != 0)
-			return cmp;
-		return (a & 1) - (b & 1);
+		return NB.compareUInt32(w5, bs[p + 4]);
 	}
 
 	public int hashCode() {

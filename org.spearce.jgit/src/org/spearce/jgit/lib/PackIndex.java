@@ -16,12 +16,12 @@
  */
 package org.spearce.jgit.lib;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
+
+import org.spearce.jgit.util.NB;
 
 /**
  * Access path to locate objects by {@link ObjectId} in a {@link PackFile}.
@@ -54,9 +54,9 @@ abstract class PackIndex {
 		final FileInputStream fd = new FileInputStream(idxFile);
 		try {
 			final byte[] hdr = new byte[8];
-			readFully(fd, 0, hdr);
+			NB.readFully(fd, hdr, 0, hdr.length);
 			if (isTOC(hdr)) {
-				final int v = (int) decodeUInt32(4, hdr);
+				final int v = NB.decodeInt32(hdr, 4);
 				switch (v) {
 				case 2:
 					return new PackIndexV2(fd);
@@ -82,68 +82,6 @@ abstract class PackIndex {
 
 	private static boolean isTOC(final byte[] h) {
 		return h[0] == -1 && h[1] == 't' && h[2] == 'O' && h[3] == 'c';
-	}
-
-	/**
-	 * Convert sequence of 4 bytes (network byte order) into unsigned value.
-	 *
-	 * @param offset
-	 *            position within the buffer to begin reading from. This
-	 *            position and the next 3 bytes after it (for a total of 4
-	 *            bytes) will be read.
-	 * @param intbuf
-	 *            buffer to acquire the 4 bytes of data from.
-	 * @return unsigned integer value that matches the 32 bits read.
-	 */
-	protected static long decodeUInt32(final int offset, final byte[] intbuf) {
-		int low = (intbuf[offset + 1] & 0xff) << 8;
-		low |= (intbuf[offset + 2] & 0xff);
-		low <<= 8;
-
-		low |= (intbuf[offset + 3] & 0xff);
-		return ((long) (intbuf[offset] & 0xff)) << 24 | low;
-	}
-
-	/**
-	 * Convert sequence of 8 bytes (network byte order) into unsigned value.
-	 *
-	 * @param offset
-	 *            position within the buffer to begin reading from. This
-	 *            position and the next 7 bytes after it (for a total of 8
-	 *            bytes) will be read.
-	 * @param intbuf
-	 *            buffer to acquire the 8 bytes of data from.
-	 * @return unsigned integer value that matches the 64 bits read.
-	 */
-	protected static long decodeUInt64(final int offset, final byte[] intbuf) {
-		return (decodeUInt32(offset, intbuf) << 32)
-				| decodeUInt32(offset + 4, intbuf);
-	}
-
-	/**
-	 * Read the entire byte array into memory, or throw an exception.
-	 *
-	 * @param fd
-	 *            input stream to read the data from.
-	 * @param dstoff
-	 *            position within the buffer to start writing to.
-	 * @param buf
-	 *            buffer that must be fully populated, from dstoff to its end.
-	 * @throws EOFException
-	 *             the stream ended before buf was fully populated.
-	 * @throws IOException
-	 *             there was an error reading from the stream.
-	 */
-	protected static void readFully(final InputStream fd, int dstoff,
-			final byte[] buf) throws IOException {
-		int remaining = buf.length - dstoff;
-		while (remaining > 0) {
-			final int r = fd.read(buf, dstoff, remaining);
-			if (r <= 0)
-				throw new EOFException("Short read of index data block.");
-			dstoff += r;
-			remaining -= r;
-		}
 	}
 
 	/**

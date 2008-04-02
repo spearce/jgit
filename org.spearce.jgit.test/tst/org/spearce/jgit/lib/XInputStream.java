@@ -21,6 +21,8 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.spearce.jgit.util.NB;
+
 class XInputStream extends BufferedInputStream {
 	private final byte[] intbuf = new byte[8];
 
@@ -54,7 +56,6 @@ class XInputStream extends BufferedInputStream {
 
 	long readUInt32() throws IOException {
 		readFully(intbuf, 0, 4);
-		return ((long) (intbuf[0] & 0xff)) << 24 | (intbuf[1] & 0xff) << 16
-				| (intbuf[2] & 0xff) << 8 | (intbuf[3] & 0xff);
+		return NB.decodeUInt32(intbuf, 0);
 	}
 }

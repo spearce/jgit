@@ -18,6 +18,8 @@ package org.spearce.jgit.lib;
 
 import java.io.UnsupportedEncodingException;
 
+import org.spearce.jgit.util.NB;
+
 /**
  * A SHA-1 abstraction.
  */
@@ -135,11 +137,11 @@ public class ObjectId extends AnyObjectId {
 	 * @return the converted object id.
 	 */
 	public static final ObjectId fromRaw(final byte[] bs, final int p) {
-		final int a = rawUInt32(bs, p);
-		final int b = rawUInt32(bs, p + 4);
-		final int c = rawUInt32(bs, p + 8);
-		final int d = rawUInt32(bs, p + 12);
-		final int e = rawUInt32(bs, p + 16);
+		final int a = NB.decodeInt32(bs, p);
+		final int b = NB.decodeInt32(bs, p + 4);
+		final int c = NB.decodeInt32(bs, p + 8);
+		final int d = NB.decodeInt32(bs, p + 12);
+		final int e = NB.decodeInt32(bs, p + 16);
 		return new ObjectId(a, b, c, d, e);
 	}
 

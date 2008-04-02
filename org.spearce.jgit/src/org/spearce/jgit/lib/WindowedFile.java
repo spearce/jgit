@@ -220,35 +220,6 @@ public class WindowedFile {
 	}
 
 	/**
-	 * Reads a 32 bit unsigned integer in network byte order.
-	 * 
-	 * @param position
-	 *            the starting offset, as measured in bytes from the beginning
-	 *            of this file, to read from. The position does not need to be
-	 *            aligned.
-	 * @param intbuf
-	 *            a temporary buffer to read the bytes into before byteorder
-	 *            conversion. Must be supplied by the caller and must have room
-	 *            for at least 4 bytes, but may be longer if the caller has a
-	 *            larger buffer they wish to loan.
-	 * @param curs
-	 *            current cursor for reading data from the file.
-	 * @return the unsigned 32 bit integer value.
-	 * @throws IOException
-	 *             necessary window was not found in the window cache and trying
-	 *             to load it in from the operating system failed.
-	 * @throws EOFException
-	 *             the file has less than 4 bytes remaining at position.
-	 */
-	public long readUInt32(final long position, byte[] intbuf,
-			final WindowCursor curs) throws IOException {
-		if (read(position, intbuf, 0, 4, curs) != 4)
-			throw new EOFException();
-		return ((long) (intbuf[0] & 0xff)) << 24 | (intbuf[1] & 0xff) << 16
-				| (intbuf[2] & 0xff) << 8 | (intbuf[3] & 0xff);
-	}
-
-	/**
 	 * Overridable hook called after the file is opened.
 	 * <p>
 	 * This hook is invoked each time the file is opened for reading, but before

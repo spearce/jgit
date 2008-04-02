@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.spearce.jgit.errors.CorruptObjectException;
+import org.spearce.jgit.util.NB;
 
 class PackIndexV1 extends PackIndex {
 	private static final int IDX_HDR_LEN = 256 * 4;
@@ -32,11 +33,11 @@ class PackIndexV1 extends PackIndex {
 			throws CorruptObjectException, IOException {
 		final byte[] fanoutTable = new byte[IDX_HDR_LEN];
 		System.arraycopy(hdr, 0, fanoutTable, 0, hdr.length);
-		readFully(fd, hdr.length, fanoutTable);
+		NB.readFully(fd, fanoutTable, hdr.length, IDX_HDR_LEN - hdr.length);
 
 		final long[] idxHeader = new long[256]; // really unsigned 32-bit...
 		for (int k = 0; k < idxHeader.length; k++)
-			idxHeader[k] = decodeUInt32(k * 4, fanoutTable);
+			idxHeader[k] = NB.decodeUInt32(fanoutTable, k * 4);
 		idxdata = new byte[idxHeader.length][];
 		for (int k = 0; k < idxHeader.length; k++) {
 			int n;
@@ -47,7 +48,7 @@ class PackIndexV1 extends PackIndex {
 			}
 			if (n > 0) {
 				idxdata[k] = new byte[n * (Constants.OBJECT_ID_LENGTH + 4)];
-				readFully(fd, 0, idxdata[k]);
+				NB.readFully(fd, idxdata[k], 0, idxdata[k].length);
 			}
 		}
 		objectCnt = idxHeader[255];

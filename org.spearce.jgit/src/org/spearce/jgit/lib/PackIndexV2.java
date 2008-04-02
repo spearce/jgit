@@ -4,6 +4,8 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.spearce.jgit.util.NB;
+
 /** Support for the pack index v2 format. */
 class PackIndexV2 extends PackIndex {
 	private static final long IS_O64 = 1L << 31;
@@ -27,10 +29,10 @@ class PackIndexV2 extends PackIndex {
 
 	PackIndexV2(final InputStream fd) throws IOException {
 		final byte[] fanoutRaw = new byte[4 * FANOUT];
-		readFully(fd, 0, fanoutRaw);
+		NB.readFully(fd, fanoutRaw, 0, fanoutRaw.length);
 		final long[] fanoutTable = new long[FANOUT];
 		for (int k = 0; k < FANOUT; k++)
-			fanoutTable[k] = decodeUInt32(k * 4, fanoutRaw);
+			fanoutTable[k] = NB.decodeUInt32(fanoutRaw, k * 4);
 		objectCnt = fanoutTable[FANOUT - 1];
 
 		names = new int[FANOUT][];
@@ -60,9 +62,9 @@ class PackIndexV2 extends PackIndex {
 			final int intNameLen = (int) nameLen;
 			final byte[] raw = new byte[intNameLen];
 			final int[] bin = new int[intNameLen >> 2];
-			readFully(fd, 0, raw);
+			NB.readFully(fd, raw, 0, raw.length);
 			for (int i = 0; i < bin.length; i++)
-				bin[i] = AnyObjectId.rawUInt32(raw, i << 2);
+				bin[i] = NB.decodeInt32(raw, i << 2);
 
 			names[k] = bin;
 			offset32[k] = new byte[(int) (bucketCnt * 4)];
@@ -78,7 +80,7 @@ class PackIndexV2 extends PackIndex {
 		int o64cnt = 0;
 		for (int k = 0; k < FANOUT; k++) {
 			final byte[] ofs = offset32[k];
-			readFully(fd, 0, ofs);
+			NB.readFully(fd, ofs, 0, ofs.length);
 			for (int p = 0; p < ofs.length; p += 4)
 				if (ofs[p] < 0)
 					o64cnt++;
@@ -88,7 +90,7 @@ class PackIndexV2 extends PackIndex {
 		//
 		if (o64cnt > 0) {
 			offset64 = new byte[o64cnt * 8];
-			readFully(fd, 0, offset64);
+			NB.readFully(fd, offset64, 0, offset64.length);
 		} else {
 			offset64 = NO_BYTES;
 		}
@@ -126,9 +128,9 @@ class PackIndexV2 extends PackIndex {
 			if (cmp < 0)
 				high = mid;
 			else if (cmp == 0) {
-				final long p = decodeUInt32(mid4, offset32[levelOne]);
+				final long p = NB.decodeUInt32(offset32[levelOne], mid4);
 				if ((p & IS_O64) != 0)
-					return decodeUInt64((8 * (int) (p & ~IS_O64)), offset64);
+					return NB.decodeUInt64(offset64, (8 * (int) (p & ~IS_O64)));
 				return p;
 			} else
 				low = mid + 1;

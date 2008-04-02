@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.zip.DataFormatException;
 
+import org.spearce.jgit.util.NB;
+
 /**
  * A Git version 2 pack file representation. A pack file contains
  * Git objects in delta packed format yielding high compression of
@@ -159,12 +161,14 @@ public class PackFile {
 		}
 		position += SIGNATURE.length;
 
-		vers = pack.readUInt32(position, intbuf, curs);
+		pack.readFully(position, intbuf, curs);
+		vers = NB.decodeUInt32(intbuf, 0);
 		if (vers != 2 && vers != 3)
 			throw new IOException("Unsupported pack version " + vers + ".");
 		position += 4;
 
-		final long objectCnt = pack.readUInt32(position, intbuf, curs);
+		pack.readFully(position, intbuf, curs);
+		final long objectCnt = NB.decodeUInt32(intbuf, 0);
 		if (idx.getObjectCount() != objectCnt)
 			throw new IOException("Pack index"
 					+ " object count mismatch; expected " + objectCnt
