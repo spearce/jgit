@@ -20,6 +20,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 
@@ -109,6 +110,7 @@ public class RefLock {
 	 *             before throwing the underlying exception to the caller.
 	 */
 	public void write(final ObjectId id) throws IOException {
+		requireLock();
 		try {
 			final BufferedOutputStream b;
 			b = new BufferedOutputStream(os, Constants.OBJECT_ID_LENGTH * 2 + 1);
@@ -142,6 +144,7 @@ public class RefLock {
 	 *             before throwing the underlying exception to the caller.
 	 */
 	public void write(final byte[] content) throws IOException {
+		requireLock();
 		try {
 			os.write(content);
 			os.flush();
@@ -158,6 +161,64 @@ public class RefLock {
 	}
 
 	/**
+	 * Obtain the direct output stream for this lock.
+	 * <p>
+	 * The stream may only be accessed once, and only after {@link #lock()} has
+	 * been successfully invoked and returned true. Callers must close the
+	 * stream prior to calling {@link #commit()} to commit the change.
+	 * 
+	 * @return a stream to write to the new file. The stream is unbuffered.
+	 */
+	public OutputStream getOutputStream() {
+		requireLock();
+		return new OutputStream() {
+			@Override
+			public void write(final byte[] b, final int o, final int n)
+					throws IOException {
+				os.write(b, o, n);
+			}
+
+			@Override
+			public void write(final byte[] b) throws IOException {
+				os.write(b);
+			}
+
+			@Override
+			public void write(final int b) throws IOException {
+				os.write(b);
+			}
+
+			@Override
+			public void flush() throws IOException {
+				os.flush();
+			}
+
+			@Override
+			public void close() throws IOException {
+				try {
+					os.flush();
+					fLck.release();
+					os.close();
+					os = null;
+				} catch (IOException ioe) {
+					unlock();
+					throw ioe;
+				} catch (RuntimeException ioe) {
+					unlock();
+					throw ioe;
+				}
+			}
+		};
+	}
+
+	private void requireLock() {
+		if (os == null) {
+			unlock();
+			throw new IllegalStateException("Lock on " + ref + " not held.");
+		}
+	}
+
+	/**
 	 * Commit this change and release the lock.
 	 * <p>
 	 * If this method fails (returns false) the lock is still released.
@@ -165,8 +226,15 @@ public class RefLock {
 	 * @return true if the commit was successful and the file contains the new
 	 *         data; false if the commit failed and the file remains with the
 	 *         old data.
+	 * @throws IllegalStateException
+	 *             the lock is not held.
 	 */
 	public boolean commit() {
+		if (os != null) {
+			unlock();
+			throw new IllegalStateException("Lock on " + ref + " not closed.");
+		}
+
 		if (lck.renameTo(ref))
 			return true;
 		if (!ref.exists() || ref.delete())
