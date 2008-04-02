@@ -49,6 +49,58 @@ public final class RawParseUtils {
 		return ptr;
 	}
 
+	private static final byte[] base10byte = { '0', '1', '2', '3', '4', '5',
+			'6', '7', '8', '9' };
+
+	/**
+	 * Format a base 10 numeric into a temporary buffer.
+	 * <p>
+	 * Formatting is performed backwards. The method starts at offset
+	 * <code>o-1</code> and ends at <code>o-1-digits</code>, where
+	 * <code>digits</code> is the number of positions necessary to store the
+	 * base 10 value.
+	 * <p>
+	 * The argument and return values from this method make it easy to chain
+	 * writing, for example:
+	 * </p>
+	 * 
+	 * <pre>
+	 * final byte[] tmp = new byte[64];
+	 * int ptr = tmp.length;
+	 * tmp[--ptr] = '\n';
+	 * ptr = RawParseUtils.formatBase10(tmp, ptr, 32);
+	 * tmp[--ptr] = ' ';
+	 * ptr = RawParseUtils.formatBase10(tmp, ptr, 18);
+	 * tmp[--ptr] = 0;
+	 * final String str = new String(tmp, ptr, tmp.length - ptr);
+	 * </pre>
+	 * 
+	 * @param b
+	 *            buffer to write into.
+	 * @param o
+	 *            one offset past the location where writing will begin; writing
+	 *            proceeds towards lower index values.
+	 * @param value
+	 *            the value to store.
+	 * @return the new offset value <code>o</code>. This is the position of
+	 *         the last byte written. Additional writing should start at one
+	 *         position earlier.
+	 */
+	public static int formatBase10(final byte[] b, int o, int value) {
+		if (value == 0) {
+			b[--o] = '0';
+			return o;
+		}
+		final boolean isneg = value < 0;
+		while (value != 0) {
+			b[--o] = base10byte[value % 10];
+			value /= 10;
+		}
+		if (isneg)
+			b[--o] = '-';
+		return o;
+	}
+
 	/**
 	 * Parse a base 10 numeric from a sequence of ASCII digits.
 	 * <p>
