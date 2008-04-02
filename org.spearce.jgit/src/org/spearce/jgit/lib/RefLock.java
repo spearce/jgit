@@ -126,6 +126,9 @@ public class RefLock {
 		} catch (RuntimeException ioe) {
 			unlock();
 			throw ioe;
+		} catch (Error ioe) {
+			unlock();
+			throw ioe;
 		}
 	}
 
@@ -155,6 +158,9 @@ public class RefLock {
 			unlock();
 			throw ioe;
 		} catch (RuntimeException ioe) {
+			unlock();
+			throw ioe;
+		} catch (Error ioe) {
 			unlock();
 			throw ioe;
 		}
@@ -204,6 +210,9 @@ public class RefLock {
 					unlock();
 					throw ioe;
 				} catch (RuntimeException ioe) {
+					unlock();
+					throw ioe;
+				} catch (Error ioe) {
 					unlock();
 					throw ioe;
 				}
