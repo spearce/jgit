@@ -23,7 +23,7 @@ import java.io.InputStreamReader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-class FS_Win32_Cygwin extends FS {
+class FS_Win32_Cygwin extends FS_Win32 {
 	private static String cygpath;
 
 	static boolean detect() {
@@ -42,18 +42,6 @@ class FS_Win32_Cygwin extends FS {
 				return true;
 			}
 		}
-		return false;
-	}
-
-	public boolean supportsExecute() {
-		return false;
-	}
-
-	public boolean canExecute(final File f) {
-		return false;
-	}
-
-	public boolean setExecute(final File f, final boolean canExec) {
 		return false;
 	}
 
