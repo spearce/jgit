@@ -45,6 +45,10 @@ public class LockFile {
 
 	private FileOutputStream os;
 
+	private boolean needStatInformation;
+
+	private long commitLastModified;
+
 	/**
 	 * Create a new lock for any file.
 	 * 
@@ -228,6 +232,16 @@ public class LockFile {
 	}
 
 	/**
+	 * Request that {@link #commit()} remember modification time.
+	 * 
+	 * @param on
+	 *            true if the commit method must remember the modification time.
+	 */
+	public void setNeedStatInformation(final boolean on) {
+		needStatInformation = on;
+	}
+
+	/**
 	 * Commit this change and release the lock.
 	 * <p>
 	 * If this method fails (returns false) the lock is still released.
@@ -244,6 +258,7 @@ public class LockFile {
 			throw new IllegalStateException("Lock on " + ref + " not closed.");
 		}
 
+		saveStatInformation();
 		if (lck.renameTo(ref))
 			return true;
 		if (!ref.exists() || ref.delete())
@@ -251,6 +266,20 @@ public class LockFile {
 				return true;
 		unlock();
 		return false;
+	}
+
+	private void saveStatInformation() {
+		if (needStatInformation)
+			commitLastModified = lck.lastModified();
+	}
+
+	/**
+	 * Get the modification time of the output file when it was committed.
+	 * 
+	 * @return modification time of the lock file right before we committed it.
+	 */
+	public long getCommitLastModified() {
+		return commitLastModified;
 	}
 
 	/**
