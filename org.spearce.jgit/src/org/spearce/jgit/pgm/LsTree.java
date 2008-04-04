@@ -18,6 +18,7 @@ package org.spearce.jgit.pgm;
 
 import java.io.File;
 
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.treewalk.FileTreeIterator;
 import org.spearce.jgit.treewalk.TreeWalk;
@@ -26,20 +27,36 @@ class LsTree extends TextBuiltin {
 	@Override
 	void execute(final String[] args) throws Exception {
 		final TreeWalk walk = new TreeWalk(db);
-		if (args.length == 0)
-			walk.addTree(resolve("HEAD^{tree}"));
-		else if (new File(args[0]).isDirectory())
-			walk.addTree(new FileTreeIterator(new File(args[0])));
+		int argi = 0;
+		for (; argi < args.length; argi++) {
+			final String a = args[argi];
+			if ("--".equals(a)) {
+				argi++;
+				break;
+			} else if ("-r".equals(a))
+				walk.setRecursive(true);
+			else
+				break;
+		}
+
+		if (argi == args.length)
+			throw die("usage: [-r] treename");
+		else if (argi + 1 < args.length)
+			throw die("too many arguments");
+
+		final String n = args[argi];
+		if (is_WorkDir(n))
+			walk.addTree(new FileTreeIterator(new File(n)));
 		else
-			walk.addTree(resolve(args[0]));
-		walk.setRecursive(true);
+			walk.addTree(resolve(n));
 
 		while (walk.next()) {
 			final FileMode mode = FileMode.fromBits(walk.getRawMode(0));
 			if (mode == FileMode.TREE)
 				out.print('0');
 			out.print(mode);
-			out.print(mode == FileMode.TREE ? " tree" : " blob");
+			out.print(' ');
+			out.print(Constants.typeString(mode.getObjectType()));
 
 			out.print(' ');
 			out.print(walk.getObjectId(0));
@@ -48,5 +65,9 @@ class LsTree extends TextBuiltin {
 			out.print(walk.getPathString());
 			out.println();
 		}
+	}
+
+	private boolean is_WorkDir(final String name) {
+		return new File(name).isDirectory();
 	}
 }
