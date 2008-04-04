@@ -65,6 +65,9 @@ public final class Constants {
 	 */
 	public static final String TYPE_TAG = "tag";
 
+	/** An unknown or invalid object type code. */
+	public static final int OBJ_BAD = -1;
+
 	/**
 	 * In-pack object type: extended types.
 	 * <p>

@@ -30,7 +30,8 @@ import java.io.OutputStream;
 public abstract class FileMode {
 	/** Mode indicating an entry is a {@link Tree}. */
 	@SuppressWarnings("synthetic-access")
-	public static final FileMode TREE = new FileMode(0040000) {
+	public static final FileMode TREE = new FileMode(0040000,
+			Constants.OBJ_TREE) {
 		public boolean equals(final int modeBits) {
 			return (modeBits & 0170000) == 0040000;
 		}
@@ -38,7 +39,8 @@ public abstract class FileMode {
 
 	/** Mode indicating an entry is a {@link SymlinkTreeEntry}. */
 	@SuppressWarnings("synthetic-access")
-	public static final FileMode SYMLINK = new FileMode(0120000) {
+	public static final FileMode SYMLINK = new FileMode(0120000,
+			Constants.OBJ_BLOB) {
 		public boolean equals(final int modeBits) {
 			return (modeBits & 0170000) == 0120000;
 		}
@@ -46,7 +48,8 @@ public abstract class FileMode {
 
 	/** Mode indicating an entry is a non-executable {@link FileTreeEntry}. */
 	@SuppressWarnings("synthetic-access")
-	public static final FileMode REGULAR_FILE = new FileMode(0100644) {
+	public static final FileMode REGULAR_FILE = new FileMode(0100644,
+			Constants.OBJ_BLOB) {
 		public boolean equals(final int modeBits) {
 			return (modeBits & 0170000) == 0100000 && (modeBits & 0111) == 0;
 		}
@@ -54,7 +57,8 @@ public abstract class FileMode {
 
 	/** Mode indicating an entry is an executable {@link FileTreeEntry}. */
 	@SuppressWarnings("synthetic-access")
-	public static final FileMode EXECUTABLE_FILE = new FileMode(0100755) {
+	public static final FileMode EXECUTABLE_FILE = new FileMode(0100755,
+			Constants.OBJ_BLOB) {
 		public boolean equals(final int modeBits) {
 			return (modeBits & 0170000) == 0100000 && (modeBits & 0111) != 0;
 		}
@@ -62,7 +66,8 @@ public abstract class FileMode {
 
 	/** Mode indicating an entry is a submodule commit in another repository. */
 	@SuppressWarnings("synthetic-access")
-	public static final FileMode GITLINK = new FileMode(0160000) {
+	public static final FileMode GITLINK = new FileMode(0160000,
+			Constants.OBJ_COMMIT) {
 		public boolean equals(final int modeBits) {
 			return (modeBits & 0170000) == 0160000;
 		}
@@ -70,7 +75,8 @@ public abstract class FileMode {
 
 	/** Mode indicating an entry is missing during parallel walks. */
 	@SuppressWarnings("synthetic-access")
-	public static final FileMode MISSING = new FileMode(0000000) {
+	public static final FileMode MISSING = new FileMode(0000000,
+			Constants.OBJ_BAD) {
 		public boolean equals(final int modeBits) {
 			return modeBits == 0;
 		}
@@ -101,7 +107,7 @@ public abstract class FileMode {
 			return GITLINK;
 		}
 
-		return new FileMode(bits) {
+		return new FileMode(bits, Constants.OBJ_BAD) {
 			@Override
 			public boolean equals(final int a) {
 				return bits == a;
@@ -113,8 +119,11 @@ public abstract class FileMode {
 
 	private final int modeBits;
 
-	private FileMode(int mode) {
+	private final int objectType;
+
+	private FileMode(int mode, final int expType) {
 		modeBits = mode;
+		objectType = expType;
 		if (mode != 0) {
 			final byte[] tmp = new byte[10];
 			int p = tmp.length;
@@ -157,6 +166,17 @@ public abstract class FileMode {
 	 */
 	public void copyTo(final OutputStream os) throws IOException {
 		os.write(octalBytes);
+	}
+
+	/**
+	 * Get the object type that should appear for this type of mode.
+	 * <p>
+	 * See the object type constants in {@link Constants}.
+	 * 
+	 * @return one of the well known object type constants.
+	 */
+	public int getObjectType() {
+		return objectType;
 	}
 
 	/** Format this mode as an octal string (for debugging only). */
