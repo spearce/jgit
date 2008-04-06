@@ -31,6 +31,7 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IContributionItem;
 import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.text.ITextOperationTarget;
@@ -48,6 +49,8 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.team.ui.history.HistoryPage;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IPartListener;
@@ -61,13 +64,13 @@ import org.eclipse.ui.progress.IWorkbenchSiteProgressService;
 import org.spearce.egit.core.ResourceList;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.Activator;
+import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIPreferences;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.revplot.PlotCommit;
 import org.spearce.jgit.revwalk.RevCommit;
-import org.spearce.jgit.revwalk.RevFlag;
 import org.spearce.jgit.revwalk.RevSort;
 import org.spearce.jgit.revwalk.filter.RevFilter;
 import org.spearce.jgit.treewalk.TreeWalk;
@@ -86,6 +89,8 @@ public class GitHistoryPage extends HistoryPage {
 	private static final String SPLIT_GRAPH = UIPreferences.RESOURCEHISTORY_GRAPH_SPLIT;
 
 	private static final String SPLIT_INFO = UIPreferences.RESOURCEHISTORY_REV_SPLIT;
+
+	private static final String SHOW_FIND_TOOLBAR = UIPreferences.RESOURCEHISTORY_SHOW_FINDTOOLBAR;
 
 	private static final String POPUP_ID = "org.spearce.egit.ui.historyPageContributions";
 
@@ -149,6 +154,9 @@ public class GitHistoryPage extends HistoryPage {
 	/** Viewer displaying file difference implied by {@link #graph}'s commit. */
 	private CommitFileDiffViewer fileViewer;
 
+	/** Toolbar to find commits in the history view. */
+	private FindToolbar findToolbar;
+
 	/** Our context menu manager for the entire page. */
 	private MenuManager popupMgr;
 
@@ -157,14 +165,6 @@ public class GitHistoryPage extends HistoryPage {
 
 	/** Revision walker that allocated our graph's commit nodes. */
 	private SWTWalk currentWalk;
-
-	/**
-	 * Highlight flag that can be applied to commits to make them stand out.
-	 * <p>
-	 * Allocated at the same time as {@link #currentWalk}. If the walk
-	 * rebuilds, so must this flag.
-	 */
-	private RevFlag highlightFlag;
 
 	/**
 	 * List of paths we used to limit {@link #currentWalk}; null if no paths.
@@ -199,12 +199,14 @@ public class GitHistoryPage extends HistoryPage {
 		revInfoSplit = new SashForm(graphDetailSplit, SWT.HORIZONTAL);
 		commentViewer = new CommitMessageViewer(revInfoSplit);
 		fileViewer = new CommitFileDiffViewer(revInfoSplit);
+		findToolbar = new FindToolbar(ourControl);
 
 		layoutSashForm(graphDetailSplit, SPLIT_GRAPH);
 		layoutSashForm(revInfoSplit, SPLIT_INFO);
 
 		popupMgr = new MenuManager(POPUP_ID);
 		attachCommitSelectionChanged();
+		createLocalToolbarActions();
 		createStandardActions();
 		createViewMenu();
 
@@ -250,6 +252,7 @@ public class GitHistoryPage extends HistoryPage {
 	private void layout() {
 		final boolean showComment = prefs.getBoolean(SHOW_COMMENT);
 		final boolean showFiles = prefs.getBoolean(SHOW_FILES);
+		final boolean showFindToolbar = prefs.getBoolean(SHOW_FIND_TOOLBAR);
 
 		if (showComment && showFiles) {
 			graphDetailSplit.setMaximizedControl(null);
@@ -263,6 +266,13 @@ public class GitHistoryPage extends HistoryPage {
 		} else if (!showComment && !showFiles) {
 			graphDetailSplit.setMaximizedControl(graph.getControl());
 		}
+		if (showFindToolbar) {
+			((GridData) findToolbar.getLayoutData()).heightHint = SWT.DEFAULT;
+		} else {
+			((GridData) findToolbar.getLayoutData()).heightHint = 0;
+			findToolbar.clear();
+		}
+		ourControl.layout();
 	}
 
 	private void attachCommitSelectionChanged() {
@@ -290,6 +300,32 @@ public class GitHistoryPage extends HistoryPage {
 						graph.selectCommit(c);
 					}
 				});
+		findToolbar.addSelectionListener(new Listener() {
+			public void handleEvent(Event event) {
+				graph.selectCommit((RevCommit) event.data);
+			}
+		});
+	}
+
+	private void createLocalToolbarActions() {
+		final IToolBarManager barManager = getSite().getActionBars()
+				.getToolBarManager();
+		IAction a;
+
+		a = createFindToolbarAction();
+		barManager.add(a);
+	}
+
+	private IAction createFindToolbarAction() {
+		final IAction r = new Action("Fi", UIIcons.ELCL16_FIND) {
+			public void run() {
+				prefs.setValue(SHOW_FIND_TOOLBAR, isChecked());
+				layout();
+			}
+		};
+		r.setChecked(prefs.getBoolean(SHOW_FIND_TOOLBAR));
+		r.setToolTipText(UIText.HistoryPage_findbar_findTooltip);
+		return r;
 	}
 
 	private void createViewMenu() {
@@ -471,7 +507,6 @@ public class GitHistoryPage extends HistoryPage {
 			currentWalk = new SWTWalk(db);
 			currentWalk.sort(RevSort.COMMIT_TIME_DESC, true);
 			currentWalk.sort(RevSort.BOUNDARY, true);
-			highlightFlag = currentWalk.newFlag("highlight");
 		} else {
 			currentWalk.reset();
 		}
@@ -501,7 +536,8 @@ public class GitHistoryPage extends HistoryPage {
 			fileWalker.setFilter(TreeFilter.ANY_DIFF);
 		}
 		fileViewer.setTreeWalk(fileWalker);
-		graph.setInput(highlightFlag, null, null);
+		findToolbar.clear();
+		graph.setInput(findToolbar.findResults, null, null);
 
 		final SWTCommitList list;
 		list = new SWTCommitList(graph.getControl().getDisplay());
@@ -540,7 +576,6 @@ public class GitHistoryPage extends HistoryPage {
 			//
 			job = null;
 			currentWalk = null;
-			highlightFlag = null;
 			pathFilters = null;
 		}
 	}
@@ -572,8 +607,10 @@ public class GitHistoryPage extends HistoryPage {
 
 		graph.getControl().getDisplay().asyncExec(new Runnable() {
 			public void run() {
-				if (!graph.getControl().isDisposed() && job == j)
-					graph.setInput(highlightFlag, list, asArray);
+				if (!graph.getControl().isDisposed() && job == j) {
+					graph.setInput(findToolbar.findResults, list, asArray);
+					findToolbar.setInput(graph.getTable(), asArray);
+				}
 			}
 		});
 	}

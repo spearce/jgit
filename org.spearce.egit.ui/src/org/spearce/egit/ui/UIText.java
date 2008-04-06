@@ -72,6 +72,29 @@ public class UIText extends NLS {
 	public static String HistoryPage_refreshJob;
 
 	/** */
+	public static String HistoryPage_findbar_findTooltip;
+	/** */
+	public static String HistoryPage_findbar_find;
+	/** */
+	public static String HistoryPage_findbar_next;
+	/** */
+	public static String HistoryPage_findbar_previous;
+	/** */
+	public static String HistoryPage_findbar_ignorecase;
+	/** */
+	public static String HistoryPage_findbar_commit;
+	/** */
+	public static String HistoryPage_findbar_comments;
+	/** */
+	public static String HistoryPage_findbar_author;
+	/** */
+	public static String HistoryPage_findbar_committer;
+	/** */
+	public static String HistoryPage_findbar_exceeded;
+	/** */
+	public static String HistoryPage_findbar_notFound;
+
+	/** */
 	public static String HistoryPreferencePage_title;
 
 	/** */

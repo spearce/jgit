@@ -49,7 +49,6 @@ import org.spearce.egit.ui.UIPreferences;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.revplot.PlotCommit;
 import org.spearce.jgit.revwalk.RevCommit;
-import org.spearce.jgit.revwalk.RevFlag;
 
 class CommitGraphTable {
 	private static Font highlightFont() {
@@ -81,13 +80,13 @@ class CommitGraphTable {
 
 	private SWTCommitList allCommits;
 
-	private RevFlag highlight;
+	private FindResults findResults;
 
 	CommitGraphTable(final Composite parent) {
 		nFont = Activator.getFont(UIPreferences.THEME_CommitGraphNormalFont);
 		hFont = highlightFont();
 
-		final Table rawTable = new Table(parent, SWT.MULTI | SWT.H_SCROLL
+		Table rawTable = new Table(parent, SWT.MULTI | SWT.H_SCROLL
 				| SWT.V_SCROLL | SWT.BORDER | SWT.FULL_SELECTION | SWT.VIRTUAL);
 		rawTable.setHeaderVisible(true);
 		rawTable.setLinesVisible(false);
@@ -159,10 +158,10 @@ class CommitGraphTable {
 				new Transfer[] { TextTransfer.getInstance() }, DND.CLIPBOARD);
 	}
 
-	void setInput(final RevFlag hFlag, final SWTCommitList list,
+	void setInput(final FindResults fResults, final SWTCommitList list,
 			final SWTCommit[] asArray) {
 		final SWTCommitList oldList = allCommits;
-		highlight = hFlag;
+		findResults = fResults;
 		allCommits = list;
 		table.setInput(asArray);
 		if (asArray != null && asArray.length > 0) {
@@ -211,8 +210,10 @@ class CommitGraphTable {
 	}
 
 	void doPaint(final Event event) {
-		final RevCommit c = (RevCommit) ((TableItem) event.item).getData();
-		if (highlight != null && c.has(highlight))
+		TableItem ti = (TableItem) event.item;
+		final RevCommit c = (RevCommit) ti.getData();
+		if (findResults != null
+				&& findResults.isFoundAt(table.getTable().indexOf(ti)))
 			event.gc.setFont(hFont);
 		else
 			event.gc.setFont(nFont);
@@ -231,5 +232,14 @@ class CommitGraphTable {
 		final Point textsz = event.gc.textExtent(txt);
 		final int texty = (event.height - textsz.y) / 2;
 		event.gc.drawString(txt, event.x, event.y + texty);
+	}
+
+	/**
+	 * Returns the SWT Table that backs this CommitGraphTable.
+	 *
+	 * @return Table the SWT Table
+	 */
+	public Table getTable() {
+		return table.getTable();
 	}
 }
