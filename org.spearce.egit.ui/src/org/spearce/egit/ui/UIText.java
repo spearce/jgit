@@ -90,6 +90,14 @@ public class UIText extends NLS {
 	/** */
 	public static String HistoryPage_findbar_committer;
 	/** */
+	public static String HistoryPage_findbar_changeto_commit;
+	/** */
+	public static String HistoryPage_findbar_changeto_comments;
+	/** */
+	public static String HistoryPage_findbar_changeto_author;
+	/** */
+	public static String HistoryPage_findbar_changeto_committer;
+	/** */
 	public static String HistoryPage_findbar_exceeded;
 	/** */
 	public static String HistoryPage_findbar_notFound;

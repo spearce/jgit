@@ -47,6 +47,8 @@ public class UIPreferences {
 	public final static String FINDTOOLBAR_AUTHOR = "findtoolbar_author";
 	/** */
 	public final static String FINDTOOLBAR_COMMITTER = "findtoolbar_committer";
+	/** */
+	public final static String FINDTOOLBAR_FIND_IN = "findtoolbar_find_in";
 
 	/** */
 	public final static String THEME_CommitGraphNormalFont = "org.spearce.egit.ui.CommitGraphNormalFont";

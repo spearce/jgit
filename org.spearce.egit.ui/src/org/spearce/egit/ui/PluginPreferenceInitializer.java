@@ -51,10 +51,7 @@ public class PluginPreferenceInitializer extends AbstractPreferenceInitializer {
 				UIPreferences.RESOURCEHISTORY_REV_SPLIT, w);
 
 		prefs.setDefault(UIPreferences.FINDTOOLBAR_IGNORE_CASE, true);
-		prefs.setDefault(UIPreferences.FINDTOOLBAR_COMMIT_ID, true);
-		prefs.setDefault(UIPreferences.FINDTOOLBAR_COMMENTS, true);
-		prefs.setDefault(UIPreferences.FINDTOOLBAR_AUTHOR, false);
-		prefs.setDefault(UIPreferences.FINDTOOLBAR_COMMITTER, false);
+		prefs.setDefault(UIPreferences.FINDTOOLBAR_FIND_IN, 2);
 	}
 
 }
