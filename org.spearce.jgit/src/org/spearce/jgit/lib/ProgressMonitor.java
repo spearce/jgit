@@ -1,31 +1,36 @@
-/*******************************************************************************
- * Copyright (c) 2000, 2006 IBM Corporation and others.
+/*
+ *  Copyright (C) 2007  Robin Rosenberg
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public
+ *  License, version 2, as published by the Free Software Foundation.
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public
+ *  License along with this library; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ */
 package org.spearce.jgit.lib;
 
 /**
- * A progress monitor. A ripoff of IProgressMonitor.
+ * A progress reporting interface
  */
 public interface ProgressMonitor {
 	/**
-	 * Set task name
+	 * Set information name
 	 *
 	 * @param message
 	 */
-	void setTask(String message);
+	void setMessage(String message);
 
 	/**
-	 * @return taskname
+	 * @return progress message
 	 */
-	String getTask();
+	String getMessage();
 
 	/**
 	 * Set the total expected amount of work
@@ -65,18 +70,18 @@ public interface ProgressMonitor {
 	boolean isCancelled();
 
 	/**
-	 * Request the task to be cancelled
+	 * Request the task to be canceled
 	 *
-	 * @param cancelled
+	 * @param canceled
 	 */
-	void setCancelled(boolean cancelled);
+	void setCanceled(boolean canceled);
 
 	/**
 	 * Begin a task
 	 *
-	 * @param task
+	 * @param message
 	 * @param total
 	 */
-	void beginTask(String task, int total);
+	void beginTask(String message, int total);
 
 }

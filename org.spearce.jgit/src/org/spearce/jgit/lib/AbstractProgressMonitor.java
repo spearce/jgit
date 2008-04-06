@@ -24,7 +24,7 @@ public abstract class AbstractProgressMonitor implements ProgressMonitor {
 
 	private int total;
 	private int worked;
-	private String task;
+	private String message;
 	private boolean done;
 
 	public void done() {
@@ -41,12 +41,12 @@ public abstract class AbstractProgressMonitor implements ProgressMonitor {
 		return false;
 	}
 
-	public void setCancelled(final boolean cancelled) {
+	public void setCanceled(final boolean cancelled) {
 		// empty
 	}
 
-	public void setTask(final String task) {
-		this.task = task;
+	public void setMessage(final String message) {
+		this.message = message;
 		report();
 	}
 
@@ -56,7 +56,7 @@ public abstract class AbstractProgressMonitor implements ProgressMonitor {
 	}
 
 	public void beginTask(final String task, final int total) {
-		this.task = task;
+		this.message = task;
 		this.total = total;
 		report();
 	}
@@ -66,8 +66,8 @@ public abstract class AbstractProgressMonitor implements ProgressMonitor {
 	 */
 	abstract protected void report();
 
-	public String getTask() {
-		return task;
+	public String getMessage() {
+		return message;
 	}
 
 	public int getWorked() {

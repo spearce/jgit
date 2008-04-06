@@ -27,7 +27,7 @@ public class TextProgressMonitor extends AbstractProgressMonitor {
 	protected void report() {
 		int tot = getTotal() + 1;
 		if ((lastWorked+1)*100/tot != (getWorked()+1)*100/tot)
-			System.out.println(getTask() + " " + (getWorked()*100 / tot) + "%");
+			System.out.println(getMessage() + " " + (getWorked()*100 / tot) + "%");
 		lastWorked = getWorked();
 	}
 
