@@ -49,6 +49,7 @@ import org.spearce.egit.ui.UIPreferences;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.revplot.PlotCommit;
 import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.revwalk.RevFlag;
 
 class CommitGraphTable {
 	private static Font highlightFont() {
@@ -80,7 +81,7 @@ class CommitGraphTable {
 
 	private SWTCommitList allCommits;
 
-	private FindResults findResults;
+	private RevFlag highlight;
 
 	CommitGraphTable(final Composite parent) {
 		nFont = Activator.getFont(UIPreferences.THEME_CommitGraphNormalFont);
@@ -158,10 +159,10 @@ class CommitGraphTable {
 				new Transfer[] { TextTransfer.getInstance() }, DND.CLIPBOARD);
 	}
 
-	void setInput(final FindResults fResults, final SWTCommitList list,
+	void setInput(final RevFlag hFlag, final SWTCommitList list,
 			final SWTCommit[] asArray) {
 		final SWTCommitList oldList = allCommits;
-		findResults = fResults;
+		highlight = hFlag;
 		allCommits = list;
 		table.setInput(asArray);
 		if (asArray != null && asArray.length > 0) {
@@ -210,10 +211,8 @@ class CommitGraphTable {
 	}
 
 	void doPaint(final Event event) {
-		TableItem ti = (TableItem) event.item;
-		final RevCommit c = (RevCommit) ti.getData();
-		if (findResults != null
-				&& findResults.isFoundAt(table.getTable().indexOf(ti)))
+		final RevCommit c = (RevCommit) ((TableItem) event.item).getData();
+		if (highlight != null && c.has(highlight))
 			event.gc.setFont(hFont);
 		else
 			event.gc.setFont(nFont);

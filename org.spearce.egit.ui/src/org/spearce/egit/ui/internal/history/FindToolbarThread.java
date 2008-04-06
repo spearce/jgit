@@ -131,7 +131,7 @@ public class FindToolbarThread extends Thread {
 						}
 						if (contentId.indexOf(findPattern) != -1) {
 							totalMatches++;
-							findResults.add(i);
+							findResults.add(i, revision);
 							notFound = false;
 						}
 					}
@@ -145,7 +145,7 @@ public class FindToolbarThread extends Thread {
 						}
 						if (comment.indexOf(findPattern) != -1) {
 							totalMatches++;
-							findResults.add(i);
+							findResults.add(i, revision);
 							notFound = false;
 						}
 					}
@@ -159,7 +159,7 @@ public class FindToolbarThread extends Thread {
 						}
 						if (author.indexOf(findPattern) != -1) {
 							totalMatches++;
-							findResults.add(i);
+							findResults.add(i, revision);
 							notFound = false;
 						}
 					}
@@ -172,7 +172,7 @@ public class FindToolbarThread extends Thread {
 							}
 							if (email.indexOf(findPattern) != -1) {
 								totalMatches++;
-								findResults.add(i);
+								findResults.add(i, revision);
 								notFound = false;
 							}
 						}
@@ -187,7 +187,7 @@ public class FindToolbarThread extends Thread {
 						}
 						if (committer.indexOf(findPattern) != -1) {
 							totalMatches++;
-							findResults.add(i);
+							findResults.add(i, revision);
 							notFound = false;
 						}
 					}
@@ -200,7 +200,7 @@ public class FindToolbarThread extends Thread {
 							}
 							if (email.indexOf(findPattern) != -1) {
 								totalMatches++;
-								findResults.add(i);
+								findResults.add(i, revision);
 								notFound = false;
 							}
 						}

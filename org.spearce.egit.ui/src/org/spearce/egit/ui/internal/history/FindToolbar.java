@@ -52,6 +52,7 @@ import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIPreferences;
 import org.spearce.egit.ui.UIText;
+import org.spearce.jgit.revwalk.RevFlag;
 
 /**
  * A toolbar for the history page.
@@ -409,12 +410,15 @@ public class FindToolbar extends Composite {
 	 * Sets the table that will have its selected items changed by this toolbar.
 	 * Sets the list to be searched.
 	 *
+	 * @param hFlag
 	 * @param historyTable
 	 * @param commitArray
 	 */
-	public void setInput(final Table historyTable, final SWTCommit[] commitArray) {
+	public void setInput(final RevFlag hFlag, final Table historyTable,
+			final SWTCommit[] commitArray) {
 		this.fileRevisions = commitArray;
 		this.historyTable = historyTable;
+		findResults.setHighlightFlag(hFlag);
 	}
 
 	void progressUpdate(int percent) {

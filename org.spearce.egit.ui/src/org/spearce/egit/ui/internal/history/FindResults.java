@@ -16,10 +16,15 @@
  */
 package org.spearce.egit.ui.internal.history;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+
+import org.spearce.jgit.revwalk.RevFlag;
+import org.spearce.jgit.revwalk.RevObject;
 
 /**
  * Results for the find toolbar. This object stores the rows in the history
@@ -31,9 +36,13 @@ import java.util.Map;
 public class FindResults {
 	private Map<Integer, Integer> matchesMap = new LinkedHashMap<Integer, Integer>();
 
+	private List<RevObject> revObjList = new ArrayList<RevObject>();
+
 	Integer[] keysArray;
 
 	private int matchesCount;
+
+	private RevFlag highlight;
 
 	/**
 	 * Returns if the index in the history table matches the find pattern.
@@ -155,7 +164,13 @@ public class FindResults {
 	 * Cleans the find results. All match item indexes are removed.
 	 */
 	public synchronized void clear() {
+		if (highlight != null) {
+			for (RevObject o : revObjList) {
+				o.remove(highlight);
+			}
+		}
 		matchesMap.clear();
+		revObjList.clear();
 		keysArray = null;
 		matchesCount = 0;
 	}
@@ -166,10 +181,14 @@ public class FindResults {
 	 *
 	 * @param matchIx
 	 *            the history table item index that matches a find pattern.
+	 * @param revObj
+	 *            The RevObject that will have the highlight tag set.
 	 */
-	public synchronized void add(int matchIx) {
+	public synchronized void add(int matchIx, RevObject revObj) {
 		matchesMap.put(Integer.valueOf(matchIx), Integer
 				.valueOf(++matchesCount));
+		revObjList.add(revObj);
+		revObj.add(highlight);
 		keysArray = null;
 	}
 
@@ -182,4 +201,10 @@ public class FindResults {
 		return keysArray;
 	}
 
+	void setHighlightFlag(RevFlag hFlag) {
+		if (highlight != null) {
+			clear();
+		}
+		this.highlight = hFlag;
+	}
 }
