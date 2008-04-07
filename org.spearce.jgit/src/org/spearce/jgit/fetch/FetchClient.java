@@ -471,4 +471,5 @@ public class FetchClient {
 	public Repository getRepository() {
 		return repository;
 	}
+
 }
