@@ -20,8 +20,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.util.Arrays;
+import java.io.Reader;
 
 import junit.framework.TestCase;
 
@@ -88,12 +89,11 @@ public abstract class RepositoryTestCase extends TestCase {
 
 	protected static void checkFile(File f, final String checkData)
 			throws IOException {
-		byte[] data = new byte[(int) f.length()];
-		assertEquals(f.length(), data.length);
-		FileInputStream stream = new FileInputStream(f);
-		stream.read(data);
-		byte[] bytes = checkData.getBytes("ISO-8859-1");
-		assertTrue(Arrays.equals(bytes, data));
+		Reader r = new InputStreamReader(new FileInputStream(f), "ISO-8859-1");
+		char[] data = new char[(int) f.length()];
+		if (f.length() !=  r.read(data))
+			throw new IOException("Internal error reading file data from "+f);
+		assertEquals(checkData, new String(data));
 	}
 
 	protected Repository db;
