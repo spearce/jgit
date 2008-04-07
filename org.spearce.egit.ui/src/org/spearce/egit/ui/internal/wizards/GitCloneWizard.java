@@ -49,9 +49,9 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.internal.wizards.datatransfer.WizardProjectsImportPage;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIIcons;
+import org.spearce.egit.ui.internal.factories.GitJSchProtocolFetchClient;
 import org.spearce.jgit.fetch.FetchClient;
 import org.spearce.jgit.fetch.GitProtocolFetchClient;
-import org.spearce.jgit.fetch.GitSshProtocolFetchClient;
 import org.spearce.jgit.fetch.LocalGitProtocolFetchClient;
 import org.spearce.jgit.fetch.URIish;
 import org.spearce.jgit.lib.GitIndex;
@@ -504,8 +504,8 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 			if (uri.getScheme().equals("ssh") || uri.getScheme().equals("git+ssh")) {
 				int port = uri.getPort();
 				if (port == -1)
-					port = GitSshProtocolFetchClient.GIT_SSH_PROTO_PORT;
-				return GitSshProtocolFetchClient.create(db, "origin", uri.getHost(), port,
+					port = GitJSchProtocolFetchClient.GIT_SSH_PROTO_PORT;
+				return GitJSchProtocolFetchClient.create(db, "origin", uri.getHost(), port,
 						user != null ? user : uri.getUser(),
 						password != null ? password : uri.getPass(),
 						uri.getPath());
