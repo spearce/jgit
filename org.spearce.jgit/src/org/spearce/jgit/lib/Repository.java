@@ -59,7 +59,7 @@ import org.spearce.jgit.errors.ObjectWritingException;
  */
 public class Repository {
 	private static final String[] refSearchPaths = { "", "refs/", "refs/tags/",
-			"refs/heads/", };
+		Constants.HEADS_PREFIX + "/", };
 
 	private final File gitDir;
 

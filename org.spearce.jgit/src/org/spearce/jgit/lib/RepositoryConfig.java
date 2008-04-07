@@ -38,6 +38,13 @@ import java.util.Map;
  * file depending on how it is instantiated.
  */
 public class RepositoryConfig {
+
+	/** Section name for a remote configuration */
+	public static final String REMOTE_SECTION = "remote";
+
+	/** Section name for a branch configuration. */
+	public static final String BRANCH_SECTION = "branch";
+
 	private final Repository repo;
 
 	private final File configFile;
