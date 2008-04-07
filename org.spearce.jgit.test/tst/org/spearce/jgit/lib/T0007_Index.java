@@ -158,7 +158,7 @@ public class T0007_Index extends RepositoryTestCase {
 		assertEquals("c696abc3ab8e091c665f49d00eb8919690b3aec3", id.toString());
 		GitIndex index2 = new GitIndex(db);
 
-		index2.readTree(db.mapTree(new ObjectId(
+		index2.readTree(db.mapTree(ObjectId.fromString(
 				"c696abc3ab8e091c665f49d00eb8919690b3aec3")));
 		Entry[] members = index2.getMembers();
 		assertEquals(3, members.length);
@@ -201,7 +201,7 @@ public class T0007_Index extends RepositoryTestCase {
 		assertEquals("ba78e065e2c261d4f7b8f42107588051e87e18e9", id.toString());
 		GitIndex index2 = new GitIndex(db);
 
-		index2.readTree(db.mapTree(new ObjectId(
+		index2.readTree(db.mapTree(ObjectId.fromString(
 				"ba78e065e2c261d4f7b8f42107588051e87e18e9")));
 		Entry[] members = index2.getMembers();
 		assertEquals(6, members.length);
@@ -268,7 +268,7 @@ public class T0007_Index extends RepositoryTestCase {
 		GitIndex index2 = new GitIndex(db);
 		assertEquals(0, index2.getMembers().length);
 
-		index2.readTree(db.mapTree(new ObjectId(
+		index2.readTree(db.mapTree(ObjectId.fromString(
 				"c696abc3ab8e091c665f49d00eb8919690b3aec3")));
 
 		index2.checkout(trash);

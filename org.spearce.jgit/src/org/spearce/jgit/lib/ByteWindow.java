@@ -16,6 +16,8 @@
  */
 package org.spearce.jgit.lib;
 
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.SoftReference;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -27,31 +29,44 @@ import java.util.zip.Inflater;
  * is very low and has paged part of this process out to disk. Therefore copying
  * bytes from a window is very inexpensive.
  * </p>
+ * 
+ * @param <T> type of object reference used to manage the window data.
  */
-public abstract class ByteWindow {
-	final WindowProvider provider;
+abstract class ByteWindow<T> extends SoftReference<T> {
+	final WindowedFile provider;
 
 	final int id;
+
+	final int size;
 
 	int lastAccessed;
 
 	/**
 	 * Constructor for ByteWindow.
-	 *
+	 * 
 	 * @param o
-	 *            the WindowProvider providing data access
+	 *            the WindowedFile providing data access
 	 * @param d
-	 *            an id provided by the WindowProvider. See
-	 *            {@link WindowCache#get(WindowProvider, int)}.
+	 *            an id provided by the WindowedFile. See
+	 *            {@link WindowCache#get(WindowCursor, WindowedFile, int)}.
+	 * @param ref
+	 *            the object value required to perform data access.
+	 * @param sz
+	 *            the total number of bytes in this window.
 	 */
-	protected ByteWindow(final WindowProvider o, final int d) {
+	@SuppressWarnings("unchecked")
+	ByteWindow(final WindowedFile o, final int d, final T ref, final int sz) {
+		super(ref, (ReferenceQueue<T>)o.cache.clearedWindowQueue);
 		provider = o;
+		size = sz;
 		id = d;
 	}
 
 	/**
 	 * Copy bytes from the window to a caller supplied buffer.
 	 * 
+	 * @param ref
+	 *            the object value required to perform data access.
 	 * @param pos
 	 *            offset within the window to start copying from.
 	 * @param dstbuf
@@ -66,11 +81,13 @@ public abstract class ByteWindow {
 	 *         <code>cnt</code> if <code>cnt</code> exceeded the number of
 	 *         bytes available.
 	 */
-	public abstract int copy(int pos, byte[] dstbuf, int dstoff, int cnt);
+	abstract int copy(T ref, int pos, byte[] dstbuf, int dstoff, int cnt);
 
 	/**
 	 * Pump bytes into the supplied inflater as input.
 	 * 
+	 * @param ref
+	 *            the object value required to perform data access.
 	 * @param pos
 	 *            offset within the window to start supplying input from.
 	 * @param dstbuf
@@ -92,13 +109,6 @@ public abstract class ByteWindow {
 	 *             the inflater encountered an invalid chunk of data. Data stream
 	 *             corruption is likely.
 	 */
-	public abstract int inflate(int pos, byte[] dstbuf, int dstoff, Inflater inf)
+	abstract int inflate(T ref, int pos, byte[] dstbuf, int dstoff, Inflater inf)
 			throws DataFormatException;
-
-	/**
-	 * Get the total size of this window.
-	 * 
-	 * @return number of bytes in this window.
-	 */
-	public abstract int size();
 }

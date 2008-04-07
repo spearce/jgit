@@ -39,13 +39,6 @@
                id="org.spearce.egit.ui.internal.actions.Disconnect">
          </action>
          <action
-               class="org.spearce.egit.ui.internal.actions.CheckpointAction"
-               tooltip="%CheckpointAction_tooltip"
-               label="%CheckpointAction_label"
-               menubarPath="team.main/group1"
-               id="org.spearce.egit.ui.internal.actions.CheckpointAction">
-         </action>
-         <action
                class="org.spearce.egit.ui.internal.actions.ResetAction"
                id="org.spearce.egit.ui.internal.actions.ResetAction"
                label="%ResetAction_label"
@@ -116,7 +109,7 @@
    <extension
          point="org.eclipse.core.runtime.adapters">
          <factory
-               adaptableType="org.spearce.egit.core.internal.mapping.GitFileHistoryProvider"
+               adaptableType="org.spearce.egit.core.internal.storage.GitFileHistoryProvider"
                class="org.spearce.egit.ui.internal.factories.GitAdapterFactory">
             <adapter
                   type="org.eclipse.team.ui.history.IHistoryPageSource">
@@ -132,10 +125,19 @@
    </extension>
    
    <extension point="org.eclipse.ui.preferencePages">
-      <page name="%PreferencePage_name"
+      <page name="%GitPreferences_name"
             category="org.eclipse.team.ui.TeamPreferences"
-            class="org.spearce.egit.ui.internal.preferences.GitPreferencePage"
-            id="org.spearce.egit.ui.internal.preferences.GitPreferencePage" />
+            class="org.spearce.egit.ui.internal.preferences.GitPreferenceRoot"
+            id="org.spearce.egit.ui.GitPreferences" />
+
+      <page name="%GitPreferences_HistoryPreferencePage_name"
+            category="org.eclipse.team.ui.TeamPreferences/org.spearce.egit.ui.GitPreferences"
+            class="org.spearce.egit.ui.internal.preferences.HistoryPreferencePage"
+            id="org.spearce.egit.ui.internal.preferences.HistoryPreferencePage" />
+      <page name="%GitPreferences_WindowCachePreferencePage_name"
+            category="org.eclipse.team.ui.TeamPreferences/org.spearce.egit.ui.GitPreferences"
+            class="org.spearce.egit.ui.internal.preferences.WindowCachePreferencePage"
+            id="org.spearce.egit.ui.internal.preferences.WindowCachePreferencePage" />
    </extension>
 
    <extension point="org.eclipse.ui.decorators">
@@ -154,6 +156,39 @@
             %Decorator_description
          </description>
       </decorator>
+   </extension>
+
+   <extension point="org.eclipse.ui.themes">
+      <themeElementCategory
+            id="org.spearce.egit.ui.GitTheme"
+            label="%Theme_label"/>
+      <fontDefinition
+            id="org.spearce.egit.ui.CommitGraphNormalFont"
+            categoryId="org.spearce.egit.ui.GitTheme"
+            label="%Theme_CommitGraphNormalFont_label"
+            defaultsTo="org.eclipse.jface.dialogfont">
+         <description>
+            %Theme_CommitGraphNormalFont_description
+         </description>
+      </fontDefinition>
+      <fontDefinition
+            id="org.spearce.egit.ui.CommitGraphHighlightFont"
+            categoryId="org.spearce.egit.ui.GitTheme"
+            label="%Theme_CommitGraphHighlightFont_label"
+            defaultsTo="org.eclipse.jface.dialogfont">
+         <description>
+            %Theme_CommitGraphHighlightFont_description
+         </description>
+      </fontDefinition>
+      <fontDefinition
+            id="org.spearce.egit.ui.CommitMessageFont"
+            categoryId="org.spearce.egit.ui.GitTheme"
+            label="%Theme_CommitMessageFont_label"
+            defaultsTo="org.eclipse.jface.textfont">
+         <description>
+            %Theme_CommitMessageFont_description
+         </description>
+      </fontDefinition>
    </extension>
 
 <!-- ********** QuickDiff text editor support ************** -->

@@ -22,14 +22,31 @@ import java.util.zip.Deflater;
  * This class keeps git repository core parameters.
  */
 public class CoreConfig {
+	private static final int DEFAULT_COMPRESSION = Deflater.DEFAULT_COMPRESSION;
+
+	private static final int MB = 1024 * 1024;
+
 	private final int compression;
 
-	private final boolean legacyHeaders;
+	private final int packedGitWindowSize;
+
+	private final int packedGitLimit;
+
+	private final boolean packedGitMMAP;
+
+	private final int deltaBaseCacheLimit;
 
 	CoreConfig(final RepositoryConfig rc) {
-		compression = rc.getInt("core", null,
-				"compression", Deflater.DEFAULT_COMPRESSION);
-		legacyHeaders = rc.getBoolean("core", null, "legacyHeaders", false);
+		compression = rc.getInt("core", "compression", DEFAULT_COMPRESSION);
+		int win = rc.getInt("core", "packedgitwindowsize", 32 * MB);
+		if (win < 4096)
+			win = 4096;
+		if (Integer.bitCount(win) != 1)
+			win = Integer.highestOneBit(win);
+		packedGitWindowSize = win;
+		packedGitLimit = rc.getInt("core", "packedgitlimit", 256 * MB);
+		packedGitMMAP = rc.getBoolean("core", "packedgitmmap", true);
+		deltaBaseCacheLimit = rc.getInt("core", "deltabasecachelimit", 16 * MB);
 	}
 
 	/**
@@ -41,10 +58,38 @@ public class CoreConfig {
 	}
 
 	/**
-	 * @see ObjectWriter
-	 * @return whether to use legacy headers
+	 * The maximum window size to mmap/read in a burst.
+	 *
+	 * @return number of bytes in a window.  Always a power of two.
 	 */
-	public boolean useLegacyHeaders() {
-		return legacyHeaders;
+	public int getPackedGitWindowSize() {
+		return packedGitWindowSize;
+	}
+
+	/**
+	 * The maximum number of bytes to allow in the cache at once.
+	 *
+	 * @return number of bytes to cache at any time.
+	 */
+	public int getPackedGitLimit() {
+		return packedGitLimit;
+	}
+
+	/**
+	 * Enable mmap for packfile data access?
+	 *
+	 * @return true if mmap should be preferred.
+	 */
+	public boolean isPackedGitMMAP() {
+		return packedGitMMAP;
+	}
+
+	/**
+	 * Maximum number of bytes to reserve for caching base objects.
+	 *
+	 * @return number of bytes to cache for base objects in pack files.
+	 */
+	public int getDeltaBaseCacheLimit() {
+		return deltaBaseCacheLimit;
 	}
 }

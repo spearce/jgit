@@ -62,6 +62,64 @@ public class UIText extends NLS {
 	/** */
 	public static String ResourceHistory_toggleTooltips;
 
+	/** */
+	public static String HistoryPage_authorColumn;
+	/** */
+	public static String HistoryPage_dateColumn;
+	/** */
+	public static String HistoryPage_pathnameColumn;
+	/** */
+	public static String HistoryPage_refreshJob;
+
+	/** */
+	public static String HistoryPage_findbar_findTooltip;
+	/** */
+	public static String HistoryPage_findbar_find;
+	/** */
+	public static String HistoryPage_findbar_next;
+	/** */
+	public static String HistoryPage_findbar_previous;
+	/** */
+	public static String HistoryPage_findbar_ignorecase;
+	/** */
+	public static String HistoryPage_findbar_commit;
+	/** */
+	public static String HistoryPage_findbar_comments;
+	/** */
+	public static String HistoryPage_findbar_author;
+	/** */
+	public static String HistoryPage_findbar_committer;
+	/** */
+	public static String HistoryPage_findbar_changeto_commit;
+	/** */
+	public static String HistoryPage_findbar_changeto_comments;
+	/** */
+	public static String HistoryPage_findbar_changeto_author;
+	/** */
+	public static String HistoryPage_findbar_changeto_committer;
+	/** */
+	public static String HistoryPage_findbar_exceeded;
+	/** */
+	public static String HistoryPage_findbar_notFound;
+
+	/** */
+	public static String HistoryPreferencePage_title;
+
+	/** */
+	public static String WindowCachePreferencePage_title;
+	/** */
+	public static String WindowCachePreferencePage_packedGitWindowSize;
+	/** */
+	public static String WindowCachePreferencePage_packedGitLimit;
+	/** */
+	public static String WindowCachePreferencePage_deltaBaseCacheLimit;
+	/** */
+	public static String WindowCachePreferencePage_packedGitMMAP;
+	/** */
+	public static String WindowCachePreferencePage_note;
+	/** */
+	public static String WindowCachePreferencePage_needRestart;
+
 	static {
 		initializeMessages(UIText.class.getPackage().getName() + ".uitext",
 				UIText.class);

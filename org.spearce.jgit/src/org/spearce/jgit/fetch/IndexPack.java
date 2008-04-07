@@ -37,6 +37,7 @@ import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdMap;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.util.NB;
 
 /** Indexes Git pack files for local use. */
 public class IndexPack {
@@ -248,7 +249,7 @@ public class IndexPack {
 			objectDigest.update(Constants.encodeASCII(data.length));
 			objectDigest.update((byte) 0);
 			objectDigest.update(data);
-			oe = new ObjectEntry(pos, objectDigest.digest());
+			oe = new ObjectEntry(pos, 0, objectDigest.digest());
 			entries[entryCount++] = oe;
 		}
 
@@ -290,12 +291,14 @@ public class IndexPack {
 			final MessageDigest d = Constants.newMessageDigest();
 			for (int i = 0; i < 256; i++)
 				writeUInt32(d, os, fanout[i]);
+			byte[] rawoe = new byte[Constants.OBJECT_ID_LENGTH];
 			for (int i = 0; i < entryCount; i++) {
 				final ObjectEntry oe = entries[i];
 				writeUInt32(d, os, oe.pos);
 //				System.out.println(oe + " " + oe.pos);
-				os.write(oe.getBytes());
-				d.update(oe.getBytes());
+				oe.copyRawTo(rawoe, 0);
+				os.write(rawoe);
+				d.update(rawoe);
 			}
 			os.write(packcsum);
 			d.update(packcsum);
@@ -392,7 +395,7 @@ public class IndexPack {
 			final byte[] ref = new byte[20];
 			System.arraycopy(buf, c, ref, 0, 20);
 			use(20);
-			final ObjectId base = new ObjectId(ref);
+			final ObjectId base = ObjectId.fromRaw(ref);
 			ArrayList<UnresolvedDelta> r = baseById.get(base);
 			if (r == null) {
 				r = new ArrayList<UnresolvedDelta>(8);
@@ -415,7 +418,7 @@ public class IndexPack {
 		objectDigest.update(Constants.encodeASCII(sz));
 		objectDigest.update((byte) 0);
 		inflateFromInput(true);
-		entries[entryCount++] = new ObjectEntry(pos, objectDigest.digest());
+		entries[entryCount++] = new ObjectEntry(pos, 0, objectDigest.digest());
 	}
 
 	// Current position of {@link #bOffset} within the entire file.
@@ -578,8 +581,12 @@ public class IndexPack {
 	private static class ObjectEntry extends ObjectId {
 		final long pos;
 
-		ObjectEntry(final long headerOffset, final byte[] raw) {
-			super(raw);
+		ObjectEntry(final long headerOffset, final int p, final byte[] raw) {
+			super(NB.decodeInt32(raw, p),
+					NB.decodeInt32(raw, p + 4),
+					NB.decodeInt32(raw, p + 8),
+					NB.decodeInt32(raw, p + 12),
+					NB.decodeInt32(raw, p + 16));
 			pos = headerOffset;
 		}
 	}
@@ -600,11 +607,13 @@ public class IndexPack {
 	 */
 	public void renamePack(Repository db) throws IOException {
 		final MessageDigest d = Constants.newMessageDigest();
+		final byte[] oeBytes = new byte[Constants.OBJECT_ID_LENGTH];
 		for (int i = 0; i < entryCount; i++) {
 			final ObjectEntry oe = entries[i];
-			d.update(oe.getBytes());
+			oe.copyRawTo(oeBytes, 0);
+			d.update(oeBytes);
 		}
-		ObjectId name = new ObjectId(d.digest());
+		ObjectId name = ObjectId.fromRaw(d.digest());
 		System.out.println("name pack "+name);
 		File packDir = new File(db.getObjectsDirectory(),"pack");
 		File finalPack = new File(packDir, "pack-"+name+".pack");

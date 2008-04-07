@@ -509,17 +509,29 @@ public class Tree extends TreeEntry implements Treeish {
 	}
 
 	private void readTree(final byte[] raw) throws IOException {
+		final int rawSize = raw.length;
 		int rawPtr = 0;
-		TreeEntry[] temp = new TreeEntry[64];
+		TreeEntry[] temp;
 		int nextIndex = 0;
 
-		while (rawPtr < raw.length) {
-			int c = raw[rawPtr++] & 0xff;
+		while (rawPtr < rawSize) {
+			while (rawPtr < rawSize && raw[rawPtr] != 0)
+				rawPtr++;
+			rawPtr++;
+			rawPtr += Constants.OBJECT_ID_LENGTH;
+			nextIndex++;
+		}
+
+		temp = new TreeEntry[nextIndex];
+		rawPtr = 0;
+		nextIndex = 0;
+		while (rawPtr < rawSize) {
+			int c = raw[rawPtr++];
 			if (c < '0' || c > '7')
 				throw new CorruptObjectException(getId(), "invalid entry mode");
 			int mode = c - '0';
 			for (;;) {
-				c = raw[rawPtr++] & 0xff;
+				c = raw[rawPtr++];
 				if (' ' == c)
 					break;
 				else if (c < '0' || c > '7')
@@ -529,15 +541,13 @@ public class Tree extends TreeEntry implements Treeish {
 			}
 
 			int nameLen = 0;
-			while ((raw[rawPtr + nameLen] & 0xff) != 0)
+			while (raw[rawPtr + nameLen] != 0)
 				nameLen++;
 			final byte[] name = new byte[nameLen];
 			System.arraycopy(raw, rawPtr, name, 0, nameLen);
 			rawPtr += nameLen + 1;
 
-			final byte[] entId = new byte[Constants.OBJECT_ID_LENGTH];
-			System.arraycopy(raw, rawPtr, entId, 0, Constants.OBJECT_ID_LENGTH);
-			final ObjectId id = new ObjectId(entId);
+			final ObjectId id = ObjectId.fromRaw(raw, rawPtr);
 			rawPtr += Constants.OBJECT_ID_LENGTH;
 
 			final TreeEntry ent;
@@ -552,26 +562,10 @@ public class Tree extends TreeEntry implements Treeish {
 			else
 				throw new CorruptObjectException(getId(), "Invalid mode: "
 						+ Integer.toOctalString(mode));
-
-			if (nextIndex == temp.length) {
-				final TreeEntry[] n = new TreeEntry[temp.length << 1];
-				for (int k = nextIndex - 1; k >= 0; k--)
-					n[k] = temp[k];
-				temp = n;
-			}
-
 			temp[nextIndex++] = ent;
 		}
 
-		if (nextIndex == temp.length)
-			contents = temp;
-		else {
-			final TreeEntry[] n = new TreeEntry[nextIndex];
-			for (int k = nextIndex - 1; k >= 0; k--)
-				n[k] = temp[k];
-			contents = n;
-		}
-
+		contents = temp;
 	}
 
 	public String toString() {

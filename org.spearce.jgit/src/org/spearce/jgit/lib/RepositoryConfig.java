@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -31,6 +32,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.spearce.jgit.util.FS;
+
 /**
  * An object representing the Git config file.
  *
@@ -38,9 +41,22 @@ import java.util.Map;
  * file depending on how it is instantiated.
  */
 public class RepositoryConfig {
-	private final Repository repo;
+	/**
+	 * Obtain a new configuration instance for ~/.gitconfig.
+	 * 
+	 * @return a new configuration instance to read the user's global
+	 *         configuration file from their home directory.
+	 */
+	public static RepositoryConfig openUserConfig() {
+		return new RepositoryConfig(null, new File(System
+				.getProperty("user.home"), ".gitconfig"));
+	}
+
+	private final RepositoryConfig baseConfig;
 
 	private final File configFile;
+
+	private boolean readFile;
 
 	private CoreConfig core;
 
@@ -54,34 +70,23 @@ public class RepositoryConfig {
 	
 	private static final String MAGIC_EMPTY_VALUE = "%%magic%%empty%%";
 
-	// used for global configs
-	private RepositoryConfig() {
-		repo = null;
-		configFile = new File(System.getProperty("user.home"), ".gitconfig");
-		clear();
-		if (configFile.exists()) {
-			try {
-				load();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+	RepositoryConfig(final Repository repo) {
+		this(openUserConfig(), FS.resolve(repo.getDirectory(), "config"));
 	}
-	
-	private static RepositoryConfig globalConfig = null;
-	
+
 	/**
-	 * @return a RepositoryConfig representing the user global config
+	 * Create a Git configuration file reader/writer/cache for a specific file.
+	 *
+	 * @param base
+	 *            configuration that provides default values if this file does
+	 *            not set/override a particular key. Often this is the user's
+	 *            global configuration file, or the system level configuration.
+	 * @param cfgLocation
+	 *            path of the file to load (or save).
 	 */
-	public static RepositoryConfig getGlobalConfig() {
-		if (globalConfig == null) 
-			globalConfig = new RepositoryConfig();
-		return globalConfig;
-	}
-	
-	RepositoryConfig(final Repository r) {
-		repo = r;
-		configFile = new File(repo.getDirectory(), "config");
+	public RepositoryConfig(final RepositoryConfig base, final File cfgLocation) {
+		baseConfig = base;
+		configFile = cfgLocation;
 		clear();
 	}
 
@@ -93,26 +98,66 @@ public class RepositoryConfig {
 	}
 
 	/**
+	 * Obtain an integer value from the configuration.
+	 *
 	 * @param section
-	 * @param subsection
+	 *            section the key is grouped within.
 	 * @param name
+	 *            name of the key to get.
 	 * @param defaultValue
-	 * @return an integer value from the git config
+	 *            default value to return if no value was present.
+	 * @return an integer value from the configuration, or defaultValue.
+	 */
+	public int getInt(final String section, final String name,
+			final int defaultValue) {
+		return getInt(section, null, name, defaultValue);
+	}
+
+	/**
+	 * Obtain an integer value from the configuration.
+	 *
+	 * @param section
+	 *            section the key is grouped within.
+	 * @param subsection
+	 *            subsection name, such a remote or branch name.
+	 * @param name
+	 *            name of the key to get.
+	 * @param defaultValue
+	 *            default value to return if no value was present.
+	 * @return an integer value from the configuration, or defaultValue.
 	 */
 	public int getInt(final String section, String subsection,
 			final String name, final int defaultValue) {
-		final String n = getString(section, subsection, name);
-		if (n == null) {
-			if (repo == null)
-				return defaultValue;
-			return getGlobalConfig().getInt(section, subsection, name, defaultValue);
+		final String str = getString(section, subsection, name);
+		if (str == null)
+			return defaultValue;
+
+		String n = str.trim();
+		if (n.length() == 0)
+			return defaultValue;
+
+		int mul = 1;
+		switch (Character.toLowerCase(n.charAt(n.length() - 1))) {
+		case 'g':
+			mul = 1024 * 1024 * 1024;
+			break;
+		case 'm':
+			mul = 1024 * 1024;
+			break;
+		case 'k':
+			mul = 1024;
+			break;
 		}
+		if (mul > 1)
+			n = n.substring(0, n.length() - 1).trim();
+		if (n.length() == 0)
+			return defaultValue;
 
 		try {
-			return Integer.parseInt(n);
+			return mul * Integer.parseInt(n);
 		} catch (NumberFormatException nfe) {
 			throw new IllegalArgumentException("Invalid integer value: "
-					+ section + "." + name + "=" + n);
+					+ section + "." + name + "=" + str);
 		}
 	}
 
@@ -120,20 +165,38 @@ public class RepositoryConfig {
 	 * Get a boolean value from the git config
 	 *
 	 * @param section
-	 * @param subsection
+	 *            section the key is grouped within.
 	 * @param name
+	 *            name of the key to get.
 	 * @param defaultValue
+	 *            default value to return if no value was present.
+	 * @return true if any value or defaultValue is true, false for missing or
+	 *         explicit false
+	 */
+	protected boolean getBoolean(final String section, final String name,
+			final boolean defaultValue) {
+		return getBoolean(section, null, name, defaultValue);
+	}
+
+	/**
+	 * Get a boolean value from the git config
+	 *
+	 * @param section
+	 *            section the key is grouped within.
+	 * @param subsection
+	 *            subsection name, such a remote or branch name.
+	 * @param name
+	 *            name of the key to get.
+	 * @param defaultValue
+	 *            default value to return if no value was present.
 	 * @return true if any value or defaultValue is true, false for missing or
 	 *         explicit false
 	 */
 	protected boolean getBoolean(final String section, String subsection,
 			final String name, final boolean defaultValue) {
 		String n = getRawString(section, subsection, name);
-		if (n == null) {
-			if (repo == null)
-				return defaultValue;
-			return getGlobalConfig().getBoolean(section, subsection, name, defaultValue);
-		}
+		if (n == null)
+			return defaultValue;
 
 		n = n.toLowerCase();
 		if (MAGIC_EMPTY_VALUE.equals(n) || "yes".equals(n) || "true".equals(n) || "1".equals(n)) {
@@ -160,7 +223,19 @@ public class RepositoryConfig {
 		return val;
 	}
 	
-	private String getRawString(final String section, String subsection, final String name) {
+	private String getRawString(final String section, final String subsection,
+			final String name) {
+		if (!readFile) {
+			try {
+				load();
+			} catch (FileNotFoundException err) {
+				// Oh well. No sense in complaining about it.
+				//
+			} catch (IOException err) {
+				err.printStackTrace();
+			}
+		}
+
 		String ss;
 		if (subsection != null)
 			ss = "."+subsection.toLowerCase();
@@ -172,11 +247,10 @@ public class RepositoryConfig {
 			return ((Entry) ((List) o).get(0)).value;
 		} else if (o instanceof Entry) {
 			return ((Entry) o).value;
-		} else {
-			if (repo == null)
-				return null;
-			return getGlobalConfig().getString(section, subsection, name);
-		}
+		} else if (baseConfig != null)
+			return baseConfig.getRawString(section, subsection, name);
+		else
+			return null;
 	}
 
 	/**
@@ -186,6 +260,7 @@ public class RepositoryConfig {
 		Entry e;
 
 		clear();
+		readFile = true;
 
 		e = new Entry();
 		e.base = "core";
@@ -263,6 +338,7 @@ public class RepositoryConfig {
 				tmp.delete();
 			}
 		}
+		readFile = ok;
 	}
 
 	/**
@@ -271,6 +347,7 @@ public class RepositoryConfig {
 	 */
 	public void load() throws IOException {
 		clear();
+		readFile = true;
 		final BufferedReader r = new BufferedReader(new InputStreamReader(
 				new FileInputStream(configFile), Constants.CHARACTER_ENCODING));
 		try {
@@ -599,12 +676,5 @@ public class RepositoryConfig {
 		String value;
 
 		String suffix;
-	}
-	
-	RepositoryConfig(String file) throws IOException  {
-		repo = null;
-		configFile = new File(file);
-		clear();
-		load();
 	}
 }

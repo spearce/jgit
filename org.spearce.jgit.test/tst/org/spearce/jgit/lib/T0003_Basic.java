@@ -62,7 +62,6 @@ public class T0003_Basic extends RepositoryTestCase {
 				"825dc642cb6eb9a060e54bf8d69288fbee4904");
 		assertTrue("Exists " + o, o.isFile());
 		assertTrue("Read-only " + o, !o.canWrite());
-		assertEquals(9, o.length());
 	}
 
 	public void test002_WriteEmptyTree2() throws IOException {
@@ -179,7 +178,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		final FileTreeEntry f = t.addFile("i-am-a-file");
 		writeTrashFile(f.getName(), "and this is the data in me\n");
 		t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
-		assertEquals(new ObjectId("00b1f73724f493096d1ffa0b0f1f1482dbb8c936"),
+		assertEquals(ObjectId.fromString("00b1f73724f493096d1ffa0b0f1f1482dbb8c936"),
 				t.getTreeId());
 
 		final Commit c = new Commit(db);
@@ -189,7 +188,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		c.setTree(t);
 		assertEquals(t.getTreeId(), c.getTreeId());
 		c.commit();
-		final ObjectId cmtid = new ObjectId(
+		final ObjectId cmtid = ObjectId.fromString(
 				"803aec4aba175e8ab1d666873c984c0308179099");
 		assertEquals(cmtid, c.getCommitId());
 
@@ -200,95 +199,6 @@ public class T0003_Basic extends RepositoryTestCase {
 			assertEquals(0x78, xis.readUInt8());
 			assertEquals(0x9c, xis.readUInt8());
 			assertTrue(0x789c % 31 == 0);
-		} finally {
-			xis.close();
-		}
-
-		// Verify we can read it.
-		final Commit c2 = db.mapCommit(cmtid);
-		assertNotNull(c2);
-		assertEquals(c.getMessage(), c2.getMessage());
-		assertEquals(c.getTreeId(), c2.getTreeId());
-		assertEquals(c.getAuthor(), c2.getAuthor());
-		assertEquals(c.getCommitter(), c2.getCommitter());
-	}
-
-	public void test010_CreateCommitNewFormat() throws IOException {
-		writeTrashFile(".git/config", "[core]\n" + "legacyHeaders=0\n");
-		db.getConfig().load();
-
-		final Tree t = new Tree(db);
-		final FileTreeEntry f = t.addFile("i-am-a-file");
-		writeTrashFile(f.getName(), "and this is the data in me\n");
-		t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
-		assertEquals(new ObjectId("00b1f73724f493096d1ffa0b0f1f1482dbb8c936"),
-				t.getTreeId());
-
-		final Commit c = new Commit(db);
-		c.setAuthor(new PersonIdent(jauthor, 1154236443000L, -4 * 60));
-		c.setCommitter(new PersonIdent(jcommitter, 1154236443000L, -4 * 60));
-		c.setMessage("A Commit\n");
-		c.setTree(t);
-		assertEquals(t.getTreeId(), c.getTreeId());
-		c.commit();
-		final ObjectId cmtid = new ObjectId(
-				"803aec4aba175e8ab1d666873c984c0308179099");
-		assertEquals(cmtid, c.getCommitId());
-
-		// Verify the commit we just wrote is in the correct format.
-		final XInputStream xis = new XInputStream(new FileInputStream(db
-				.toFile(cmtid)));
-		try {
-			// 'pack style' commit header: 177 bytes
-			assertEquals(0x91, xis.readUInt8());
-			assertEquals(0x0b, xis.readUInt8());
-			// zlib stream start
-			assertEquals(0x78, xis.readUInt8());
-			assertTrue(((0x78 << 8) | xis.readUInt8()) % 31 == 0);
-		} finally {
-			xis.close();
-		}
-
-		// Verify we can read it.
-		final Commit c2 = db.mapCommit(cmtid);
-		assertNotNull(c2);
-		assertEquals(c.getMessage(), c2.getMessage());
-		assertEquals(c.getTreeId(), c2.getTreeId());
-		assertEquals(c.getAuthor(), c2.getAuthor());
-		assertEquals(c.getCommitter(), c2.getCommitter());
-	}
-
-	public void test011_CreateCommitNewFormatIsDefault() throws IOException {
-		db.getConfig().load();
-
-		final Tree t = new Tree(db);
-		final FileTreeEntry f = t.addFile("i-am-a-file");
-		writeTrashFile(f.getName(), "and this is the data in me\n");
-		t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
-		assertEquals(new ObjectId("00b1f73724f493096d1ffa0b0f1f1482dbb8c936"),
-				t.getTreeId());
-
-		final Commit c = new Commit(db);
-		c.setAuthor(new PersonIdent(jauthor, 1154236443000L, -4 * 60));
-		c.setCommitter(new PersonIdent(jcommitter, 1154236443000L, -4 * 60));
-		c.setMessage("A Commit\n");
-		c.setTree(t);
-		assertEquals(t.getTreeId(), c.getTreeId());
-		c.commit();
-		final ObjectId cmtid = new ObjectId(
-				"803aec4aba175e8ab1d666873c984c0308179099");
-		assertEquals(cmtid, c.getCommitId());
-
-		// Verify the commit we just wrote is in the correct format.
-		final XInputStream xis = new XInputStream(new FileInputStream(db
-				.toFile(cmtid)));
-		try {
-			// 'pack style' commit header: 177 bytes
-			assertEquals(0x91, xis.readUInt8());
-			assertEquals(0x0b, xis.readUInt8());
-			// zlib stream start
-			assertEquals(0x78, xis.readUInt8());
-			assertTrue(((0x78 << 8) | xis.readUInt8()) % 31 == 0);
 		} finally {
 			xis.close();
 		}
@@ -318,7 +228,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		e4.setId(emptyBlob);
 
 		t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
-		assertEquals(new ObjectId("b47a8f0a4190f7572e11212769090523e23eb1ea"),
+		assertEquals(ObjectId.fromString("b47a8f0a4190f7572e11212769090523e23eb1ea"),
 				t.getId());
 	}
 
@@ -344,7 +254,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		test020_createBlobTag();
 		Tag t = new Tag(db);
 		t.setTag("test020b");
-		t.setObjId(new ObjectId("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"));
+		t.setObjId(ObjectId.fromString("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"));
 		t.tag();
 		
 		Tag mapTag = db.mapTag("test020b");
@@ -490,7 +400,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		final FileTreeEntry f = t.addFile("i-am-a-file");
 		writeTrashFile(f.getName(), "and this is the data in me\n");
 		t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
-		assertEquals(new ObjectId("00b1f73724f493096d1ffa0b0f1f1482dbb8c936"),
+		assertEquals(ObjectId.fromString("00b1f73724f493096d1ffa0b0f1f1482dbb8c936"),
 				t.getTreeId());
 
 		final Commit c1 = new Commit(db);
@@ -500,7 +410,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		c1.setTree(t);
 		assertEquals(t.getTreeId(), c1.getTreeId());
 		c1.commit();
-		final ObjectId cmtid1 = new ObjectId(
+		final ObjectId cmtid1 = ObjectId.fromString(
 				"803aec4aba175e8ab1d666873c984c0308179099");
 		assertEquals(cmtid1, c1.getCommitId());
 
@@ -512,7 +422,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		assertEquals(t.getTreeId(), c2.getTreeId());
 		c2.setParentIds(new ObjectId[] { c1.getCommitId() } );
 		c2.commit();
-		final ObjectId cmtid2 = new ObjectId(
+		final ObjectId cmtid2 = ObjectId.fromString(
 				"95d068687c91c5c044fb8c77c5154d5247901553");
 		assertEquals(cmtid2, c2.getCommitId());
 
@@ -533,7 +443,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		assertEquals(t.getTreeId(), c3.getTreeId());
 		c3.setParentIds(new ObjectId[] { c1.getCommitId(), c2.getCommitId() });
 		c3.commit();
-		final ObjectId cmtid3 = new ObjectId(
+		final ObjectId cmtid3 = ObjectId.fromString(
 				"ce6e1ce48fbeeb15a83f628dc8dc2debefa066f4");
 		assertEquals(cmtid3, c3.getCommitId());
 
@@ -555,7 +465,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		assertEquals(t.getTreeId(), c3.getTreeId());
 		c4.setParentIds(new ObjectId[] { c1.getCommitId(), c2.getCommitId(), c3.getCommitId() });
 		c4.commit();
-		final ObjectId cmtid4 = new ObjectId(
+		final ObjectId cmtid4 = ObjectId.fromString(
 				"d1fca9fe3fef54e5212eb67902c8ed3e79736e27");
 		assertEquals(cmtid4, c4.getCommitId());
 
@@ -588,8 +498,8 @@ public class T0003_Basic extends RepositoryTestCase {
 		ObjectId resolve = db.resolve("HEAD");
 		assertEquals("7f822839a2fe9760f386cbbbcb3f92c5fe81def7", resolve.toString());
 
-		RefLock lockRef = db.lockRef("HEAD");
-		ObjectId newId = new ObjectId("07f822839a2fe9760f386cbbbcb3f92c5fe81def");
+		LockFile lockRef = db.lockRef("HEAD");
+		ObjectId newId = ObjectId.fromString("07f822839a2fe9760f386cbbbcb3f92c5fe81def");
 		lockRef.write(newId);
 		assertTrue(lockRef.commit());
 
@@ -597,8 +507,8 @@ public class T0003_Basic extends RepositoryTestCase {
 		assertEquals(newId, db.resolve("refs/heads/foobar"));
 
 		// Again. The ref already exists
-		RefLock lockRef2 = db.lockRef("HEAD");
-		ObjectId newId2 = new ObjectId("7f822839a2fe9760f386cbbbcb3f92c5fe81def7");
+		LockFile lockRef2 = db.lockRef("HEAD");
+		ObjectId newId2 = ObjectId.fromString("7f822839a2fe9760f386cbbbcb3f92c5fe81def7");
 		lockRef2.write(newId2);
 		assertTrue(lockRef2.commit());
 

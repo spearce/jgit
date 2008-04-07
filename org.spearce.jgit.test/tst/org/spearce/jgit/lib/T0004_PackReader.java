@@ -20,20 +20,21 @@ import java.io.File;
 import java.io.IOException;
 
 public class T0004_PackReader extends RepositoryTestCase {
-	private static final File TEST_PACK = new File(new File("tst"),
-			"pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.pack");
+	private static final String PACK_NAME = "pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f";
+	private static final File TEST_PACK = new File(new File("tst"), PACK_NAME + ".pack");
+	private static final File TEST_IDX = new File(TEST_PACK.getParentFile(), PACK_NAME + ".idx");
 
 	public void test003_lookupCompressedObject() throws IOException {
 		final PackFile pr;
 		final ObjectId id;
 		final PackedObjectLoader or;
 
-		id = new ObjectId("902d5476fa249b7abc9d84c611577a81381f0327");
-		pr = new PackFile(db, TEST_PACK);
+		id = ObjectId.fromString("902d5476fa249b7abc9d84c611577a81381f0327");
+		pr = new PackFile(db, TEST_IDX, TEST_PACK);
 		or = pr.get(id);
 		assertNotNull(or);
 		assertEquals(id, or.getId());
-		assertEquals(Constants.TYPE_TREE, or.getType());
+		assertEquals(Constants.OBJ_TREE, or.getType());
 		assertEquals(35, or.getSize());
 		assertEquals(7738, or.getDataOffset());
 		pr.close();
@@ -43,12 +44,12 @@ public class T0004_PackReader extends RepositoryTestCase {
 		final ObjectId id;
 		final ObjectLoader or;
 
-		id = new ObjectId("5b6e7c66c276e7610d4a73c70ec1a1f7c1003259");
+		id = ObjectId.fromString("5b6e7c66c276e7610d4a73c70ec1a1f7c1003259");
 		or = db.openObject(id);
 		assertNotNull(or);
 		assertTrue(or instanceof PackedObjectLoader);
 		assertEquals(id, or.getId());
-		assertEquals(Constants.TYPE_BLOB, or.getType());
+		assertEquals(Constants.OBJ_BLOB, or.getType());
 		assertEquals(18009, or.getSize());
 		assertEquals(537, ((PackedObjectLoader) or).getDataOffset());
 	}
@@ -70,13 +71,13 @@ public class T0004_PackReader extends RepositoryTestCase {
 		Tree t;
 
 		t = db
-				.mapTree(new ObjectId(
+				.mapTree(ObjectId.fromString(
 						"aac9df07f653dd18b935298deb813e02c32d2e6f"));
 		assertNotNull(t);
 		t.memberCount();
 
 		t = db
-				.mapTree(new ObjectId(
+				.mapTree(ObjectId.fromString(
 						"6b9ffbebe7b83ac6a61c9477ab941d999f5d0c96"));
 		assertNotNull(t);
 		t.memberCount();

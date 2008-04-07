@@ -10,8 +10,6 @@ import org.eclipse.compare.ITypedElement;
 import org.eclipse.compare.structuremergeviewer.IStructureComparator;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.team.core.history.IFileRevision;
-import org.spearce.egit.core.internal.mapping.GitCommitFileRevision;
 import org.spearce.jgit.lib.FileTreeEntry;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectLoader;
@@ -33,15 +31,6 @@ public class GitResourceNode extends BufferedContent implements IStructureCompar
 	 */
 	public GitResourceNode(TreeEntry e) {
 		entry = e;
-	}
-
-	/**
-	 * Construct a {@link GitResourceNode} for a resource ties a specific historical version
-	 * @param file
-	 */
-	public GitResourceNode(IFileRevision file) {
-		this(file instanceof GitCommitFileRevision ? ((GitCommitFileRevision)file).getTreeEntry() : null);
-		contentIdentifier = ((GitCommitFileRevision)file).getContentIdentifier();
 	}
 
 	public Object[] getChildren() {

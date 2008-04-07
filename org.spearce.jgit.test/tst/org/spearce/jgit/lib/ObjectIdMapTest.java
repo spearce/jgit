@@ -27,8 +27,7 @@ import junit.framework.TestCase;
  * Test functionality of ObjectIdMap
  *
  * The reason this class exists is performance, but those figures
- * are hard to make stable. See {@link ObjectIdMapExtTest} for
- * peformance tests.
+ * are hard to make stable.
  */
 public class ObjectIdMapTest extends TestCase {
 
@@ -40,7 +39,7 @@ public class ObjectIdMapTest extends TestCase {
 			byte[] data = new byte[Constants.OBJECT_ID_LENGTH];
 			for (int j=0; j<Constants.OBJECT_ID_LENGTH; ++j)
 				data[j] = (byte) (b++^0xEE);
-			ids[i] = new ObjectId(data);
+			ids[i] = ObjectId.fromRaw(data);
 		}
 	}
 

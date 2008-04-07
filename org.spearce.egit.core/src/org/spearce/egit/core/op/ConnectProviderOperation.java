@@ -35,6 +35,7 @@ import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryFinder;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.WindowCache;
 
 /**
  * Connects Eclipse to an existing Git repository, or creates a new one.
@@ -66,6 +67,7 @@ public class ConnectProviderOperation implements IWorkspaceRunnable {
 
 		m.beginTask(CoreText.ConnectProviderOperation_connecting, 100);
 		try {
+			final WindowCache windows = GitProjectData.getWindowCache();
 			final Collection repos = new ArrayList();
 
 			if (newGitDir != null) {
@@ -75,7 +77,7 @@ public class ConnectProviderOperation implements IWorkspaceRunnable {
 					m.subTask(CoreText.ConnectProviderOperation_creating);
 					Activator.trace("Creating repository " + newGitDir);
 
-					db = new Repository(newGitDir);
+					db = new Repository(windows, newGitDir);
 					db.create();
 					repos.add(new RepositoryMapping(project, db.getDirectory(),
 							null));

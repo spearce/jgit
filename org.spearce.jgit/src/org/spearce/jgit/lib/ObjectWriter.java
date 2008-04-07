@@ -52,8 +52,6 @@ public class ObjectWriter {
 
 	private final Deflater def;
 
-	private final boolean legacyHeaders;
-
 	/**
 	 * Construct an Object writer for the specified repository
 	 * @param d
@@ -63,7 +61,6 @@ public class ObjectWriter {
 		buf = new byte[8192];
 		md = Constants.newMessageDigest();
 		def = new Deflater(r.getConfig().getCore().getCompression());
-		legacyHeaders = r.getConfig().getCore().useLegacyHeaders();
 	}
 
 	/**
@@ -106,8 +103,7 @@ public class ObjectWriter {
 	 */
 	public ObjectId writeBlob(final long len, final InputStream is)
 			throws IOException {
-		return writeObject(Constants.OBJ_BLOB, Constants.TYPE_BLOB, len, is,
-				true);
+		return writeObject(Constants.TYPE_BLOB, len, is, true);
 	}
 
 	/**
@@ -135,7 +131,7 @@ public class ObjectWriter {
 			o.write(' ');
 			o.write(e.getNameUTF8());
 			o.write(0);
-			o.write(id.getBytes());
+			id.copyRawTo(o);
 		}
 		return writeTree(o.toByteArray());
 	}
@@ -146,8 +142,7 @@ public class ObjectWriter {
 
 	private ObjectId writeTree(final long len, final InputStream is)
 			throws IOException {
-		return writeObject(Constants.OBJ_TREE, Constants.TYPE_TREE, len, is,
-				true);
+		return writeObject(Constants.TYPE_TREE, len, is, true);
 	}
 
 	/**
@@ -250,13 +245,12 @@ public class ObjectWriter {
 
 	private ObjectId writeCommit(final long len, final InputStream is)
 			throws IOException {
-		return writeObject(Constants.OBJ_COMMIT, Constants.TYPE_COMMIT, len,
-				is, true);
+		return writeObject(Constants.TYPE_COMMIT, len, is, true);
 	}
 
 	private ObjectId writeTag(final long len, final InputStream is)
 		throws IOException {
-		return writeObject(Constants.OBJ_TAG, Constants.TYPE_TAG, len, is, true);
+		return writeObject(Constants.TYPE_TAG, len, is, true);
 	}
 
 	/**
@@ -270,13 +264,12 @@ public class ObjectWriter {
 	 */
 	public ObjectId computeBlobSha1(final long len, final InputStream is)
 			throws IOException {
-		return writeObject(Constants.OBJ_BLOB, Constants.TYPE_BLOB, len, is,
-				false);
+		return writeObject(Constants.TYPE_BLOB, len, is, false);
 	}
 
 	@SuppressWarnings("null")
-	ObjectId writeObject(final int typeCode, final String type,
-			long len, final InputStream is, boolean store) throws IOException {
+	ObjectId writeObject(final String type, long len, final InputStream is,
+			boolean store) throws IOException {
 		final File t;
 		final DeflaterOutputStream deflateStream;
 		final FileOutputStream fileStream;
@@ -288,17 +281,6 @@ public class ObjectWriter {
 		} else {
 			t = null;
 			fileStream = null;
-		}
-		if (fileStream !=null && !legacyHeaders) {
-			long sz = len;
-			int c = ((typeCode & 7) << 4) | (int) (sz & 0xf);
-			sz >>= 4;
-			while (sz > 0) {
-				fileStream.write(c | 0x80);
-				c = (int) (sz & 0x7f);
-				sz >>= 7;
-			}
-			fileStream.write(c);
 		}
 
 		md.reset();
@@ -314,20 +296,20 @@ public class ObjectWriter {
 
 			header = Constants.encodeASCII(type);
 			md.update(header);
-			if (deflateStream != null && legacyHeaders)
+			if (deflateStream != null)
 				deflateStream.write(header);
 
 			md.update((byte) ' ');
-			if (deflateStream != null && legacyHeaders)
+			if (deflateStream != null)
 				deflateStream.write((byte) ' ');
 
 			header = Constants.encodeASCII(len);
 			md.update(header);
-			if (deflateStream != null && legacyHeaders)
+			if (deflateStream != null)
 				deflateStream.write(header);
 
 			md.update((byte) 0);
-			if (deflateStream != null && legacyHeaders)
+			if (deflateStream != null)
 				deflateStream.write((byte) 0);
 
 			while (len > 0
@@ -348,7 +330,7 @@ public class ObjectWriter {
 					t.setReadOnly();
 			}
 
-			id = new ObjectId(md.digest());
+			id = ObjectId.fromRaw(md.digest());
 		} finally {
 			if (id == null && deflateStream != null) {
 				try {

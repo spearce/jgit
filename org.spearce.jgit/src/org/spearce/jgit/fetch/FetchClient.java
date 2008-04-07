@@ -34,10 +34,10 @@ import java.util.regex.Pattern;
 
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdMap;
 import org.spearce.jgit.lib.ProgressMonitor;
-import org.spearce.jgit.lib.RefLock;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tag;
 import org.spearce.jgit.lib.Tree;
@@ -459,7 +459,7 @@ public class FetchClient {
 				lref = ref;
 			else
 				throw new IllegalStateException("Bad ref name from remote "+ref);
-			RefLock lockRef = repository.lockRef(lref);
+			LockFile lockRef = repository.lockRef(lref);
 			lockRef.write(id);
 			lockRef.commit();
 		}

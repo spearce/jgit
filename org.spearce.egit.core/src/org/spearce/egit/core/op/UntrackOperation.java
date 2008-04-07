@@ -111,7 +111,7 @@ public class UntrackOperation implements IWorkspaceRunnable {
 				while (i.hasNext()) {
 					final RepositoryMapping r = (RepositoryMapping) i.next();
 					r.getRepository().getIndex().read();
-					r.recomputeMerge();
+					r.fireRepositoryChanged();
 				}
 			} catch (IOException e) {
 				e.printStackTrace();

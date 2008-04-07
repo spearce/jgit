@@ -20,7 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.zip.DataFormatException;
 
-import org.spearce.jgit.errors.CorruptObjectException;
+import org.spearce.jgit.util.NB;
 
 /**
  * A Git version 2 pack file representation. A pack file contains
@@ -28,62 +28,48 @@ import org.spearce.jgit.errors.CorruptObjectException;
  * lots of object where some objects are similar.
  */
 public class PackFile {
-	private static final int IDX_HDR_LEN = 256 * 4;
-
 	private static final byte[] SIGNATURE = { 'P', 'A', 'C', 'K' };
 
 	private final Repository repo;
 
 	private final WindowedFile pack;
 
-	private byte[][] idxdata;
+	private final PackIndex idx;
 
-	private long objectCnt;
+	private final UnpackedObjectCache deltaBaseCache;
 
 	/**
-	 * Construct a representation of a packfile
+	 * Construct a reader for an existing, pre-indexed packfile.
 	 *
-	 * @param parentRepo Git repository holding this pack file
+	 * @param parentRepo
+	 *            Git repository holding this pack file
+	 * @param idxFile
+	 *            path of the <code>.idx</code> file listing the contents.
 	 * @param packFile
+	 *            path of the <code>.pack</code> file holding the data.
 	 * @throws IOException
+	 *             the index file cannot be accessed at this time.
 	 */
-	public PackFile(final Repository parentRepo, final File packFile)
-			throws IOException {
+	public PackFile(final Repository parentRepo, final File idxFile,
+			final File packFile) throws IOException {
 		repo = parentRepo;
-		// FIXME window size and mmap type should be configurable
-		pack = new WindowedFile(repo.getWindowCache(), packFile,
-				64 * 1024 * 1024, true);
+		pack = new WindowedFile(repo.getWindowCache(), packFile) {
+			@Override
+			protected void onOpen() throws IOException {
+				readPackHeader();
+			}
+		};
 		try {
-			readPackHeader();
-
-			final String name = packFile.getName();
-			final int dot = name.lastIndexOf('.');
-			final File idxFile = new File(packFile.getParentFile(), name
-					.substring(0, dot)
-					+ ".idx");
-			// FIXME window size and mmap type should be configurable
-			final WindowedFile idx = new WindowedFile(new WindowCache(8*1024*1024,1), idxFile, 8*1024*1024, true);
-			try {
-				readIndexHeader(idx);
-			} finally {
-				try {
-					idx.close();
-				} catch (IOException err2) {
-					// ignore
-				}
-			}
+			idx = PackIndex.open(idxFile);
 		} catch (IOException ioe) {
-			try {
-				pack.close();
-			} catch (IOException err2) {
-				// Ignore this
-			}
 			throw ioe;
 		}
+		deltaBaseCache = pack.cache.deltaBaseCache;
 	}
 
-	ObjectLoader resolveBase(final long ofs) throws IOException {
-		return reader(ofs);
+	final PackedObjectLoader resolveBase(final WindowCursor curs, final long ofs)
+			throws IOException {
+		return reader(curs, ofs);
 	}
 
 	/**
@@ -97,21 +83,12 @@ public class PackFile {
 	 *            the object to look for. Must not be null.
 	 * @return true if the object is in this pack; false otherwise.
 	 */
-	public boolean hasObject(final ObjectId id) {
-		return findOffset(id) != -1;
+	public boolean hasObject(final AnyObjectId id) {
+		return idx.findOffset(id) != -1;
 	}
 
 	/**
 	 * Get an object from this pack.
-	 * <p>
-	 * For performance reasons the caller is responsible for supplying a
-	 * temporary buffer of at least {@link Constants#OBJECT_ID_LENGTH} bytes for
-	 * use during searching. If an object loader is returned this temporary
-	 * buffer becomes the property of the object loader and must not be
-	 * overwritten by the caller. If no object loader is returned then the
-	 * temporary buffer remains the property of the caller and may be given to a
-	 * different pack file to continue searching for the needed object.
-	 * </p>
 	 * 
 	 * @param id
 	 *            the object to obtain from the pack. Must not be null.
@@ -120,38 +97,63 @@ public class PackFile {
 	 * @throws IOException
 	 *             the pack file or the index could not be read.
 	 */
-	public PackedObjectLoader get(final ObjectId id)
+	public PackedObjectLoader get(final AnyObjectId id) throws IOException {
+		return get(new WindowCursor(), id);
+	}
+
+	/**
+	 * Get an object from this pack.
+	 * 
+	 * @param curs
+	 *            temporary working space associated with the calling thread.
+	 * @param id
+	 *            the object to obtain from the pack. Must not be null.
+	 * @return the object loader for the requested object if it is contained in
+	 *         this pack; null if the object was not found.
+	 * @throws IOException
+	 *             the pack file or the index could not be read.
+	 */
+	public PackedObjectLoader get(final WindowCursor curs, final AnyObjectId id)
 			throws IOException {
-		final long offset = findOffset(id);
+		final long offset = idx.findOffset(id);
 		if (offset == -1)
 			return null;
-		final PackedObjectLoader objReader = reader(offset);
-		objReader.setId(id);
+		final PackedObjectLoader objReader = reader(curs, offset);
+		objReader.setId(id.toObjectId());
 		return objReader;
 	}
 
 	/**
 	 * Close the resources utilized by this repository
-	 * @throws IOException
 	 */
-	public void close() throws IOException {
+	public void close() {
+		deltaBaseCache.purge(pack);
 		pack.close();
 	}
 
-	byte[] decompress(final long position, final int totalSize)
-			throws DataFormatException, IOException {
+	final UnpackedObjectCache.Entry readCache(final long position) {
+		return deltaBaseCache.get(pack, position);
+	}
+
+	final void saveCache(final long position, final byte[] data, final int type) {
+		deltaBaseCache.store(pack, position, data, type);
+	}
+
+	final byte[] decompress(final long position, final int totalSize,
+			final WindowCursor curs) throws DataFormatException, IOException {
 		final byte[] dstbuf = new byte[totalSize];
-		pack.readCompressed(position, dstbuf);
+		pack.readCompressed(position, dstbuf, curs);
 		return dstbuf;
 	}
 
 	private void readPackHeader() throws IOException {
+		final WindowCursor curs = new WindowCursor();
 		long position = 0;
 		final byte[] sig = new byte[SIGNATURE.length];
 		final byte[] intbuf = new byte[4];
 		final long vers;
 
-		if (pack.read(position, sig) != SIGNATURE.length)
+		if (pack.read(position, sig, curs) != SIGNATURE.length)
 			throw new IOException("Not a PACK file.");
 		for (int k = 0; k < SIGNATURE.length; k++) {
 			if (sig[k] != SIGNATURE[k])
@@ -159,44 +161,28 @@ public class PackFile {
 		}
 		position += SIGNATURE.length;
 
-		vers = pack.readUInt32(position, intbuf);
+		pack.readFully(position, intbuf, curs);
+		vers = NB.decodeUInt32(intbuf, 0);
 		if (vers != 2 && vers != 3)
 			throw new IOException("Unsupported pack version " + vers + ".");
 		position += 4;
 
-		objectCnt = pack.readUInt32(position, intbuf);
+		pack.readFully(position, intbuf, curs);
+		final long objectCnt = NB.decodeUInt32(intbuf, 0);
+		if (idx.getObjectCount() != objectCnt)
+			throw new IOException("Pack index"
+					+ " object count mismatch; expected " + objectCnt
+					+ " found " + idx.getObjectCount() + ": "
+					+ pack.getName());
 	}
 
-	private void readIndexHeader(final WindowedFile idx) throws CorruptObjectException, IOException {
-		if (idx.length() != (IDX_HDR_LEN + (24 * objectCnt) + (2 * Constants.OBJECT_ID_LENGTH)))
-			throw new CorruptObjectException("Invalid pack index");
-
-		final long[] idxHeader = new long[256]; // really unsigned 32-bit...
-		final byte[] intbuf = new byte[4];
-		for (int k = 0; k < idxHeader.length; k++)
-			idxHeader[k] = idx.readUInt32(k * 4, intbuf);
-		idxdata = new byte[idxHeader.length][];
-		for (int k = 0; k < idxHeader.length; k++) {
-			int n;
-			if (k == 0) {
-				n = (int)(idxHeader[k]);
-			} else {
-				n = (int)(idxHeader[k]-idxHeader[k-1]);
-			}
-			if (n > 0) {
-				idxdata[k] = new byte[n * (Constants.OBJECT_ID_LENGTH + 4)];
-				int off = (int) ((k == 0) ? 0 : idxHeader[k-1] * (Constants.OBJECT_ID_LENGTH + 4));
-				idx.read(off + IDX_HDR_LEN, idxdata[k]);
-			}
-		}
-	}
-
-	private PackedObjectLoader reader(final long objOffset)
+	private PackedObjectLoader reader(final WindowCursor curs,
+			final long objOffset)
 			throws IOException {
 		long pos = objOffset;
 		int p = 0;
-		final byte[] ib = new byte[Constants.OBJECT_ID_LENGTH];
-		pack.readFully(pos, ib);
+		final byte[] ib = curs.tempId;
+		pack.readFully(pos, ib, curs);
 		int c = ib[p++] & 0xff;
 		final int typeCode = (c >> 4) & 7;
 		long dataSize = c & 15;
@@ -210,15 +196,14 @@ public class PackFile {
 
 		switch (typeCode) {
 		case Constants.OBJ_COMMIT:
-			return whole(Constants.TYPE_COMMIT, pos, dataSize);
 		case Constants.OBJ_TREE:
-			return whole(Constants.TYPE_TREE, pos, dataSize);
 		case Constants.OBJ_BLOB:
-			return whole(Constants.TYPE_BLOB, pos, dataSize);
 		case Constants.OBJ_TAG:
-			return whole(Constants.TYPE_TAG, pos, dataSize);
+			return new WholePackedObjectLoader(curs, this, pos, typeCode,
+					(int) dataSize);
+
 		case Constants.OBJ_OFS_DELTA: {
-			pack.readFully(pos, ib);
+			pack.readFully(pos, ib, curs);
 			p = 0;
 			c = ib[p++] & 0xff;
 			long ofs = c & 127;
@@ -228,46 +213,16 @@ public class PackFile {
 				ofs <<= 7;
 				ofs += (c & 127);
 			}
-			return new DeltaOfsPackedObjectLoader(this, pos + p,
+			return new DeltaOfsPackedObjectLoader(curs, this, pos + p,
 					(int) dataSize, objOffset - ofs);
 		}
 		case Constants.OBJ_REF_DELTA: {
-			pack.readFully(pos, ib);
-			return new DeltaRefPackedObjectLoader(this, pos + ib.length,
-					(int) dataSize, new ObjectId(ib));
+			pack.readFully(pos, ib, curs);
+			return new DeltaRefPackedObjectLoader(curs, this, pos + ib.length,
+					(int) dataSize, ObjectId.fromRaw(ib));
 		}
 		default:
 			throw new IOException("Unknown object type " + typeCode + ".");
 		}
-	}
-
-	private final WholePackedObjectLoader whole(final String type,
-			final long pos, final long size) {
-		return new WholePackedObjectLoader(this, pos, type, (int) size);
-	}
-
-	private long findOffset(final ObjectId objId) {
-		final int levelOne = objId.getFirstByte();
-		byte[] data = idxdata[levelOne];
-		if (data == null)
-			return -1;
-		long high = data.length / (4 + Constants.OBJECT_ID_LENGTH);
-		long low = 0;
-		do {
-			final long mid = (low + high) / 2;
-			final long pos = ((4 + Constants.OBJECT_ID_LENGTH) * mid) + 4;
-			final int cmp = objId.compareTo(data, pos);
-			if (cmp < 0)
-				high = mid;
-			else if (cmp == 0) {
-				int b0 = data[(int)pos-4] & 0xff;
-				int b1 = data[(int)pos-3] & 0xff;
-				int b2 = data[(int)pos-2] & 0xff;
-				int b3 = data[(int)pos-1] & 0xff;
-				return (((long)b0) << 24) | ( b1 << 16 ) | ( b2 << 8 ) | (b3); 
-			} else
-				low = mid + 1;
-		} while (low < high);
-		return -1;
 	}
 }

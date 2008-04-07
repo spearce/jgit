@@ -18,21 +18,20 @@ package org.spearce.jgit.lib;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.ObjectWritingException;
+import org.spearce.jgit.stgit.StGitPatch;
+import org.spearce.jgit.util.FS;
 
 /**
  * Represents a Git repository. A repository holds all objects and refs used for
@@ -54,12 +53,12 @@ import org.spearce.jgit.errors.ObjectWritingException;
  * </li>
  * </ul>
  *
- * This implemention only handles a subtly undocumented subset of git features.
+ * This implementation only handles a subtly undocumented subset of git features.
  *
  */
 public class Repository {
 	private static final String[] refSearchPaths = { "", "refs/", "refs/tags/",
-			"refs/heads/", };
+			"refs/heads/", "refs/remotes/" };
 
 	private final File gitDir;
 
@@ -67,14 +66,13 @@ public class Repository {
 
 	private final File refsDir;
 
+	private final File packedRefsFile;
+
 	private final RepositoryConfig config;
 
 	private PackFile[] packs;
 
-	private WindowCache windows;
-
-	private Map<ObjectId,Reference<Tree>> treeCache = new WeakHashMap<ObjectId,Reference<Tree>>(30000);
-	private Map<ObjectId,Reference<Commit>> commitCache = new WeakHashMap<ObjectId,Reference<Commit>>(30000);
+	private final WindowCache windows;
 
 	private GitIndex index;
 
@@ -86,18 +84,40 @@ public class Repository {
 	 * @throws IOException
 	 */
 	public Repository(final File d) throws IOException {
+		this(null, d);
+	}
+
+	/**
+	 * Construct a representation of a Git repository.
+	 * 
+	 * @param wc
+	 *            cache this repository's data will be cached through during
+	 *            access. May be shared with another repository, or null to
+	 *            indicate this repository should allocate its own private
+	 *            cache.
+	 * @param d
+	 *            GIT_DIR (the location of the repository metadata).
+	 * @throws IOException
+	 *             the repository appears to already exist but cannot be
+	 *             accessed.
+	 */
+	public Repository(final WindowCache wc, final File d) throws IOException {
 		gitDir = d.getAbsoluteFile();
 		try {
-			objectsDirs = readObjectsDirs(new File(gitDir, "objects"), new ArrayList<File>()).toArray(new File[0]);
+			objectsDirs = readObjectsDirs(FS.resolve(gitDir, "objects"),
+					new ArrayList<File>()).toArray(new File[0]);
 		} catch (IOException e) {
 			IOException ex = new IOException("Cannot find all object dirs for " + gitDir);
 			ex.initCause(e);
 			throw ex;
 		}
-		refsDir = new File(gitDir, "refs");
+		refsDir = FS.resolve(gitDir, "refs");
+		packedRefsFile = FS.resolve(gitDir, "packed-refs");
 		packs = new PackFile[0];
 		config = new RepositoryConfig(this);
-		if (objectsDirs[0].exists()) {
+
+		final boolean isExisting = objectsDirs[0].exists();
+		if (isExisting) {
 			getConfig().load();
 			final String repositoryFormatVersion = getConfig().getString(
 					"core", null, "repositoryFormatVersion");
@@ -105,18 +125,21 @@ public class Repository {
 				throw new IOException("Unknown repository format \""
 						+ repositoryFormatVersion + "\"; expected \"0\".");
 			}
-			initializeWindowCache();
-			scanForPacks();
+		} else {
+			getConfig().create();
 		}
+		windows = wc != null ? wc : new WindowCache(getConfig());
+		if (isExisting)
+			scanForPacks();
 	}
 
 	private Collection<File> readObjectsDirs(File objectsDir, Collection<File> ret) throws IOException {
 		ret.add(objectsDir);
-		File alternatesFile = new File(objectsDir,"info/alternates");
-		if (alternatesFile.exists()) {
-			BufferedReader ar = new BufferedReader(new FileReader(alternatesFile));
+		final File altFile = FS.resolve(objectsDir, "info/alternates");
+		if (altFile.exists()) {
+			BufferedReader ar = new BufferedReader(new FileReader(altFile));
 			for (String alt=ar.readLine(); alt!=null; alt=ar.readLine()) {
-				readObjectsDirs(new File(alt), ret);
+				readObjectsDirs(FS.resolve(objectsDir, alt), ret);
 			}
 			ar.close();
 		}
@@ -151,12 +174,6 @@ public class Repository {
 
 		getConfig().create();
 		getConfig().save();
-		initializeWindowCache();
-	}
-
-	private void initializeWindowCache() {
-		// FIXME these should be configurable...
-		windows = new WindowCache(256 * 1024 * 1024, 4);
 	}
 
 	/**
@@ -197,7 +214,7 @@ public class Repository {
 	 * @param objectId
 	 * @return suggested file name
 	 */
-	public File toFile(final ObjectId objectId) {
+	public File toFile(final AnyObjectId objectId) {
 		final String n = objectId.toString();
 		String d=n.substring(0, 2);
 		String f=n.substring(2);
@@ -214,7 +231,7 @@ public class Repository {
 	 * @return true if the specified object is stored in this repo or any of the
 	 *         known shared repositories.
 	 */
-	public boolean hasObject(final ObjectId objectId) {
+	public boolean hasObject(final AnyObjectId objectId) {
 		int k = packs.length;
 		if (k > 0) {
 			do {
@@ -226,18 +243,35 @@ public class Repository {
 	}
 
 	/**
-	 * @param id SHA-1 of an object.
-	 *
+	 * @param id
+	 *            SHA-1 of an object.
+	 * 
 	 * @return a {@link ObjectLoader} for accessing the data of the named
 	 *         object, or null if the object does not exist.
 	 * @throws IOException
 	 */
-	public ObjectLoader openObject(final ObjectId id) throws IOException {
+	public ObjectLoader openObject(final AnyObjectId id)
+			throws IOException {
+		return openObject(new WindowCursor(),id);
+	}
+
+	/**
+	 * @param curs
+	 *            temporary working space associated with the calling thread.
+	 * @param id
+	 *            SHA-1 of an object.
+	 * 
+	 * @return a {@link ObjectLoader} for accessing the data of the named
+	 *         object, or null if the object does not exist.
+	 * @throws IOException
+	 */
+	public ObjectLoader openObject(final WindowCursor curs, final AnyObjectId id)
+			throws IOException {
 		int k = packs.length;
 		if (k > 0) {
 			do {
 				try {
-					final ObjectLoader ol = packs[--k].get(id);
+					final ObjectLoader ol = packs[--k].get(curs, id);
 					if (ol != null)
 						return ol;
 				} catch (IOException ioe) {
@@ -247,8 +281,9 @@ public class Repository {
 					// been noticed with JDK < 1.6. Tell the gc that now is a good
 					// time to collect and try once more.
 					try {
+						curs.release();
 						System.gc();
-						final ObjectLoader ol = packs[k].get(id);
+						final ObjectLoader ol = packs[k].get(curs, id);
 						if (ol != null)
 							return ol;
 					} catch (IOException ioe2) {
@@ -262,7 +297,7 @@ public class Repository {
 			} while (k > 0);
 		}
 		try {
-			return new UnpackedObjectLoader(this, id);
+			return new UnpackedObjectLoader(this, id.toObjectId());
 		} catch (FileNotFoundException fnfe) {
 			return null;
 		}
@@ -314,10 +349,6 @@ public class Repository {
 	 * @throws IOException
 	 */
 	public Object mapObject(final ObjectId id, final String refName) throws IOException {
-		if (commitCache.containsKey(id))
-			return mapCommit(id);
-		if (treeCache.containsKey(id))
-			return mapTree(id);
 		final ObjectLoader or = openObject(id);
 		final byte[] raw = or.getBytes();
 		if (Constants.TYPE_TREE.equals(or.getType()))
@@ -338,29 +369,17 @@ public class Repository {
 	 * @throws IOException for I/O error or unexpected object type.
 	 */
 	public Commit mapCommit(final ObjectId id) throws IOException {
-		Reference<Commit> retr = commitCache.get(id);
-		if (retr != null) {
-			Commit ret = retr.get();
-			if (ret != null)
-				return ret;
-//			System.out.println("Found a null id, size was "+commitCache.size());
-		}
-
 		final ObjectLoader or = openObject(id);
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
-		if (Constants.TYPE_COMMIT.equals(or.getType())) {
-			return makeCommit(id, raw);
-		}
+		if (Constants.OBJ_COMMIT == or.getType())
+			return new Commit(this, id, raw);
 		throw new IncorrectObjectTypeException(id, Constants.TYPE_COMMIT);
 	}
 
 	private Commit makeCommit(final ObjectId id, final byte[] raw) {
 		Commit ret = new Commit(this, id, raw);
-		// The key must not be the referenced strongly
-		// by the value in WeakHashMaps
-		commitCache.put(id, new SoftReference<Commit>(ret));
 		return ret;
 	}
 
@@ -387,28 +406,20 @@ public class Repository {
 	 * @throws IOException for I/O error or unexpected object type.
 	 */
 	public Tree mapTree(final ObjectId id) throws IOException {
-		Reference<Tree> wret = treeCache.get(id);
-		if (wret != null) {
-			Tree ret = wret.get();
-			if (ret != null)
-				return ret;
-		}
-
 		final ObjectLoader or = openObject(id);
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
-		if (Constants.TYPE_TREE.equals(or.getType())) {
-			return makeTree(id, raw);
+		if (Constants.OBJ_TREE == or.getType()) {
+			return new Tree(this, id, raw);
 		}
-		if (Constants.TYPE_COMMIT.equals(or.getType()))
+		if (Constants.OBJ_COMMIT == or.getType())
 			return mapTree(ObjectId.fromString(raw, 5));
 		throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
 	}
 
 	private Tree makeTree(final ObjectId id, final byte[] raw) throws IOException {
 		Tree ret = new Tree(this, id, raw);
-		treeCache.put(id, new SoftReference<Tree>(ret));
 		return ret;
 	}
 
@@ -441,7 +452,7 @@ public class Repository {
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
-		if (Constants.TYPE_TAG.equals(or.getType()))
+		if (Constants.OBJ_TAG == or.getType())
 			return new Tag(this, id, refName, raw);
 		return new Tag(this, id, refName, null);
 	}
@@ -453,9 +464,9 @@ public class Repository {
 	 * @return a locked ref
 	 * @throws IOException
 	 */
-	public RefLock lockRef(final String ref) throws IOException {
+	public LockFile lockRef(final String ref) throws IOException {
 		final Ref r = readRef(ref, true);
-		final RefLock l = new RefLock(new File(gitDir, r.getName()));
+		final LockFile l = new LockFile(fileForRef(r.getName()));
 		return l.lock() ? l : null;
 	}
 
@@ -593,32 +604,23 @@ public class Repository {
 	}
 
 	private ObjectId resolveSimple(final String revstr) throws IOException {
-		ObjectId id = null;
-
-		if (ObjectId.isId(revstr)) {
-			id = new ObjectId(revstr);
+		if (ObjectId.isId(revstr))
+			return ObjectId.fromString(revstr);
+		final Ref r = readRef(revstr, false);
+		if (r != null) {
+			return r.getObjectId();
 		}
-
-		if (id == null) {
-			final Ref r = readRef(revstr, false);
-			if (r != null) {
-				id = r.getObjectId();
-			}
-		}
-
-		return id;
+		return null;
 	}
 
 	/**
 	 * Close all resources used by this repository
-	 *
-	 * @throws IOException
 	 */
-	public void close() throws IOException {
+	public void close() {
 		closePacks();
 	}
 
-	void closePacks() throws IOException {
+	void closePacks() {
 		for (int k = packs.length - 1; k >= 0; k--) {
 			packs[k].close();
 		}
@@ -639,25 +641,24 @@ public class Repository {
 	}
 
 	private void scanForPacks(final File packDir, Collection<PackFile> packList) {
-		final File[] list = packDir.listFiles(new FileFilter() {
-			public boolean accept(final File f) {
-				final String n = f.getName();
-				if (!n.endsWith(".pack")) {
-					return false;
-				}
-				final String nBase = n.substring(0, n.lastIndexOf('.'));
-				final File idx = new File(packDir, nBase + ".idx");
-				return f.isFile() && f.canRead() && idx.isFile()
-						&& idx.canRead();
+		final String[] idxList = packDir.list(new FilenameFilter() {
+			public boolean accept(final File baseDir, final String n) {
+				// Must match "pack-[0-9a-f]{40}.idx" to be an index.
+				return n.length() == 49 && n.endsWith(".idx")
+						&& n.startsWith("pack-");
 			}
 		});
-		if (list != null) {
-			for (int k = 0; k < list.length; k++) {
+		if (idxList != null) {
+			for (final String indexName : idxList) {
+				final String n = indexName.substring(0, indexName.length() - 4);
+				final File idxFile = new File(packDir, n + ".idx");
+				final File packFile = new File(packDir, n + ".pack");
 				try {
-					packList.add(new PackFile(this, list[k]));
+					packList.add(new PackFile(this, idxFile, packFile));
 				} catch (IOException ioe) {
 					// Whoops. That's not a pack!
 					//
+					ioe.printStackTrace();
 				}
 			}
 		}
@@ -673,7 +674,7 @@ public class Repository {
     public void writeSymref(final String name, final String target)
 			throws IOException {
 		final byte[] content = ("ref: " + target + "\n").getBytes("UTF-8");
-		final RefLock lck = new RefLock(new File(gitDir, name));
+		final LockFile lck = new LockFile(fileForRef(name));
 		if (!lck.lock())
 			throw new ObjectWritingException("Unable to lock " + name);
 		try {
@@ -687,7 +688,7 @@ public class Repository {
 
 	private Ref readRef(final String revstr, final boolean missingOk)
 			throws IOException {
-		refreshPackredRefsCache();
+		refreshPackedRefsCache();
 		for (int k = 0; k < refSearchPaths.length; k++) {
 			final Ref r = readRefBasic(refSearchPaths[k] + revstr);
 			if (missingOk || r.getObjectId() != null) {
@@ -701,7 +702,7 @@ public class Repository {
 		int depth = 0;
 		REF_READING: do {
 			// prefer unpacked ref to packed ref
-			final File f = new File(getDirectory(), name);
+			final File f = fileForRef(name);
 			if (!f.isFile()) {
 				// look for packed ref, since this one doesn't exist
 				ObjectId id = packedRefs.get(name);
@@ -721,13 +722,19 @@ public class Repository {
 					name = line.substring("ref: ".length());
 					continue REF_READING;
 				} else if (ObjectId.isId(line))
-					return new Ref(name, new ObjectId(line));
+					return new Ref(name, ObjectId.fromString(line));
 				throw new IOException("Not a ref: " + name + ": " + line);
 			} finally {
 				br.close();
 			}
 		} while (depth++ < 5);
 		throw new IOException("Exceed maximum ref depth.  Circular reference?");
+	}
+
+	private File fileForRef(final String name) {
+		if (name.startsWith("refs/"))
+			return new File(refsDir, name.substring("refs/".length()));
+		return new File(gitDir, name);
 	}
 
 	public String toString() {
@@ -828,7 +835,7 @@ public class Repository {
 			branches.add("refs/" + refSubDir + b);
 		}
 		
-		refreshPackredRefsCache();
+		refreshPackedRefsCache();
 		Set<String> keySet = packedRefs.keySet();
 		for (String s : keySet)
 			if (s.startsWith("refs/" + refSubDir) && !branches.contains(s))
@@ -846,19 +853,18 @@ public class Repository {
 	private Map<String,ObjectId> packedRefs = new HashMap<String,ObjectId>();
 	private long packedrefstime = 0;
 
-	private void refreshPackredRefsCache() {
-		File file = new File(gitDir, "packed-refs");
-		if (!file.exists()) {
+	private void refreshPackedRefsCache() {
+		if (!packedRefsFile.exists()) {
 			if (packedRefs.size() > 0)
 				packedRefs = new HashMap<String,ObjectId>();
 			return;
 		}
-		if (file.lastModified() == packedrefstime)
+		if (packedRefsFile.lastModified() == packedrefstime)
 			return;
 		Map<String,ObjectId> newPackedRefs = new HashMap<String,ObjectId>();
 		FileReader fileReader = null;
 		try {
-			fileReader = new FileReader(file);
+			fileReader = new FileReader(packedRefsFile);
 			BufferedReader b=new BufferedReader(fileReader);
 			String p;
 			while ((p = b.readLine()) != null) {
@@ -868,7 +874,7 @@ public class Repository {
 					continue;
 				}
 				int spos = p.indexOf(' ');
-				ObjectId id = new ObjectId(p.substring(0,spos));
+				ObjectId id = ObjectId.fromString(p.substring(0,spos));
 				String name = p.substring(spos+1);
 				newPackedRefs.put(name, id);
 			}
@@ -913,39 +919,6 @@ public class Repository {
 	}
 
 	/**
-	 * A Stacked Git patch
-	 */
-	public static class StGitPatch {
-
-		/**
-		 * Construct an StGitPatch
-		 * @param patchName
-		 * @param id
-		 */
-		public StGitPatch(String patchName, ObjectId id) {
-			name = patchName;
-			gitId = id;
-		}
-
-		/**
-		 * @return commit id of patch
-		 */
-		public ObjectId getGitId() {
-			return gitId;
-		}
-
-		/**
-		 * @return name of patch
-		 */
-		public String getName() {
-			return name;
-		}
-
-		private String name;
-		private ObjectId gitId;
-	}
-
-	/**
 	 * @return applied patches in a map indexed on current commit id
 	 * @throws IOException
 	 */
@@ -958,7 +931,7 @@ public class Repository {
 				File topFile = new File(new File(new File(patchDir,"patches"), patchName), "top");
 				BufferedReader tfr = new BufferedReader(new FileReader(topFile));
 				String objectId = tfr.readLine();
-				ObjectId id = new ObjectId(objectId);
+				ObjectId id = ObjectId.fromString(objectId);
 				ret.put(id, new StGitPatch(patchName, id));
 				tfr.close();
 			}
@@ -1012,97 +985,6 @@ public class Repository {
 			if (bytes[i] == File.separatorChar)
 				bytes[i] = '/';
 		return bytes;
-	}
-
-	/**
-	 * Important state of the repository that affects what can and cannot bed
-	 * done. This is things like unhandles conflicted merges and unfinished rebase.
-	 */
-	public static enum RepositoryState {
-		/**
-		 * A safe state for working normally
-		 * */
-		SAFE {
-			public boolean canCheckout() { return true; }
-			public boolean canResetHead() { return true; }
-			public boolean canCommit() { return true; }
-			public String getDescription() { return "Normal"; }
-		},
-
-		/** An unfinished merge. Must resole or reset before continuing normally
-		 */
-		MERGING {
-			public boolean canCheckout() { return false; }
-			public boolean canResetHead() { return false; }
-			public boolean canCommit() { return false; }
-			public String getDescription() { return "Conflicts"; }
-		},
-
-		/**
-		 * An unfinished rebase. Must resolve, skip or abort before normal work can take place
-		 */
-		REBASING {
-			public boolean canCheckout() { return false; }
-			public boolean canResetHead() { return false; }
-			public boolean canCommit() { return true; }
-			public String getDescription() { return "Rebase/Apply mailbox"; }
-		},
-
-		/**
-		 * An unfinished rebase with merge. Must resolve, skip or abort before normal work can take place
-		 */
-		REBASING_MERGE {
-			public boolean canCheckout() { return false; }
-			public boolean canResetHead() { return false; }
-			public boolean canCommit() { return true; }
-			public String getDescription() { return "Rebase w/merge"; }
-		},
-
-		/**
-		 * An unfinished interactive rebase. Must resolve, skip or abort before normal work can take place
-		 */
-		REBASING_INTERACTIVE {
-			public boolean canCheckout() { return false; }
-			public boolean canResetHead() { return false; }
-			public boolean canCommit() { return true; }
-			public String getDescription() { return "Rebase interactive"; }
-		},
-
-		/**
-		 * Bisecting being done. Normal work may continue but is discouraged
-		 */
-		BISECTING {
-			/* Changing head is a normal operation when bisecting */
-			public boolean canCheckout() { return true; }
-
-			/* Do not reset, checkout instead */
-			public boolean canResetHead() { return false; }
-
-			/* Actually it may make sense, but for now we err on the side of caution */
-			public boolean canCommit() { return false; }
-
-			public String getDescription() { return "Bisecting"; }
-		};
-
-		/**
-		 * @return true if changing HEAD is sane.
-		 */
-		public abstract boolean canCheckout();
-
-		/**
-		 * @return true if we can commit
-		 */
-		public abstract boolean canCommit();
-
-		/**
-		 * @return true if reset to another HEAD is considered SAFE
-		 */
-		public abstract boolean canResetHead();
-
-		/**
-		 * @return a human readable description of the state.
-		 */
-		public abstract String getDescription();
 	}
 
 	/**

@@ -1,5 +1,6 @@
 package org.spearce.jgit.lib;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -12,8 +13,8 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 	 * @throws IOException
 	 */
 	public void test001_ReadBareKey() throws IOException {
-		String path = writeTrashFile("config_001", "[foo]\nbar\n").getAbsolutePath();
-		RepositoryConfig repositoryConfig = new RepositoryConfig(path);
+		final File path = writeTrashFile("config_001", "[foo]\nbar\n");
+		RepositoryConfig repositoryConfig = new RepositoryConfig(null, path);
 		System.out.println(repositoryConfig.getString("foo", null, "bar"));
 		assertEquals(true, repositoryConfig.getBoolean("foo", null, "bar", false));
 		assertEquals("", repositoryConfig.getString("foo", null, "bar"));
@@ -25,8 +26,8 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 	 * @throws IOException
 	 */
 	public void test002_ReadWithSubsection() throws IOException {
-		String path = writeTrashFile("config_002", "[foo \"zip\"]\nbar\n[foo \"zap\"]\nbar=false\nn=3\n").getAbsolutePath();
-		RepositoryConfig repositoryConfig = new RepositoryConfig(path);
+		final File path = writeTrashFile("config_002", "[foo \"zip\"]\nbar\n[foo \"zap\"]\nbar=false\nn=3\n");
+		RepositoryConfig repositoryConfig = new RepositoryConfig(null, path);
 		assertEquals(true, repositoryConfig.getBoolean("foo", "zip", "bar", false));
 		assertEquals("", repositoryConfig.getString("foo","zip", "bar"));
 		assertEquals(false, repositoryConfig.getBoolean("foo", "zap", "bar", true));

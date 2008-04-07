@@ -39,7 +39,7 @@ public class ReadTreeTest extends RepositoryTestCase {
 		
 		Tree head = new Tree(db);
 		FileTreeEntry headFile = head.addFile("foo");
-		ObjectId objectId = new ObjectId("ba78e065e2c261d4f7b8f42107588051e87e18e9");
+		ObjectId objectId = ObjectId.fromString("ba78e065e2c261d4f7b8f42107588051e87e18e9");
 		headFile.setId(objectId);
 		Tree merge = new Tree(db);
 		
@@ -53,7 +53,7 @@ public class ReadTreeTest extends RepositoryTestCase {
 		
 		assertEquals(objectId, readTree.updated.get("foo"));
 		
-		ObjectId anotherId = new ObjectId("ba78e065e2c261d4f7b8f42107588051e87e18ee");
+		ObjectId anotherId = ObjectId.fromString("ba78e065e2c261d4f7b8f42107588051e87e18ee");
 		merge.addFile("foo").setId(anotherId);
 		
 		readTree = new WorkDirCheckout(db, trash, head, index, merge);
@@ -98,8 +98,8 @@ public class ReadTreeTest extends RepositoryTestCase {
 		InputStream is = new ByteArrayInputStream(data.getBytes());
 		ObjectWriter objectWriter = new ObjectWriter(db);
 		try {
-			return objectWriter.writeObject(Constants.OBJ_BLOB, Constants.TYPE_BLOB, data.getBytes().length, is,
-			true);
+			return objectWriter.writeObject(Constants.TYPE_BLOB, data
+					.getBytes().length, is, true);
 		} catch (IOException e) {
 			fail(e.toString());
 		}

@@ -16,7 +16,6 @@
  */
 package org.spearce.egit.ui.internal.factories;
 
-import org.eclipse.core.internal.resources.File;
 import org.eclipse.core.runtime.IAdapterFactory;
 import org.eclipse.team.ui.history.IHistoryPageSource;
 import org.spearce.egit.ui.GitHistoryPageSource;
@@ -31,11 +30,6 @@ public class GitAdapterFactory implements IAdapterFactory {
 	private Object historyPageSource = new GitHistoryPageSource();
 
 	public Object getAdapter(Object adaptableObject, Class adapterType) {
-		if (adaptableObject instanceof File) {
-			if (adapterType.isAssignableFrom(IHistoryPageSource.class)) {
-				return historyPageSource;
-			}
-		}
 		if (adapterType.isAssignableFrom(IHistoryPageSource.class)) {
 			return historyPageSource;
 		}

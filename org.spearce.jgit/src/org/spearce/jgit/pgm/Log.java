@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2007  Robin Rosenberg
+ *  Copyright (C) 2008  Shawn Pearce <spearce@spearce.org>
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public
@@ -16,32 +16,51 @@
  */
 package org.spearce.jgit.pgm;
 
-import java.io.File;
-import java.io.IOException;
-import org.spearce.jgit.lib.Commit;
-import org.spearce.jgit.lib.ObjectId;
-import org.spearce.jgit.lib.Repository;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
-/**
- * Simple command line utility to show a log.
- */
-public class Log {
-	/**
-	 * List all commits reachable from a root set
-	 * @param args the refs or commits to start from
-	 * @throws IOException
-	 */
-	public static void main(String[] args) throws IOException {
-		Repository db = new Repository(new File(".git"));
-		Commit commit = db.mapCommit(args[0]);
-		System.out.println("commit " + commit.getCommitId());
-		System.out.println("tree " + commit.getTreeId());
-		ObjectId[] ps=commit.getParentIds();
-		for (int ci=0; ci<ps.length; ++ci) {
-			System.out.println("parent " + ps[ci]);
+import org.spearce.jgit.lib.PersonIdent;
+import org.spearce.jgit.revwalk.RevCommit;
+
+class Log extends RevWalkTextBuiltin {
+	private final TimeZone myTZ = TimeZone.getDefault();
+
+	private final DateFormat fmt;
+
+	Log() {
+		fmt = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy ZZZZZ");
+	}
+
+	@Override
+	protected void show(final RevCommit c) throws Exception {
+		out.print("commit ");
+		c.getId().copyTo(outbuffer, out);
+		out.println();
+
+		final PersonIdent author = c.getAuthorIdent();
+		out.print("Author: ");
+		out.print(author.getName());
+		out.print(" <");
+		out.print(author.getEmailAddress());
+		out.print(">");
+		out.println();
+
+		final TimeZone authorTZ = author.getTimeZone();
+		fmt.setTimeZone(authorTZ != null ? authorTZ : myTZ);
+		out.print("Date:   ");
+		out.print(fmt.format(author.getWhen()));
+		out.println();
+
+		out.println();
+		final String[] lines = c.getFullMessage().split("\n");
+		for (final String s : lines) {
+			out.print("    ");
+			out.print(s);
+			out.println();
 		}
-		System.out.println("author " + commit.getAuthor());
-		System.out.println();
-		System.out.println(commit.getMessage());
+
+		out.println();
+		out.flush();
 	}
 }

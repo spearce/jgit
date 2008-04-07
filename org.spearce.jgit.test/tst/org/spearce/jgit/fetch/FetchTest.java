@@ -3,9 +3,9 @@ package org.spearce.jgit.fetch;
 import java.io.IOException;
 
 import org.spearce.jgit.lib.Commit;
+import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.PersonIdent;
-import org.spearce.jgit.lib.RefLock;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.RepositoryTestCase;
 import org.spearce.jgit.lib.TextProgressMonitor;
@@ -31,7 +31,7 @@ public class FetchTest extends RepositoryTestCase {
 		commit.setTree(db.mapTree("refs/heads/a"));
 		ObjectWriter ow = new ObjectWriter(db);
 		commit.setCommitId(ow.writeCommit(commit));
-		RefLock lockRef = db.lockRef("refs/heads/a");
+		LockFile lockRef = db.lockRef("refs/heads/a");
 		lockRef.write(commit.getCommitId());
 		if (!lockRef.commit())
 			throw new IllegalStateException("Could not update refs/heafs/a in test");

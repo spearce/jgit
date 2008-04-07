@@ -7,16 +7,31 @@ import org.spearce.jgit.errors.CorruptObjectException;
 
 /** Reader for a non-delta (just deflated) object in a pack file. */
 class WholePackedObjectLoader extends PackedObjectLoader {
-	WholePackedObjectLoader(final PackFile pr, final long offset,
-			final String type, final int size) {
-		super(pr, offset);
+	private static final int OBJ_COMMIT = Constants.OBJ_COMMIT;
+
+	WholePackedObjectLoader(final WindowCursor curs, final PackFile pr,
+			final long offset, final int type, final int size) {
+		super(curs, pr, offset);
 		objectType = type;
 		objectSize = size;
 	}
 
-	public byte[] getBytes() throws IOException {
+	@Override
+	public byte[] getCachedBytes() throws IOException {
+		if (objectType != OBJ_COMMIT) {
+			final UnpackedObjectCache.Entry cache = pack.readCache(dataOffset);
+			if (cache != null) {
+				curs.release();
+				return cache.data;
+			}
+		}
+
 		try {
-			return pack.decompress(dataOffset, objectSize);
+			final byte[] data = pack.decompress(dataOffset, objectSize, curs);
+			curs.release();
+			if (objectType != OBJ_COMMIT)
+				pack.saveCache(dataOffset, data, objectType);
+			return data;
 		} catch (DataFormatException dfe) {
 			final CorruptObjectException coe;
 			coe = new CorruptObjectException(getId(), "bad stream");

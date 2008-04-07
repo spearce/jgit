@@ -16,6 +16,7 @@
  */
 package org.spearce.jgit.lib;
 
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -25,7 +26,7 @@ public final class Constants {
 	private static final String HASH_FUNCTION = "SHA-1";
 
 	/** Length of an object hash. */
-	public static final int OBJECT_ID_LENGTH;
+	public static final int OBJECT_ID_LENGTH = 20;
 
 	/** Special name for the "HEAD" symbolic-ref. */
 	public static final String HEAD = "HEAD";
@@ -63,6 +64,9 @@ public final class Constants {
 	 * project.
 	 */
 	public static final String TYPE_TAG = "tag";
+
+	/** An unknown or invalid object type code. */
+	public static final int OBJ_BAD = -1;
 
 	/**
 	 * In-pack object type: extended types.
@@ -154,6 +158,9 @@ public final class Constants {
 	/** Native character encoding for commit messages, file names... */
 	public static final String CHARACTER_ENCODING = "UTF-8";
 
+	/** Native character encoding for commit messages, file names... */
+	public static final Charset CHARSET;
+
 	/**
 	 * Create a new digest function for objects.
 	 * 
@@ -169,6 +176,27 @@ public final class Constants {
 		} catch (NoSuchAlgorithmException nsae) {
 			throw new RuntimeException("Required hash function "
 					+ HASH_FUNCTION + " not available.", nsae);
+		}
+	}
+
+	/**
+	 * Convert an OBJ_* type constant to a TYPE_* type constant.
+	 *
+	 * @param typeCode the type code, from a pack representation.
+	 * @return the canonical string name of this type.
+	 */
+	public static String typeString(final int typeCode) {
+		switch (typeCode) {
+		case OBJ_COMMIT:
+			return TYPE_COMMIT;
+		case OBJ_TREE:
+			return TYPE_TREE;
+		case OBJ_BLOB:
+			return TYPE_BLOB;
+		case OBJ_TAG:
+			return TYPE_TAG;
+		default:
+			throw new IllegalArgumentException("Bad object type: " + typeCode);
 		}
 	}
 
@@ -208,7 +236,9 @@ public final class Constants {
 	}
 
 	static {
-		OBJECT_ID_LENGTH = newMessageDigest().getDigestLength();
+		if (OBJECT_ID_LENGTH != newMessageDigest().getDigestLength())
+			throw new LinkageError("Incorrect OBJECT_ID_LENGTH.");
+		CHARSET = Charset.forName(CHARACTER_ENCODING);
 	}
 
 	private Constants() {

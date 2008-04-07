@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.0"?>
 <plugin>
+   <extension point="org.eclipse.core.runtime.preferences">
+      <initializer class="org.spearce.egit.core.GitCorePreferenceInitializer"/>
+   </extension>
+
   <extension point="org.eclipse.team.core.repository">
 	<repository
     		class="org.spearce.egit.core.GitProvider"

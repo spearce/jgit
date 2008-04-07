@@ -49,32 +49,18 @@ import java.util.zip.Inflater;
  * </p>
  */
 public class WindowedFile {
-	private static final int bits(int sz) {
-		if (sz < 4096)
-			throw new IllegalArgumentException("Invalid window size");
+	final WindowCache cache;
 
-		int b = 0;
-		while (sz > 1) {
-			if ((sz & 1) != 0)
-				throw new IllegalArgumentException(
-						"Window size must be a power of 2");
-			b++;
-			sz >>= 1;
-		}
-		return b;
-	}
+	private final File fPath;
 
-	private final WindowCache cache;
+	final int hash;
 
-	private final int sz;
+	private RandomAccessFile fd;
 
-	private final int szb;
+	private long length;
 
-	private final int szm;
-
-	private final Provider wp;
-
-	private final long length;
+	/** Total number of windows actively in the associated cache. */
+	int openCount;
 
 	/**
 	 * Open a file for reading through window caching.
@@ -88,29 +74,12 @@ public class WindowedFile {
 	 *            the file to open. The file will be opened for reading only,
 	 *            unless {@link FileChannel.MapMode#READ_WRITE} or {@link FileChannel.MapMode#PRIVATE}
 	 *            is given.
-	 * @param windowSz
-	 *            number of bytes within a window. This value must be a power of
-	 *            2 and must be at least 4096, or one system page, whichever is
-	 *            larger. If <code>mapType</code> is not null then this value
-	 *            should be large (e.g. several MiBs) to amortize the high cost
-	 *            of mapping the file.
-	 * @param usemmap
-	 *            indicates if the operating system mmap should be used for the
-	 *            byte windows. False means don't use mmap, preferring to
-	 *            allocate a byte[] in Java and reading the file data into the
-	 *            array. True will use a read only mmap, however this requires
-	 *            allocation of small temporary objects during every read.
-	 * @throws IOException
-	 *             the file could not be opened.
 	 */
-	public WindowedFile(final WindowCache winCache, final File file,
-			final int windowSz, final boolean usemmap) throws IOException {
+	public WindowedFile(final WindowCache winCache, final File file) {
 		cache = winCache;
-		sz = windowSz;
-		szb = bits(windowSz);
-		szm = (1 << szb) - 1;
-		wp = new Provider(usemmap, file);
-		length = wp.fd.length();
+		fPath = file;
+		hash = System.identityHashCode(this);
+		length = Long.MAX_VALUE;
 	}
 
 	/**
@@ -120,6 +89,15 @@ public class WindowedFile {
 	 */
 	public long length() {
 		return length;
+	}
+
+	/**
+	 * Get the path name of this file.
+	 *
+	 * @return the absolute path name of the file.
+	 */
+	public String getName() {
+		return fPath.getAbsolutePath();
 	}
 
 	/**
@@ -135,15 +113,18 @@ public class WindowedFile {
 	 *            of this file, to copy from.
 	 * @param dstbuf
 	 *            buffer to copy the bytes into.
+	 * @param curs
+	 *            current cursor for reading data from the file.
 	 * @return total number of bytes read. Always <code>dstbuf.length</code>
 	 *         unless the requested range to copy is over the end of the file.
 	 * @throws IOException
 	 *             a necessary window was not found in the window cache and
 	 *             trying to load it in from the operating system failed.
 	 */
-	public int read(final long position, final byte[] dstbuf)
+	public int read(final long position, final byte[] dstbuf,
+			final WindowCursor curs)
 			throws IOException {
-		return read(position, dstbuf, 0, dstbuf.length);
+		return read(position, dstbuf, 0, dstbuf.length, curs);
 	}
 
 	/**
@@ -164,6 +145,8 @@ public class WindowedFile {
 	 * @param cnt
 	 *            number of bytes to copy. Must not exceed
 	 *            <code>dstbuf.length - dstoff</code>.
+	 * @param curs
+	 *            current cursor for reading data from the file.
 	 * @return total number of bytes read. Always <code>length</code> unless
 	 *         the requested range to copy is over the end of the file.
 	 * @throws IOException
@@ -171,11 +154,11 @@ public class WindowedFile {
 	 *             trying to load it in from the operating system failed.
 	 */
 	public int read(long position, final byte[] dstbuf, int dstoff,
-			final int cnt) throws IOException {
+			final int cnt, final WindowCursor curs) throws IOException {
 		int remaining = cnt;
 		while (remaining > 0 && position < length) {
-			final int r = cache.get(wp, (int) (position >> szb)).copy(
-					((int) position) & szm, dstbuf, dstoff, remaining);
+			final int r = curs.copy(this, (int) (position >> cache.szb),
+					((int) position) & cache.szm, dstbuf, dstoff, remaining);
 			position += r;
 			dstoff += r;
 			remaining -= r;
@@ -196,6 +179,8 @@ public class WindowedFile {
 	 *            of this file, to copy from.
 	 * @param dstbuf
 	 *            buffer to copy the bytes into.
+	 * @param curs
+	 *            current cursor for reading data from the file.
 	 * @throws IOException
 	 *             a necessary window was not found in the window cache and
 	 *             trying to load it in from the operating system failed.
@@ -203,106 +188,117 @@ public class WindowedFile {
 	 *             the file ended before <code>dstbuf.length</code> bytes
 	 *             could be read.
 	 */
-	public void readFully(final long position, final byte[] dstbuf)
+	public void readFully(final long position, final byte[] dstbuf,
+			final WindowCursor curs)
 			throws IOException {
-		if (read(position, dstbuf, 0, dstbuf.length) != dstbuf.length)
+		if (read(position, dstbuf, 0, dstbuf.length, curs) != dstbuf.length)
 			throw new EOFException();
 	}
 
-	void readCompressed(final long position, final byte[] dstbuf)
+	void readCompressed(final long position, final byte[] dstbuf,
+			final WindowCursor curs)
 			throws IOException, DataFormatException {
 		final Inflater inf = cache.borrowInflater();
 		try {
-			readCompressed(position, dstbuf, inf);
+			readCompressed(position, dstbuf, curs, inf);
 		} finally {
 			inf.reset();
 			cache.returnInflater(inf);
 		}
 	}
 
-	void readCompressed(long pos, final byte[] dstbuf, final Inflater inf)
-			throws IOException, DataFormatException {
+	void readCompressed(long pos, final byte[] dstbuf, final WindowCursor curs,
+			final Inflater inf) throws IOException, DataFormatException {
 		int dstoff = 0;
-		dstoff = cache.get(wp, (int) (pos >> szb)).inflate(((int) pos) & szm,
-				dstbuf, dstoff, inf);
-		pos >>= szb;
-		while (!inf.finished()) {
-			dstoff = cache.get(wp, (int) ++pos).inflate(0, dstbuf, dstoff, inf);
-		}
+		dstoff = curs.inflate(this, (int) (pos >> cache.szb), ((int) pos)
+				& cache.szm, dstbuf, dstoff, inf);
+		pos >>= cache.szb;
+		while (!inf.finished())
+			dstoff = curs.inflate(this, (int) ++pos, 0, dstbuf, dstoff, inf);
 		if (dstoff != dstbuf.length)
 			throw new EOFException();
 	}
 
 	/**
-	 * Reads a 32 bit unsigned integer in network byte order.
+	 * Overridable hook called after the file is opened.
+	 * <p>
+	 * This hook is invoked each time the file is opened for reading, but before
+	 * the first window is mapped into the cache. Implementers are free to use
+	 * any of the window access methods to obtain data, however doing so may
+	 * pollute the window cache with otherwise unnecessary windows.
+	 * </p>
 	 * 
-	 * @param position
-	 *            the starting offset, as measured in bytes from the beginning
-	 *            of this file, to read from. The position does not need to be
-	 *            aligned.
-	 * @param intbuf
-	 *            a temporary buffer to read the bytes into before byteorder
-	 *            conversion. Must be supplied by the caller and must have room
-	 *            for at least 4 bytes, but may be longer if the caller has a
-	 *            larger buffer they wish to loan.
-	 * @return the unsigned 32 bit integer value.
 	 * @throws IOException
-	 *             necessary window was not found in the window cache and trying
-	 *             to load it in from the operating system failed.
-	 * @throws EOFException
-	 *             the file has less than 4 bytes remaining at position.
+	 *             something is wrong with the file, for example the caller does
+	 *             not understand its version header information.
 	 */
-	public long readUInt32(final long position, byte[] intbuf)
+	protected void onOpen() throws IOException {
+		fd.getFD(); // Silly Eclipse requires us to throw.
+	}
+
+	/** Close this file and remove all open windows. */
+	public void close() {
+		cache.purge(this);
+	}
+
+	void cacheOpen() throws IOException {
+		fd = new RandomAccessFile(fPath, "r");
+		length = fd.length();
+		try {
+			onOpen();
+		} catch (IOException ioe) {
+			cacheClose();
+			throw ioe;
+		} catch (RuntimeException re) {
+			cacheClose();
+			throw re;
+		} catch (Error re) {
+			cacheClose();
+			throw re;
+		}
+	}
+
+	void cacheClose() {
+		try {
+			fd.close();
+		} catch (IOException err) {
+			// Ignore a close event. We had it open only for reading.
+			// There should not be errors related to network buffers
+			// not flushed, etc.
+		}
+		fd = null;
+	}
+
+	void loadWindow(final WindowCursor curs, final int windowId)
 			throws IOException {
-		if (read(position, intbuf, 0, 4) != 4)
-			throw new EOFException();
-		return (intbuf[0] & 0xff) << 24 | (intbuf[1] & 0xff) << 16
-				| (intbuf[2] & 0xff) << 8 | (intbuf[3] & 0xff);
+		final long position = windowId << cache.szb;
+		final int windowSize = getWindowSize(windowId);
+		if (cache.mmap) {
+			final MappedByteBuffer map = fd.getChannel().map(MapMode.READ_ONLY,
+					position, windowSize);
+			if (map.hasArray()) {
+				final byte[] b = map.array();
+				curs.window = new ByteArrayWindow(this, windowId, b);
+				curs.handle = b;
+			} else {
+				curs.window = new ByteBufferWindow(this, windowId, map);
+				curs.handle = map;
+			}
+			return;
+		}
+
+		final byte[] b = new byte[windowSize];
+		synchronized (fd) {
+			fd.seek(position);
+			fd.readFully(b);
+		}
+		curs.window = new ByteArrayWindow(this, windowId, b);
+		curs.handle = b;
 	}
 
-	/**
-	 * Close this file and remove all open windows.
-	 * 
-	 * @throws IOException
-	 *             the file refused to be closed.
-	 */
-	public void close() throws IOException {
-		cache.purge(wp);
-		wp.fd.close();
-	}
-
-	private class Provider extends WindowProvider {
-		final boolean map;
-
-		final RandomAccessFile fd;
-
-		Provider(final boolean usemmap, final File file) throws IOException {
-			map = usemmap;
-			fd = new RandomAccessFile(file, "r");
-		}
-
-		public ByteWindow loadWindow(final int windowId) throws IOException {
-			final int windowSize = getWindowSize(windowId);
-			if (map) {
-				final MappedByteBuffer map = fd.getChannel().map(
-						MapMode.READ_ONLY, windowId << szb, windowSize);
-				if (map.hasArray())
-					return new ByteArrayWindow(this, windowId, map.array());
-				else
-					return new ByteBufferWindow(this, windowId, map);
-			}
-
-			final byte[] b = new byte[windowSize];
-			synchronized (fd) {
-				fd.seek(windowId << szb);
-				fd.readFully(b);
-			}
-			return new ByteArrayWindow(this, windowId, b);
-		}
-
-		public int getWindowSize(final int id) {
-			final long position = id << szb;
-			return length < position + sz ? (int) (length - position) : sz;
-		}
+	int getWindowSize(final int id) {
+		final int sz = cache.sz;
+		final long position = id << cache.szb;
+		return length < position + sz ? (int) (length - position) : sz;
 	}
 }

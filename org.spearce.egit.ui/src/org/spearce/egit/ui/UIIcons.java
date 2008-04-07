@@ -46,6 +46,14 @@ public class UIIcons {
 	public static final ImageDescriptor ELCL16_NEXT;
 	/** Previous arrow icon */
 	public static final ImageDescriptor ELCL16_PREVIOUS;
+	/** Commit icon */
+	public static final ImageDescriptor ELCL16_COMMIT;
+	/** Comments icon */
+	public static final ImageDescriptor ELCL16_COMMENTS;
+	/** Author icon */
+	public static final ImageDescriptor ELCL16_AUTHOR;
+	/** Committer icon */
+	public static final ImageDescriptor ELCL16_COMMITTER;
 
 	/** Import Wizard banner */
 	public static final ImageDescriptor WIZBAN_IMPORT_REPO;
@@ -63,6 +71,10 @@ public class UIIcons {
 		ELCL16_NEXT = map("elcl16/next.gif");
 		ELCL16_PREVIOUS = map("elcl16/previous.gif");
 		WIZBAN_IMPORT_REPO = map("wizban/import.png");
+		ELCL16_COMMIT = map("elcl16/commit.gif");
+		ELCL16_COMMENTS = map("elcl16/comment.gif");
+		ELCL16_AUTHOR = map("elcl16/author.gif");
+		ELCL16_COMMITTER = map("elcl16/committer.gif");
 	}
 
 	private static ImageDescriptor map(final String icon) {
