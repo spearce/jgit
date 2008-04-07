@@ -1188,6 +1188,27 @@ public class Repository {
 	}
 
 	/**
+	 * Setup repository configuration for a new remote
+	 * 
+	 * @param remote
+	 *            remote name, e.g. "origin"
+	 * @param url
+	 *            fetch url, e.g. "git://repo.or.cz/egit.git"
+	 * @param branch
+	 *            local branch name, e.g. "master"
+	 */
+	public void configureDefaultBranch(final String remote, final String url, final String branch) {
+		config.putString(RepositoryConfig.REMOTE_SECTION, remote, "url",
+				url);
+		config.putString(RepositoryConfig.REMOTE_SECTION, remote, "fetch",
+				"+" + Constants.HEADS_PREFIX + "/*:" + Constants.REMOTES_PREFIX + "/" + remote + "/*");
+		config.putString(RepositoryConfig.BRANCH_SECTION, branch, "remote",
+				remote);
+		config.putString(RepositoryConfig.BRANCH_SECTION, Constants.MASTER, "merge",
+				Constants.HEADS_PREFIX + "/" + branch);
+	}
+
+	/**
 	 * @return the workdir file, i.e. where the files are checked out
 	 */
 	public File getWorkDir() {

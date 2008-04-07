@@ -461,7 +461,7 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 				db = new Repository(new File(into, ".git"));
 				db.create();
 				FetchClient client = createClient(urish, db, cloneInput.getUser(), cloneInput.getPassword(), cloneInput.getRemote());
-				CloneJob cloneJob = new CloneJob(client, cloneInput.getRemote());
+				CloneJob cloneJob = new CloneJob(client, cloneInput.getRemote(), cloneInput.getUri());
 				getContainer().run(true, true, cloneJob);
 				return true;
 
@@ -539,10 +539,12 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 
 			private final FetchClient client;
 			private final String remote;
+			private final String url;
 
-			CloneJob(final FetchClient client, final String remote) {
+			CloneJob(final FetchClient client, final String remote, final String url) {
 				this.client = client;
 				this.remote = remote;
+				this.url = url;
 			}
 
 			public void run(final IProgressMonitor monitor) {
@@ -559,6 +561,11 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 					workDirCheckout.checkout();
 					monitor.setTaskName("Writing index");
 					index.write();
+
+					// Now set up the default remote just like Git would do it
+					repository.configureDefaultBranch(remote, url, Constants.MASTER);
+					repository.getConfig().save();
+
 					System.out.println("Done");
 				} catch (IOException e) {
 					setErrorMessage(e.getMessage());
@@ -566,6 +573,7 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 					monitor.done();
 				}
 			}
+
 		}
 	}
 
