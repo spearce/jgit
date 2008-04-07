@@ -94,7 +94,7 @@ public class BranchOperation implements IWorkspaceRunnable {
 	private void refreshProjects() {
 		final IProject[] projects = ResourcesPlugin.getWorkspace().getRoot()
 				.getProjects();
-		final File parentFile = repository.getDirectory().getParentFile();
+		final File parentFile = repository.getWorkDir();
 		for (IProject p : projects) {
 			final File file = p.getLocation().toFile();
 			if (file.getAbsolutePath().startsWith(parentFile.getAbsolutePath())) {
@@ -136,8 +136,8 @@ public class BranchOperation implements IWorkspaceRunnable {
 
 	private void checkoutTree() throws TeamException {
 		try {
-			new WorkDirCheckout(repository, repository.getDirectory()
-					.getParentFile(), oldTree, index, newTree).checkout();
+			new WorkDirCheckout(repository, repository.getWorkDir(), oldTree,
+					index, newTree).checkout();
 		} catch (CheckoutConflictException e) {
 			TeamException teamException = new TeamException(e.getMessage());
 			throw teamException;

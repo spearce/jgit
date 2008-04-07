@@ -471,10 +471,7 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 		}
 
 		private void destroyPartialClone(final Repository db) throws CoreException {
-			File dir = db.getDirectory();
-			if (dir.equals(".git"))
-				dir = dir.getParentFile();
-			delete(dir);
+			delete(db.getWorkDir());
 		}
 
 		private void delete(final File dir) throws CoreException {
@@ -527,7 +524,7 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 					System.out.println("Checking out");
 					monitor.setTaskName("Checking out");
 					Repository repository = client.getRepository();
-					WorkDirCheckout workDirCheckout = new WorkDirCheckout(repository, repository.getDirectory().getParentFile(), new GitIndex(client.getRepository()), repository.mapTree("remotes/origin/master"));
+					WorkDirCheckout workDirCheckout = new WorkDirCheckout(repository, repository.getWorkDir(), new GitIndex(client.getRepository()), repository.mapTree("remotes/origin/master"));
 					workDirCheckout.checkout();
 					System.out.println("Done");
 				} catch (IOException e) {

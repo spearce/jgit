@@ -1109,7 +1109,7 @@ public class Repository {
 	 * @return an important state
 	 */
 	public RepositoryState getRepositoryState() {
-		if (new File(gitDir.getParentFile(), ".dotest").exists())
+		if (new File(getWorkDir(), ".dotest").exists())
 			return RepositoryState.REBASING;
 		if (new File(gitDir,".dotest-merge").exists())
 			return RepositoryState.REBASING_INTERACTIVE;
@@ -1185,5 +1185,12 @@ public class Repository {
 		String fetchPattern = getConfig().getString("remote."+name, null, "fetch");
 		String pushPattern = getConfig().getString("remote."+name, null, "push");
 		return new RemoteSpec(name, url, fetchPattern, pushPattern);
+	}
+
+	/**
+	 * @return the workdir file, i.e. where the files are checked out
+	 */
+	public File getWorkDir() {
+		return getDirectory().getParentFile();
 	}
 }
