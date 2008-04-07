@@ -1193,4 +1193,30 @@ public class Repository {
 	public File getWorkDir() {
 		return getDirectory().getParentFile();
 	}
+
+	/**
+	 * Setup HEAD and "master" refs for a new repository.
+	 *
+	 * @param remoteBranch
+	 *            The remote branch to start with
+	 * @param branch
+	 *            The local branch to configure, initially starting at
+	 *            remoteBranch
+	 * @return the commit references by the new HEAD
+	 * @throws IOException
+	 */
+	public Commit setupHEADRef(final String remoteBranch, final String branch) throws IOException {
+		Commit mapCommit = mapCommit(remoteBranch);
+		String refName = Constants.HEADS_PREFIX + "/" + branch;
+		RefLock masterRef = lockRef(refName);
+		try {
+			masterRef.write(mapCommit.getCommitId());
+			masterRef.commit();
+		} finally {
+			masterRef.unlock();
+		}
+		writeSymref(Constants.HEAD, refName);
+		return mapCommit;
+	}
+
 }

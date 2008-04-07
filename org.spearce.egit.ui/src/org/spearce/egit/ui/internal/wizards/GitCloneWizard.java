@@ -54,6 +54,8 @@ import org.spearce.jgit.fetch.FetchClient;
 import org.spearce.jgit.fetch.GitProtocolFetchClient;
 import org.spearce.jgit.fetch.LocalGitProtocolFetchClient;
 import org.spearce.jgit.fetch.URIish;
+import org.spearce.jgit.lib.Commit;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Repository;
@@ -549,8 +551,14 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 					System.out.println("Checking out");
 					monitor.setTaskName("Checking out");
 					Repository repository = client.getRepository();
-					WorkDirCheckout workDirCheckout = new WorkDirCheckout(repository, repository.getWorkDir(), new GitIndex(client.getRepository()), repository.mapTree("remotes/" + remote + "/master"));
+					final GitIndex index = new GitIndex(client.getRepository());
+					final String originMasterRef = Constants.REMOTES_PREFIX + "/" + remote + "/" + Constants.MASTER;
+					Commit mapCommit = repository.setupHEADRef(originMasterRef, Constants.MASTER);
+					// This may not be the most efficient way of checking out an initial work tree and index
+					WorkDirCheckout workDirCheckout = new WorkDirCheckout(repository, repository.getWorkDir(), index, mapCommit.getTree());
 					workDirCheckout.checkout();
+					monitor.setTaskName("Writing index");
+					index.write();
 					System.out.println("Done");
 				} catch (IOException e) {
 					setErrorMessage(e.getMessage());
