@@ -39,6 +39,7 @@ import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdMap;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.util.NB;
 
 /** Indexes Git pack files for local use. */
 public class IndexPack {
@@ -320,10 +321,10 @@ public class IndexPack {
 			if (buf[p + k] != SIGNATURE[k])
 				throw new IOException("Not a PACK file.");
 
-		final long vers = readUInt32(buf, p + 4);
+		final long vers = NB.decodeUInt32(buf, p + 4);
 		if (vers != 2 && vers != 3)
 			throw new IOException("Unsupported pack version " + vers + ".");
-		objectCount = readUInt32(buf, p + 8);
+		objectCount = NB.decodeUInt32(buf, p + 8);
 		use(hdrln);
 	}
 
@@ -559,11 +560,6 @@ public class IndexPack {
 	private static CorruptObjectException corrupt(final DataFormatException dfe) {
 		return new CorruptObjectException("Packfile corruption detected: "
 				+ dfe.getMessage());
-	}
-
-	private static long readUInt32(final byte[] b, final int i) {
-		return (b[i + 0] & 0xff) << 24 | (b[i + 1] & 0xff) << 16
-				| (b[i + 2] & 0xff) << 8 | (b[i + 3] & 0xff);
 	}
 
 	private static void writeUInt32(final MessageDigest m,
