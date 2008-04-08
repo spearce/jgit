@@ -35,4 +35,21 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 		assertEquals(3, repositoryConfig.getInt("foo", "zap", "n", 4));
 		assertEquals(4, repositoryConfig.getInt("foo", "zap","m", 4));
 	}
+
+	public void test003_PutRemote() throws IOException {
+		File cfgFile = writeTrashFile("config_003", "");
+		RepositoryConfig repositoryConfig = new RepositoryConfig(null, cfgFile);
+		repositoryConfig.putString("sec", "ext", "name", "value");
+		repositoryConfig.putString("sec", "ext", "name2", "value2");
+		repositoryConfig.save();
+		checkFile(cfgFile, "[sec \"ext\"]\n\tname = value\n\tname2 = value2\n");
+	}
+
+	public void test004_PutSimple() throws IOException {
+		File cfgFile = writeTrashFile("config_004", "");
+		RepositoryConfig repositoryConfig = new RepositoryConfig(null, cfgFile);
+		repositoryConfig.putString("my", null, "somename", "false");
+		repositoryConfig.save();
+		checkFile(cfgFile, "[my]\n\tsomename = false\n");
+	}
 }

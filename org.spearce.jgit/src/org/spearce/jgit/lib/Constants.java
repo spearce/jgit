@@ -161,6 +161,15 @@ public final class Constants {
 	/** Native character encoding for commit messages, file names... */
 	public static final Charset CHARSET;
 
+	/** Default main branch name */
+	public static final String MASTER = "master";
+
+	/** Prefix for branch refs */
+	public static final String HEADS_PREFIX = "refs/heads";
+
+	/** Prefix for remotes refs */
+	public static String REMOTES_PREFIX = "refs/remotes";
+
 	/**
 	 * Create a new digest function for objects.
 	 * 

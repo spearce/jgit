@@ -54,6 +54,8 @@ import org.spearce.jgit.fetch.FetchClient;
 import org.spearce.jgit.fetch.GitProtocolFetchClient;
 import org.spearce.jgit.fetch.LocalGitProtocolFetchClient;
 import org.spearce.jgit.fetch.URIish;
+import org.spearce.jgit.lib.Commit;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Repository;
@@ -113,6 +115,8 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 		private Text passText;
 
 		private Text keyText;
+
+		private Text remoteText;
 
 		/**
 		 * Wizard page that allows the user entering the location of a repository to
@@ -190,6 +194,20 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 					enableDisableFinish();
 				}
 			};
+
+			new Label(localComposite, SWT.NULL); // wrap layout
+
+			Label remoteLabel = new Label(localComposite, SWT.NULL);
+			remoteLabel.setText("Remote name");
+			final GridData remoteLabelData = new GridData();
+			remoteLabelData.exclude = true;
+			remoteLabel.setLayoutData(remoteLabelData);
+
+			remoteText = new Text(localComposite, SWT.BORDER);
+			remoteText.setText("origin");
+			final GridData remoteTextData = new GridData(SWT.FILL, SWT.DEFAULT, true,
+					false);
+			remoteText.setLayoutData(remoteTextData);
 
 			uriText.addKeyListener(completeListener);
 			userText.addKeyListener(completeListener);
@@ -384,6 +402,13 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 
 			}
 		}
+
+		/**
+		 * @return remote name
+		 */
+		public String getRemote() {
+			return remoteText.getText();
+		}
 	}
 
 	class DoClonePage extends WizardPage {
@@ -435,8 +460,8 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 			try {
 				db = new Repository(new File(into, ".git"));
 				db.create();
-				FetchClient client = createClient(urish, db, cloneInput.getUser(), cloneInput.getPassword());
-				CloneJob cloneJob = new CloneJob(client);
+				FetchClient client = createClient(urish, db, cloneInput.getUser(), cloneInput.getPassword(), cloneInput.getRemote());
+				CloneJob cloneJob = new CloneJob(client, cloneInput.getRemote(), cloneInput.getUri());
 				getContainer().run(true, true, cloneJob);
 				return true;
 
@@ -471,10 +496,7 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 		}
 
 		private void destroyPartialClone(final Repository db) throws CoreException {
-			File dir = db.getDirectory();
-			if (dir.equals(".git"))
-				dir = dir.getParentFile();
-			delete(dir);
+			delete(db.getWorkDir());
 		}
 
 		private void delete(final File dir) throws CoreException {
@@ -490,22 +512,22 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 		}
 
 		private FetchClient createClient(final String urish, final Repository db,
-				final String user, final String password)
+				final String user, final String password, final String remoteName)
 		throws IOException, URISyntaxException, JSchException {
 			URIish uri = new URIish(urish);
 			if (uri.getScheme() == null)
-				return LocalGitProtocolFetchClient.create(db, "origin", uri.getPath());
+				return LocalGitProtocolFetchClient.create(db, remoteName, uri.getPath());
 			if (uri.getScheme().equals("git")) {
 				int port = uri.getPort();
 				if (port == -1)
 					port = GitProtocolFetchClient.GIT_PROTO_PORT;
-				return GitProtocolFetchClient.create(db, "origin", uri.getHost(), port, uri.getPath());
+				return GitProtocolFetchClient.create(db, remoteName, uri.getHost(), port, uri.getPath());
 			}
 			if (uri.getScheme().equals("ssh") || uri.getScheme().equals("git+ssh")) {
 				int port = uri.getPort();
 				if (port == -1)
 					port = GitJSchProtocolFetchClient.GIT_SSH_PROTO_PORT;
-				return GitJSchProtocolFetchClient.create(db, "origin", uri.getHost(), port,
+				return GitJSchProtocolFetchClient.create(db, remoteName, uri.getHost(), port,
 						user != null ? user : uri.getUser(),
 						password != null ? password : uri.getPass(),
 						uri.getPath());
@@ -516,9 +538,13 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 		class CloneJob implements IRunnableWithProgress {
 
 			private final FetchClient client;
+			private final String remote;
+			private final String url;
 
-			CloneJob(final FetchClient client) {
+			CloneJob(final FetchClient client, final String remote, final String url) {
 				this.client = client;
+				this.remote = remote;
+				this.url = url;
 			}
 
 			public void run(final IProgressMonitor monitor) {
@@ -527,8 +553,19 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 					System.out.println("Checking out");
 					monitor.setTaskName("Checking out");
 					Repository repository = client.getRepository();
-					WorkDirCheckout workDirCheckout = new WorkDirCheckout(repository, repository.getDirectory().getParentFile(), new GitIndex(client.getRepository()), repository.mapTree("remotes/origin/master"));
+					final GitIndex index = new GitIndex(client.getRepository());
+					final String originMasterRef = Constants.REMOTES_PREFIX + "/" + remote + "/" + Constants.MASTER;
+					Commit mapCommit = repository.setupHEADRef(originMasterRef, Constants.MASTER);
+					// This may not be the most efficient way of checking out an initial work tree and index
+					WorkDirCheckout workDirCheckout = new WorkDirCheckout(repository, repository.getWorkDir(), index, mapCommit.getTree());
 					workDirCheckout.checkout();
+					monitor.setTaskName("Writing index");
+					index.write();
+
+					// Now set up the default remote just like Git would do it
+					repository.configureDefaultBranch(remote, url, Constants.MASTER);
+					repository.getConfig().save();
+
 					System.out.println("Done");
 				} catch (IOException e) {
 					setErrorMessage(e.getMessage());
@@ -536,6 +573,7 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 					monitor.done();
 				}
 			}
+
 		}
 	}
 

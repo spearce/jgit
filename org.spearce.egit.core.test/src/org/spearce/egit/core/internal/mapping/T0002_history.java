@@ -60,8 +60,8 @@ public class T0002_history extends GitTestCase {
 		project.createSourceFolder();
 		gitDir = new File(project.getProject().getWorkspace().getRoot()
 				.getRawLocation().toFile(), ".git");
-		workDir = gitDir.getParentFile();
 		thisGit = new Repository(gitDir);
+		workDir = thisGit.getWorkDir();
 		thisGit.create();
 		objectWriter = new ObjectWriter(thisGit);
 

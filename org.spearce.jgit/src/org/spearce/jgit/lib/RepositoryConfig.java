@@ -54,6 +54,12 @@ public class RepositoryConfig {
 
 	private final RepositoryConfig baseConfig;
 
+	/** Section name for a remote configuration */
+	public static final String REMOTE_SECTION = "remote";
+
+	/** Section name for a branch configuration. */
+	public static final String BRANCH_SECTION = "branch";
+
 	private final File configFile;
 
 	private boolean readFile;
@@ -251,6 +257,56 @@ public class RepositoryConfig {
 			return baseConfig.getRawString(section, subsection, name);
 		else
 			return null;
+	}
+
+	/**
+	 * Add or modify a configuration value. The parameters will result in a
+	 * configuration entry like this.
+	 *
+	 * <pre>
+	 * [section &quot;subsection&quot;]
+	 *         name = value
+	 * </pre>
+	 *
+	 * @param section
+	 *            section name, e.g "branch"
+	 * @param subsection
+	 *            optional subsection value, e.g. a branch name
+	 * @param name
+	 *            parameter name, e.g. "filemode"
+	 * @param value
+	 *            parameter value, e.g. "true"
+	 */
+	public void putString(final String section, final String subsection,
+			final String name, final String value) {
+		Entry pe = null;
+		for (int i = 0; i < entries.size(); ++i) {
+			pe = entries.get(i);
+			if (pe.base.equals(section)
+					&& (pe.extendedBase == null && subsection == null || pe.extendedBase != null
+							&& pe.extendedBase.equals(subsection)))
+				break;
+			pe = null;
+		}
+
+		// TODO: This doesn't work in general, so we must revise this code
+		if (pe == null) {
+			pe = new Entry();
+			pe.prefix = null;
+			pe.suffix = null;
+			pe.base = section;
+			pe.extendedBase = subsection;
+			add(pe);
+		}
+
+		Entry e = new Entry();
+		e.prefix = null;
+		e.suffix = null;
+		e.base = section;
+		e.extendedBase = subsection;
+		e.name = name;
+		e.value = value;
+		add(e);
 	}
 
 	/**

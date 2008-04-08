@@ -131,7 +131,7 @@ public class ResetOperation implements IWorkspaceRunnable {
 
 	private void refreshProjects() {
 		final IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
-		final File parentFile = repository.getDirectory().getParentFile();
+		final File parentFile = repository.getWorkDir();
 		for (IProject p : projects) {
 			final File file = p.getLocation().toFile();
 			if (file.getAbsolutePath().startsWith(parentFile.getAbsolutePath())) {
@@ -205,7 +205,7 @@ public class ResetOperation implements IWorkspaceRunnable {
 	}
 
 	private void checkoutIndex() throws TeamException {
-		final File parentFile = repository.getDirectory().getParentFile();
+		final File parentFile = repository.getWorkDir();
 		try {
 			WorkDirCheckout workDirCheckout = 
 				new WorkDirCheckout(repository, parentFile, index, newTree);

@@ -131,7 +131,7 @@ public class RepositoryMapping {
 	 * @return the workdir file, i.e. where the files are checked out
 	 */
 	public File getWorkDir() {
-		return getRepository().getDirectory().getParentFile();
+		return getRepository().getWorkDir();
 	}
 
 	synchronized void clear() {
