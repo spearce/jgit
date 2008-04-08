@@ -19,11 +19,24 @@ package org.spearce.jgit.lib;
 /**
  * A NullProgressMonitor does not report progress anywhere.
  */
-public class NullProgressMonitor extends AbstractProgressMonitor {
-
-	@Override
-	protected void report() {
-		// Nothing
+public class NullProgressMonitor implements ProgressMonitor {
+	public void start(int totalTasks) {
+		// Do not report.
 	}
 
+	public void beginTask(String title, int totalWork) {
+		// Do not report.
+	}
+
+	public void update(int completed) {
+		// Do not report.
+	}
+
+	public boolean isCancelled() {
+		return false;
+	}
+
+	public void endTask() {
+		// Do not report.
+	}
 }

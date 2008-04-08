@@ -19,16 +19,93 @@ package org.spearce.jgit.lib;
 /**
  * A simple progress reporter printing on stderr
  */
-public class TextProgressMonitor extends AbstractProgressMonitor {
+public class TextProgressMonitor implements ProgressMonitor {
+	private boolean output;
 
-	int lastWorked;
+	private long taskBeganAt;
 
-	@Override
-	protected void report() {
-		int tot = getTotal() + 1;
-		if ((lastWorked+1)*100/tot != (getWorked()+1)*100/tot)
-			System.err.println(getMessage() + " " + (getWorked()*100 / tot) + "%");
-		lastWorked = getWorked();
+	private String msg;
+
+	private int lastWorked;
+
+	private int totalWork;
+
+	public void start(final int totalTasks) {
+		// Ignore the number of tasks.
 	}
 
+	public void beginTask(final String title, final int total) {
+		endTask();
+		msg = title;
+		taskBeganAt = System.currentTimeMillis();
+		lastWorked = 0;
+		totalWork = total;
+	}
+
+	public void update(final int completed) {
+		if (msg == null)
+			return;
+
+		final int cmp = lastWorked + completed;
+		if (!output && System.currentTimeMillis() - taskBeganAt < 1000)
+			return;
+		if (totalWork == UNKNOWN) {
+			if (cmp % 100 == 0) {
+				display(cmp);
+				System.err.flush();
+			}
+		} else {
+			if ((cmp * 100 / totalWork) != (lastWorked * 100) / totalWork) {
+				display(cmp);
+				System.err.flush();
+			}
+		}
+		lastWorked = cmp;
+		output = true;
+	}
+
+	private void display(final int cmp) {
+		final StringBuilder m = new StringBuilder();
+		m.append('\r');
+		m.append(msg);
+		m.append(": ");
+		while (m.length() < 25)
+			m.append(' ');
+
+		if (totalWork == UNKNOWN) {
+			m.append(cmp);
+		} else {
+			final String twstr = String.valueOf(totalWork);
+			String cmpstr = String.valueOf(cmp);
+			while (cmpstr.length() < twstr.length())
+				cmpstr = " " + cmpstr;
+			final int pcnt = (cmp * 100 / totalWork);
+			if (pcnt < 100)
+				m.append(' ');
+			if (pcnt < 10)
+				m.append(' ');
+			m.append(pcnt);
+			m.append("% (");
+			m.append(cmpstr);
+			m.append("/");
+			m.append(twstr);
+			m.append(")");
+		}
+
+		System.err.print(m);
+	}
+
+	public boolean isCancelled() {
+		return false;
+	}
+
+	public void endTask() {
+		if (output) {
+			if (totalWork != UNKNOWN)
+				display(totalWork);
+			System.err.println();
+		}
+		output = false;
+		msg = null;
+	}
 }

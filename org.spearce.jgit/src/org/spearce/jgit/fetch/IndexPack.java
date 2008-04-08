@@ -43,6 +43,12 @@ import org.spearce.jgit.util.NB;
 
 /** Indexes Git pack files for local use. */
 public class IndexPack {
+	/** Progress message when reading raw data from the pack. */
+	public static final String PROGRESS_DOWNLOAD = "Receiving objects";
+
+	/** Progress message when computing names of delta compressed objects. */
+	public static final String PROGRESS_RESOLVE_DELTA = "Resolving deltas";
+
 	private static final byte[] SIGNATURE = { 'P', 'A', 'C', 'K' };
 
 	private static final int BUFFER_SIZE = 2048;
@@ -140,23 +146,25 @@ public class IndexPack {
 	 * @throws IOException
 	 */
 	public void index(final ProgressMonitor progress) throws IOException {
+		progress.start(2 /* tasks */);
 		try {
 			try {
 				readPackHeader();
-				progress.setMessage("Downloading / Indexing");
 
 				entries = new ObjectEntry[(int) objectCount];
 				baseById = new ObjectIdMap<ArrayList<UnresolvedDelta>>();
 				baseByPos = new HashMap<Long, ArrayList<UnresolvedDelta>>();
 
+				progress.beginTask(PROGRESS_DOWNLOAD, (int)objectCount);
 				for (int done = 0; done < objectCount; done++) {
 					indexOneObject();
-					progress.worked(1);
+					progress.update(1);
 					if (progress.isCancelled())
 						throw new IOException("Download cancelled");
 				}
 				readPackFooter();
 				endInput();
+				progress.endTask();
 				if (deltaCount > 0) {
 					if (packOut == null)
 						throw new IOException("need packOut");
@@ -171,6 +179,7 @@ public class IndexPack {
 					writeIdx();
 
 			} finally {
+				progress.endTask();
 				if (packOut != null)
 					packOut.close();
 				inflater.end();
@@ -185,15 +194,16 @@ public class IndexPack {
 	}
 
 	private void resolveDeltas(final ProgressMonitor progress) throws IOException {
-		progress.setMessage("Resolving deltas");
-		progress.worked((int) (2*objectCount - progress.getWorked()));
+		progress.beginTask(PROGRESS_RESOLVE_DELTA, deltaCount);
 		final int last = entryCount;
 		for (int i = 0; i < last; i++) {
+			final int before = entryCount;
 			resolveDeltas(entries[i]);
-			progress.worked((int) (2*objectCount + (i*entryCount / objectCount) - progress.getWorked()));
+			progress.update(entryCount - before);
 			if (progress.isCancelled())
 				throw new IOException("Download cancelled during indexing");
 		}
+		progress.endTask();
 	}
 
 	private void resolveDeltas(final ObjectEntry oe) throws IOException {

@@ -16,72 +16,54 @@
  */
 package org.spearce.jgit.lib;
 
-/**
- * A progress reporting interface
- */
+/** A progress reporting interface. */
 public interface ProgressMonitor {
-	/**
-	 * Set information name
-	 *
-	 * @param message
-	 */
-	void setMessage(String message);
+	/** Constant indicating the total work units cannot be predicted. */
+	public static final int UNKNOWN = 0;
 
 	/**
-	 * @return progress message
+	 * Advise the monitor of the total number of subtasks.
+	 * <p>
+	 * This should be invoked at most once per progress monitor interface.
+	 * 
+	 * @param totalTasks
+	 *            the total number of tasks the caller will need to complete
+	 *            their processing.
 	 */
-	String getMessage();
+	void start(int totalTasks);
 
 	/**
-	 * Set the total expected amount of work
-	 *
-	 * @param work
+	 * Begin processing a single task.
+	 * 
+	 * @param title
+	 *            title to describe the task. Callers should publish these as
+	 *            stable string constants that implementations could match
+	 *            against for translation support.
+	 * @param totalWork
+	 *            total number of work units the application will perform;
+	 *            {@link #UNKNOWN} if it cannot be predicted in advance.
 	 */
-	void setTotalWork(int work);
+	void beginTask(String title, int totalWork);
 
 	/**
-	 * @return amount worked so far
+	 * Denote that some work units have been completed.
+	 * <p>
+	 * This is an incremental update; if invoked once per work unit the correct
+	 * value for our argument is <code>1</code>, to indicate a single unit of
+	 * work has been finished by the caller.
+	 * 
+	 * @param completed
+	 *            the number of work units completed since the last call.
 	 */
-	int getWorked();
+	void update(int completed);
+
+	/** Finish the current task, so the next can begin. */
+	void endTask();
 
 	/**
-	 * @param work
-	 */
-	void worked(int work);
-
-	/**
-	 * @return total expected amount of work
-	 */
-	int getTotal();
-
-	/**
-	 * Indicate the task is completed.
-	 */
-	void done();
-
-	/**
-	 * @return true if done.
-	 */
-	boolean isDone();
-
-	/**
-	 * @return true if cancel has been requested.
+	 * Check for user task cancellation.
+	 * 
+	 * @return true if the user asked the process to stop working.
 	 */
 	boolean isCancelled();
-
-	/**
-	 * Request the task to be canceled
-	 *
-	 * @param canceled
-	 */
-	void setCanceled(boolean canceled);
-
-	/**
-	 * Begin a task
-	 *
-	 * @param message
-	 * @param total
-	 */
-	void beginTask(String message, int total);
-
 }

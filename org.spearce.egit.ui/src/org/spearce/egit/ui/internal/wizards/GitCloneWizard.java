@@ -26,6 +26,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
@@ -578,65 +579,46 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 	}
 
 	class EclipseGitProgressTransformer implements ProgressMonitor {
-		private final IProgressMonitor eclipseMonitor;
-		private String task;
-		private boolean done;
-		private int total;
-		private int worked;
+		private final IProgressMonitor root;
+
+		private IProgressMonitor task;
 
 		EclipseGitProgressTransformer(final IProgressMonitor eclipseMonitor) {
-			this.eclipseMonitor = eclipseMonitor;
+			root = eclipseMonitor;
 		}
 
-		public void worked(final int work) {
-			worked += work;
-			eclipseMonitor.worked(work);
+		public void start(final int totalTasks) {
+			root.beginTask("", totalTasks * 1000);
 		}
 
-		public void setTotalWork(final int work) {
-			total = work;
-			eclipseMonitor.beginTask(getMessage(), work);
+		public void beginTask(final String name, final int totalWork) {
+			endTask();
+			task = new SubProgressMonitor(root, 1000);
+			if (totalWork == UNKNOWN)
+				task.beginTask(name, IProgressMonitor.UNKNOWN);
+			else
+				task.beginTask(name, totalWork);
 		}
 
-		public void setMessage(final String message) {
-			task = message;
-			eclipseMonitor.setTaskName(message);
+		public void update(final int work) {
+			if (task != null)
+				task.worked(work);
 		}
 
-		public void setCanceled(final boolean canceled) {
-			eclipseMonitor.setCanceled(true);
-		}
-
-		public boolean isDone() {
-			return done;
+		public void endTask() {
+			if (task != null) {
+				try {
+					task.done();
+				} finally {
+					task = null;
+				}
+			}
 		}
 
 		public boolean isCancelled() {
-			return eclipseMonitor.isCanceled();
-		}
-
-		public int getWorked() {
-			return worked;
-		}
-
-		public int getTotal() {
-			return total;
-		}
-
-		public String getMessage() {
-			return task;
-		}
-
-		public void done() {
-			done = true;
-			eclipseMonitor.done();
-		}
-
-		public void beginTask(final String task, final int total) {
-			this.task = task;
-			this.total = total;
-			eclipseMonitor.beginTask(task, total);
+			if (task != null)
+				return task.isCanceled();
+			return root.isCanceled();
 		}
 	}
 }
-
