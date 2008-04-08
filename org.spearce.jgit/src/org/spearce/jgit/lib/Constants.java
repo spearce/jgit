@@ -161,7 +161,7 @@ public final class Constants {
 	public static final String HEADS_PREFIX = "refs/heads";
 
 	/** Prefix for remotes refs */
-	public static String REMOTES_PREFIX = "remotes";
+	public static String REMOTES_PREFIX = "refs/remotes";
 
 	/**
 	 * Create a new digest function for objects.
