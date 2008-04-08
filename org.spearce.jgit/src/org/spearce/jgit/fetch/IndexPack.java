@@ -31,13 +31,14 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 import org.spearce.jgit.errors.CorruptObjectException;
+import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.BinaryDelta;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdMap;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Repository;
-import org.spearce.jgit.util.NB;
 
 /** Indexes Git pack files for local use. */
 public class IndexPack {
@@ -63,6 +64,8 @@ public class IndexPack {
 	private final Inflater inflater;
 
 	private final MessageDigest objectDigest;
+
+	private final MutableObjectId tempObjectId;
 
 	private InputStream in;
 
@@ -113,6 +116,7 @@ public class IndexPack {
 		buf = new byte[BUFFER_SIZE];
 		objectData = new byte[BUFFER_SIZE];
 		objectDigest = Constants.newMessageDigest();
+		tempObjectId = new MutableObjectId();
 		packDigest = Constants.newMessageDigest();
 
 		if (dstBase != null) {
@@ -249,7 +253,8 @@ public class IndexPack {
 			objectDigest.update(Constants.encodeASCII(data.length));
 			objectDigest.update((byte) 0);
 			objectDigest.update(data);
-			oe = new ObjectEntry(pos, 0, objectDigest.digest());
+			tempObjectId.fromRaw(objectDigest.digest(), 0);
+			oe = new ObjectEntry(pos, tempObjectId);
 			entries[entryCount++] = oe;
 		}
 
@@ -418,7 +423,8 @@ public class IndexPack {
 		objectDigest.update(Constants.encodeASCII(sz));
 		objectDigest.update((byte) 0);
 		inflateFromInput(true);
-		entries[entryCount++] = new ObjectEntry(pos, 0, objectDigest.digest());
+		tempObjectId.fromRaw(objectDigest.digest(), 0);
+		entries[entryCount++] = new ObjectEntry(pos, tempObjectId);
 	}
 
 	// Current position of {@link #bOffset} within the entire file.
@@ -581,12 +587,8 @@ public class IndexPack {
 	private static class ObjectEntry extends ObjectId {
 		final long pos;
 
-		ObjectEntry(final long headerOffset, final int p, final byte[] raw) {
-			super(NB.decodeInt32(raw, p),
-					NB.decodeInt32(raw, p + 4),
-					NB.decodeInt32(raw, p + 8),
-					NB.decodeInt32(raw, p + 12),
-					NB.decodeInt32(raw, p + 16));
+		ObjectEntry(final long headerOffset, final AnyObjectId id) {
+			super(id);
 			pos = headerOffset;
 		}
 	}
