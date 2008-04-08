@@ -59,6 +59,37 @@ public class LocalGitProtocolFetchClient extends FullFetchClient {
 				new String[] { "git-upload-pack", "." }, null, remoteGitDir);
 		final InputStream inputStream = process.getInputStream();
 		final OutputStream outpuStream = process.getOutputStream();
+		final InputStream errorStream = process.getErrorStream();
+		new Thread("jgit-local-errors") {
+			public void run() {
+				final byte[] tmp = new byte[512];
+				try {
+					for (;;) {
+						final int n = errorStream.read(tmp);
+						if (n < 0)
+							break;
+						System.err.write(tmp, 0, n);
+						System.err.flush();
+					}
+				} catch (IOException err) {
+					// Ignore errors reading errors.
+				} finally {
+					try {
+						errorStream.close();
+					} catch (IOException err2) {
+						// Ignore errors closing the pipe.
+					}
+				}
+				for (;;) {
+					try {
+						process.waitFor();
+						break;
+					} catch (InterruptedException ie) {
+						// Try again.
+					}
+				}
+			}
+		}.start();
 		return new LocalGitProtocolFetchClient(repository, remoteName, null, outpuStream, inputStream);
 	}
 }
