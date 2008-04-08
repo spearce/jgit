@@ -608,7 +608,6 @@ public class IndexPack {
 			d.update(oeBytes);
 		}
 		ObjectId name = ObjectId.fromRaw(d.digest());
-		System.out.println("name pack "+name);
 		File packDir = new File(db.getObjectsDirectory(),"pack");
 		File finalPack = new File(packDir, "pack-"+name+".pack");
 		File finalIdx = new File(packDir, "pack-"+name+".idx");

@@ -179,7 +179,6 @@ public class FetchClient {
 			}
 			if (!match)
 				continue;
-			System.out.println("Requesting "+e);
 			final ObjectId id = repository.resolve(e.getKey());
 			if (id != null) {
 				Object object = repository.mapObject(id, e.getKey());
@@ -190,7 +189,7 @@ public class FetchClient {
 					todo.add(commit.getCommitId());
 					have.add(commit.getCommitId());
 				} else {
-					System.out.println("cannot negotiate (yet) "+e.getKey());
+					System.err.println("cannot negotiate (yet) "+e.getKey());
 				}
 			} else {
 				writeServer(("want " + e.getValue() + flags + "\n"));
@@ -230,7 +229,6 @@ public class FetchClient {
 				if (!(object instanceof Commit))
 					break;
 				final Commit commit = repository.mapCommit(id);
-				System.out.println("Have "+commit.getCommitId());
 				toServer.write(("0032have "+commit.getCommitId().toString()+"\n").getBytes());
 				final ObjectId[] parentIds = commit.getParentIds();
 				for (int i=1; i<parentIds.length; ++i) {
@@ -267,7 +265,6 @@ public class FetchClient {
 			if (data[0] == '\1') {
 				os.write(data,1,data.length-1);
 			} else {
-				System.out.println("Progress "+new String(data,1,data.length-1));
 				String msg = new String(data, 1, data.length - 1);
 				Matcher matcher = progress.matcher(msg);
 				if (matcher.matches()) {
@@ -326,14 +323,11 @@ public class FetchClient {
 			throw new IOException("Expected ack/nak SHA-1");
 
 		final ObjectId id = ObjectId.fromString(objectIdBuf,0);
-//		System.out.println("Got "+acktype+" "+id);
 		if (acktype.equals("ACK"))
 			have.add(id); // record that we know this one (and all older ones of course)
 		int c = readFully(fromServer);
-		if (c == '\n') {
-			System.out.println("Server says done");
+		if (c == '\n')
 			return false;
-		}
 		if (c != ' ')
 			throw new IOException("Expected blank");
 
