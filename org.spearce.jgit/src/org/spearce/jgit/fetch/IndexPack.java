@@ -303,6 +303,8 @@ public class IndexPack {
 			}
 			for (int i = 0; i < entryCount; i++) {
 				final ObjectEntry oe = entries[i];
+				if (oe.pos >>> 1 > Integer.MAX_VALUE)
+					throw new IOException("Pack too large for index version 1");
 				NB.encodeInt32(rawoe, 0, (int) oe.pos);
 				oe.copyRawTo(rawoe, 4);
 				os.write(rawoe);
