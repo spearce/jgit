@@ -294,15 +294,17 @@ public class IndexPack {
 		final BufferedOutputStream os = new BufferedOutputStream(
 				new FileOutputStream(dstIdx), BUFFER_SIZE);
 		try {
+			final byte[] rawoe = new byte[4 + Constants.OBJECT_ID_LENGTH];
 			final MessageDigest d = Constants.newMessageDigest();
-			for (int i = 0; i < 256; i++)
-				writeUInt32(d, os, fanout[i]);
-			byte[] rawoe = new byte[Constants.OBJECT_ID_LENGTH];
+			for (int i = 0; i < 256; i++) {
+				NB.encodeInt32(rawoe, 0, fanout[i]);
+				os.write(rawoe, 0, 4);
+				d.update(rawoe, 0, 4);
+			}
 			for (int i = 0; i < entryCount; i++) {
 				final ObjectEntry oe = entries[i];
-				writeUInt32(d, os, oe.pos);
-//				System.out.println(oe + " " + oe.pos);
-				oe.copyRawTo(rawoe, 0);
+				NB.encodeInt32(rawoe, 0, (int) oe.pos);
+				oe.copyRawTo(rawoe, 4);
 				os.write(rawoe);
 				d.update(rawoe);
 			}
@@ -560,24 +562,6 @@ public class IndexPack {
 	private static CorruptObjectException corrupt(final DataFormatException dfe) {
 		return new CorruptObjectException("Packfile corruption detected: "
 				+ dfe.getMessage());
-	}
-
-	private static void writeUInt32(final MessageDigest m,
-			final BufferedOutputStream o, final long i) throws IOException {
-		final int a = ((int) (i >> 24)) & 0xff;
-		final int b = ((int) (i >> 16)) & 0xff;
-		final int c = ((int) (i >> 8)) & 0xff;
-		final int d = ((int) i) & 0xff;
-
-		o.write(a);
-		o.write(b);
-		o.write(c);
-		o.write(d);
-
-		m.update((byte) a);
-		m.update((byte) b);
-		m.update((byte) c);
-		m.update((byte) d);
 	}
 
 	private static class ObjectEntry extends ObjectId {
