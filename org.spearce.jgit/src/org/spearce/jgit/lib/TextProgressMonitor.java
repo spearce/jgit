@@ -17,7 +17,7 @@
 package org.spearce.jgit.lib;
 
 /**
- * A simple progress reporter printing on stdout
+ * A simple progress reporter printing on stderr
  */
 public class TextProgressMonitor extends AbstractProgressMonitor {
 
@@ -27,7 +27,7 @@ public class TextProgressMonitor extends AbstractProgressMonitor {
 	protected void report() {
 		int tot = getTotal() + 1;
 		if ((lastWorked+1)*100/tot != (getWorked()+1)*100/tot)
-			System.out.println(getMessage() + " " + (getWorked()*100 / tot) + "%");
+			System.err.println(getMessage() + " " + (getWorked()*100 / tot) + "%");
 		lastWorked = getWorked();
 	}
 
