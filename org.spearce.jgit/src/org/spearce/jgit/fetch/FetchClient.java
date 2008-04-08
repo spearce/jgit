@@ -41,6 +41,7 @@ import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tag;
 import org.spearce.jgit.lib.Tree;
+import org.spearce.jgit.util.NB;
 
 /**
  * This class implements the Git fetch protocol.
@@ -352,12 +353,8 @@ public class FetchClient {
 	}
 
 	private static int readFully(final BufferedInputStream in, final byte[] b) throws IOException {
-		int off=0;
-		int nread = 0;
-		while (off < b.length && (nread=in.read(b, off, b.length - off)) >= 0) {
-			off += nread;
-		}
-		return off;
+		NB.readFully(in, b, 0, b.length);
+		return b.length;
 	}
 
 	private void writeServer(final String data) throws IOException {
