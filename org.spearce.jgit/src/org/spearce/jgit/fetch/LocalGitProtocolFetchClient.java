@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.spearce.jgit.fetch.FetchClient;
-import org.spearce.jgit.fetch.FullFetchClient;
 import org.spearce.jgit.lib.Repository;
 
 
@@ -55,11 +53,10 @@ public class LocalGitProtocolFetchClient extends FullFetchClient {
 	 * @throws IOException
 	 */
 	public static FetchClient create(final Repository repository,
-			final String remoteName, final String remoteGitDir)
+			final String remoteName, final File remoteGitDir)
 			throws IOException {
-		final File tmpDir = new File("tmppack");
-		tmpDir.mkdirs();
-		final Process process = Runtime.getRuntime().exec("git-upload-pack "+remoteGitDir, null, tmpDir);
+		final Process process = Runtime.getRuntime().exec(
+				new String[] { "git-upload-pack", "." }, null, remoteGitDir);
 		final InputStream inputStream = process.getInputStream();
 		final OutputStream outpuStream = process.getOutputStream();
 		return new LocalGitProtocolFetchClient(repository, remoteName, null, outpuStream, inputStream);

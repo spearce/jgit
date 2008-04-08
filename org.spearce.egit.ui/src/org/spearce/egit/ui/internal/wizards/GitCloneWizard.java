@@ -517,7 +517,7 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 		throws IOException, URISyntaxException, JSchException {
 			URIish uri = new URIish(urish);
 			if (uri.getScheme() == null)
-				return LocalGitProtocolFetchClient.create(db, remoteName, uri.getPath());
+				return LocalGitProtocolFetchClient.create(db, remoteName, new File(uri.getPath()));
 			if (uri.getScheme().equals("git")) {
 				int port = uri.getPort();
 				if (port == -1)
