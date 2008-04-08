@@ -184,6 +184,11 @@ public class IndexPack {
 					packOut.close();
 				inflater.end();
 			}
+
+			if (dstPack != null)
+				dstPack.setReadOnly();
+			if (dstIdx != null)
+				dstIdx.setReadOnly();
 		} catch (IOException err) {
 			if (dstPack != null)
 				dstPack.delete();
