@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -164,7 +165,8 @@ public class FetchClient {
 	 */
 	private void request() throws IOException {
 		final List<ObjectId> todo = new ArrayList<ObjectId>();
-		for (final Map.Entry<String,ObjectId> e : serverHas.entrySet()) {
+		for (final Iterator<Map.Entry<String,ObjectId>> i = serverHas.entrySet().iterator(); i.hasNext(); ) {
+			final Entry<String, ObjectId> e = i.next();
 			if (e.getKey().endsWith("^{}"))
 				continue;
 			boolean match = false;
@@ -177,8 +179,11 @@ public class FetchClient {
 					}
 				}
 			}
-			if (!match)
+			if (!match) {
+				i.remove();
 				continue;
+			}
+
 			final ObjectId id = repository.resolve(e.getKey());
 			if (id != null) {
 				Object object = repository.mapObject(id, e.getKey());
