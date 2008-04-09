@@ -55,6 +55,7 @@ git merge master
 echo a1 >>a/a1.txt
 git add a/a1.txt
 git_commit -a -m "Second a/a1"
+git branch pa
 
 echo a2 >>a/a2.txt
 git add a/a2.txt

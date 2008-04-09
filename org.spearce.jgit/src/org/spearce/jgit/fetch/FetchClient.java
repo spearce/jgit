@@ -119,7 +119,7 @@ public class FetchClient {
 			else
 				throw new IOException("Invalid state, already received options from server");
 		}
-		if (shouldReceiveRef(refName))
+		if (refName.endsWith("^{}") || shouldReceiveRef(refName))
 			serverHas.put(refName, id);
 
 		return true;
@@ -150,7 +150,7 @@ public class FetchClient {
 		}
 	}
 
-	private static final String defaultflags = " multi_ack side-band-64k ofs-delta";
+	private static final String defaultflags = " multi_ack side-band-64k include-tag ofs-delta";
 
 	private String flags = defaultflags;
 	private String[] fetchList;
@@ -167,20 +167,28 @@ public class FetchClient {
 		final List<ObjectId> todo = new ArrayList<ObjectId>();
 		for (final Iterator<Map.Entry<String,ObjectId>> i = serverHas.entrySet().iterator(); i.hasNext(); ) {
 			final Entry<String, ObjectId> e = i.next();
-			if (e.getKey().endsWith("^{}"))
+			if (e.getKey().endsWith("^{}")) {
+				e.setValue(null); // only tells us this is an object referencing another, such as a tag
 				continue;
+			}
 			boolean match = false;
 			if (fetchList == null) {
 				match = true;
 			} else {
-				for (final String f : fetchList) {
-					if (e.getKey().matches(f)) {
-						match = true;
+				if (serverHas.containsKey(e.getKey()+"^{}")) {
+					// if this is an object referencing another we might want it. Keep it
+					// an see if it comes from server
+					match = true;
+				} else {
+					for (final String f : fetchList) {
+						if (e.getKey().matches(f)) {
+							match = true;
+						}
 					}
 				}
 			}
 			if (!match) {
-				i.remove();
+				e.setValue(null); // mark as uninteresting
 				continue;
 			}
 
@@ -445,9 +453,19 @@ public class FetchClient {
 	void updateRemoteRefs(String remote) throws IOException {
 		for(String ref : serverHas.keySet()) {
 			ObjectId id = serverHas.get(ref);
+			if (id == null) // Was pruned as not interesting
+				continue;
 			if (!repository.hasObject(id))
-				throw new IllegalStateException("We should have received " + id
-						+ " in order to set up remote ref " + ref);
+				// We only record branch refs that we requested. For tags we
+				// will record all we receieve. serverHas is pruned from
+				// branch refs that we did not ask for and not getting one
+				// we asked for is an error (or should be). Let's be strict
+				// for now.
+				if (!ref.startsWith("refs/tags/"))
+					throw new IllegalStateException("We should have received " + id
+							+ " in order to set up remote ref " + ref);
+				else
+					continue;
 			String remotePrefix = "refs/remotes/"+remote+"/";
 			String lref;
 			if (ref.startsWith("refs/heads/"))

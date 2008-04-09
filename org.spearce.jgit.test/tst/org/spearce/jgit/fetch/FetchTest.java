@@ -50,10 +50,14 @@ public class FetchTest extends RepositoryTestCase {
 	public void testSimpleOneBranchClone() throws IOException {
 		final Repository newRepo = createNewEmptyRepo();
 		FetchClient client = LocalGitProtocolFetchClient.create(newRepo, "origintest", trash_git);
-		client.setBranches(new String[] { "refs/heads/a" });
+		client.setBranches(new String[] { "refs/heads/pa" });
 		client.run(new TextProgressMonitor());
 
-		assertEquals("6db9c2ebf75590eef973081736730a9ea169a0c4", newRepo.mapCommit("remotes/origintest/a").getCommitId().toString());
+		assertEquals("d86a2aada2f5e7ccf6f11880bfb9ab404e8a8864", newRepo.mapCommit("remotes/origintest/pa").getCommitId().toString());
+		assertNull(newRepo.mapCommit("6db9c2ebf75590eef973081736730a9ea169a0c4")); // refs/heads/a
+		assertNotNull(newRepo.mapTag("17768080a2318cd89bba4c8b87834401e2095703")); // refs/heads/B
+		assertEquals("d86a2aada2f5e7ccf6f11880bfb9ab404e8a8864", newRepo.mapTag("refs/tags/B").getObjId().toString());
+		assertNull(newRepo.mapTag("refs/tags/A"));
 
 		// Now do an incremental update test too, a non-fast-forward
 		Commit commit = new Commit(db);
@@ -69,6 +73,7 @@ public class FetchTest extends RepositoryTestCase {
 			throw new IllegalStateException("Could not update refs/heafs/a in test");
 
 		FetchClient client2 = LocalGitProtocolFetchClient.create(newRepo, "origintest", trash_git);
+		client.setBranches(new String[] { "refs/heads/a" });
 		client2.run(new TextProgressMonitor());
 
 		assertEquals("9bac73222088373f5a41ed64994adc881a0a27b6", newRepo.mapCommit("remotes/origintest/a").getCommitId().toString());
