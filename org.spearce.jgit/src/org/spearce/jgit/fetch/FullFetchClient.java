@@ -29,7 +29,7 @@ public class FullFetchClient extends FetchClient {
 				public void run() {
 					IndexPack pack;
 					try {
-						pack = new IndexPack(pi, new File("tmp_pack1"));
+						pack = new IndexPack(pi, new File(new File(repository.getObjectsDirectory(), "pack"), "packtmp_pack"+System.currentTimeMillis()));
 						pack.index(monitor);
 						pack.renamePack(repository);
 					} catch (Throwable e) {
