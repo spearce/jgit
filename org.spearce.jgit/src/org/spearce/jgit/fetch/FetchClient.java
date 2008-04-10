@@ -180,9 +180,13 @@ public class FetchClient {
 					// an see if it comes from server
 					match = true;
 				} else {
-					for (final String f : fetchList) {
-						if (e.getKey().matches(f)) {
-							match = true;
+					if (e.getKey().startsWith("refs/tags/")) {
+						match = true;
+					} else {
+						for (final String f : fetchList) {
+							if (e.getKey().matches(f)) {
+								match = true;
+							}
 						}
 					}
 				}
@@ -196,6 +200,7 @@ public class FetchClient {
 			if (id != null) {
 				Object object = repository.mapObject(id, e.getKey());
 				if (object instanceof Commit) {
+					System.out.println("want "+ e.getValue());
 					writeServer(("want " + e.getValue() + flags+ "\n"));
 					flags = "";
 					Commit commit = (Commit)object;
@@ -205,8 +210,10 @@ public class FetchClient {
 					System.err.println("cannot negotiate (yet) "+e.getKey());
 				}
 			} else {
-				writeServer(("want " + e.getValue() + flags + "\n"));
-				flags = "";
+				if (!e.getKey().startsWith("refs/tags/")) {
+					writeServer(("want " + e.getValue() + flags + "\n"));
+					flags = "";
+				}
 			}
 		}
 		toServer.write("0000".getBytes());
