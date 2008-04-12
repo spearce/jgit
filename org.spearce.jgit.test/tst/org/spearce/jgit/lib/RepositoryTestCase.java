@@ -117,7 +117,8 @@ public abstract class RepositoryTestCase extends TestCase {
 		final String[] packs = {
 				"pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f",
 				"pack-df2982f284bbabb6bdb59ee3fcc6eb0983e20371",
-				"pack-9fb5b411fe6dfa89cc2e6b89d2bd8e5de02b5745"
+				"pack-9fb5b411fe6dfa89cc2e6b89d2bd8e5de02b5745",
+				"pack-e6d07037cbcf13376308a0a995d1fa48f8f76aaa"
 		};
 		final File tst = new File("tst");
 		final File packDir = new File(db.getObjectsDirectory(), "pack");

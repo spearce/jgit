@@ -15,6 +15,7 @@ public class FetchTest extends RepositoryTestCase {
 	public void testSimpleFullLocalClone() throws IOException {
 		final Repository newRepo = createNewEmptyRepo();
 		FetchClient client = LocalGitProtocolFetchClient.create(newRepo, "origintest", trash_git);
+		client.setFetchAllTags(true);
 		client.run(new TextProgressMonitor());
 
 		assertEquals("6db9c2ebf75590eef973081736730a9ea169a0c4", newRepo.mapCommit("remotes/origintest/a").getCommitId().toString());
@@ -45,6 +46,9 @@ public class FetchTest extends RepositoryTestCase {
 		assertEquals("d86a2aada2f5e7ccf6f11880bfb9ab404e8a8864", newRepo.mapTag("refs/tags/B").getObjId().toString());
 		assertEquals("6db9c2ebf75590eef973081736730a9ea169a0c4", newRepo.mapTag("refs/tags/A").getObjId().toString());
 		assertNull(newRepo.mapTag("refs/tags/A").getTagId());
+
+		// This is a full clone so we expect all tags, including this one
+		assertEquals("fd608fbe625a2b456d9f15c2b1dc41f252057dd7", newRepo.mapTag("refs/tags/spearce-gpg-pub").getObjId().toString());
 	}
 
 	public void testSimpleOneBranchClone() throws IOException {
@@ -82,8 +86,11 @@ public class FetchTest extends RepositoryTestCase {
 		assertEquals("17768080a2318cd89bba4c8b87834401e2095703", newRepo.mapTag("refs/tags/B").getTagId().toString());
 		assertEquals("d86a2aada2f5e7ccf6f11880bfb9ab404e8a8864", newRepo.mapTag("refs/tags/B").getObjId().toString());
 
-		// Got dome new stuff
+		// Got some new stuff
 		assertEquals("6db9c2ebf75590eef973081736730a9ea169a0c4", newRepo.mapTag("refs/tags/A").getObjId().toString());
 		assertNull(newRepo.mapTag("refs/tags/A").getTagId());
+
+		// This tag is not referenced by any commit
+		assertNull(newRepo.mapTag("refs/tags/spearc-gpg-pub"));
 	}
 }
