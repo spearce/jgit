@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -84,9 +85,25 @@ public class FetchClient {
 			this.fromServer = new BufferedInputStream(fromServer);
 	}
 
+	static final String OPTION_INCLUDE_TAG = "include-tag";
+	static final String OPTION_MULTI_ACK = "multi_ack";
+	static final String OPTION_THIN_PACK = "thin-pack";
+	static final String OPTION_SIDE_BAND_64K = "side-band-64k";
+	static final String OPTION_OFS_DELTA = "ofs-delta";
+	static final String OPTION_SHALLOW = "shallow";
+
 	private Map<String,ObjectId> serverHas = new HashMap<String,ObjectId>();
 	private Set<ObjectId> have = new HashSet<ObjectId>();
-	private String options;
+	private Set<String> requestedOptions;
+	private Set<String> receivedOptions;
+	{
+		requestedOptions = new HashSet<String>();
+		requestedOptions.add(OPTION_MULTI_ACK);
+		requestedOptions.add(OPTION_SIDE_BAND_64K);
+		requestedOptions.add(OPTION_INCLUDE_TAG); // Since GIT 1.5.4
+		requestedOptions.add(OPTION_OFS_DELTA);
+	}
+	private String flags = packOptions(requestedOptions);
 
 	private boolean readHasLine() throws IOException {
 		final byte[] lenbuf = new byte[4];
@@ -114,8 +131,8 @@ public class FetchClient {
 			++z;
 		final String refName = new String(refnameBuf,0,z);
 		if (z < refnameBuf.length) {
-			if (options == null)
-				options = new String(refnameBuf,z);
+			if (receivedOptions == null)
+				receivedOptions = parseReceivedOptions(new String(refnameBuf, z + 1, refnameBuf.length - z - 1));
 			else
 				throw new IOException("Invalid state, already received options from server");
 		}
@@ -123,6 +140,29 @@ public class FetchClient {
 			serverHas.put(refName, id);
 
 		return true;
+	}
+
+	private Set<String> parseReceivedOptions(final String optionString) throws IOException {
+		final Set<String> ret = new HashSet<String>();
+		if (false) {
+			final StringTokenizer st = new StringTokenizer(optionString," ");
+			while (st.hasMoreTokens()) {
+				final String option = st.nextToken(); 
+				ret.add(option);
+				if (!requestedOptions.contains(option))
+					throw new IOException("Unexpected option receiced: " + option);
+			}
+		}
+		return ret;
+	}
+
+	private String packOptions(final Set<String> options) {
+		StringBuilder b = new StringBuilder();
+		for (String option : options) {
+			b.append(' ');
+			b.append(option);
+		}
+		return b.toString();
 	}
 
 	private boolean shouldReceiveRef(final String refName) {
@@ -150,9 +190,6 @@ public class FetchClient {
 		}
 	}
 
-	private static final String defaultflags = " multi_ack side-band-64k include-tag ofs-delta";
-
-	private String flags = defaultflags;
 	private String[] fetchList;
 	private ProgressMonitor monitor;
 
@@ -218,7 +255,6 @@ public class FetchClient {
 		}
 		toServer.write("0000".getBytes());
 		toServer.flush();
-		flags = defaultflags;
 		final Collection<String> allRefs = repository.getAllRefs();
 		for (final String ref : allRefs) {
 			final ObjectId id = repository.resolve(ref);
