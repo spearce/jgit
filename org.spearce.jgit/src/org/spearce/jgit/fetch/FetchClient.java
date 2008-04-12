@@ -193,6 +193,20 @@ public class FetchClient {
 	private String[] fetchList;
 	private ProgressMonitor monitor;
 
+	private boolean fetchAllTags;
+
+	/**
+	 * Set whether all tags should be received. By default only tags referenced
+	 * by received objects are fetched.
+	 *
+	 * @param fetchAllTags
+	 *            true if all tags should be fetched.
+	 *
+	 */
+	public void setFetchAllTags(boolean fetchAllTags) {
+		this.fetchAllTags = fetchAllTags;
+	}
+
 	/**
 	 * Request data.
 	 *
@@ -209,7 +223,7 @@ public class FetchClient {
 				continue;
 			}
 			boolean match = false;
-			if (fetchList == null) {
+			if (fetchList == null || fetchAllTags) {
 				match = true;
 			} else {
 				if (serverHas.containsKey(e.getKey()+"^{}")) {
@@ -244,10 +258,11 @@ public class FetchClient {
 					todo.add(commit.getCommitId());
 					have.add(commit.getCommitId());
 				} else {
-					System.err.println("cannot negotiate (yet) "+e.getKey());
+					System.out.println("want "+ e.getValue());
+					writeServer(("want " + e.getValue() + flags+ "\n"));
 				}
 			} else {
-				if (!e.getKey().startsWith("refs/tags/")) {
+				if (!e.getKey().startsWith("refs/tags/") || fetchAllTags) {
 					writeServer(("want " + e.getValue() + flags + "\n"));
 					flags = "";
 				}
