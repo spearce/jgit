@@ -54,12 +54,12 @@ public class Tag {
 	}
 
 	/**
-	 * Construct a Tag representing an existing with a know name referencing an known object.
+	 * Construct a Tag representing an existing with a known name referencing an known object.
 	 * This could be either a simple or annotated tag.
 	 *
 	 * @param db {@link Repository}
 	 * @param id target id.
-	 * @param refName tag name
+	 * @param refName tag name or null
 	 * @param raw data of an annotated tag.
 	 */
 	public Tag(final Repository db, final ObjectId id, String refName, final byte[] raw) {
@@ -69,7 +69,7 @@ public class Tag {
 			objId = ObjectId.fromString(raw, 7);
 		} else
 			objId = id;
-		if (refName.startsWith("refs/tags/"))
+		if (refName != null && refName.startsWith("refs/tags/"))
 			refName = refName.substring(10);
 		tag = refName;
 		this.raw = raw;
