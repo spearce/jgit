@@ -351,13 +351,13 @@ public class Repository {
 	public Object mapObject(final ObjectId id, final String refName) throws IOException {
 		final ObjectLoader or = openObject(id);
 		final byte[] raw = or.getBytes();
-		if (Constants.TYPE_TREE.equals(or.getType()))
+		if (or.getType() == Constants.OBJ_TREE)
 			return makeTree(id, raw);
-		if (Constants.TYPE_COMMIT.equals(or.getType()))
+		if (or.getType() == Constants.OBJ_COMMIT)
 			return makeCommit(id, raw);
-		if (Constants.TYPE_TAG.equals(or.getType()))
+		if (or.getType() == Constants.OBJ_TAG)
 			return makeTag(id, refName, raw);
-		if (Constants.TYPE_BLOB.equals(or.getType()))
+		if (or.getType() == Constants.OBJ_BLOB)
 			return raw;
 		return null;
 	}
