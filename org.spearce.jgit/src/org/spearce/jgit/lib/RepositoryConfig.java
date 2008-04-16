@@ -348,7 +348,12 @@ public class RepositoryConfig {
 				+ ".lock");
 		final PrintWriter r = new PrintWriter(new BufferedWriter(
 				new OutputStreamWriter(new FileOutputStream(tmp),
-						Constants.CHARACTER_ENCODING)));
+						Constants.CHARACTER_ENCODING))) {
+			@Override
+			public void println() {
+				print('\n');
+			}
+		};
 		boolean ok = false;
 		try {
 			final Iterator<Entry> i = entries.iterator();
