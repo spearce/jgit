@@ -388,10 +388,16 @@ public class RepositoryConfig {
 				r.println();
 			}
 			ok = true;
+			r.close();
+			if (!tmp.renameTo(configFile)) {
+				configFile.delete();
+				if (!tmp.renameTo(configFile))
+					throw new IOException("Cannot save config file " + configFile + ", rename failed");
+			}
 		} finally {
 			r.close();
-			if (!ok || !tmp.renameTo(configFile)) {
-				tmp.delete();
+			if (tmp.exists() && !tmp.delete()) {
+				System.err.println("(warning) failed to delete tmp config file: " + tmp);
 			}
 		}
 		readFile = ok;
