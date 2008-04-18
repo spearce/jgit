@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
  * any special character is written as-is.
  */
 public class URIish {
-	private String protocol;
+	private String scheme;
 
 	private String path;
 
@@ -50,7 +50,7 @@ public class URIish {
 				.compile("^(?:([a-z]+)://(?:([^/]+?)(?::([^/]+?))?@)?(?:([^/]+?))?(?::(\\d+))?)?((?:[A-Za-z]:)?/.+)$");
 		Matcher matcher = p.matcher(s);
 		if (matcher.matches()) {
-			protocol = matcher.group(1);
+			scheme = matcher.group(1);
 			user = matcher.group(2);
 			pass = matcher.group(3);
 			host = matcher.group(4);
@@ -78,7 +78,7 @@ public class URIish {
 	 * @return protocol name or null for local references
 	 */
 	public String getScheme() {
-		return protocol;
+		return scheme;
 	}
 
 	/**
