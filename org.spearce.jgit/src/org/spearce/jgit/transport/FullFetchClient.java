@@ -1,4 +1,4 @@
-package org.spearce.jgit.fetch;
+package org.spearce.jgit.transport;
 
 import java.io.File;
 import java.io.IOException;

@@ -18,9 +18,9 @@ package org.spearce.jgit.pgm;
 
 import java.io.File;
 
-import org.spearce.jgit.fetch.FetchClient;
-import org.spearce.jgit.fetch.LocalGitProtocolFetchClient;
 import org.spearce.jgit.lib.TextProgressMonitor;
+import org.spearce.jgit.transport.FetchClient;
+import org.spearce.jgit.transport.LocalGitProtocolFetchClient;
 
 class Fetch extends TextBuiltin {
 	@Override

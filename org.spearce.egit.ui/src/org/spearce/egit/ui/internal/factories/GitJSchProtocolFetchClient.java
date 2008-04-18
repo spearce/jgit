@@ -21,9 +21,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.eclipse.jsch.internal.ui.JSchUIPlugin;
-import org.spearce.jgit.fetch.FetchClient;
-import org.spearce.jgit.fetch.FullFetchClient;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.transport.FetchClient;
+import org.spearce.jgit.transport.FullFetchClient;
 
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;

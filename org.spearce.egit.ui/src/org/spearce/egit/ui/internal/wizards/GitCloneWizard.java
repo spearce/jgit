@@ -51,16 +51,16 @@ import org.eclipse.ui.internal.wizards.datatransfer.WizardProjectsImportPage;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.internal.factories.GitJSchProtocolFetchClient;
-import org.spearce.jgit.fetch.FetchClient;
-import org.spearce.jgit.fetch.GitProtocolFetchClient;
-import org.spearce.jgit.fetch.LocalGitProtocolFetchClient;
-import org.spearce.jgit.fetch.URIish;
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.WorkDirCheckout;
+import org.spearce.jgit.transport.FetchClient;
+import org.spearce.jgit.transport.GitProtocolFetchClient;
+import org.spearce.jgit.transport.LocalGitProtocolFetchClient;
+import org.spearce.jgit.transport.URIish;
 
 import com.jcraft.jsch.JSchException;
 

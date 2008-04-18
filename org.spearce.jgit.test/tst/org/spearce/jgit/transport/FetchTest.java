@@ -1,4 +1,4 @@
-package org.spearce.jgit.fetch;
+package org.spearce.jgit.transport;
 
 import java.io.IOException;
 
@@ -9,6 +9,8 @@ import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.RepositoryTestCase;
 import org.spearce.jgit.lib.TextProgressMonitor;
+import org.spearce.jgit.transport.FetchClient;
+import org.spearce.jgit.transport.LocalGitProtocolFetchClient;
 
 public class FetchTest extends RepositoryTestCase {
 

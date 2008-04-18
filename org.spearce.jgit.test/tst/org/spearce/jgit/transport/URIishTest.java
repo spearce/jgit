@@ -1,6 +1,6 @@
-package org.spearce.jgit.lib.net;
+package org.spearce.jgit.transport;
 
-import org.spearce.jgit.fetch.URIish;
+import org.spearce.jgit.transport.URIish;
 
 import junit.framework.TestCase;
 

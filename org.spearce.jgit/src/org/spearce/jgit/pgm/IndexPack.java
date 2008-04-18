@@ -41,9 +41,9 @@ class IndexPack extends TextBuiltin {
 
 		final File base = new File(args[argi]);
 		final BufferedInputStream in;
-		final org.spearce.jgit.fetch.IndexPack ip;
+		final org.spearce.jgit.transport.IndexPack ip;
 		in = new BufferedInputStream(System.in);
-		ip = new org.spearce.jgit.fetch.IndexPack(in, base);
+		ip = new org.spearce.jgit.transport.IndexPack(in, base);
 		ip.index(new TextProgressMonitor());
 	}
 }

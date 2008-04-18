@@ -14,18 +14,18 @@
  *  License along with this library; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  */
-package org.spearce.jgit.fetch;
+package org.spearce.jgit.transport;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.spearce.jgit.fetch.IndexPack;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.PackFile;
 import org.spearce.jgit.lib.RepositoryTestCase;
 import org.spearce.jgit.lib.TextProgressMonitor;
+import org.spearce.jgit.transport.IndexPack;
 
 /**
  * Test indexing of git packs. A pack is read from a stream, copied

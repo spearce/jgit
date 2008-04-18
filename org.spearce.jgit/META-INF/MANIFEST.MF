@@ -6,12 +6,12 @@ Bundle-Version: 0.3.1.qualifier
 Bundle-Localization: plugin
 Bundle-Vendor: %provider_name
 Export-Package: org.spearce.jgit.errors;uses:="org.spearce.jgit.lib",
- org.spearce.jgit.fetch;uses:="org.spearce.jgit.lib",
  org.spearce.jgit.lib,
  org.spearce.jgit.revplot,
  org.spearce.jgit.revwalk,
  org.spearce.jgit.revwalk.filter,
  org.spearce.jgit.stgit,
+ org.spearce.jgit.transport;uses:="org.spearce.jgit.lib",
  org.spearce.jgit.treewalk,
  org.spearce.jgit.treewalk.filter,
  org.spearce.jgit.util
