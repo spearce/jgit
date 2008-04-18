@@ -108,4 +108,41 @@ public class URIish {
 	public int getPort() {
 		return port;
 	}
+
+	public String toString() {
+		final StringBuilder r = new StringBuilder();
+		if (getScheme() != null) {
+			r.append(getScheme());
+			r.append("://");
+		}
+
+		if (getUser() != null) {
+			r.append(getUser());
+			if (getPass() != null) {
+				r.append(':');
+				r.append(getPass());
+			}
+		}
+
+		if (getHost() != null) {
+			if (getUser() != null)
+				r.append('@');
+			r.append(getHost());
+			if (getScheme() != null && getPort() > 0) {
+				r.append(':');
+				r.append(getPort());
+			}
+		}
+
+		if (getPath() != null) {
+			if (getScheme() != null) {
+				if (!getPath().startsWith("/"))
+					r.append('/');
+			} else if (getHost() != null)
+				r.append(':');
+			r.append(getPath());
+		}
+
+		return r.toString();
+	}
 }

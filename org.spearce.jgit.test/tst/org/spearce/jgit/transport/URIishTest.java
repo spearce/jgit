@@ -7,85 +7,107 @@ import junit.framework.TestCase;
 public class URIishTest extends TestCase {
 
 	public void testUnixFile() throws Exception {
-		URIish u = new URIish("/home/m y");
+		final String str = "/home/m y";
+		URIish u = new URIish(str);
 		assertNull(u.getScheme());
-		assertEquals("/home/m y", u.getPath());
+		assertEquals(str, u.getPath());
+		assertEquals(str, u.toString());
 	}
 
 	public void testWindowsFile() throws Exception {
-		URIish u = new URIish("D:/m y");
+		final String str = "D:/m y";
+		URIish u = new URIish(str);
 		assertNull(u.getScheme());
-		assertEquals("D:/m y", u.getPath());
+		assertEquals(str, u.getPath());
+		assertEquals(str, u.toString());
 	}
 
 	public void testFileProtoUnix() throws Exception {
-		URIish u = new URIish("file:///home/m y");
+		final String str = "file:///home/m y";
+		URIish u = new URIish(str);
 		assertEquals("file", u.getScheme());
 		assertEquals("/home/m y", u.getPath());
+		assertEquals(str, u.toString());
 	}
 
 	public void testFileProtoWindows() throws Exception {
-		URIish u = new URIish("file:///D:/m y");
+		final String str = "file:///D:/m y";
+		URIish u = new URIish(str);
 		assertEquals("file", u.getScheme());
 		assertEquals("D:/m y", u.getPath());
+		assertEquals(str, u.toString());
 	}
 
 	public void testGitProtoUnix() throws Exception {
-		URIish u = new URIish("git://example.com/home/m y");
+		final String str = "git://example.com/home/m y";
+		URIish u = new URIish(str);
 		assertEquals("git", u.getScheme());
 		assertEquals("example.com", u.getHost());
 		assertEquals("/home/m y", u.getPath());
+		assertEquals(str, u.toString());
 	}
 
 	public void testGitProtoUnixPort() throws Exception {
-		URIish u = new URIish("git://example.com:333/home/m y");
+		final String str = "git://example.com:333/home/m y";
+		URIish u = new URIish(str);
 		assertEquals("git", u.getScheme());
 		assertEquals("example.com", u.getHost());
 		assertEquals("/home/m y", u.getPath());
 		assertEquals(333, u.getPort());
+		assertEquals(str, u.toString());
 	}
 
 	public void testGitProtoWindowsPort() throws Exception {
-		URIish u = new URIish("git://example.com:338/D:/m y");
+		final String str = "git://example.com:338/D:/m y";
+		URIish u = new URIish(str);
 		assertEquals("git", u.getScheme());
 		assertEquals("D:/m y", u.getPath());
 		assertEquals(338, u.getPort());
 		assertEquals("example.com", u.getHost());
+		assertEquals(str, u.toString());
 	}
 
 	public void testGitProtoWindows() throws Exception {
-		URIish u = new URIish("git://example.com/D:/m y");
+		final String str = "git://example.com/D:/m y";
+		URIish u = new URIish(str);
 		assertEquals("git", u.getScheme());
 		assertEquals("D:/m y", u.getPath());
 		assertEquals("example.com", u.getHost());
 		assertEquals(-1, u.getPort());
+		assertEquals(str, u.toString());
 	}
 
 	public void testSshProto() throws Exception {
-		URIish u = new URIish("ssh://example.com/some/p ath");
+		final String str = "ssh://example.com/some/p ath";
+		URIish u = new URIish(str);
 		assertEquals("ssh", u.getScheme());
 		assertEquals("/some/p ath", u.getPath());
 		assertEquals("example.com", u.getHost());
 		assertEquals(-1, u.getPort());
+		assertEquals(str, u.toString());
 	}
 
 	public void testSshProtoWithUserAndPort() throws Exception {
-		URIish u = new URIish("ssh://user@example.com:33/some/p ath");
+		final String str = "ssh://user@example.com:33/some/p ath";
+		URIish u = new URIish(str);
 		assertEquals("ssh", u.getScheme());
 		assertEquals("/some/p ath", u.getPath());
 		assertEquals("example.com", u.getHost());
 		assertEquals("user", u.getUser());
 		assertNull(u.getPass());
 		assertEquals(33, u.getPort());
+		assertEquals(str, u.toString());
 	}
 
 	public void testSshProtoWithUserPassAndPort() throws Exception {
-		URIish u = new URIish("ssh://user:pass@example.com:33/some/p ath");
+		final String str = "ssh://user:pass@example.com:33/some/p ath";
+		URIish u = new URIish(str);
 		assertEquals("ssh", u.getScheme());
 		assertEquals("/some/p ath", u.getPath());
 		assertEquals("example.com", u.getHost());
 		assertEquals("user", u.getUser());
 		assertEquals("pass", u.getPass());
 		assertEquals(33, u.getPort());
+		assertEquals(str, u.toString());
 	}
 }
