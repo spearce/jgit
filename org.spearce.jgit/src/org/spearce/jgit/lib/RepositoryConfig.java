@@ -224,8 +224,50 @@ public class RepositoryConfig {
 		}
 		return val;
 	}
-	
+
+	/**
+	 * @param section
+	 * @param subsection
+	 * @param name
+	 * @return array of zero or more values from the configuration.
+	 */
+	public String[] getStringList(final String section, String subsection,
+			final String name) {
+		final Object o = getRawEntry(section, subsection, name);
+		if (o instanceof List) {
+			final List lst = (List) o;
+			final String[] r = new String[lst.size()];
+			for (int i = 0; i < r.length; i++) {
+				final String val = ((Entry) lst.get(i)).value;
+				r[i] = MAGIC_EMPTY_VALUE.equals(val) ? "" : val;
+			}
+			return r;
+		}
+
+		if (o instanceof Entry) {
+			final String val = ((Entry) o).value;
+			return new String[] { MAGIC_EMPTY_VALUE.equals(val) ? "" : val };
+		}
+
+		if (baseConfig != null)
+			return baseConfig.getStringList(section, subsection, name);
+		return new String[0];
+	}
+
 	private String getRawString(final String section, final String subsection,
+			final String name) {
+		final Object o = getRawEntry(section, subsection, name);
+		if (o instanceof List) {
+			return ((Entry) ((List) o).get(0)).value;
+		} else if (o instanceof Entry) {
+			return ((Entry) o).value;
+		} else if (baseConfig != null)
+			return baseConfig.getRawString(section, subsection, name);
+		else
+			return null;
+	}
+
+	private Object getRawEntry(final String section, final String subsection,
 			final String name) {
 		if (!readFile) {
 			try {
@@ -245,14 +287,7 @@ public class RepositoryConfig {
 			ss = "";
 		final Object o;
 		o = byName.get(section.toLowerCase() + ss + "." + name.toLowerCase());
-		if (o instanceof List) {
-			return ((Entry) ((List) o).get(0)).value;
-		} else if (o instanceof Entry) {
-			return ((Entry) o).value;
-		} else if (baseConfig != null)
-			return baseConfig.getRawString(section, subsection, name);
-		else
-			return null;
+		return o;
 	}
 
 	/**
