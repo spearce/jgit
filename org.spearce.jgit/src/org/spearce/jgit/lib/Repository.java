@@ -1150,18 +1150,6 @@ public class Repository {
 	}
 
 	/**
-	 * @param name
-	 *            The "remote" name in this repo
-	 * @return information about how a remote repository is beging tracked
-	 */
-	public RemoteSpec getRemoteSpec(String name) {
-		String url = getConfig().getString("remote."+name, null, "url");
-		String fetchPattern = getConfig().getString("remote."+name, null, "fetch");
-		String pushPattern = getConfig().getString("remote."+name, null, "push");
-		return new RemoteSpec(name, url, fetchPattern, pushPattern);
-	}
-
-	/**
 	 * Setup repository configuration for a new remote
 	 * 
 	 * @param remote
