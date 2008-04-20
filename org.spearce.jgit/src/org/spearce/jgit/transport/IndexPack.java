@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 import org.spearce.jgit.errors.CorruptObjectException;
@@ -37,6 +38,7 @@ import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdMap;
+import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.util.NB;
@@ -68,6 +70,8 @@ public class IndexPack {
 		BLOB = Constants.encodeASCII(Constants.TYPE_BLOB);
 	}
 
+	private final Repository repo;
+
 	private final Inflater inflater;
 
 	private final MessageDigest objectDigest;
@@ -83,6 +87,8 @@ public class IndexPack {
 	private int bOffset;
 
 	private int bAvail;
+
+	private boolean fixThin;
 
 	private final File dstPack;
 
@@ -111,13 +117,15 @@ public class IndexPack {
 	/**
 	 * Create a new pack indexer utility.
 	 * 
+	 * @param db
 	 * @param src
 	 * @param dstBase
 	 * @throws IOException
 	 *             the output packfile could not be created.
 	 */
-	public IndexPack(final InputStream src, final File dstBase)
-			throws IOException {
+	public IndexPack(final Repository db, final InputStream src,
+			final File dstBase) throws IOException {
+		repo = db;
 		in = src;
 		inflater = new Inflater(false);
 		buf = new byte[BUFFER_SIZE];
@@ -137,6 +145,20 @@ public class IndexPack {
 			dstPack = null;
 			dstIdx = null;
 		}
+	}
+
+	/**
+	 * Configure this index pack instance to make a thin pack complete.
+	 * <p>
+	 * Thin packs are sometimes used during network transfers to allow a delta
+	 * to be sent without a base object. Such packs are not permitted on disk.
+	 * They can be fixed by copying the base object onto the end of the pack.
+	 * 
+	 * @param fix
+	 *            true to enable fixing a thin pack.
+	 */
+	public void setFixThin(final boolean fix) {
+		fixThin = fix;
 	}
 
 	/**
@@ -171,9 +193,17 @@ public class IndexPack {
 					if (packOut == null)
 						throw new IOException("need packOut");
 					resolveDeltas(progress);
-					if (entryCount < objectCount)
-						throw new IOException("thin packs aren't supported");
+					if (entryCount < objectCount) {
+						if (!fixThin) {
+							throw new IOException("pack has "
+									+ (objectCount - entryCount)
+									+ " unresolved deltas");
+						}
+						fixThinPack(progress);
+					}
 				}
+
+				packDigest = null;
 				baseById = null;
 				baseByPos = null;
 
@@ -277,6 +307,11 @@ public class IndexPack {
 			entries[entryCount++] = oe;
 		}
 
+		resolveChildDeltas(pos, type, data, oe);
+	}
+
+	private void resolveChildDeltas(final long pos, byte[] type, byte[] data,
+			ObjectEntry oe) throws IOException {
 		final ArrayList<UnresolvedDelta> a = baseById.remove(oe);
 		final ArrayList<UnresolvedDelta> b = baseByPos.remove(new Long(pos));
 		int ai = 0, bi = 0;
@@ -301,8 +336,101 @@ public class IndexPack {
 				resolveDeltas(b.get(bi++).position, type, data, null);
 	}
 
+	private void fixThinPack(final ProgressMonitor progress) throws IOException {
+		growEntries();
+
+		final Deflater def = new Deflater(Deflater.DEFAULT_COMPRESSION, false);
+		long end = packOut.length() - 20;
+		while (!baseById.isEmpty()) {
+			final ObjectId baseId = baseById.keySet().iterator().next();
+			final ObjectLoader ldr = repo.openObject(baseId);
+			final byte[] data = ldr.getBytes();
+			final int typeCode = ldr.getType();
+			final byte[] type;
+			final ObjectEntry oe;
+
+			switch (typeCode) {
+			case Constants.OBJ_COMMIT:
+				type = COMMIT;
+				break;
+			case Constants.OBJ_TREE:
+				type = TREE;
+				break;
+			case Constants.OBJ_BLOB:
+				type = BLOB;
+				break;
+			case Constants.OBJ_TAG:
+				type = TAG;
+				break;
+			default:
+				throw new IOException("Unknown object type " + typeCode + ".");
+			}
+
+			oe = new ObjectEntry(end, baseId);
+			entries[entryCount++] = oe;
+			packOut.seek(end);
+			writeWhole(def, typeCode, data);
+			end = packOut.getFilePointer();
+
+			resolveChildDeltas(oe.pos, type, data, oe);
+			if (progress.isCancelled())
+				throw new IOException("Download cancelled during indexing");
+		}
+		def.end();
+
+		fixHeaderFooter();
+	}
+
+	private void writeWhole(final Deflater def, final int typeCode,
+			final byte[] data) throws IOException {
+		int sz = data.length;
+		int hdrlen = 0;
+		buf[hdrlen++] = (byte) ((typeCode << 4) | sz & 15);
+		sz >>>= 4;
+		while (sz > 0) {
+			buf[hdrlen - 1] |= 0x80;
+			buf[hdrlen++] = (byte) (sz & 0x7f);
+			sz >>>= 7;
+		}
+		packOut.write(buf, 0, hdrlen);
+		def.reset();
+		def.setInput(data);
+		def.finish();
+		while (!def.finished())
+			packOut.write(buf, 0, def.deflate(buf));
+	}
+
+	private void fixHeaderFooter() throws IOException {
+		packOut.seek(0);
+		if (packOut.read(buf, 0, 12) != 12)
+			throw new IOException("Cannot re-read pack header to fix count");
+		NB.encodeInt32(buf, 8, entryCount);
+		packOut.seek(0);
+		packOut.write(buf, 0, 12);
+
+		packDigest.reset();
+		packDigest.update(buf, 0, 12);
+		for (;;) {
+			final int n = packOut.read(buf);
+			if (n < 0)
+				break;
+			packDigest.update(buf, 0, n);
+		}
+
+		packcsum = packDigest.digest();
+		packOut.write(packcsum);
+	}
+
+	private void growEntries() {
+		final ObjectEntry[] ne;
+
+		ne = new ObjectEntry[(int) objectCount + baseById.size()];
+		System.arraycopy(entries, 0, ne, 0, entryCount);
+		entries = ne;
+	}
+
 	private void writeIdx() throws IOException {
-		Arrays.sort(entries);
+		Arrays.sort(entries, 0, entryCount);
 		final int[] fanout = new int[256];
 		for (int i = 0; i < entryCount; i++)
 			fanout[entries[i].getFirstByte() & 0xff]++;
@@ -367,7 +495,6 @@ public class IndexPack {
 	// Cleanup all resources associated with our input parsing.
 	private void endInput() {
 		in = null;
-		packDigest = null;
 		objectData = null;
 	}
 
@@ -604,10 +731,9 @@ public class IndexPack {
 	/**
 	 * Rename the temporary pack to it's final name and location.
 	 * 
-	 * @param db
 	 * @throws IOException
 	 */
-	public void renamePack(Repository db) throws IOException {
+	public void renamePack() throws IOException {
 		final MessageDigest d = Constants.newMessageDigest();
 		final byte[] oeBytes = new byte[Constants.OBJECT_ID_LENGTH];
 		for (int i = 0; i < entryCount; i++) {
@@ -616,7 +742,7 @@ public class IndexPack {
 			d.update(oeBytes);
 		}
 		ObjectId name = ObjectId.fromRaw(d.digest());
-		File packDir = new File(db.getObjectsDirectory(), "pack");
+		File packDir = new File(repo.getObjectsDirectory(), "pack");
 		File finalPack = new File(packDir, "pack-" + name + ".pack");
 		File finalIdx = new File(packDir, "pack-" + name + ".idx");
 		if (!dstIdx.renameTo(finalIdx)) {

@@ -29,9 +29,9 @@ public class FullFetchClient extends FetchClient {
 				public void run() {
 					IndexPack pack;
 					try {
-						pack = new IndexPack(pi, new File(new File(repository.getObjectsDirectory(), "pack"), "packtmp_pack"+System.currentTimeMillis()));
+						pack = new IndexPack(repository, pi, new File(new File(repository.getObjectsDirectory(), "pack"), "packtmp_pack"+System.currentTimeMillis()));
 						pack.index(monitor);
-						pack.renamePack(repository);
+						pack.renamePack();
 					} catch (Throwable e) {
 						e.printStackTrace();
 						fetchThread.interrupt();

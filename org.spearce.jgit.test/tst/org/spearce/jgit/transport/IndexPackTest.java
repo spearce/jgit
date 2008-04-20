@@ -44,7 +44,7 @@ public class IndexPackTest extends RepositoryTestCase {
 		File packFile = new File("tst/pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.pack");
 		final InputStream is = new FileInputStream(packFile);
 		try {
-			IndexPack pack = new IndexPack(is, new File(trash, "tmp_pack1"));
+			IndexPack pack = new IndexPack(db, is, new File(trash, "tmp_pack1"));
 			pack.index(new TextProgressMonitor());
 			PackFile file = new PackFile(db, new File(trash, "tmp_pack1.idx"), new File(trash, "tmp_pack1.pack"));
 			assertTrue(file.hasObject(ObjectId.fromString("4b825dc642cb6eb9a060e54bf8d69288fbee4904")));
@@ -70,7 +70,7 @@ public class IndexPackTest extends RepositoryTestCase {
 		File packFile = new File("tst/pack-df2982f284bbabb6bdb59ee3fcc6eb0983e20371.pack");
 		final InputStream is = new FileInputStream(packFile);
 		try {
-			IndexPack pack = new IndexPack(is, new File(trash, "tmp_pack2"));
+			IndexPack pack = new IndexPack(db, is, new File(trash, "tmp_pack2"));
 			pack.index(new TextProgressMonitor());
 			PackFile file = new PackFile(db, new File(trash, "tmp_pack2.idx"), new File(trash, "tmp_pack2.pack"));
 			assertTrue(file.hasObject(ObjectId.fromString("02ba32d3649e510002c21651936b7077aa75ffa9")));
