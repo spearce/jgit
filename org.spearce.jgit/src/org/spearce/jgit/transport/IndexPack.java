@@ -70,6 +70,34 @@ public class IndexPack {
 		BLOB = Constants.encodeASCII(Constants.TYPE_BLOB);
 	}
 
+	/**
+	 * Create an index pack instance to load a new pack into a repository.
+	 * <p>
+	 * The received pack data and generated index will be saved to temporary
+	 * files within the repository's <code>objects</code> directory. To use
+	 * the data contained within them call {@link #renamePack()} once the
+	 * indexing is complete.
+	 * 
+	 * @param db
+	 *            the repository that will receive the new pack.
+	 * @param is
+	 *            stream to read the pack data from.
+	 * @return a new index pack instance.
+	 * @throws IOException
+	 *             a temporary file could not be created.
+	 */
+	public static IndexPack create(final Repository db, final InputStream is)
+			throws IOException {
+		final String suffix = ".pack";
+		final File objdir = db.getObjectsDirectory();
+		final File tmp = File.createTempFile("incoming_", suffix, objdir);
+		final String n = tmp.getName();
+		final File base;
+
+		base = new File(objdir, n.substring(0, n.length() - suffix.length()));
+		return new IndexPack(db, is, base);
+	}
+
 	private final Repository repo;
 
 	private final Inflater inflater;
