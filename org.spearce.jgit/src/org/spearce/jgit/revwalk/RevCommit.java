@@ -166,6 +166,20 @@ public class RevCommit extends RevObject {
 	}
 
 	/**
+	 * Obtain an array of all parents (<b>NOTE - THIS IS NOT A COPY</b>).
+	 * <p>
+	 * This method is exposed only to provide very fast, efficient access to
+	 * this commit's parent list. Applications relying on this list should be
+	 * very careful to ensure they do not modify its contents during their use
+	 * of it.
+	 * 
+	 * @return the array of parents.
+	 */
+	public final RevCommit[] getParents() {
+		return parents;
+	}
+
+	/**
 	 * Obtain the raw unparsed commit body (<b>NOTE - THIS IS NOT A COPY</b>).
 	 * <p>
 	 * This method is exposed only to provide very fast, efficient access to
