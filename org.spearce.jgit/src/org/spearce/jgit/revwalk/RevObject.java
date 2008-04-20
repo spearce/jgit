@@ -16,6 +16,10 @@
  */
 package org.spearce.jgit.revwalk;
 
+import java.io.IOException;
+
+import org.spearce.jgit.errors.IncorrectObjectTypeException;
+import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.ObjectId;
 
@@ -28,6 +32,9 @@ public abstract class RevObject extends ObjectId {
 	RevObject(final AnyObjectId name) {
 		super(name);
 	}
+
+	abstract void parse(RevWalk walk) throws MissingObjectException,
+			IncorrectObjectTypeException, IOException;
 
 	/**
 	 * Get the name of this object.

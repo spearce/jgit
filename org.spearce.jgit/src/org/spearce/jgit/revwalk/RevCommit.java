@@ -55,6 +55,7 @@ public class RevCommit extends RevObject {
 		super(id);
 	}
 
+	@Override
 	void parse(final RevWalk walk) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
 		final ObjectLoader ldr = walk.db.openObject(walk.curs, this);

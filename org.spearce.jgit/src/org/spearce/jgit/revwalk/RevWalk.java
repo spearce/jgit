@@ -538,6 +538,26 @@ public class RevWalk implements Iterable<RevCommit> {
 	}
 
 	/**
+	 * Ensure the object's content has been parsed.
+	 * <p>
+	 * This method only returns successfully if the object exists and was parsed
+	 * without error.
+	 * 
+	 * @param obj
+	 *            the object the caller needs to be parsed.
+	 * @throws MissingObjectException
+	 *             the supplied does not exist.
+	 * @throws IOException
+	 *             a pack file or loose object could not be read.
+	 */
+	public void parse(final RevObject obj) throws MissingObjectException,
+			IOException {
+		if ((obj.flags & PARSED) != 0)
+			return;
+		obj.parse(this);
+	}
+
+	/**
 	 * Create a new flag for application use during walking.
 	 * <p>
 	 * Applications are only assured to be able to create 24 unique flags on any

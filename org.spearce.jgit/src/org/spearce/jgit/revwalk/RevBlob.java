@@ -29,4 +29,9 @@ public class RevBlob extends RevObject {
 	protected RevBlob(final AnyObjectId id) {
 		super(id);
 	}
+
+	@Override
+	void parse(final RevWalk walk) {
+		flags |= PARSED;
+	}
 }
