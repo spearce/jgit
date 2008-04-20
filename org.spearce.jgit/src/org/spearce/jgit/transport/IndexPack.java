@@ -110,7 +110,7 @@ public class IndexPack {
 
 	/**
 	 * Create a new pack indexer utility.
-	 *
+	 * 
 	 * @param src
 	 * @param dstBase
 	 * @throws IOException
@@ -141,8 +141,10 @@ public class IndexPack {
 
 	/**
 	 * Consume data from the input stream until the packfile is indexed.
-	 * @param progress progress feedback
-	 *
+	 * 
+	 * @param progress
+	 *            progress feedback
+	 * 
 	 * @throws IOException
 	 */
 	public void index(final ProgressMonitor progress) throws IOException {
@@ -155,7 +157,7 @@ public class IndexPack {
 				baseById = new ObjectIdMap<ArrayList<UnresolvedDelta>>();
 				baseByPos = new HashMap<Long, ArrayList<UnresolvedDelta>>();
 
-				progress.beginTask(PROGRESS_DOWNLOAD, (int)objectCount);
+				progress.beginTask(PROGRESS_DOWNLOAD, (int) objectCount);
 				for (int done = 0; done < objectCount; done++) {
 					indexOneObject();
 					progress.update(1);
@@ -198,7 +200,8 @@ public class IndexPack {
 		}
 	}
 
-	private void resolveDeltas(final ProgressMonitor progress) throws IOException {
+	private void resolveDeltas(final ProgressMonitor progress)
+			throws IOException {
 		progress.beginTask(PROGRESS_RESOLVE_DELTA, deltaCount);
 		final int last = entryCount;
 		for (int i = 0; i < last; i++) {
@@ -600,7 +603,7 @@ public class IndexPack {
 
 	/**
 	 * Rename the temporary pack to it's final name and location.
-	 *
+	 * 
 	 * @param db
 	 * @throws IOException
 	 */
@@ -613,9 +616,9 @@ public class IndexPack {
 			d.update(oeBytes);
 		}
 		ObjectId name = ObjectId.fromRaw(d.digest());
-		File packDir = new File(db.getObjectsDirectory(),"pack");
-		File finalPack = new File(packDir, "pack-"+name+".pack");
-		File finalIdx = new File(packDir, "pack-"+name+".idx");
+		File packDir = new File(db.getObjectsDirectory(), "pack");
+		File finalPack = new File(packDir, "pack-" + name + ".pack");
+		File finalIdx = new File(packDir, "pack-" + name + ".idx");
 		if (!dstIdx.renameTo(finalIdx)) {
 			if (!dstIdx.delete())
 				dstIdx.deleteOnExit();
