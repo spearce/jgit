@@ -20,6 +20,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import org.spearce.jgit.errors.TransportException;
+import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
 
 /**
@@ -41,6 +43,9 @@ import org.spearce.jgit.lib.Ref;
  */
 public abstract class FetchConnection {
 	private Map<String, Ref> cachedRefs = Collections.<String, Ref> emptyMap();
+
+	/** Have we started {@link #fetch(ProgressMonitor, Collection)} yet? */
+	private boolean startedFetch;
 
 	/**
 	 * Denote the list of refs available on the remote repository.
@@ -86,6 +91,30 @@ public abstract class FetchConnection {
 	public final Ref getRef(final String name) {
 		return cachedRefs.get(name);
 	}
+
+	/**
+	 * Fetch objects we don't have but that are reachable from advertised refs.
+	 * 
+	 * @param monitor
+	 *            progress monitor to update the end-user about the amount of
+	 *            work completed, or to indicate cancellation.
+	 * @param want
+	 *            one or more refs advertised by this connection that the caller
+	 *            wants to store locally.
+	 * @throws TransportException
+	 *             objects could not be copied due to a network failure,
+	 *             protocol error, or error on remote side.
+	 */
+	public final void fetch(final ProgressMonitor monitor,
+			final Collection<Ref> want) throws TransportException {
+		if (startedFetch)
+			throw new TransportException("Only one fetch call supported.");
+		startedFetch = true;
+		doFetch(monitor, want);
+	}
+
+	protected abstract void doFetch(ProgressMonitor monitor,
+			Collection<Ref> want) throws TransportException;
 
 	/**
 	 * Close any resources used by this connection.

@@ -16,32 +16,31 @@
  */
 package org.spearce.jgit.pgm;
 
-import java.io.File;
-
 import org.spearce.jgit.lib.TextProgressMonitor;
-import org.spearce.jgit.transport.FetchClient;
-import org.spearce.jgit.transport.LocalGitProtocolFetchClient;
+import org.spearce.jgit.transport.FetchConnection;
+import org.spearce.jgit.transport.Transport;
 
 class Fetch extends TextBuiltin {
 	@Override
 	void execute(String[] args) throws Exception {
-		final FetchClient fp;
-
+		int argi = 0;
+		for (; argi < args.length; argi++) {
+			final String a = args[argi];
+			if ("--".equals(a)) {
+				argi++;
+				break;
+			} else
+				break;
+		}
 		if (args.length == 0)
 			args = new String[] { "origin" };
 
-		final String rn = args[0];
-		if (new File(rn).isDirectory())
-			fp = LocalGitProtocolFetchClient.create(db, rn, new File(rn));
-		else
-			throw die("unsupported URL: " + rn);
-
-		if (args.length > 1) {
-			final String[] branches = new String[args.length - 1];
-			System.arraycopy(args, 1, branches, 0, args.length - 1);
-			fp.setBranches(branches);
+		final Transport tn = Transport.open(db, args[argi]);
+		final FetchConnection c = tn.openFetch();
+		try {
+			c.fetch(new TextProgressMonitor(), c.getRefs());
+		} finally {
+			c.close();
 		}
-
-		fp.run(new TextProgressMonitor());
 	}
 }

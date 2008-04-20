@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Set;
@@ -31,6 +32,7 @@ import org.spearce.jgit.errors.PackProtocolException;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.util.FS;
@@ -158,6 +160,23 @@ class TransportBundle extends PackTransport {
 			if (lf < cnt && hdrbuf[lf] == '\n')
 				bin.skip(1);
 			return new String(hdrbuf, 0, lf, Constants.CHARACTER_ENCODING);
+		}
+
+		@Override
+		protected void doFetch(final ProgressMonitor monitor,
+				final Collection<Ref> want) throws TransportException {
+			try {
+				final IndexPack ip = IndexPack.create(local, in);
+				ip.setFixThin(true);
+				ip.index(monitor);
+				ip.renameAndOpenPack();
+			} catch (IOException err) {
+				close();
+				throw new TransportException(err.getMessage(), err);
+			} catch (RuntimeException err) {
+				close();
+				throw new TransportException(err.getMessage(), err);
+			}
 		}
 
 		@Override

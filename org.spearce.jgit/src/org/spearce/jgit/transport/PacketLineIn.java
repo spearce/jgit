@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
+import org.spearce.jgit.errors.PackProtocolException;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.util.NB;
 
 class PacketLineIn {
@@ -35,6 +37,15 @@ class PacketLineIn {
 			fromhex[i] = (byte) ((i - 'a') + 10);
 	}
 
+	static enum AckNackResult {
+		/** NAK */
+		NAK,
+		/** ACK */
+		ACK,
+		/** ACK + continue */
+		ACK_CONTINUE
+	}
+
 	private final InputStream in;
 
 	private final byte[] lenbuffer;
@@ -42,6 +53,21 @@ class PacketLineIn {
 	PacketLineIn(final InputStream i) {
 		in = i;
 		lenbuffer = new byte[4];
+	}
+
+	AckNackResult readACK(final MutableObjectId returnedId) throws IOException {
+		final String line = readString();
+		if (line.length() == 0)
+			throw new PackProtocolException("Expected ACK/NAK, found EOF");
+		if ("NAK".equals(line))
+			return AckNackResult.NAK;
+		if (line.startsWith("ACK ")) {
+			returnedId.fromString(line.substring(4, 44));
+			if (line.indexOf("continue", 44) != -1)
+				return AckNackResult.ACK_CONTINUE;
+			return AckNackResult.ACK;
+		}
+		throw new PackProtocolException("Expected ACK/NAK, got: " + line);
 	}
 
 	String readString() throws IOException {
