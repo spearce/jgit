@@ -55,10 +55,8 @@ public class TextProgressMonitor implements ProgressMonitor {
 		if (!output && System.currentTimeMillis() - taskBeganAt < 500)
 			return;
 		if (totalWork == UNKNOWN) {
-			if (cmp % 100 == 0) {
-				display(cmp);
-				System.err.flush();
-			}
+			display(cmp);
+			System.err.flush();
 		} else {
 			if ((cmp * 100 / totalWork) != (lastWorked * 100) / totalWork) {
 				display(cmp);

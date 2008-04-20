@@ -23,6 +23,7 @@ import java.util.Arrays;
 import org.spearce.jgit.errors.PackProtocolException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.MutableObjectId;
+import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.util.NB;
 
 class PacketLineIn {
@@ -53,6 +54,10 @@ class PacketLineIn {
 	PacketLineIn(final InputStream i) {
 		in = i;
 		lenbuffer = new byte[4];
+	}
+
+	InputStream sideband(final ProgressMonitor pm) {
+		return new SideBandInputStream(this, in, pm);
 	}
 
 	AckNackResult readACK(final MutableObjectId returnedId) throws IOException {
@@ -88,7 +93,7 @@ class PacketLineIn {
 			throw new IOException("Protocol error: expected LF");
 	}
 
-	private int readLength() throws IOException {
+	int readLength() throws IOException {
 		NB.readFully(in, lenbuffer, 0, 4);
 		try {
 			int r = fromhex[lenbuffer[0]] << 4;

@@ -74,6 +74,8 @@ abstract class PackFetchConnection extends FetchConnection {
 
 	static final String OPTION_THIN_PACK = "thin-pack";
 
+	static final String OPTION_SIDE_BAND = "side-band";
+
 	static final String OPTION_SIDE_BAND_64K = "side-band-64k";
 
 	static final String OPTION_OFS_DELTA = "ofs-delta";
@@ -118,6 +120,8 @@ abstract class PackFetchConnection extends FetchConnection {
 	private boolean multiAck;
 
 	private boolean thinPack;
+
+	private boolean sideband;
 
 	PackFetchConnection(final PackTransport packTransport) {
 		local = packTransport.local;
@@ -330,6 +334,10 @@ abstract class PackFetchConnection extends FetchConnection {
 		wantCapability(line, OPTION_OFS_DELTA);
 		multiAck = wantCapability(line, OPTION_MULTI_ACK);
 		thinPack = wantCapability(line, OPTION_THIN_PACK);
+		if (wantCapability(line, OPTION_SIDE_BAND_64K))
+			sideband = true;
+		else if (wantCapability(line, OPTION_SIDE_BAND))
+			sideband = true;
 		return line.toString();
 	}
 
@@ -520,7 +528,9 @@ abstract class PackFetchConnection extends FetchConnection {
 	}
 
 	private void receivePack(final ProgressMonitor monitor) throws IOException {
-		final IndexPack ip = IndexPack.create(local, in);
+		final IndexPack ip;
+
+		ip = IndexPack.create(local, sideband ? pckIn.sideband(monitor) : in);
 		ip.setFixThin(thinPack);
 		ip.index(monitor);
 		ip.renameAndOpenPack();
