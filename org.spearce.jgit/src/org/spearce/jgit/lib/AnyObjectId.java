@@ -115,7 +115,7 @@ public abstract class AnyObjectId implements Comparable {
 
 	int w5;
 
-	/** 
+	/**
 	 * For ObjectIdMap
 	 * 
 	 * @return a discriminator usable for a fan-out style map
