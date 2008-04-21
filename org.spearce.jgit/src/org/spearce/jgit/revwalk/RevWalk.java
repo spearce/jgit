@@ -577,7 +577,13 @@ public class RevWalk implements Iterable<RevCommit> {
 		return new RevFlag(this, name, 1 << nextFlagBit++);
 	}
 
-	/** Resets internal state and allows this instance to be used again. */
+	/**
+	 * Resets internal state and allows this instance to be used again.
+	 * <p>
+	 * Unlike {@link #dispose()} previously acquired RevObject (and RevCommit)
+	 * instances are not invalidated. RevFlag instances are not invalidated, but
+	 * are removed from all RevObjects.
+	 */
 	public void reset() {
 		final FIFORevQueue q = new FIFORevQueue();
 		for (final RevCommit c : roots) {
@@ -599,6 +605,22 @@ public class RevWalk implements Iterable<RevCommit> {
 			}
 		}
 
+		curs.release();
+		roots.clear();
+		pending = new StartGenerator(this);
+	}
+
+	/**
+	 * Dispose all internal state and invalidate all RevObject instances.
+	 * <p>
+	 * All RevObject (and thus RevCommit, etc.) instances previously acquired
+	 * from this RevWalk are invalidated by a dispose call. Applications must
+	 * not retain or use RevObject instances obtained prior to the dispose call.
+	 * All RevFlag instances are also invalidated, and must not be reused.
+	 */
+	public void dispose() {
+		nextFlagBit = RESERVED_FLAGS;
+		objects.clear();
 		curs.release();
 		roots.clear();
 		pending = new StartGenerator(this);

@@ -40,6 +40,12 @@ public class ObjectIdSubclassMap<V extends ObjectId> {
 		obj_hash = createArray(32);
 	}
 
+	/** Remove all entries from this map. */
+	public void clear() {
+		size = 0;
+		obj_hash = createArray(32);
+	}
+
 	/**
 	 * Lookup an existing mapping.
 	 * 
