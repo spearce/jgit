@@ -21,6 +21,47 @@ abstract class AbstractRevQueue extends Generator {
 	int outputType;
 
 	/**
+	 * Add a commit if it does not have a flag set yet, then set the flag.
+	 * <p>
+	 * This method permits the application to test if the commit has the given
+	 * flag; if it does not already have the flag than the commit is added to
+	 * the queue and the flag is set. This later will prevent the commit from
+	 * being added twice.
+	 * 
+	 * @param c
+	 *            commit to add.
+	 * @param queueControl
+	 *            flag that controls admission to the queue.
+	 */
+	public final void add(final RevCommit c, final RevFlag queueControl) {
+		if (!c.has(queueControl)) {
+			c.add(queueControl);
+			add(c);
+		}
+	}
+
+	/**
+	 * Add a commit's parents if one does not have a flag set yet.
+	 * <p>
+	 * This method permits the application to test if the commit has the given
+	 * flag; if it does not already have the flag than the commit is added to
+	 * the queue and the flag is set. This later will prevent the commit from
+	 * being added twice.
+	 * 
+	 * @param c
+	 *            commit whose parents should be added.
+	 * @param queueControl
+	 *            flag that controls admission to the queue.
+	 */
+	public final void addParents(final RevCommit c, final RevFlag queueControl) {
+		final RevCommit[] pList = c.parents;
+		if (pList == null)
+			return;
+		for (RevCommit p : pList)
+			add(p, queueControl);
+	}
+
+	/**
 	 * Remove the first commit from the queue.
 	 * 
 	 * @return the first commit of this queue.
