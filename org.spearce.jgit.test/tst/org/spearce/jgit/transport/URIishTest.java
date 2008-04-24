@@ -77,6 +77,27 @@ public class URIishTest extends TestCase {
 		assertEquals(str, u.toString());
 	}
 
+	public void testScpStyleWithoutUser() throws Exception {
+		final String str = "example.com:some/p ath";
+		URIish u = new URIish(str);
+		assertNull(u.getScheme());
+		assertEquals("some/p ath", u.getPath());
+		assertEquals("example.com", u.getHost());
+		assertEquals(-1, u.getPort());
+		assertEquals(str, u.toString());
+	}
+
+	public void testScpStyleWithUser() throws Exception {
+		final String str = "user@example.com:some/p ath";
+		URIish u = new URIish(str);
+		assertNull(u.getScheme());
+		assertEquals("some/p ath", u.getPath());
+		assertEquals("user", u.getUser());
+		assertEquals("example.com", u.getHost());
+		assertEquals(-1, u.getPort());
+		assertEquals(str, u.toString());
+	}
+
 	public void testSshProto() throws Exception {
 		final String str = "ssh://example.com/some/p ath";
 		URIish u = new URIish(str);

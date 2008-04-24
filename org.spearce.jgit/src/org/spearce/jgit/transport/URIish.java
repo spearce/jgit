@@ -27,6 +27,12 @@ import java.util.regex.Pattern;
  * any special character is written as-is.
  */
 public class URIish {
+	private static final Pattern FULL_URI = Pattern
+			.compile("^(?:([a-z]+)://(?:([^/]+?)(?::([^/]+?))?@)?(?:([^/]+?))?(?::(\\d+))?)?((?:[A-Za-z]:)?/.+)$");
+
+	private static final Pattern SCP_URI = Pattern
+			.compile("^(?:([^@]+?)@)?([^:]+?):(.+)$");
+
 	private String scheme;
 
 	private String path;
@@ -46,9 +52,7 @@ public class URIish {
 	 * @throws URISyntaxException
 	 */
 	public URIish(String s) throws URISyntaxException {
-		Pattern p = Pattern
-				.compile("^(?:([a-z]+)://(?:([^/]+?)(?::([^/]+?))?@)?(?:([^/]+?))?(?::(\\d+))?)?((?:[A-Za-z]:)?/.+)$");
-		Matcher matcher = p.matcher(s);
+		Matcher matcher = FULL_URI.matcher(s);
 		if (matcher.matches()) {
 			scheme = matcher.group(1);
 			user = matcher.group(2);
@@ -63,8 +67,15 @@ public class URIish {
 			&& (path.charAt(1) >= 'A' && path.charAt(1) <= 'Z'
 			 || path.charAt(1) >= 'a' && path.charAt(1) <= 'z'))
 				path = path.substring(1);
-		} else
-			throw new URISyntaxException(s, "Cannot parse Git URI-ish");
+		} else {
+			matcher = SCP_URI.matcher(s);
+			if (matcher.matches()) {
+				user = matcher.group(1);
+				host = matcher.group(2);
+				path = matcher.group(3);
+			} else
+				throw new URISyntaxException(s, "Cannot parse Git URI-ish");
+		}
 	}
 
 	/**
