@@ -43,6 +43,8 @@ public abstract class OrRevFilter extends RevFilter {
 	 * @return a filter that must match at least one input filter.
 	 */
 	public static RevFilter create(final RevFilter a, final RevFilter b) {
+		if (a == ALL || b == ALL)
+			return ALL;
 		return new Binary(a, b);
 	}
 
