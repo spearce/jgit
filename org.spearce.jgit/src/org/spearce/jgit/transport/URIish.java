@@ -79,6 +79,13 @@ public class URIish {
 	}
 
 	/**
+	 * @return true if this URI references a repository on another system.
+	 */
+	public boolean isRemote() {
+		return getHost() != null;
+	}
+
+	/**
 	 * @return host name part or null
 	 */
 	public String getHost() {

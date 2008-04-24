@@ -10,6 +10,7 @@ public class URIishTest extends TestCase {
 		final String str = "/home/m y";
 		URIish u = new URIish(str);
 		assertNull(u.getScheme());
+		assertFalse(u.isRemote());
 		assertEquals(str, u.getPath());
 		assertEquals(str, u.toString());
 	}
@@ -18,6 +19,7 @@ public class URIishTest extends TestCase {
 		final String str = "D:/m y";
 		URIish u = new URIish(str);
 		assertNull(u.getScheme());
+		assertFalse(u.isRemote());
 		assertEquals(str, u.getPath());
 		assertEquals(str, u.toString());
 	}
@@ -26,6 +28,7 @@ public class URIishTest extends TestCase {
 		final String str = "file:///home/m y";
 		URIish u = new URIish(str);
 		assertEquals("file", u.getScheme());
+		assertFalse(u.isRemote());
 		assertEquals("/home/m y", u.getPath());
 		assertEquals(str, u.toString());
 	}
@@ -34,6 +37,7 @@ public class URIishTest extends TestCase {
 		final String str = "file:///D:/m y";
 		URIish u = new URIish(str);
 		assertEquals("file", u.getScheme());
+		assertFalse(u.isRemote());
 		assertEquals("D:/m y", u.getPath());
 		assertEquals(str, u.toString());
 	}
@@ -42,6 +46,7 @@ public class URIishTest extends TestCase {
 		final String str = "git://example.com/home/m y";
 		URIish u = new URIish(str);
 		assertEquals("git", u.getScheme());
+		assertTrue(u.isRemote());
 		assertEquals("example.com", u.getHost());
 		assertEquals("/home/m y", u.getPath());
 		assertEquals(str, u.toString());
@@ -51,6 +56,7 @@ public class URIishTest extends TestCase {
 		final String str = "git://example.com:333/home/m y";
 		URIish u = new URIish(str);
 		assertEquals("git", u.getScheme());
+		assertTrue(u.isRemote());
 		assertEquals("example.com", u.getHost());
 		assertEquals("/home/m y", u.getPath());
 		assertEquals(333, u.getPort());
@@ -61,6 +67,7 @@ public class URIishTest extends TestCase {
 		final String str = "git://example.com:338/D:/m y";
 		URIish u = new URIish(str);
 		assertEquals("git", u.getScheme());
+		assertTrue(u.isRemote());
 		assertEquals("D:/m y", u.getPath());
 		assertEquals(338, u.getPort());
 		assertEquals("example.com", u.getHost());
@@ -71,6 +78,7 @@ public class URIishTest extends TestCase {
 		final String str = "git://example.com/D:/m y";
 		URIish u = new URIish(str);
 		assertEquals("git", u.getScheme());
+		assertTrue(u.isRemote());
 		assertEquals("D:/m y", u.getPath());
 		assertEquals("example.com", u.getHost());
 		assertEquals(-1, u.getPort());
@@ -81,6 +89,7 @@ public class URIishTest extends TestCase {
 		final String str = "example.com:some/p ath";
 		URIish u = new URIish(str);
 		assertNull(u.getScheme());
+		assertTrue(u.isRemote());
 		assertEquals("some/p ath", u.getPath());
 		assertEquals("example.com", u.getHost());
 		assertEquals(-1, u.getPort());
@@ -91,6 +100,7 @@ public class URIishTest extends TestCase {
 		final String str = "user@example.com:some/p ath";
 		URIish u = new URIish(str);
 		assertNull(u.getScheme());
+		assertTrue(u.isRemote());
 		assertEquals("some/p ath", u.getPath());
 		assertEquals("user", u.getUser());
 		assertEquals("example.com", u.getHost());
@@ -102,6 +112,7 @@ public class URIishTest extends TestCase {
 		final String str = "git+ssh://example.com/some/p ath";
 		URIish u = new URIish(str);
 		assertEquals("git+ssh", u.getScheme());
+		assertTrue(u.isRemote());
 		assertEquals("/some/p ath", u.getPath());
 		assertEquals("example.com", u.getHost());
 		assertEquals(-1, u.getPort());
@@ -112,6 +123,7 @@ public class URIishTest extends TestCase {
 		final String str = "ssh+git://example.com/some/p ath";
 		URIish u = new URIish(str);
 		assertEquals("ssh+git", u.getScheme());
+		assertTrue(u.isRemote());
 		assertEquals("/some/p ath", u.getPath());
 		assertEquals("example.com", u.getHost());
 		assertEquals(-1, u.getPort());
@@ -122,6 +134,7 @@ public class URIishTest extends TestCase {
 		final String str = "ssh://example.com/some/p ath";
 		URIish u = new URIish(str);
 		assertEquals("ssh", u.getScheme());
+		assertTrue(u.isRemote());
 		assertEquals("/some/p ath", u.getPath());
 		assertEquals("example.com", u.getHost());
 		assertEquals(-1, u.getPort());
@@ -132,6 +145,7 @@ public class URIishTest extends TestCase {
 		final String str = "ssh://user@example.com:33/some/p ath";
 		URIish u = new URIish(str);
 		assertEquals("ssh", u.getScheme());
+		assertTrue(u.isRemote());
 		assertEquals("/some/p ath", u.getPath());
 		assertEquals("example.com", u.getHost());
 		assertEquals("user", u.getUser());
@@ -144,6 +158,7 @@ public class URIishTest extends TestCase {
 		final String str = "ssh://user:pass@example.com:33/some/p ath";
 		URIish u = new URIish(str);
 		assertEquals("ssh", u.getScheme());
+		assertTrue(u.isRemote());
 		assertEquals("/some/p ath", u.getPath());
 		assertEquals("example.com", u.getHost());
 		assertEquals("user", u.getUser());
