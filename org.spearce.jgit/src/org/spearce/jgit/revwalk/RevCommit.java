@@ -113,6 +113,49 @@ public class RevCommit extends RevObject {
 		flags |= PARSED;
 	}
 
+	static void carryFlags(RevCommit c, final int carry) {
+		for (;;) {
+			final RevCommit[] pList = c.parents;
+			if (pList == null)
+				return;
+			final int n = pList.length;
+			if (n == 0)
+				return;
+
+			for (int i = 1; i < n; i++) {
+				final RevCommit p = pList[i];
+				p.flags |= carry;
+				carryFlags(p, carry);
+			}
+
+			c = pList[0];
+			c.flags |= carry;
+		}
+	}
+
+	void carryFlags(final int carryMask) {
+		final int carry = flags & carryMask;
+		if (carry == 0)
+			return;
+		carryFlags(this, carry);
+	}
+
+	/**
+	 * Carry a RevFlag set on this commit to its parents.
+	 * <p>
+	 * If this commit is parsed, has parents, and has the supplied flag set on
+	 * it we automatically add it to the parents, grand-parents, and so on until
+	 * an unparsed commit or a commit with no parents is discovered. This
+	 * permits applications to force a flag through the history chain when
+	 * necessary.
+	 * 
+	 * @param flag
+	 *            the single flag value to carry back onto parents.
+	 */
+	public void carry(final RevFlag flag) {
+		carryFlags(flags & flag.mask);
+	}
+
 	/**
 	 * Time from the "committer " line of the buffer.
 	 * 

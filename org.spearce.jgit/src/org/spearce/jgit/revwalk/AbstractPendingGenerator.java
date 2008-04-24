@@ -80,20 +80,15 @@ abstract class AbstractPendingGenerator extends Generator {
 				else
 					produce = false;
 
-				final int carry = c.flags & RevWalk.CARRY_MASK;
 				for (final RevCommit p : c.parents) {
-					if ((p.flags & SEEN) != 0) {
-						if (carry != 0)
-							carryFlags(p, carry);
+					if ((p.flags & SEEN) != 0)
 						continue;
-					}
 					if ((p.flags & PARSED) == 0)
 						p.parse(walker);
 					p.flags |= SEEN;
-					if (carry != 0)
-						carryFlags(p, carry);
 					pending.add(p);
 				}
+				c.carryFlags(RevWalk.CARRY_MASK);
 
 				if ((c.flags & RevWalk.UNINTERESTING) != 0) {
 					if (pending.everbodyHasFlag(RevWalk.UNINTERESTING))
@@ -111,28 +106,6 @@ abstract class AbstractPendingGenerator extends Generator {
 			walker.curs.release();
 			pending.clear();
 			return null;
-		}
-	}
-
-	private static void carryFlags(RevCommit c, final int carry) {
-		// If we have seen the commit it is either about to enter our
-		// pending queue (first invocation) or one of its parents was
-		// possibly already visited by another path _before_ we came
-		// in through this path (topological order violated). We must
-		// still carry the flags through to the parents.
-		//
-		for (;;) {
-			c.flags |= carry;
-			if ((c.flags & SEEN) == 0)
-				return;
-			final RevCommit[] pList = c.parents;
-			final int n = pList.length;
-			if (n == 0)
-				return;
-
-			for (int i = 1; i < n; i++)
-				carryFlags(pList[i], carry);
-			c = pList[0];
 		}
 	}
 
