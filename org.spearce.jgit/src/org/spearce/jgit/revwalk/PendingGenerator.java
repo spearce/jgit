@@ -18,7 +18,6 @@ package org.spearce.jgit.revwalk;
 
 import java.io.IOException;
 
-import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.StopWalkException;
@@ -33,32 +32,35 @@ import org.spearce.jgit.revwalk.filter.RevFilter;
  * commit graph to be walked. A {@link RevFilter} may be used to select a subset
  * of the commits and return them to the caller.
  */
-abstract class AbstractPendingGenerator extends Generator {
+class PendingGenerator extends Generator {
 	private static final int PARSED = RevWalk.PARSED;
 
 	private static final int SEEN = RevWalk.SEEN;
 
-	protected final RevWalk walker;
+	private final RevWalk walker;
 
 	private final AbstractRevQueue pending;
 
 	private final RevFilter filter;
 
+	private final int output;
+
 	boolean canDispose;
 
-	AbstractPendingGenerator(final RevWalk w, final AbstractRevQueue p,
-			final RevFilter f) {
+	PendingGenerator(final RevWalk w, final AbstractRevQueue p,
+			final RevFilter f, final int out) {
 		walker = w;
 		pending = p;
 		filter = f;
+		output = out;
 		canDispose = true;
 	}
 
 	@Override
 	int outputType() {
 		if (pending instanceof DateRevQueue)
-			return SORT_COMMIT_TIME_DESC;
-		return 0;
+			return output | SORT_COMMIT_TIME_DESC;
+		return output;
 	}
 
 	@Override
@@ -75,10 +77,8 @@ abstract class AbstractPendingGenerator extends Generator {
 				final boolean produce;
 				if ((c.flags & RevWalk.UNINTERESTING) != 0)
 					produce = false;
-				else if (filter.include(walker, c))
-					produce = include(c);
 				else
-					produce = false;
+					produce = filter.include(walker, c);
 
 				for (final RevCommit p : c.parents) {
 					if ((p.flags & SEEN) != 0)
@@ -108,24 +108,4 @@ abstract class AbstractPendingGenerator extends Generator {
 			return null;
 		}
 	}
-
-	/**
-	 * Determine if a commit should produce in the output.
-	 * 
-	 * @param c
-	 *            the current commit.
-	 * @return true if this commit should still be produced in the result (it
-	 *         looked interesting); false if this commit should be omitted from
-	 *         the result (it appeared boring).
-	 * @throws MissingObjectException
-	 *             see TreeWalk for reasons.
-	 * @throws IncorrectObjectTypeException
-	 *             see TreeWalk for reasons.
-	 * @throws CorruptObjectException
-	 *             see TreeWalk for reasons.
-	 * @throws IOException
-	 *             see TreeWalk for reasons.
-	 */
-	abstract boolean include(final RevCommit c) throws MissingObjectException,
-			IncorrectObjectTypeException, IOException, CorruptObjectException;
 }

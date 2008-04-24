@@ -18,9 +18,9 @@ package org.spearce.jgit.revwalk;
 
 import java.io.IOException;
 
-import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.errors.StopWalkException;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.revwalk.filter.RevFilter;
 import org.spearce.jgit.treewalk.TreeWalk;
@@ -29,8 +29,8 @@ import org.spearce.jgit.treewalk.filter.TreeFilter;
 /**
  * First phase of a path limited revision walk.
  * <p>
- * This generator takes the place of {@link AbstractPendingGenerator} and ties
- * the configured {@link TreeFilter} into the revision walking process.
+ * This filter is ANDed to evaluate after all other filters and ties the
+ * configured {@link TreeFilter} into the revision walking process.
  * <p>
  * Each commit is differenced concurrently against all of its parents to look
  * for tree entries that are interesting to the TreeFilter. If none are found
@@ -40,7 +40,7 @@ import org.spearce.jgit.treewalk.filter.TreeFilter;
  * 
  * @see RewriteGenerator
  */
-class TreeFilterPendingGenerator extends AbstractPendingGenerator {
+class RewriteTreeFilter extends RevFilter {
 	private static final int PARSED = RevWalk.PARSED;
 
 	private static final int UNINTERESTING = RevWalk.UNINTERESTING;
@@ -49,21 +49,21 @@ class TreeFilterPendingGenerator extends AbstractPendingGenerator {
 
 	private final TreeWalk pathFilter;
 
-	TreeFilterPendingGenerator(final RevWalk w, final AbstractRevQueue p,
-			final RevFilter f, final TreeFilter t) {
-		super(w, p, f);
-		pathFilter = new TreeWalk(w.db);
+	RewriteTreeFilter(final RevWalk walker, final TreeFilter t) {
+		pathFilter = new TreeWalk(walker.db);
 		pathFilter.setFilter(t);
 		pathFilter.setRecursive(t.shouldBeRecursive());
 	}
 
 	@Override
-	int outputType() {
-		return super.outputType() | HAS_REWRITE | NEEDS_REWRITE;
+	public RevFilter clone() {
+		throw new UnsupportedOperationException();
 	}
 
-	boolean include(final RevCommit c) throws MissingObjectException,
-			IncorrectObjectTypeException, IOException, CorruptObjectException {
+	@Override
+	public boolean include(final RevWalk walker, final RevCommit c)
+			throws StopWalkException, MissingObjectException,
+			IncorrectObjectTypeException, IOException {
 		// Reset the tree filter to scan this commit and parents.
 		//
 		final RevCommit[] pList = c.parents;

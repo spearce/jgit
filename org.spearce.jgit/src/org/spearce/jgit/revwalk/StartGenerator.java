@@ -21,6 +21,7 @@ import java.util.EnumSet;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.revwalk.filter.AndRevFilter;
 import org.spearce.jgit.revwalk.filter.RevFilter;
 import org.spearce.jgit.treewalk.filter.TreeFilter;
 
@@ -58,7 +59,7 @@ class StartGenerator extends Generator {
 		Generator g;
 
 		final RevWalk w = walker;
-		final RevFilter rf = w.getRevFilter();
+		RevFilter rf = w.getRevFilter();
 		final TreeFilter tf = w.getTreeFilter();
 		final EnumSet<RevSort> sort = w.getRevSort();
 		AbstractRevQueue q = pending;
@@ -72,24 +73,21 @@ class StartGenerator extends Generator {
 			boundary = false;
 		}
 
+		int pendingOutputType = 0;
 		if (sort.contains(RevSort.COMMIT_TIME_DESC))
 			q = new DateRevQueue(q);
-		if (tf != TreeFilter.ALL)
-			g = new TreeFilterPendingGenerator(w, q, rf, tf);
-		else
-			g = new AbstractPendingGenerator(w, q, rf) {
-				@Override
-				boolean include(final RevCommit c) {
-					return true;
-				}
-			};
+		if (tf != TreeFilter.ALL) {
+			rf = AndRevFilter.create(rf, new RewriteTreeFilter(w, tf));
+			pendingOutputType |= HAS_REWRITE | NEEDS_REWRITE;
+		}
+		g = new PendingGenerator(w, q, rf, pendingOutputType);
 
 		if (boundary) {
 			// Because the boundary generator may produce uninteresting
 			// commits we cannot allow the pending generator to dispose
 			// of them early.
 			//
-			((AbstractPendingGenerator) g).canDispose = false;
+			((PendingGenerator) g).canDispose = false;
 		}
 
 		if ((g.outputType() & NEEDS_REWRITE) != 0) {

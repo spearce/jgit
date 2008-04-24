@@ -29,7 +29,7 @@ import org.spearce.jgit.errors.MissingObjectException;
  * there are no more relevant. Generators may be piped/stacked together to
  * create a more complex set of operations.
  * 
- * @see AbstractPendingGenerator
+ * @see PendingGenerator
  * @see StartGenerator
  */
 abstract class Generator {
