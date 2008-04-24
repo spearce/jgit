@@ -124,6 +124,8 @@ public class RevWalk implements Iterable<RevCommit> {
 	/** Number of flag bits we keep internal for our own use. See above flags. */
 	static final int RESERVED_FLAGS = 6;
 
+	private static final int APP_FLAGS = -1 & ~((1 << RESERVED_FLAGS) - 1);
+
 	/** Flags we must automatically carry from a child to a parent commit. */
 	static final int CARRY_MASK = UNINTERESTING;
 
@@ -135,7 +137,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	private final ObjectIdSubclassMap<RevObject> objects;
 
-	private int nextFlagBit = RESERVED_FLAGS;
+	private int freeFlags = APP_FLAGS;
 
 	private final ArrayList<RevCommit> roots;
 
@@ -571,10 +573,25 @@ public class RevWalk implements Iterable<RevCommit> {
 	 *             too many flags have been reserved on this revision walker.
 	 */
 	public RevFlag newFlag(final String name) {
-		if (nextFlagBit == 32)
+		if (freeFlags == 0)
 			throw new IllegalArgumentException(32 - RESERVED_FLAGS
 					+ " flags already created.");
-		return new RevFlag(this, name, 1 << nextFlagBit++);
+		final int m = Integer.lowestOneBit(freeFlags);
+		freeFlags &= ~m;
+		return new RevFlag(this, name, m);
+	}
+
+	/**
+	 * Allow a flag to be recycled for a different use.
+	 * <p>
+	 * Recycled flags always come back as a different Java object instance when
+	 * assigned again by {@link #newFlag(String)}.
+	 * 
+	 * @param flag
+	 *            the to recycle.
+	 */
+	public void disposeFlag(final RevFlag flag) {
+		freeFlags |= flag.mask;
 	}
 
 	/**
@@ -619,7 +636,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * All RevFlag instances are also invalidated, and must not be reused.
 	 */
 	public void dispose() {
-		nextFlagBit = RESERVED_FLAGS;
+		freeFlags = APP_FLAGS;
 		objects.clear();
 		curs.release();
 		roots.clear();
