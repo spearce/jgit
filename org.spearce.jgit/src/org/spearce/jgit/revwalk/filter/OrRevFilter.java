@@ -35,7 +35,7 @@ import org.spearce.jgit.revwalk.RevWalk;
 public abstract class OrRevFilter extends RevFilter {
 	/**
 	 * Create a filter with two filters, one of which must match.
-	 *
+	 * 
 	 * @param a
 	 *            first filter to test.
 	 * @param b
@@ -50,7 +50,7 @@ public abstract class OrRevFilter extends RevFilter {
 
 	/**
 	 * Create a filter around many filters, one of which must match.
-	 *
+	 * 
 	 * @param list
 	 *            list of filters to match against. Must contain at least 2
 	 *            filters.
@@ -68,7 +68,7 @@ public abstract class OrRevFilter extends RevFilter {
 
 	/**
 	 * Create a filter around many filters, one of which must match.
-	 *
+	 * 
 	 * @param list
 	 *            list of filters to match against. Must contain at least 2
 	 *            filters.
