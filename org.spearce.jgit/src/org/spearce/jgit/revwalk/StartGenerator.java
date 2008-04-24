@@ -53,8 +53,24 @@ class StartGenerator extends Generator {
 		final RevWalk w = walker;
 		RevFilter rf = w.getRevFilter();
 		final TreeFilter tf = w.getTreeFilter();
-		final EnumSet<RevSort> sort = w.getRevSort();
 		AbstractRevQueue q = walker.queue;
+
+		if (rf == RevFilter.MERGE_BASE) {
+			// Computing for merge bases is a special case and does not
+			// use the bulk of the generator pipeline.
+			//
+			if (tf != TreeFilter.ALL)
+				throw new IllegalStateException("Cannot combine TreeFilter "
+						+ tf + " with RevFilter " + rf + ".");
+
+			final MergeBaseGenerator mbg = new MergeBaseGenerator(w);
+			walker.pending = mbg;
+			walker.queue = AbstractRevQueue.EMPTY_QUEUE;
+			mbg.init(q);
+			return mbg.next();
+		}
+
+		final EnumSet<RevSort> sort = w.getRevSort();
 		boolean boundary = sort.contains(RevSort.BOUNDARY);
 
 		if (boundary && !q.anybodyHasFlag(RevWalk.UNINTERESTING)) {

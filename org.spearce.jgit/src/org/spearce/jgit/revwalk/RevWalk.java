@@ -137,6 +137,8 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	private int freeFlags = APP_FLAGS;
 
+	private int delayFreeFlags;
+
 	int carryFlags;
 
 	private final ArrayList<RevCommit> roots;
@@ -616,12 +618,17 @@ public class RevWalk implements Iterable<RevCommit> {
 	 *             too many flags have been reserved on this revision walker.
 	 */
 	public RevFlag newFlag(final String name) {
+		final int m = allocFlag();
+		return new RevFlag(this, name, m);
+	}
+
+	int allocFlag() {
 		if (freeFlags == 0)
 			throw new IllegalArgumentException(32 - RESERVED_FLAGS
 					+ " flags already created.");
 		final int m = Integer.lowestOneBit(freeFlags);
 		freeFlags &= ~m;
-		return new RevFlag(this, name, m);
+		return m;
 	}
 
 	/**
@@ -669,8 +676,24 @@ public class RevWalk implements Iterable<RevCommit> {
 	 *            the to recycle.
 	 */
 	public void disposeFlag(final RevFlag flag) {
-		freeFlags |= flag.mask;
-		carryFlags &= ~flag.mask;
+		freeFlag(flag.mask);
+	}
+
+	void freeFlag(final int mask) {
+		if (isNotStarted()) {
+			freeFlags |= mask;
+			carryFlags &= ~mask;
+		} else {
+			delayFreeFlags |= mask;
+		}
+	}
+
+	private void finishDelayedFreeFlags() {
+		if (delayFreeFlags != 0) {
+			freeFlags |= delayFreeFlags;
+			carryFlags &= delayFreeFlags;
+			delayFreeFlags = 0;
+		}
 	}
 
 	/**
@@ -718,6 +741,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	}
 
 	private void reset(int retainFlags) {
+		finishDelayedFreeFlags();
 		retainFlags |= PARSED;
 
 		final FIFORevQueue q = new FIFORevQueue();
@@ -757,6 +781,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 */
 	public void dispose() {
 		freeFlags = APP_FLAGS;
+		delayFreeFlags = 0;
 		carryFlags = 0;
 		objects.clear();
 		curs.release();
@@ -821,9 +846,13 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	/** Throws an exception if we have started producing output. */
 	protected void assertNotStarted() {
-		if (pending instanceof StartGenerator)
+		if (isNotStarted())
 			return;
 		throw new IllegalStateException("Output has already been started.");
+	}
+
+	private boolean isNotStarted() {
+		return pending instanceof StartGenerator;
 	}
 
 	/**

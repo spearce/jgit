@@ -17,6 +17,8 @@
 package org.spearce.jgit.revwalk;
 
 abstract class AbstractRevQueue extends Generator {
+	static final AbstractRevQueue EMPTY_QUEUE = new AlwaysEmptyQueue();
+
 	/** Current output flags set for this generator instance. */
 	int outputType;
 
@@ -90,5 +92,33 @@ abstract class AbstractRevQueue extends Generator {
 	@Override
 	int outputType() {
 		return outputType;
+	}
+
+	private static class AlwaysEmptyQueue extends AbstractRevQueue {
+		@Override
+		public void add(RevCommit c) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public RevCommit next() {
+			return null;
+		}
+
+		@Override
+		boolean anybodyHasFlag(int f) {
+			return true;
+		}
+
+		@Override
+		boolean everbodyHasFlag(int f) {
+			return true;
+		}
+
+		@Override
+		public void clear() {
+			// Nothing to clear, we have no state.
+		}
+
 	}
 }
