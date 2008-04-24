@@ -98,6 +98,26 @@ public class URIishTest extends TestCase {
 		assertEquals(str, u.toString());
 	}
 
+	public void testGitSshProto() throws Exception {
+		final String str = "git+ssh://example.com/some/p ath";
+		URIish u = new URIish(str);
+		assertEquals("git+ssh", u.getScheme());
+		assertEquals("/some/p ath", u.getPath());
+		assertEquals("example.com", u.getHost());
+		assertEquals(-1, u.getPort());
+		assertEquals(str, u.toString());
+	}
+
+	public void testSshGitProto() throws Exception {
+		final String str = "ssh+git://example.com/some/p ath";
+		URIish u = new URIish(str);
+		assertEquals("ssh+git", u.getScheme());
+		assertEquals("/some/p ath", u.getPath());
+		assertEquals("example.com", u.getHost());
+		assertEquals(-1, u.getPort());
+		assertEquals(str, u.toString());
+	}
+
 	public void testSshProto() throws Exception {
 		final String str = "ssh://example.com/some/p ath";
 		URIish u = new URIish(str);

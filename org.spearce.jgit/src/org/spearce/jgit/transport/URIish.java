@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  */
 public class URIish {
 	private static final Pattern FULL_URI = Pattern
-			.compile("^(?:([a-z]+)://(?:([^/]+?)(?::([^/]+?))?@)?(?:([^/]+?))?(?::(\\d+))?)?((?:[A-Za-z]:)?/.+)$");
+			.compile("^(?:([a-z+]+)://(?:([^/]+?)(?::([^/]+?))?@)?(?:([^/]+?))?(?::(\\d+))?)?((?:[A-Za-z]:)?/.+)$");
 
 	private static final Pattern SCP_URI = Pattern
 			.compile("^(?:([^@]+?)@)?([^:]+?):(.+)$");
