@@ -21,6 +21,18 @@ abstract class AbstractRevQueue extends Generator {
 	int outputType;
 
 	/**
+	 * Add a commit to the queue.
+	 * <p>
+	 * This method always adds the commit, even if it is already in the queue or
+	 * previously was in the queue but has already been removed. To control
+	 * queue admission use {@link #add(RevCommit, RevFlag)}.
+	 * 
+	 * @param c
+	 *            commit to add.
+	 */
+	public abstract void add(RevCommit c);
+
+	/**
 	 * Add a commit if it does not have a flag set yet, then set the flag.
 	 * <p>
 	 * This method permits the application to test if the commit has the given

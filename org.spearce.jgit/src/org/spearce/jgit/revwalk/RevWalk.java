@@ -141,6 +141,8 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	private final ArrayList<RevCommit> roots;
 
+	AbstractRevQueue queue;
+
 	Generator pending;
 
 	private final EnumSet<RevSort> sorting;
@@ -161,6 +163,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		idBuffer = new MutableObjectId();
 		objects = new ObjectIdSubclassMap<RevObject>();
 		roots = new ArrayList<RevCommit>();
+		queue = new FIFORevQueue();
 		pending = new StartGenerator(this);
 		sorting = EnumSet.of(RevSort.NONE);
 		filter = RevFilter.ALL;
@@ -207,14 +210,13 @@ public class RevWalk implements Iterable<RevCommit> {
 	 */
 	public void markStart(final RevCommit c) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
-		assertNotStarted();
 		if ((c.flags & SEEN) != 0)
 			return;
 		if ((c.flags & PARSED) == 0)
 			c.parse(this);
 		c.flags |= SEEN;
 		roots.add(c);
-		pending.add(c);
+		queue.add(c);
 	}
 
 	/**
@@ -253,8 +255,8 @@ public class RevWalk implements Iterable<RevCommit> {
 	public void markUninteresting(final RevCommit c)
 			throws MissingObjectException, IncorrectObjectTypeException,
 			IOException {
-		assertNotStarted();
 		c.flags |= UNINTERESTING;
+		c.carryFlags(UNINTERESTING);
 		markStart(c);
 	}
 
@@ -660,6 +662,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 		curs.release();
 		roots.clear();
+		queue = new FIFORevQueue();
 		pending = new StartGenerator(this);
 	}
 
@@ -677,6 +680,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		objects.clear();
 		curs.release();
 		roots.clear();
+		queue = new FIFORevQueue();
 		pending = new StartGenerator(this);
 	}
 

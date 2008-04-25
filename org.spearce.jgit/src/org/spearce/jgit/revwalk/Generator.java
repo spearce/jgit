@@ -49,22 +49,6 @@ abstract class Generator {
 	static final int HAS_UNINTERESTING = 1 << 4;
 
 	/**
-	 * Register a commit as a starting point.
-	 * <p>
-	 * The default implementation of this method always throws an exception as
-	 * most generators do not accept commits directly. Instead they pull them
-	 * from another generator, or they are passed the set of relevant commits
-	 * when created.
-	 * 
-	 * @param c
-	 *            the commit the application wants to start from.
-	 */
-	void add(final RevCommit c) {
-		throw new IllegalStateException("Revision walk has already begun;"
-				+ " it is too late to add commit " + c + ".");
-	}
-
-	/**
 	 * Connect the supplied queue to this generator's own free list (if any).
 	 * 
 	 * @param q

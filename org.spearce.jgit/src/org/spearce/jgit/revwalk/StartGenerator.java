@@ -36,21 +36,13 @@ import org.spearce.jgit.treewalk.filter.TreeFilter;
 class StartGenerator extends Generator {
 	private final RevWalk walker;
 
-	private final AbstractRevQueue pending;
-
 	StartGenerator(final RevWalk w) {
 		walker = w;
-		pending = new FIFORevQueue();
 	}
 
 	@Override
 	int outputType() {
 		return 0;
-	}
-
-	@Override
-	void add(final RevCommit c) {
-		pending.add(c);
 	}
 
 	@Override
@@ -62,7 +54,7 @@ class StartGenerator extends Generator {
 		RevFilter rf = w.getRevFilter();
 		final TreeFilter tf = w.getTreeFilter();
 		final EnumSet<RevSort> sort = w.getRevSort();
-		AbstractRevQueue q = pending;
+		AbstractRevQueue q = walker.queue;
 		boolean boundary = sort.contains(RevSort.BOUNDARY);
 
 		if (boundary && !q.anybodyHasFlag(RevWalk.UNINTERESTING)) {
@@ -80,6 +72,8 @@ class StartGenerator extends Generator {
 			rf = AndRevFilter.create(rf, new RewriteTreeFilter(w, tf));
 			pendingOutputType |= HAS_REWRITE | NEEDS_REWRITE;
 		}
+
+		walker.queue = q;
 		g = new PendingGenerator(w, q, rf, pendingOutputType);
 
 		if (boundary) {
