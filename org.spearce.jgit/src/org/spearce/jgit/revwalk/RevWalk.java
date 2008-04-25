@@ -220,6 +220,32 @@ public class RevWalk implements Iterable<RevCommit> {
 	}
 
 	/**
+	 * Mark commits to start graph traversal from.
+	 * 
+	 * @param list
+	 *            commits to start traversing from. The commits passed must be
+	 *            from this same revision walker.
+	 * @throws MissingObjectException
+	 *             one of the commits supplied is not available from the object
+	 *             database. This usually indicates the supplied commit is
+	 *             invalid, but the reference was constructed during an earlier
+	 *             invocation to {@link #lookupCommit(AnyObjectId)}.
+	 * @throws IncorrectObjectTypeException
+	 *             the object was not parsed yet and it was discovered during
+	 *             parsing that it is not actually a commit. This usually
+	 *             indicates the caller supplied a non-commit SHA-1 to
+	 *             {@link #lookupCommit(AnyObjectId)}.
+	 * @throws IOException
+	 *             a pack file or loose object could not be read.
+	 */
+	public void markStart(final Collection<RevCommit> list)
+			throws MissingObjectException, IncorrectObjectTypeException,
+			IOException {
+		for (final RevCommit c : list)
+			markStart(c);
+	}
+
+	/**
 	 * Mark a commit to not produce in the output.
 	 * <p>
 	 * Uninteresting commits denote not just themselves but also their entire
