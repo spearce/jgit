@@ -476,10 +476,8 @@ public class RevWalk implements Iterable<RevCommit> {
 			IOException {
 		RevObject c = parseAny(id);
 		while (c instanceof RevTag) {
-			final RevTag t = ((RevTag) c);
-			if ((t.flags & PARSED) == 0)
-				t.parse(this);
-			c = t.getObject();
+			c = ((RevTag) c).getObject();
+			parse(c);
 		}
 		return (RevCommit) c;
 	}
