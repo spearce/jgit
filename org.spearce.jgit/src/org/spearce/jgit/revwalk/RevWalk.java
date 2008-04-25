@@ -18,6 +18,7 @@ package org.spearce.jgit.revwalk;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Iterator;
 
@@ -126,9 +127,6 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	private static final int APP_FLAGS = -1 & ~((1 << RESERVED_FLAGS) - 1);
 
-	/** Flags we must automatically carry from a child to a parent commit. */
-	static final int CARRY_MASK = UNINTERESTING;
-
 	final Repository db;
 
 	final WindowCursor curs;
@@ -138,6 +136,8 @@ public class RevWalk implements Iterable<RevCommit> {
 	private final ObjectIdSubclassMap<RevObject> objects;
 
 	private int freeFlags = APP_FLAGS;
+
+	int carryFlags;
 
 	private final ArrayList<RevCommit> roots;
 
@@ -582,16 +582,52 @@ public class RevWalk implements Iterable<RevCommit> {
 	}
 
 	/**
+	 * Automatically carry a flag from a child commit to its parents.
+	 * <p>
+	 * A carried flag is copied from the child commit onto its parents when the
+	 * child commit is popped from the lowest level of walk's internal graph.
+	 * 
+	 * @param flag
+	 *            the flag to carry onto parents, if set on a descendant.
+	 */
+	public void carry(final RevFlag flag) {
+		if ((freeFlags & flag.mask) != 0)
+			throw new IllegalArgumentException(flag.name + " is disposed.");
+		if (flag.walker != this)
+			throw new IllegalArgumentException(flag.name + " not from this.");
+		carryFlags |= flag.mask;
+	}
+
+	/**
+	 * Automatically carry flags from a child commit to its parents.
+	 * <p>
+	 * A carried flag is copied from the child commit onto its parents when the
+	 * child commit is popped from the lowest level of walk's internal graph.
+	 * 
+	 * @param set
+	 *            the flags to carry onto parents, if set on a descendant.
+	 */
+	public void carry(final Collection<RevFlag> set) {
+		for (final RevFlag flag : set)
+			carry(flag);
+	}
+
+	/**
 	 * Allow a flag to be recycled for a different use.
 	 * <p>
 	 * Recycled flags always come back as a different Java object instance when
 	 * assigned again by {@link #newFlag(String)}.
+	 * <p>
+	 * If the flag was previously being carried, the carrying request is
+	 * removed. Disposing of a carried flag while a traversal is in progress has
+	 * an undefined behavior.
 	 * 
 	 * @param flag
 	 *            the to recycle.
 	 */
 	public void disposeFlag(final RevFlag flag) {
 		freeFlags |= flag.mask;
+		carryFlags &= ~flag.mask;
 	}
 
 	/**
@@ -637,6 +673,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 */
 	public void dispose() {
 		freeFlags = APP_FLAGS;
+		carryFlags = 0;
 		objects.clear();
 		curs.release();
 		roots.clear();

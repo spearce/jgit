@@ -37,6 +37,8 @@ class PendingGenerator extends Generator {
 
 	private static final int SEEN = RevWalk.SEEN;
 
+	private static final int UNINTERESTING = RevWalk.UNINTERESTING;
+
 	private final RevWalk walker;
 
 	private final AbstractRevQueue pending;
@@ -44,6 +46,8 @@ class PendingGenerator extends Generator {
 	private final RevFilter filter;
 
 	private final int output;
+
+	private final int carryMask;
 
 	boolean canDispose;
 
@@ -53,6 +57,7 @@ class PendingGenerator extends Generator {
 		pending = p;
 		filter = f;
 		output = out;
+		carryMask = w.carryFlags | UNINTERESTING;
 		canDispose = true;
 	}
 
@@ -75,7 +80,7 @@ class PendingGenerator extends Generator {
 				}
 
 				final boolean produce;
-				if ((c.flags & RevWalk.UNINTERESTING) != 0)
+				if ((c.flags & UNINTERESTING) != 0)
 					produce = false;
 				else
 					produce = filter.include(walker, c);
@@ -88,10 +93,10 @@ class PendingGenerator extends Generator {
 					p.flags |= SEEN;
 					pending.add(p);
 				}
-				c.carryFlags(RevWalk.CARRY_MASK);
+				c.carryFlags(carryMask);
 
-				if ((c.flags & RevWalk.UNINTERESTING) != 0) {
-					if (pending.everbodyHasFlag(RevWalk.UNINTERESTING))
+				if ((c.flags & UNINTERESTING) != 0) {
+					if (pending.everbodyHasFlag(UNINTERESTING))
 						throw StopWalkException.INSTANCE;
 					c.dispose();
 					continue;
