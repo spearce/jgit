@@ -640,10 +640,50 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * are removed from all RevObjects.
 	 */
 	public void reset() {
+		reset(0);
+	}
+
+	/**
+	 * Resets internal state and allows this instance to be used again.
+	 * <p>
+	 * Unlike {@link #dispose()} previously acquired RevObject (and RevCommit)
+	 * instances are not invalidated. RevFlag instances are not invalidated, but
+	 * are removed from all RevObjects.
+	 * 
+	 * @param retainFlags
+	 *            application flags that should <b>not</b> be cleared from
+	 *            existing commit objects.
+	 */
+	public void resetRetain(final RevFlagSet retainFlags) {
+		reset(retainFlags.mask);
+	}
+
+	/**
+	 * Resets internal state and allows this instance to be used again.
+	 * <p>
+	 * Unlike {@link #dispose()} previously acquired RevObject (and RevCommit)
+	 * instances are not invalidated. RevFlag instances are not invalidated, but
+	 * are removed from all RevObjects.
+	 * 
+	 * @param retainFlags
+	 *            application flags that should <b>not</b> be cleared from
+	 *            existing commit objects.
+	 */
+	public void resetRetain(final RevFlag... retainFlags) {
+		int mask = 0;
+		for (final RevFlag flag : retainFlags)
+			mask |= flag.mask;
+		reset(mask);
+	}
+
+	private void reset(int retainFlags) {
+		retainFlags |= PARSED;
+
 		final FIFORevQueue q = new FIFORevQueue();
 		for (final RevCommit c : roots) {
 			if ((c.flags & SEEN) == 0)
 				continue;
+			c.flags &= retainFlags;
 			c.reset();
 			q.add(c);
 		}
@@ -655,7 +695,7 @@ public class RevWalk implements Iterable<RevCommit> {
 			for (final RevCommit p : c.parents) {
 				if ((p.flags & SEEN) == 0)
 					continue;
-				p.reset();
+				p.flags &= retainFlags;
 				q.add(p);
 			}
 		}

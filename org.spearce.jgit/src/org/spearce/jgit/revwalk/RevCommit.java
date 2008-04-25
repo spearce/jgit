@@ -354,7 +354,6 @@ public class RevCommit extends RevObject {
 	 * basic information can be correctly cleared out.
 	 */
 	public void reset() {
-		flags &= PARSED;
 		inDegree = 0;
 	}
 
