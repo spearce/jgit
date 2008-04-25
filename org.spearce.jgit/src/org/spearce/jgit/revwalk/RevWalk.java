@@ -316,6 +316,21 @@ public class RevWalk implements Iterable<RevCommit> {
 	}
 
 	/**
+	 * Select a single sorting strategy for the returned commits.
+	 * <p>
+	 * Disables all sorting strategies, then enables only the single strategy
+	 * supplied by the caller.
+	 * 
+	 * @param s
+	 *            a sorting strategy to enable.
+	 */
+	public void sort(final RevSort s) {
+		assertNotStarted();
+		sorting.clear();
+		sorting.add(s);
+	}
+
+	/**
 	 * Add or remove a sorting strategy for the returned commits.
 	 * <p>
 	 * Multiple strategies can be applied at once, in which case some strategies
