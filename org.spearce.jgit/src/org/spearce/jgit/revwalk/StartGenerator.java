@@ -66,7 +66,10 @@ class StartGenerator extends Generator {
 		}
 
 		int pendingOutputType = 0;
-		if (sort.contains(RevSort.COMMIT_TIME_DESC))
+		if (sort.contains(RevSort.START_ORDER) && !(q instanceof FIFORevQueue))
+			q = new FIFORevQueue(q);
+		if (sort.contains(RevSort.COMMIT_TIME_DESC)
+				&& !(q instanceof DateRevQueue))
 			q = new DateRevQueue(q);
 		if (tf != TreeFilter.ALL) {
 			rf = AndRevFilter.create(rf, new RewriteTreeFilter(w, tf));
