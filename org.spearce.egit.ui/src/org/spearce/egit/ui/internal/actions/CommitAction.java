@@ -67,10 +67,6 @@ public class CommitAction extends RepositoryAction {
 	private boolean amendAllowed;
 	private boolean amending;
 
-	public void execute(IAction action) {
-		run(action);
-	}
-
 	@Override
 	public void run(IAction act) {
 		resetState();

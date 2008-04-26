@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.team.internal.ui.actions.TeamAction;
 import org.spearce.egit.core.project.RepositoryMapping;
@@ -13,6 +14,18 @@ import org.spearce.jgit.lib.Repository;
  * A helper class for Team Actions on Git controlled projects
  */
 public abstract class RepositoryAction extends TeamAction {
+
+	// There are changes in Eclipse 3.3 requiring that execute be implemented
+	// for it to compile. while 3.2 requires that run is implemented instead.
+	/*
+	 * See {@link #run(IAction)}
+	 *
+	 * @param action
+	 */
+	public void execute(IAction action) {
+		run(action);
+	}
+
 	/**
 	 * @return repository for current project, or null
 	 */
