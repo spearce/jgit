@@ -289,6 +289,55 @@ public class RevWalk implements Iterable<RevCommit> {
 	}
 
 	/**
+	 * Determine if a commit is reachable from another commit.
+	 * <p>
+	 * A commit <code>base</code> is an ancestor of <code>tip</code> if we
+	 * can find a path of commits that leads from <code>tip</code> and ends at
+	 * <code>base</code>.
+	 * <p>
+	 * This utility function resets the walker, inserts the two supplied
+	 * commits, and then executes a walk until an answer can be obtained.
+	 * Currently allocated RevFlags that have been added to RevCommit instances
+	 * will be retained through the reset.
+	 * 
+	 * @param base
+	 *            commit the caller thinks is reachable from <code>tip</code>.
+	 * @param tip
+	 *            commit to start iteration from, and which is most likely a
+	 *            descendant (child) of <code>base</code>.
+	 * @return true if there is a path directly from <code>tip</code> to
+	 *         <code>base</code> (and thus <code>base</code> is fully merged
+	 *         into <code>tip</code>); false otherwise.
+	 * @throws MissingObjectException
+	 *             one or or more of the next commit's parents are not available
+	 *             from the object database, but were thought to be candidates
+	 *             for traversal. This usually indicates a broken link.
+	 * @throws IncorrectObjectTypeException
+	 *             one or or more of the next commit's parents are not actually
+	 *             commit objects.
+	 * @throws IOException
+	 *             a pack file or loose object could not be read.
+	 */
+	public boolean isMergedInto(final RevCommit base, final RevCommit tip)
+			throws MissingObjectException, IncorrectObjectTypeException,
+			IOException {
+		final RevFilter oldRF = filter;
+		final TreeFilter oldTF = treeFilter;
+		try {
+			finishDelayedFreeFlags();
+			reset(~freeFlags & ~RESERVED_FLAGS);
+			filter = RevFilter.MERGE_BASE;
+			treeFilter = TreeFilter.ALL;
+			markStart(tip);
+			markStart(base);
+			return next() == base;
+		} finally {
+			filter = oldRF;
+			treeFilter = oldTF;
+		}
+	}
+
+	/**
 	 * Pop the next most recent commit.
 	 * 
 	 * @return next most recent commit; null if traversal is over.
