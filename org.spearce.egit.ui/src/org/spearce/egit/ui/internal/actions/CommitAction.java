@@ -21,12 +21,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.TimeZone;
 
 import org.eclipse.core.resources.IFile;
@@ -78,7 +76,7 @@ public class CommitAction extends RepositoryAction {
 		}
 
 		Repository repo = null;
-		for (IProject proj : listProjects()) {
+		for (IProject proj : getSelectedProjects()) {
 			Repository repository = RepositoryMapping.getMapping(proj).getRepository();
 			if (repo == null)
 				repo = repository;
@@ -172,7 +170,7 @@ public class CommitAction extends RepositoryAction {
 		} catch (IOException e) {
 			throw new TeamException("Committing changes", e);
 		}
-		for (IProject proj : listProjects()) {
+		for (IProject proj : getSelectedProjects()) {
 			RepositoryMapping.getMapping(proj).fireRepositoryChanged();
 		}
 	}
@@ -241,7 +239,7 @@ public class CommitAction extends RepositoryAction {
 			UnsupportedEncodingException {
 		if (selectedItems.length == 0) {
 			// amending commit - need to put something into the map
-			for (IProject proj : listProjects()) {
+			for (IProject proj : getSelectedProjects()) {
 				Repository repo = RepositoryMapping.getMapping(proj).getRepository();
 				if (!treeMap.containsKey(repo))
 					treeMap.put(repo, repo.mapTree("HEAD"));
@@ -347,7 +345,7 @@ public class CommitAction extends RepositoryAction {
 	}
 
 	private void buildIndexHeadDiffList() throws IOException {
-		for (IProject project : listProjects()) {
+		for (IProject project : getSelectedProjects()) {
 			RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
 			if (repositoryMapping != null) {
 				Repository repository = repositoryMapping.getRepository();
@@ -389,10 +387,6 @@ public class CommitAction extends RepositoryAction {
 				continue;
 			} // if it's outside the workspace, bad things happen
 		}
-	}
-
-	private List<IProject> listProjects() {
-		return Arrays.asList(getSelectedProjects());
 	}
 
 	boolean tryAddResource(IFile resource, GitProjectData projectData, ArrayList<IFile> category) {
