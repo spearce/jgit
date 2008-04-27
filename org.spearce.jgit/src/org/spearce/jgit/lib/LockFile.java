@@ -18,6 +18,8 @@ package org.spearce.jgit.lib;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -98,6 +100,69 @@ public class LockFile {
 			}
 		}
 		return haveLck;
+	}
+
+	/**
+	 * Try to establish the lock for appending.
+	 * 
+	 * @return true if the lock is now held by the caller; false if it is held
+	 *         by someone else.
+	 * @throws IOException
+	 *             the temporary output file could not be created. The caller
+	 *             does not hold the lock.
+	 */
+	public boolean lockForAppend() throws IOException {
+		if (!lock())
+			return false;
+		copyCurrentContent();
+		return true;
+	}
+
+	/**
+	 * Copy the current file content into the temporary file.
+	 * <p>
+	 * This method saves the current file content by inserting it into the
+	 * temporary file, so that the caller can safely append rather than replace
+	 * the primary file.
+	 * <p>
+	 * This method does nothing if the current file does not exist, or exists
+	 * but is empty.
+	 * 
+	 * @throws IOException
+	 *             the temporary file could not be written, or a read error
+	 *             occurred while reading from the current file. The lock is
+	 *             released before throwing the underlying IO exception to the
+	 *             caller.
+	 * @throws RuntimeException
+	 *             the temporary file could not be written. The lock is released
+	 *             before throwing the underlying exception to the caller.
+	 */
+	public void copyCurrentContent() throws IOException {
+		requireLock();
+		try {
+			final FileInputStream fis = new FileInputStream(ref);
+			try {
+				final byte[] buf = new byte[2048];
+				int r;
+				while ((r = fis.read(buf)) >= 0)
+					os.write(buf, 0, r);
+			} finally {
+				fis.close();
+			}
+		} catch (FileNotFoundException fnfe) {
+			// Don't worry about a file that doesn't exist yet, it
+			// conceptually has no current content to copy.
+			//
+		} catch (IOException ioe) {
+			unlock();
+			throw ioe;
+		} catch (RuntimeException ioe) {
+			unlock();
+			throw ioe;
+		} catch (Error ioe) {
+			unlock();
+			throw ioe;
+		}
 	}
 
 	/**
