@@ -200,4 +200,53 @@
             id="org.spearce.egit.ui.internal.decorators.GitQuickDiffProvider">
       </referenceprovider>
    </extension>
+   <extension
+	 point="org.eclipse.ui.actionSets">
+      <actionSet
+	    description="Common things to do with Git"
+	    id="org.spearce.egit.ui.gitaction"
+	    label="%GitActions_label"
+	    visible="true"
+	    >
+	    <menu
+           id="org.spearce.egit.ui.gitmenu"
+           label="%GitMenu_label"
+           path="org.spearce.egit.ui.gitmenu"
+           >
+	    </menu>
+		<action
+		       class="org.spearce.egit.ui.internal.actions.BranchAction"
+		       disabledIcon="icons/toolbar/checkoutd.png"
+		       icon="icons/toolbar/checkoute.png"
+		       id="org.spearce.egit.ui.actionbranch"
+		       label="%BranchAction_label"
+		       style="push"
+		       menubarPath="org.spearce.egit.ui.gitmenu/repo"
+		       toolbarPath="org.spearce.egit.ui"
+		       tooltip="%BranchAction_tooltip">
+		</action>
+		<action
+		       class="org.spearce.egit.ui.internal.actions.CommitAction"
+		       disabledIcon="icons/toolbar/commitd.png"
+		       icon="icons/toolbar/commite.png"
+		       id="org.spearce.egit.ui.actioncommit"
+		       label="%CommitAction_label"
+		       style="push"
+		       menubarPath="org.spearce.egit.ui.gitmenu/repo"
+		       toolbarPath="org.spearce.egit.ui"
+		       tooltip="%CommitAction_tooltip">
+		</action>
+		<action
+		       class="org.spearce.egit.ui.internal.actions.ResetAction"
+		       disabledIcon="icons/toolbar/resetd.png"
+		       icon="icons/toolbar/resete.png"
+		       id="org.spearce.egit.ui.actionreset"
+		       label="%ResetAction_label"
+		       style="push"
+		       menubarPath="org.spearce.egit.ui.gitmenu/repo"
+		       toolbarPath="org.spearce.egit.ui"
+		       tooltip="%ResetAction_tooltip">
+		</action>
+      </actionSet>
+   </extension>
 </plugin>
