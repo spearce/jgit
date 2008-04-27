@@ -49,8 +49,7 @@ public class RepositoryConfig {
 	 *         configuration file from their home directory.
 	 */
 	public static RepositoryConfig openUserConfig() {
-		return new RepositoryConfig(null, new File(System
-				.getProperty("user.home"), ".gitconfig"));
+		return new RepositoryConfig(null, new File(FS.userHome(), ".gitconfig"));
 	}
 
 	private final RepositoryConfig baseConfig;

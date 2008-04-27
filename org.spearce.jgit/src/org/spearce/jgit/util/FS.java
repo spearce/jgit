@@ -17,6 +17,8 @@
 package org.spearce.jgit.util;
 
 import java.io.File;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /** Abstraction to support various file system operations not in Java. */
 public abstract class FS {
@@ -115,5 +117,41 @@ public abstract class FS {
 		if (abspn.isAbsolute())
 			return abspn;
 		return new File(dir, name);
+	}
+
+	/**
+	 * Determine the user's home directory (location where preferences are).
+	 * <p>
+	 * This method can be expensive on the first invocation if path name
+	 * translation is required. Subsequent invocations return a cached result.
+	 * <p>
+	 * Not all platforms and JREs require path name translation. Currently only
+	 * Cygwin on Win32 requires translation of the Cygwin HOME directory.
+	 * 
+	 * @return the user's home directory; null if the user does not have one.
+	 */
+	public static File userHome() {
+		return USER_HOME.home;
+	}
+
+	private static class USER_HOME {
+		static final File home = INSTANCE.userHomeImpl();
+	}
+
+	/**
+	 * Determine the user's home directory (location where preferences are).
+	 * 
+	 * @return the user's home directory; null if the user does not have one.
+	 */
+	protected File userHomeImpl() {
+		final String home = AccessController
+				.doPrivileged(new PrivilegedAction<String>() {
+					public String run() {
+						return System.getProperty("user.home");
+					}
+				});
+		if (home == null || home.length() == 0)
+			return null;
+		return new File(home).getAbsoluteFile();
 	}
 }

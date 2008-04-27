@@ -78,4 +78,17 @@ class FS_Win32_Cygwin extends FS_Win32 {
 		}
 		return super.resolveImpl(dir, pn);
 	}
+
+	@Override
+	protected File userHomeImpl() {
+		final String home = AccessController
+				.doPrivileged(new PrivilegedAction<String>() {
+					public String run() {
+						return System.getenv("HOME");
+					}
+				});
+		if (home == null || home.length() == 0)
+			return super.userHomeImpl();
+		return resolveImpl(new File("."), home);
+	}
 }
