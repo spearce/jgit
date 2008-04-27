@@ -23,6 +23,8 @@ import org.spearce.jgit.lib.Repository;
 
 /** Command line entry point. */
 public class Main {
+	private static boolean showStackTrace;
+
 	/**
 	 * Execute the command line.
 	 * 
@@ -34,10 +36,14 @@ public class Main {
 			execute(argv);
 		} catch (Die err) {
 			System.err.println("fatal: " + err.getMessage());
+			if (showStackTrace)
+				err.printStackTrace();
 			System.exit(128);
 		} catch (Exception err) {
 			if (err.getClass().getName().startsWith("org.spearce.jgit.errors.")) {
 				System.err.println("fatal: " + err.getMessage());
+				if (showStackTrace)
+					err.printStackTrace();
 				System.exit(128);
 			}
 			err.printStackTrace();
@@ -49,10 +55,17 @@ public class Main {
 		int argi = 0;
 		String gitdir = ".git";
 
-		if (argi == argv.length)
-			usage();
-		if (argv[argi].startsWith("--git-dir="))
-			gitdir = argv[argi++].substring("--git-dir=".length());
+		for (; argi < argv.length; argi++) {
+			final String arg = argv[argi];
+			if (arg.startsWith("--git-dir="))
+				gitdir = arg.substring("--git-dir=".length());
+			else if (arg.equals("--show-stack-trace"))
+				showStackTrace = true;
+			else if (arg.startsWith("--"))
+				usage();
+			else
+				break;
+		}
 
 		if (argi == argv.length)
 			usage();
