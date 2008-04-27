@@ -34,6 +34,8 @@ class SWTPlotRenderer extends AbstractPlotRenderer<SWTLane, Color> {
 
 	private final Color sys_gray;
 
+	private Color sys_darkblue;
+
 	GC g;
 
 	int cellX;
@@ -48,6 +50,7 @@ class SWTPlotRenderer extends AbstractPlotRenderer<SWTLane, Color> {
 		sys_blue = d.getSystemColor(SWT.COLOR_BLUE);
 		sys_black = d.getSystemColor(SWT.COLOR_BLACK);
 		sys_gray = d.getSystemColor(SWT.COLOR_GRAY);
+		sys_darkblue = d.getSystemColor(SWT.COLOR_DARK_BLUE);
 	}
 
 	void paint(final Event event) {
@@ -71,9 +74,12 @@ class SWTPlotRenderer extends AbstractPlotRenderer<SWTLane, Color> {
 	protected void drawCommitDot(final int x, final int y, final int w,
 			final int h) {
 		g.setBackground(sys_blue);
+		g.fillOval(cellX + x, cellY + y, w, h);
+		g.setForeground(sys_darkblue);
+		g.setLineWidth(2);
+		g.drawOval(cellX + x + 1, cellY + y + 1, w - 2, h - 2);
 		g.setForeground(sys_black);
 		g.setLineWidth(1);
-		g.fillOval(cellX + x, cellY + y, w, h);
 		g.drawOval(cellX + x, cellY + y, w, h);
 	}
 
