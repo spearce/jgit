@@ -472,6 +472,23 @@ public class Repository {
 	}
 
 	/**
+	 * Create a command to update (or create) a ref in this repository.
+	 * 
+	 * @param ref
+	 *            name of the ref the caller wants to modify.
+	 * @return an update command. The caller must finish populating this command
+	 *         and then invoke one of the update methods to actually make a
+	 *         change.
+	 * @throws IOException
+	 *             a symbolic ref was passed in and could not be resolved back
+	 *             to the base ref, as the symbolic ref could not be read.
+	 */
+	public RefUpdate updateRef(final String ref) throws IOException {
+		final Ref r = readRef(ref, true);
+		return new RefUpdate(this, r, fileForRef(r.getName()));
+	}
+
+	/**
 	 * Parse a git revision string and return an object id.
 	 *
 	 * Currently supported is combinations of these.
