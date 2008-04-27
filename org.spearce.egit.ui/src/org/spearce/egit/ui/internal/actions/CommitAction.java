@@ -417,6 +417,7 @@ public class CommitAction extends RepositoryAction {
 
 	@Override
 	public boolean isEnabled() {
-		return !getSelection().isEmpty();
+		return getRepositories().length > 0;
 	}
+
 }

@@ -83,6 +83,6 @@ public class BranchAction extends RepositoryAction {
 
 	@Override
 	public boolean isEnabled() {
-		return !getSelection().isEmpty();
+		return getRepository(false) != null;
 	}
 }

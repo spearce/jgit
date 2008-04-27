@@ -74,4 +74,8 @@ public abstract class RepositoryAction extends TeamAction {
 		}
 		return repos.toArray(new Repository[repos.size()]);
 	}
+
+	// Re-make isEnabled abstract
+	@Override
+	abstract public boolean isEnabled();
 }
