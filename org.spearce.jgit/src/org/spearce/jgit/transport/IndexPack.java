@@ -769,21 +769,36 @@ public class IndexPack {
 			oe.copyRawTo(oeBytes, 0);
 			d.update(oeBytes);
 		}
-		ObjectId name = ObjectId.fromRaw(d.digest());
-		File packDir = new File(repo.getObjectsDirectory(), "pack");
-		File finalPack = new File(packDir, "pack-" + name + ".pack");
-		File finalIdx = new File(packDir, "pack-" + name + ".idx");
-		if (!dstIdx.renameTo(finalIdx)) {
-			if (!dstIdx.delete())
-				dstIdx.deleteOnExit();
-			throw new IOException("Cannot rename final pack index");
+
+		final ObjectId name = ObjectId.fromRaw(d.digest());
+		final File packDir = new File(repo.getObjectsDirectory(), "pack");
+		final File finalPack = new File(packDir, "pack-" + name + ".pack");
+		final File finalIdx = new File(packDir, "pack-" + name + ".idx");
+
+		if (finalPack.exists()) {
+			// If the pack is already present we should never replace it.
+			//
+			cleanupTemporaryFiles();
+			return;
 		}
+
 		if (!dstPack.renameTo(finalPack)) {
-			if (!finalIdx.delete())
-				finalIdx.deleteOnExit();
-			if (!dstPack.delete())
-				dstPack.deleteOnExit();
-			throw new IOException("Cannot rename final pack");
+			cleanupTemporaryFiles();
+			throw new IOException("Cannot move pack to " + finalPack);
 		}
+
+		if (!dstIdx.renameTo(finalIdx)) {
+			cleanupTemporaryFiles();
+			if (!finalPack.delete())
+				finalPack.deleteOnExit();
+			throw new IOException("Cannot move index to " + finalIdx);
+		}
+	}
+
+	private void cleanupTemporaryFiles() {
+		if (!dstIdx.delete())
+			dstIdx.deleteOnExit();
+		if (!dstPack.delete())
+			dstPack.deleteOnExit();
 	}
 }
