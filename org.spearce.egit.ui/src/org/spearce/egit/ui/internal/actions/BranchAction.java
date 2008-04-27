@@ -38,7 +38,7 @@ import org.spearce.jgit.lib.Repository;
 public class BranchAction extends RepositoryAction {
 	@Override
 	public void run(IAction action) {
-		final Repository repository = getRepository();
+		final Repository repository = getRepository(true);
 		if (repository == null)
 			return;
 

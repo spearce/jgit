@@ -1,9 +1,9 @@
 package org.spearce.egit.ui.internal.actions;
 
-import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.team.internal.ui.actions.TeamAction;
@@ -27,31 +27,29 @@ public abstract class RepositoryAction extends TeamAction {
 	}
 
 	/**
+	 * Figure out which repository to use. All selected
+	 * resources must map to the same Git repository.
+	 *
+	 * @param warn Put up a message dialog to warn why a resource was not selected
 	 * @return repository for current project, or null
 	 */
-	protected Repository getRepository() {
-		IResource[] selectedResources = getSelectedResources();
-		
-		ArrayList<IProject> projects = new ArrayList<IProject>();
-		
-		for (IResource resource : selectedResources) {
-			IProject project = resource.getProject();
-			if (!projects.contains(project))
-				projects.add(project);
-		}
-		
+	protected Repository getRepository(boolean warn) {
 		RepositoryMapping mapping = null;
-		for (IProject project : projects) {
+		for (IProject project : getSelectedProjects()) {
 			RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
 			if (mapping == null) 
 				mapping = repositoryMapping;
-			else if (mapping.getRepository() != repositoryMapping.getRepository()) {
-				MessageDialog.openError(getShell(), "Multiple Repositories Selection", "Cannot perform reset on multiple repositories simultaneously.\n\nPlease select items from only one repository.");
+			if (repositoryMapping == null)
+				return null;
+			if (repositoryMapping != null && mapping.getRepository() != repositoryMapping.getRepository()) {
+				if (warn)
+					MessageDialog.openError(getShell(), "Multiple Repositories Selection", "Cannot perform reset on multiple repositories simultaneously.\n\nPlease select items from only one repository.");
 				return null;
 			}
 		}
 		if (mapping == null) {
-			MessageDialog.openError(getShell(), "Cannot Find Repository", "Could not find a repository associated with this project");
+			if (warn)
+				MessageDialog.openError(getShell(), "Cannot Find Repository", "Could not find a repository associated with this project");
 			return null;
 		}
 		
@@ -59,4 +57,21 @@ public abstract class RepositoryAction extends TeamAction {
 		return repository;
 	}
 
+	/**
+	 * Figure out which repositories to use. All selected
+	 * resources must map to a Git repository.
+	 *
+	 * @return repository for current project, or null
+	 */
+	protected Repository[] getRepositories() {
+		IProject[] selectedProjects = getSelectedProjects();
+		Set<Repository> repos = new HashSet<Repository>(selectedProjects.length);
+		for (IProject project : selectedProjects) {
+			RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
+			if (repositoryMapping == null)
+				return new Repository[0];
+			repos.add(repositoryMapping.getRepository());
+		}
+		return repos.toArray(new Repository[repos.size()]);
+	}
 }

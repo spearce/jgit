@@ -41,10 +41,10 @@ import org.spearce.egit.ui.internal.dialogs.CommitDialog;
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.IndexDiff;
+import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.PersonIdent;
-import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.RefLogWriter;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
@@ -75,24 +75,15 @@ public class CommitAction extends RepositoryAction {
 			return;
 		}
 
-		Repository repo = null;
-		for (IProject proj : getSelectedProjects()) {
-			Repository repository = RepositoryMapping.getMapping(proj).getRepository();
-			if (repo == null)
-				repo = repository;
-			else if (repo != repository) {
-				amendAllowed = false;
-				break;
-			}
-		}
-
-		// repo cannot really be null because this action cannot be invoked on a
-		// non-git managed project.
-		if (repo != null && !repo.getRepositoryState().canCommit()) {
-			MessageDialog.openError(getTargetPart().getSite().getShell(),
+		Repository[] repos = getRepositories();
+		amendAllowed = repos.length == 1;
+		for (Repository repo : repos) {
+			if (!repo.getRepositoryState().canCommit()) {
+				MessageDialog.openError(getTargetPart().getSite().getShell(),
 					"Cannot commit now", "Respository state:"
 							+ repo.getRepositoryState().getDescription());
-			return;
+				return;
+			}
 		}
 		
 		if (files.isEmpty()) {
@@ -135,7 +126,6 @@ public class CommitAction extends RepositoryAction {
 		files = new ArrayList<IFile>();
 		notIndexed = new ArrayList<IFile>();
 		indexChanges = new ArrayList<IFile>();
-		amendAllowed = true;
 		amending = false;
 		previousCommit = null;
 	}
