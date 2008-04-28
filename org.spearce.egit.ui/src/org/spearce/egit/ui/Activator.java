@@ -20,10 +20,13 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.jsch.core.IJSchService;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.themes.ITheme;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.spearce.jgit.transport.SshSessionFactory;
 
 /**
  * This is a plugin singleton mostly controlling logging.
@@ -139,6 +142,17 @@ public class Activator extends AbstractUIPlugin {
 	public void start(final BundleContext context) throws Exception {
 		super.start(context);
 		traceVerbose = isOptionSet("/trace/verbose");
+		setupSSH(context);
+	}
+
+	private void setupSSH(final BundleContext context) {
+		final ServiceReference ssh;
+
+		ssh = context.getServiceReference(IJSchService.class.getName());
+		if (ssh != null) {
+			SshSessionFactory.setInstance(new EclipseSshSessionFactory(
+					(IJSchService) context.getService(ssh)));
+		}
 	}
 
 	public void stop(final BundleContext context) throws Exception {
