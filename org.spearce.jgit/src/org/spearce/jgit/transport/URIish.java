@@ -127,6 +127,50 @@ public class URIish {
 		return port;
 	}
 
+	public int hashCode() {
+		int hc = 0;
+		if (getScheme() != null)
+			hc = hc * 31 + getScheme().hashCode();
+		if (getUser() != null)
+			hc = hc * 31 + getUser().hashCode();
+		if (getPass() != null)
+			hc = hc * 31 + getPass().hashCode();
+		if (getHost() != null)
+			hc = hc * 31 + getHost().hashCode();
+		if (getPort() > 0)
+			hc = hc * 31 + getPort();
+		if (getPath() != null)
+			hc = hc * 31 + getPath().hashCode();
+		return hc;
+	}
+
+	public boolean equals(final Object obj) {
+		if (!(obj instanceof URIish))
+			return false;
+		final URIish b = (URIish) obj;
+		if (!eq(getScheme(), b.getScheme()))
+			return false;
+		if (!eq(getUser(), b.getUser()))
+			return false;
+		if (!eq(getPass(), b.getPass()))
+			return false;
+		if (!eq(getHost(), b.getHost()))
+			return false;
+		if (getPort() != b.getPort())
+			return false;
+		if (!eq(getPath(), b.getPath()))
+			return false;
+		return true;
+	}
+
+	private static boolean eq(final String a, final String b) {
+		if (a == b)
+			return true;
+		if (a == null || b == null)
+			return false;
+		return a.equals(b);
+	}
+
 	public String toString() {
 		final StringBuilder r = new StringBuilder();
 		if (getScheme() != null) {
