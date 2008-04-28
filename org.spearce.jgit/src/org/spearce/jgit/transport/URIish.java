@@ -47,7 +47,7 @@ public class URIish {
 
 	/**
 	 * Parse and construct an {@link URIish} from a string
-	 *
+	 * 
 	 * @param s
 	 * @throws URISyntaxException
 	 */
@@ -78,6 +78,20 @@ public class URIish {
 		}
 	}
 
+	/** Create an empty, non-configured URI. */
+	public URIish() {
+		// Configure nothing.
+	}
+
+	private URIish(final URIish u) {
+		this.scheme = u.scheme;
+		this.path = u.path;
+		this.user = u.user;
+		this.pass = u.pass;
+		this.port = u.port;
+		this.host = u.host;
+	}
+
 	/**
 	 * @return true if this URI references a repository on another system.
 	 */
@@ -93,10 +107,36 @@ public class URIish {
 	}
 
 	/**
+	 * Return a new URI matching this one, but with a different host.
+	 * 
+	 * @param n
+	 *            the new value for host.
+	 * @return a new URI with the updated value.
+	 */
+	public URIish setHost(final String n) {
+		final URIish r = new URIish(this);
+		r.host = n;
+		return r;
+	}
+
+	/**
 	 * @return protocol name or null for local references
 	 */
 	public String getScheme() {
 		return scheme;
+	}
+
+	/**
+	 * Return a new URI matching this one, but with a different scheme.
+	 * 
+	 * @param n
+	 *            the new value for scheme.
+	 * @return a new URI with the updated value.
+	 */
+	public URIish setScheme(final String n) {
+		final URIish r = new URIish(this);
+		r.scheme = n;
+		return r;
 	}
 
 	/**
@@ -107,10 +147,36 @@ public class URIish {
 	}
 
 	/**
+	 * Return a new URI matching this one, but with a different path.
+	 * 
+	 * @param n
+	 *            the new value for path.
+	 * @return a new URI with the updated value.
+	 */
+	public URIish setPath(final String n) {
+		final URIish r = new URIish(this);
+		r.path = n;
+		return r;
+	}
+
+	/**
 	 * @return user name requested for transfer or null
 	 */
 	public String getUser() {
 		return user;
+	}
+
+	/**
+	 * Return a new URI matching this one, but with a different user.
+	 * 
+	 * @param n
+	 *            the new value for user.
+	 * @return a new URI with the updated value.
+	 */
+	public URIish setUser(final String n) {
+		final URIish r = new URIish(this);
+		r.user = n;
+		return r;
 	}
 
 	/**
@@ -121,10 +187,36 @@ public class URIish {
 	}
 
 	/**
+	 * Return a new URI matching this one, but with a different password.
+	 * 
+	 * @param n
+	 *            the new value for password.
+	 * @return a new URI with the updated value.
+	 */
+	public URIish setPass(final String n) {
+		final URIish r = new URIish(this);
+		r.pass = n;
+		return r;
+	}
+
+	/**
 	 * @return port number requested for transfer or -1 if not explicit
 	 */
 	public int getPort() {
 		return port;
+	}
+
+	/**
+	 * Return a new URI matching this one, but with a different port.
+	 * 
+	 * @param n
+	 *            the new value for port.
+	 * @return a new URI with the updated value.
+	 */
+	public URIish setPort(final int n) {
+		final URIish r = new URIish(this);
+		r.port = n > 0 ? n : -1;
+		return r;
 	}
 
 	public int hashCode() {
