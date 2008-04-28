@@ -17,10 +17,15 @@
 package org.spearce.jgit.transport;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.errors.TransportException;
+import org.spearce.jgit.lib.NullProgressMonitor;
+import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Repository;
 
 /**
@@ -76,6 +81,7 @@ public abstract class Transport {
 			throws NotSupportedException {
 		final Transport tn = open(local, cfg.getURIs().get(0));
 		tn.setOptionUploadPack(cfg.getUploadPack());
+		tn.fetch = cfg.getFetchRefSpecs();
 		return tn;
 	}
 
@@ -115,6 +121,9 @@ public abstract class Transport {
 
 	/** Name of the upload pack program, if it must be executed. */
 	private String optionUploadPack = RemoteConfig.DEFAULT_UPLOAD_PACK;
+
+	/** Specifications to apply during fetch. */
+	private List<RefSpec> fetch = Collections.<RefSpec> emptyList();
 
 	/**
 	 * Create a new transport instance.
@@ -163,6 +172,65 @@ public abstract class Transport {
 			optionUploadPack = where;
 		else
 			optionUploadPack = RemoteConfig.DEFAULT_UPLOAD_PACK;
+	}
+
+	/**
+	 * Fetch objects and refs from the remote repository to the local one.
+	 * <p>
+	 * This is a utility function providing standard fetch behavior. Local
+	 * tracking refs associated with the remote repository are automatically
+	 * updated if this transport was created from a {@link RemoteConfig} with
+	 * fetch RefSpecs defined.
+	 * 
+	 * @param monitor
+	 *            progress monitor to inform the user about our processing
+	 *            activity. Must not be null. Use {@link NullProgressMonitor} if
+	 *            progress updates are not interesting or necessary.
+	 * @param toFetch
+	 *            specification of refs to fetch locally. May be null or the
+	 *            empty collection to use the specifications from the
+	 *            RemoteConfig.
+	 * @return information describing the tracking refs updated.
+	 * @throws NotSupportedException
+	 *             this transport implementation does not support fetching
+	 *             objects.
+	 * @throws TransportException
+	 *             the remote connection could not be established or object
+	 *             copying (if necessary) failed.
+	 */
+	public FetchResult fetch(final ProgressMonitor monitor,
+			Collection<RefSpec> toFetch) throws NotSupportedException,
+			TransportException {
+		if (toFetch == null || toFetch.isEmpty()) {
+			// If the caller did not ask for anything use the defaults.
+			//
+			if (fetch.isEmpty())
+				throw new TransportException("Nothing to fetch.");
+			toFetch = fetch;
+		} else if (!fetch.isEmpty()) {
+			// If the caller asked for something specific without giving
+			// us the local tracking branch see if we can update any of
+			// the local tracking branches without incurring additional
+			// object transfer overheads.
+			//
+			final Collection<RefSpec> tmp = new ArrayList<RefSpec>(toFetch);
+			for (final RefSpec requested : toFetch) {
+				final String reqSrc = requested.getSource();
+				for (final RefSpec configured : fetch) {
+					final String cfgSrc = configured.getSource();
+					final String cfgDst = configured.getDestination();
+					if (cfgSrc.equals(reqSrc) && cfgDst != null) {
+						tmp.add(configured);
+						break;
+					}
+				}
+			}
+			toFetch = tmp;
+		}
+
+		final FetchResult result = new FetchResult();
+		new FetchProcess(this, toFetch).execute(monitor, result);
+		return result;
 	}
 
 	/**

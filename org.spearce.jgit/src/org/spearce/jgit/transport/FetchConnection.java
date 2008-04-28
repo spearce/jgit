@@ -47,6 +47,10 @@ public abstract class FetchConnection {
 	/** Have we started {@link #fetch(ProgressMonitor, Collection)} yet? */
 	private boolean startedFetch;
 
+	Map<String, Ref> getCachedRefs() {
+		return cachedRefs;
+	}
+
 	/**
 	 * Denote the list of refs available on the remote repository.
 	 * <p>

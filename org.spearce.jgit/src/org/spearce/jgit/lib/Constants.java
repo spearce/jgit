@@ -170,6 +170,9 @@ public final class Constants {
 	/** Prefix for remotes refs */
 	public static final String REMOTES_PREFIX = "refs/remotes";
 
+	/** Prefix for tag refs */
+	public static final String TAGS_PREFIX = "refs/tags";
+
 	/**
 	 * Create a new digest function for objects.
 	 * 
