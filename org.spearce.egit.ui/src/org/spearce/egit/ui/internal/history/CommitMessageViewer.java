@@ -53,6 +53,8 @@ class CommitMessageViewer extends TextViewer {
 
 	private Cursor sys_normalCursor;
 
+	private boolean fill;
+
 	CommitMessageViewer(final Composite parent) {
 		super(parent, SWT.H_SCROLL | SWT.V_SCROLL | SWT.READ_ONLY);
 		fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -174,8 +176,11 @@ class CommitMessageViewer extends TextViewer {
 			d.append("\n");
 		}
 
-		d.append("\n  ");
-		d.append(commit.getFullMessage().replaceAll("\n", "\n  "));
+		d.append("\n");
+		String msg = commit.getFullMessage();
+		if (fill)
+			msg = msg.replaceAll("([\\w.; \t])\n(\\w)","$1 $2");
+		d.append(msg);
 
 		final StyleRange[] arr = new StyleRange[styles.size()];
 		styles.toArray(arr);
@@ -205,5 +210,15 @@ class CommitMessageViewer extends TextViewer {
 				return false;
 			return super.similarTo(style);
 		}
+	}
+
+	void setWrap(boolean wrap) {
+		format();
+		getTextWidget().setWordWrap(wrap);
+	}
+
+	void setFill(boolean fill) {
+		this.fill = fill;
+		format();
 	}
 }

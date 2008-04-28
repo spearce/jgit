@@ -83,6 +83,8 @@ import org.spearce.jgit.treewalk.filter.TreeFilter;
 public class GitHistoryPage extends HistoryPage {
 	private static final String PREF_COMMENT_WRAP = UIPreferences.RESOURCEHISTORY_SHOW_COMMENT_WRAP;
 
+	private static final String PREF_COMMENT_FILL = UIPreferences.RESOURCEHISTORY_SHOW_COMMENT_FILL;
+
 	private static final String SHOW_COMMENT = UIPreferences.RESOURCEHISTORY_SHOW_REV_COMMENT;
 
 	private static final String SHOW_FILES = UIPreferences.RESOURCEHISTORY_SHOW_REV_DETAIL;
@@ -346,6 +348,10 @@ public class GitHistoryPage extends HistoryPage {
 		menuManager.add(a);
 		popupMgr.add(a);
 
+		a = createCommentFill();
+		menuManager.add(a);
+		popupMgr.add(a);
+
 		menuManager.add(new Separator());
 		popupMgr.add(new Separator());
 
@@ -365,7 +371,18 @@ public class GitHistoryPage extends HistoryPage {
 		final BooleanPrefAction a = new BooleanPrefAction(PREF_COMMENT_WRAP,
 				UIText.ResourceHistory_toggleCommentWrap) {
 			void apply(boolean wrap) {
-				commentViewer.getTextWidget().setWordWrap(wrap);
+				commentViewer.setWrap(wrap);
+			}
+		};
+		a.apply(a.isChecked());
+		return a;
+	}
+
+	private IAction createCommentFill() {
+		final BooleanPrefAction a = new BooleanPrefAction(PREF_COMMENT_FILL,
+				UIText.ResourceHistory_toggleCommentFill) {
+			void apply(boolean fill) {
+				commentViewer.setFill(fill);
 			}
 		};
 		a.apply(a.isChecked());

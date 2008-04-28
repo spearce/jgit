@@ -56,6 +56,8 @@ public class UIText extends NLS {
 	/** */
 	public static String ResourceHistory_toggleCommentWrap;
 	/** */
+	public static String ResourceHistory_toggleCommentFill;
+	/** */
 	public static String ResourceHistory_toggleRevDetail;
 	/** */
 	public static String ResourceHistory_toggleRevComment;
