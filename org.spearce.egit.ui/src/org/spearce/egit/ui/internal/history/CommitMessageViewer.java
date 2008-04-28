@@ -19,6 +19,8 @@ package org.spearce.egit.ui.internal.history;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.ListenerList;
 import org.eclipse.jface.text.Document;
@@ -180,8 +182,14 @@ class CommitMessageViewer extends TextViewer {
 		String msg = commit.getFullMessage();
 		if (fill)
 			msg = msg.replaceAll("([\\w.; \t])\n(\\w)","$1 $2");
+		int h0 = d.length();
 		d.append(msg);
 
+		Pattern p = Pattern.compile("\n([A-Z](?:[A-Za-z]+-)+by: [^\n]+)");
+		Matcher matcher = p.matcher(msg);
+		while (matcher.find()) {
+			styles.add(new StyleRange(h0 + matcher.start(), matcher.end()-matcher.start(), null,  null, SWT.ITALIC));
+		}
 		final StyleRange[] arr = new StyleRange[styles.size()];
 		styles.toArray(arr);
 		setDocument(new Document(d.toString()));
