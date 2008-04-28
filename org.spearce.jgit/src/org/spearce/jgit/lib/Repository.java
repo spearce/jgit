@@ -58,8 +58,9 @@ import org.spearce.jgit.util.FS;
  *
  */
 public class Repository {
-	private static final String[] refSearchPaths = { "", "refs/", "refs/tags/",
-		Constants.HEADS_PREFIX + "/", "refs/" + Constants.REMOTES_PREFIX + "/" };
+	private static final String[] refSearchPaths = { "", "refs/",
+			Constants.TAGS_PREFIX + "/", Constants.HEADS_PREFIX + "/",
+			Constants.REMOTES_PREFIX + "/" };
 
 	private final File gitDir;
 
@@ -171,7 +172,8 @@ public class Repository {
 
 		new File(gitDir, "branches").mkdir();
 		new File(gitDir, "remotes").mkdir();
-		writeSymref("HEAD", "refs/heads/master");
+		final String master = Constants.HEADS_PREFIX + "/" + Constants.MASTER;
+		writeSymref(Constants.HEAD, master);
 
 		getConfig().create();
 		getConfig().save();
@@ -876,7 +878,7 @@ public class Repository {
 	 */
 	public String getBranch() throws IOException {
 		try {
-			final File ptr = new File(getDirectory(),"HEAD");
+			final File ptr = new File(getDirectory(), Constants.HEAD);
 			final BufferedReader br = new BufferedReader(new FileReader(ptr));
 			String ref;
 			try {
