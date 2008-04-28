@@ -27,6 +27,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -308,36 +309,135 @@ public class RepositoryConfig {
 	 * @param value
 	 *            parameter value, e.g. "true"
 	 */
-	public void putString(final String section, final String subsection,
+	public void setString(final String section, final String subsection,
 			final String name, final String value) {
-		Entry pe = null;
-		for (int i = 0; i < entries.size(); ++i) {
-			pe = entries.get(i);
-			if (pe.base.equals(section)
-					&& (pe.extendedBase == null && subsection == null || pe.extendedBase != null
-							&& pe.extendedBase.equals(subsection)))
-				break;
-			pe = null;
+		setStringList(section, subsection, name, Collections
+				.singletonList(value));
+	}
+
+	/**
+	 * Remove a configuration value.
+	 * 
+	 * @param section
+	 *            section name, e.g "branch"
+	 * @param subsection
+	 *            optional subsection value, e.g. a branch name
+	 * @param name
+	 *            parameter name, e.g. "filemode"
+	 */
+	public void unsetString(final String section, final String subsection,
+			final String name) {
+		setStringList(section, subsection, name, Collections
+				.<String> emptyList());
+	}
+
+	/**
+	 * Set a configuration value.
+	 * 
+	 * <pre>
+	 * [section &quot;subsection&quot;]
+	 *         name = value
+	 * </pre>
+	 * 
+	 * @param section
+	 *            section name, e.g "branch"
+	 * @param subsection
+	 *            optional subsection value, e.g. a branch name
+	 * @param name
+	 *            parameter name, e.g. "filemode"
+	 * @param values
+	 *            list of zero or more values for this key.
+	 */
+	public void setStringList(final String section, final String subsection,
+			final String name, final List<String> values) {
+		// Update our parsed cache of values for future reference.
+		//
+		String key = section.toLowerCase();
+		if (subsection != null)
+			key += "." + subsection.toLowerCase();
+		key += "." + name.toLowerCase();
+		if (values.size() == 0)
+			byName.remove(key);
+		else if (values.size() == 1)
+			byName.put(key, values.get(0));
+		else
+			byName.put(key, new ArrayList<String>(values));
+
+		int entryIndex = 0;
+		int valueIndex = 0;
+		int insertPosition = -1;
+
+		// Reset the first n Entry objects that match this input name.
+		//
+		while (entryIndex < entries.size() && valueIndex < values.size()) {
+			final Entry e = entries.get(entryIndex++);
+			if (e.match(section, subsection, name)) {
+				e.value = values.get(valueIndex++);
+				insertPosition = entryIndex;
+			}
 		}
 
-		// TODO: This doesn't work in general, so we must revise this code
-		if (pe == null) {
-			pe = new Entry();
-			pe.prefix = null;
-			pe.suffix = null;
-			pe.base = section;
-			pe.extendedBase = subsection;
-			add(pe);
+		// Remove any extra Entry objects that we no longer need.
+		//
+		if (valueIndex == values.size() && entryIndex < entries.size()) {
+			while (entryIndex < entries.size()) {
+				final Entry e = entries.get(entryIndex++);
+				if (e.match(section, subsection, name))
+					entries.remove(--entryIndex);
+			}
 		}
 
-		Entry e = new Entry();
-		e.prefix = null;
-		e.suffix = null;
-		e.base = section;
-		e.extendedBase = subsection;
-		e.name = name;
-		e.value = value;
-		add(e);
+		// Insert new Entry objects for additional/new values.
+		//
+		if (valueIndex < values.size() && entryIndex == entries.size()){
+			if (insertPosition < 0) {
+				// We didn't find a matching key above, but maybe there
+				// is already a section available that matches.  Insert
+				// after the last key of that section.
+				//
+				insertPosition = findSectionEnd(section, subsection);
+			}
+			if (insertPosition < 0) {
+				// We didn't find any matching section header for this key,
+				// so we must create a new section header at the end.
+				//
+				final Entry e = new Entry();
+				e.prefix = null;
+				e.suffix = null;
+				e.base = section;
+				e.extendedBase = subsection;
+				entries.add(e);
+				insertPosition = entries.size();
+			}
+			while (valueIndex < values.size()) {
+				final Entry e = new Entry();
+				e.prefix = null;
+				e.suffix = null;
+				e.base = section;
+				e.extendedBase = subsection;
+				e.name = name;
+				e.value = values.get(valueIndex++);
+				entries.add(insertPosition++, e);
+			}
+		}
+	}
+
+	private int findSectionEnd(final String section, final String subsection) {
+		for (int i = 0; i < entries.size(); i++) {
+			Entry e = entries.get(i);
+			if (e.match(section, subsection, null)) {
+				i++;
+				while (i < entries.size()) {
+					e = entries.get(i);
+					if (e.match(section, subsection, e.name))
+						i++;
+					else
+						break;
+				}
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	/**
@@ -770,5 +870,19 @@ public class RepositoryConfig {
 		String value;
 
 		String suffix;
+
+		boolean match(final String aBase, final String aExtendedBase,
+				final String aName) {
+			return eq(base, aBase) && eq(extendedBase, aExtendedBase)
+					&& eq(name, aName);
+		}
+
+		private static boolean eq(final String a, final String b) {
+			if (a == b)
+				return true;
+			if (a == null || b == null)
+				return false;
+			return a.equals(b);
+		}
 	}
 }

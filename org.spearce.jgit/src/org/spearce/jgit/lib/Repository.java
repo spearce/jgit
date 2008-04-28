@@ -1126,13 +1126,13 @@ public class Repository {
 	 *            local branch name, e.g. "master"
 	 */
 	public void configureDefaultBranch(final String remote, final String url, final String branch) {
-		config.putString(RepositoryConfig.REMOTE_SECTION, remote, "url",
+		config.setString(RepositoryConfig.REMOTE_SECTION, remote, "url",
 				url);
-		config.putString(RepositoryConfig.REMOTE_SECTION, remote, "fetch",
+		config.setString(RepositoryConfig.REMOTE_SECTION, remote, "fetch",
 				"+" + Constants.HEADS_PREFIX + "/*:" + Constants.REMOTES_PREFIX + "/" + remote + "/*");
-		config.putString(RepositoryConfig.BRANCH_SECTION, branch, "remote",
+		config.setString(RepositoryConfig.BRANCH_SECTION, branch, "remote",
 				remote);
-		config.putString(RepositoryConfig.BRANCH_SECTION, Constants.MASTER, "merge",
+		config.setString(RepositoryConfig.BRANCH_SECTION, Constants.MASTER, "merge",
 				Constants.HEADS_PREFIX + "/" + branch);
 	}
 
