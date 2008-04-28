@@ -70,10 +70,6 @@ public class RepositoryConfig {
 
 	private Map<String, Object> byName;
 
-	private Map<String, Entry> lastInEntry;
-
-	private Map<String, Entry> lastInGroup;
-	
 	private static final String MAGIC_EMPTY_VALUE = "%%magic%%empty%%";
 
 	RepositoryConfig(final Repository repo) {
@@ -482,8 +478,6 @@ public class RepositoryConfig {
 	private void clear() {
 		entries = new ArrayList<Entry>();
 		byName = new HashMap<String, Object>();
-		lastInEntry = new HashMap<String, Entry>();
-		lastInGroup = new HashMap<String, Entry>();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -511,9 +505,7 @@ public class RepositoryConfig {
 				} else if (o instanceof List) {
 					((List<Entry>) o).add(e);
 				}
-				lastInEntry.put(key, e);
 			}
-			lastInGroup.put(group, e);
 		}
 	}
 
