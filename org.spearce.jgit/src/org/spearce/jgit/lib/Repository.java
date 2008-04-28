@@ -1152,56 +1152,9 @@ public class Repository {
 	}
 
 	/**
-	 * Setup repository configuration for a new remote
-	 * 
-	 * @param remote
-	 *            remote name, e.g. "origin"
-	 * @param url
-	 *            fetch url, e.g. "git://repo.or.cz/egit.git"
-	 * @param branch
-	 *            local branch name, e.g. "master"
-	 */
-	public void configureDefaultBranch(final String remote, final String url, final String branch) {
-		config.setString(RepositoryConfig.REMOTE_SECTION, remote, "url",
-				url);
-		config.setString(RepositoryConfig.REMOTE_SECTION, remote, "fetch",
-				"+" + Constants.HEADS_PREFIX + "/*:" + Constants.REMOTES_PREFIX + "/" + remote + "/*");
-		config.setString(RepositoryConfig.BRANCH_SECTION, branch, "remote",
-				remote);
-		config.setString(RepositoryConfig.BRANCH_SECTION, Constants.MASTER, "merge",
-				Constants.HEADS_PREFIX + "/" + branch);
-	}
-
-	/**
 	 * @return the workdir file, i.e. where the files are checked out
 	 */
 	public File getWorkDir() {
 		return getDirectory().getParentFile();
 	}
-
-	/**
-	 * Setup HEAD and "master" refs for a new repository.
-	 *
-	 * @param remoteBranch
-	 *            The remote branch to start with
-	 * @param branch
-	 *            The local branch to configure, initially starting at
-	 *            remoteBranch
-	 * @return the commit references by the new HEAD
-	 * @throws IOException
-	 */
-	public Commit setupHEADRef(final String remoteBranch, final String branch) throws IOException {
-		Commit mapCommit = mapCommit(remoteBranch);
-		String refName = Constants.HEADS_PREFIX + "/" + branch;
-		LockFile masterRef = lockRef(refName);
-		try {
-			masterRef.write(mapCommit.getCommitId());
-			masterRef.commit();
-		} finally {
-			masterRef.unlock();
-		}
-		writeSymref(Constants.HEAD, refName);
-		return mapCommit;
-	}
-
 }

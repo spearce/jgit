@@ -83,7 +83,7 @@ public class FetchResult {
 	 *            name of the ref to obtain.
 	 * @return the requested ref; null if the remote did not advertise this ref.
 	 */
-	public final Ref getRef(final String name) {
+	public final Ref getAdvertisedRef(final String name) {
 		return advertisedRefs.get(name);
 	}
 

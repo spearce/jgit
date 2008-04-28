@@ -7,12 +7,13 @@
 
    <extension point="org.eclipse.ui.importWizards">
       <category name="%Git_clone_category"
-	    id="org.spearce.egit.ui.internal.wizards.gitclonecategory"/>
+	    id="org.spearce.egit.ui.internal.clone.gitclonecategory"/>
       <wizard name="%Git_clone_wizard"
 	    icon="icons/etool16/import_wiz.gif"
-	    class="org.spearce.egit.ui.internal.wizards.GitCloneWizard"
-	    id="org.spearce.egit.ui.internal.wizards.GitCloneWizard"
-	    category="org.spearce.egit.ui.internal.wizards.gitclonecategory">
+	    class="org.spearce.egit.ui.internal.clone.GitCloneWizard"
+	    id="org.spearce.egit.ui.internal.clone.GitCloneWizard"
+	    category="org.spearce.egit.ui.internal.clone.gitclonecategory">
+	    <description>%Git_clone_description</description>
       </wizard>
    </extension>
 
