@@ -26,7 +26,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
-import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
@@ -48,13 +47,13 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IImportWizard;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.internal.wizards.datatransfer.WizardProjectsImportPage;
+import org.spearce.egit.core.EclipseGitProgressTransformer;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.internal.factories.GitJSchProtocolFetchClient;
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.GitIndex;
-import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.WorkDirCheckout;
 import org.spearce.jgit.transport.FetchClient;
@@ -575,50 +574,6 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 				}
 			}
 
-		}
-	}
-
-	class EclipseGitProgressTransformer implements ProgressMonitor {
-		private final IProgressMonitor root;
-
-		private IProgressMonitor task;
-
-		EclipseGitProgressTransformer(final IProgressMonitor eclipseMonitor) {
-			root = eclipseMonitor;
-		}
-
-		public void start(final int totalTasks) {
-			root.beginTask("", totalTasks * 1000);
-		}
-
-		public void beginTask(final String name, final int totalWork) {
-			endTask();
-			task = new SubProgressMonitor(root, 1000);
-			if (totalWork == UNKNOWN)
-				task.beginTask(name, IProgressMonitor.UNKNOWN);
-			else
-				task.beginTask(name, totalWork);
-		}
-
-		public void update(final int work) {
-			if (task != null)
-				task.worked(work);
-		}
-
-		public void endTask() {
-			if (task != null) {
-				try {
-					task.done();
-				} finally {
-					task = null;
-				}
-			}
-		}
-
-		public boolean isCancelled() {
-			if (task != null)
-				return task.isCanceled();
-			return root.isCanceled();
 		}
 	}
 }
