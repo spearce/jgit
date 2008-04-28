@@ -18,5 +18,4 @@ Export-Package: org.spearce.jgit.errors;uses:="org.spearce.jgit.lib",
 Eclipse-LazyStart: true
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Bundle-ClassPath: .
-Require-Bundle: com.jcraft.jsch;visibility:=reexport,
- org.eclipse.jsch.core
+Require-Bundle: com.jcraft.jsch;visibility:=reexport
