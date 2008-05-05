@@ -691,6 +691,35 @@ public class Repository {
 	}
 
 	/**
+	 * Add a single existing pack to the list of available pack files.
+	 * 
+	 * @param pack
+	 *            path of the pack file to open.
+	 * @param idx
+	 *            path of the corresponding index file.
+	 * @throws IOException
+	 *             index file could not be opened, read, or is not recognized as
+	 *             a Git pack file index.
+	 */
+	public void openPack(final File pack, final File idx) throws IOException {
+		final String p = pack.getName();
+		final String i = idx.getName();
+		if (p.length() != 50 || !p.startsWith("pack-") || !p.endsWith(".pack"))
+		    throw new IllegalArgumentException("Not a valid pack " + pack);
+		if (i.length() != 49 || !i.startsWith("pack-") || !i.endsWith(".idx"))
+		    throw new IllegalArgumentException("Not a valid pack " + idx);
+		if (!p.substring(0,45).equals(i.substring(0,45)))
+			throw new IllegalArgumentException("Pack " + pack
+					+ "does not match index " + idx);
+
+		final PackFile[] cur = packs;
+		final PackFile[] arr = new PackFile[cur.length + 1];
+		System.arraycopy(cur, 0, arr, 1, cur.length);
+		arr[0] = new PackFile(this, idx, pack);
+		packs = arr;
+	}
+
+	/**
 	 * Scan the object dirs, including alternates for packs
 	 * to use.
 	 */

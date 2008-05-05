@@ -75,7 +75,7 @@ public class IndexPack {
 	 * <p>
 	 * The received pack data and generated index will be saved to temporary
 	 * files within the repository's <code>objects</code> directory. To use
-	 * the data contained within them call {@link #renamePack()} once the
+	 * the data contained within them call {@link #renameAndOpenPack()} once the
 	 * indexing is complete.
 	 * 
 	 * @param db
@@ -757,11 +757,18 @@ public class IndexPack {
 	}
 
 	/**
-	 * Rename the temporary pack to it's final name and location.
+	 * Rename the pack to it's final name and location and open it.
+	 * <p>
+	 * If the call completes successfully the repository this IndexPack instance
+	 * was created with will have the objects in the pack available for reading
+	 * and use, without needing to scan for packs.
 	 * 
 	 * @throws IOException
+	 *             The pack could not be inserted into the repository's objects
+	 *             directory. The pack no longer exists on disk, as it was
+	 *             removed prior to throwing the exception to the caller.
 	 */
-	public void renamePack() throws IOException {
+	public void renameAndOpenPack() throws IOException {
 		final MessageDigest d = Constants.newMessageDigest();
 		final byte[] oeBytes = new byte[Constants.OBJECT_ID_LENGTH];
 		for (int i = 0; i < entryCount; i++) {
@@ -792,6 +799,14 @@ public class IndexPack {
 			if (!finalPack.delete())
 				finalPack.deleteOnExit();
 			throw new IOException("Cannot move index to " + finalIdx);
+		}
+
+		try {
+			repo.openPack(finalPack, finalIdx);
+		} catch (IOException err) {
+			finalPack.delete();
+			finalIdx.delete();
+			throw err;
 		}
 	}
 

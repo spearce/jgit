@@ -31,7 +31,7 @@ public class FullFetchClient extends FetchClient {
 					try {
 						pack = new IndexPack(repository, pi, new File(new File(repository.getObjectsDirectory(), "pack"), "packtmp_pack"+System.currentTimeMillis()));
 						pack.index(monitor);
-						pack.renamePack();
+						pack.renameAndOpenPack();
 					} catch (Throwable e) {
 						e.printStackTrace();
 						fetchThread.interrupt();
@@ -44,7 +44,6 @@ public class FullFetchClient extends FetchClient {
 			super.run(monitor);
 			os.close();
 			indexThread.join();
-			repository.scanForPacks();
 			updateRemoteRefs(remote);
 		} catch (InterruptedException e) {
 			if (threadError[0] != null)
