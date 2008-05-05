@@ -19,6 +19,7 @@ package org.spearce.jgit.transport;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -82,6 +83,9 @@ abstract class PackFetchConnection extends FetchConnection {
 	/** The repository this transport fetches into, or pushes out of. */
 	protected final Repository local;
 
+	/** Remote repository location. */
+	protected final URIish uri;
+
 	/** Capability tokens advertised by the remote side. */
 	protected final Set<String> remoteCapablities = new HashSet<String>();
 
@@ -117,6 +121,7 @@ abstract class PackFetchConnection extends FetchConnection {
 
 	PackFetchConnection(final PackTransport packTransport) {
 		local = packTransport.local;
+		uri = packTransport.uri;
 
 		walk = new RevWalk(local);
 		reachableCommits = new RevCommitList<RevCommit>();
@@ -157,7 +162,15 @@ abstract class PackFetchConnection extends FetchConnection {
 	private void readAdvertisedRefsImpl() throws IOException {
 		final LinkedHashMap<String, Ref> avail = new LinkedHashMap<String, Ref>();
 		for (;;) {
-			String line = pckIn.readString();
+			String line;
+
+			try {
+				line = pckIn.readString();
+			} catch (EOFException eof) {
+				if (avail.isEmpty())
+					throw new TransportException(uri + " not found.");
+				throw eof;
+			}
 
 			if (avail.isEmpty()) {
 				// The first line (if any) may contain "hidden"
