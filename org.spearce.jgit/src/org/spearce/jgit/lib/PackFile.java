@@ -84,7 +84,7 @@ public class PackFile {
 	 * @return true if the object is in this pack; false otherwise.
 	 */
 	public boolean hasObject(final AnyObjectId id) {
-		return idx.findOffset(id) != -1;
+		return idx.hasObject(id);
 	}
 
 	/**

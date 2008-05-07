@@ -32,7 +32,7 @@ import org.spearce.jgit.util.NB;
  * by ObjectId.
  * </p>
  */
-abstract class PackIndex {
+public abstract class PackIndex {
 	/**
 	 * Open an existing pack <code>.idx</code> file for reading.
 	 * <p>
@@ -50,7 +50,7 @@ abstract class PackIndex {
 	 *             the file exists but could not be read due to security errors,
 	 *             unrecognized data version, or unexpected data corruption.
 	 */
-	static PackIndex open(final File idxFile) throws IOException {
+	public static PackIndex open(final File idxFile) throws IOException {
 		final FileInputStream fd = new FileInputStream(idxFile);
 		try {
 			final byte[] hdr = new byte[8];
@@ -82,6 +82,17 @@ abstract class PackIndex {
 
 	private static boolean isTOC(final byte[] h) {
 		return h[0] == -1 && h[1] == 't' && h[2] == 'O' && h[3] == 'c';
+	}
+
+	/**
+	 * Determine if an object is contained within the pack file.
+	 * 
+	 * @param id
+	 *            the object to look for. Must not be null.
+	 * @return true if the object is listed in this index; false otherwise.
+	 */
+	public boolean hasObject(final AnyObjectId id) {
+		return findOffset(id) != -1;
 	}
 
 	/**
