@@ -101,6 +101,9 @@ public abstract class Transport {
 		if (TransportGitSsh.canHandle(remote))
 			return new TransportGitSsh(local, remote);
 
+		else if (TransportHttp.canHandle(remote))
+			return new TransportHttp(local, remote);
+
 		else if (TransportGitAnon.canHandle(remote))
 			return new TransportGitAnon(local, remote);
 

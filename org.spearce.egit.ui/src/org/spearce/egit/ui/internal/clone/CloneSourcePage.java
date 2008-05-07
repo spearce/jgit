@@ -49,7 +49,25 @@ import org.spearce.jgit.util.FS;
  * cloned.
  */
 class CloneSourcePage extends WizardPage {
-	private static final String[] DEFAULT_SCHEMES = { "git", "git+ssh", "file" };
+	private static final int S_GIT = 0;
+
+	private static final int S_SSH = 1;
+
+	private static final int S_HTTP = 2;
+
+	private static final int S_HTTPS = 3;
+
+	private static final int S_FILE = 4;
+
+	private static final String[] DEFAULT_SCHEMES;
+	static {
+		DEFAULT_SCHEMES = new String[5];
+		DEFAULT_SCHEMES[S_GIT] = "git";
+		DEFAULT_SCHEMES[S_SSH] = "git+ssh";
+		DEFAULT_SCHEMES[S_HTTP] = "http";
+		DEFAULT_SCHEMES[S_HTTPS] = "https";
+		DEFAULT_SCHEMES[S_FILE] = "file";
+	}
 
 	private final List<URIishChangeListener> uriishChangeListeners;
 
@@ -126,11 +144,18 @@ class CloneSourcePage extends WizardPage {
 						portText.setText("");
 
 					if (isFile(u))
-						scheme.select(2);
+						scheme.select(S_FILE);
 					else if (isSSH(u))
-						scheme.select(1);
-					else
-						scheme.select(0);
+						scheme.select(S_SSH);
+					else {
+						for (int i = 0; i < DEFAULT_SCHEMES.length; i++) {
+							if (DEFAULT_SCHEMES[i].equals(u.getScheme())) {
+								scheme.select(i);
+								break;
+							}
+						}
+					}
+
 					updateAuthGroup();
 					uri = u;
 					for (final URIishChangeListener l : uriishChangeListeners)
@@ -320,7 +345,7 @@ class CloneSourcePage extends WizardPage {
 				return false;
 			}
 
-			if (!isSSH(finalURI)) {
+			if (isGIT(finalURI)) {
 				String badField = null;
 				if (uri.getUser() != null)
 					badField = UIText.CloneSourcePage_promptUser;
@@ -347,6 +372,10 @@ class CloneSourcePage extends WizardPage {
 			setErrorMessage(UIText.CloneSourcePage_internalError);
 			return false;
 		}
+	}
+
+	private static boolean isGIT(final URIish uri) {
+		return "git".equals(uri.getScheme());
 	}
 
 	private static boolean isFile(final URIish uri) {
@@ -403,17 +432,19 @@ class CloneSourcePage extends WizardPage {
 
 	private void updateAuthGroup() {
 		switch (scheme.getSelectionIndex()) {
-		case 0:
+		case S_GIT:
 			hostText.setEnabled(true);
 			portText.setEnabled(true);
 			authGroup.setEnabled(false);
 			break;
-		case 1:
+		case S_SSH:
+		case S_HTTP:
+		case S_HTTPS:
 			hostText.setEnabled(true);
 			portText.setEnabled(true);
 			authGroup.setEnabled(true);
 			break;
-		case 2:
+		case S_FILE:
 			hostText.setEnabled(false);
 			portText.setEnabled(false);
 			authGroup.setEnabled(false);
