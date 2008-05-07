@@ -17,6 +17,7 @@
 package org.spearce.jgit.lib;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -42,6 +43,11 @@ public class UnpackedObjectLoader extends ObjectLoader {
 	 */
 	public UnpackedObjectLoader(final Repository db, final ObjectId id)
 			throws IOException {
+		this(readCompressed(db, id), id);
+	}
+
+	private static byte[] readCompressed(final Repository db, final ObjectId id)
+			throws FileNotFoundException, IOException {
 		final FileInputStream objStream = new FileInputStream(db.toFile(id));
 		final byte[] compressed;
 		try {
@@ -52,6 +58,21 @@ public class UnpackedObjectLoader extends ObjectLoader {
 		} finally {
 			objStream.close();
 		}
+		return compressed;
+	}
+
+	/**
+	 * Construct an ObjectLoader from a loose object's compressed form.
+	 * 
+	 * @param compressed
+	 *            entire content of the loose object file.
+	 * @throws IOException
+	 */
+	public UnpackedObjectLoader(final byte[] compressed) throws IOException {
+		this(compressed, null);
+	}
+
+	private UnpackedObjectLoader(final byte[] compressed, final ObjectId id) throws IOException {
 		setId(id);
 
 		// Try to determine if this is a legacy format loose object or
