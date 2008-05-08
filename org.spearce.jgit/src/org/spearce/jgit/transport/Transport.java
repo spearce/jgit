@@ -104,6 +104,9 @@ public abstract class Transport {
 		else if (TransportHttp.canHandle(remote))
 			return new TransportHttp(local, remote);
 
+		else if (TransportSftp.canHandle(remote))
+			return new TransportSftp(local, remote);
+
 		else if (TransportGitAnon.canHandle(remote))
 			return new TransportGitAnon(local, remote);
 

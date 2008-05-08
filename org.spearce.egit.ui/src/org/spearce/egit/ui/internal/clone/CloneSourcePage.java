@@ -53,19 +53,22 @@ class CloneSourcePage extends WizardPage {
 
 	private static final int S_SSH = 1;
 
-	private static final int S_HTTP = 2;
+	private static final int S_SFTP = 2;
 
-	private static final int S_HTTPS = 3;
+	private static final int S_HTTP = 3;
 
-	private static final int S_FTP = 4;
+	private static final int S_HTTPS = 4;
 
-	private static final int S_FILE = 5;
+	private static final int S_FTP = 5;
+
+	private static final int S_FILE = 6;
 
 	private static final String[] DEFAULT_SCHEMES;
 	static {
-		DEFAULT_SCHEMES = new String[6];
+		DEFAULT_SCHEMES = new String[7];
 		DEFAULT_SCHEMES[S_GIT] = "git";
 		DEFAULT_SCHEMES[S_SSH] = "git+ssh";
+		DEFAULT_SCHEMES[S_SFTP] = "sftp";
 		DEFAULT_SCHEMES[S_HTTP] = "http";
 		DEFAULT_SCHEMES[S_HTTPS] = "https";
 		DEFAULT_SCHEMES[S_FTP] = "ftp";
@@ -441,6 +444,7 @@ class CloneSourcePage extends WizardPage {
 			authGroup.setEnabled(false);
 			break;
 		case S_SSH:
+		case S_SFTP:
 		case S_HTTP:
 		case S_HTTPS:
 		case S_FTP:
