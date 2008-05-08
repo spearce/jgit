@@ -16,11 +16,15 @@
  */
 package org.spearce.jgit.pgm;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.TextProgressMonitor;
 import org.spearce.jgit.transport.FetchResult;
+import org.spearce.jgit.transport.RefSpec;
 import org.spearce.jgit.transport.TrackingRefUpdate;
 import org.spearce.jgit.transport.Transport;
 
@@ -46,7 +50,10 @@ class Fetch extends TextBuiltin {
 			args = new String[] { "origin" };
 
 		final Transport tn = Transport.open(db, args[argi++]);
-		final FetchResult r = tn.fetch(new TextProgressMonitor(), null);
+		final List<RefSpec> toget = new ArrayList<RefSpec>();
+		for (; argi < args.length; argi++)
+			toget.add(new RefSpec(args[argi]));
+		final FetchResult r = tn.fetch(new TextProgressMonitor(), toget);
 		if (r.getTrackingRefUpdates().isEmpty())
 			return;
 
