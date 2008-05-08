@@ -35,7 +35,7 @@ import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
 
 /**
- * Transport over the non-Git aware HTTP protocol.
+ * Transport over the non-Git aware HTTP and FTP protocol.
  * <p>
  * The HTTP transport does not require any specialized Git support on the remote
  * (server side) repository. Object files are retrieved directly through
@@ -49,7 +49,7 @@ class TransportHttp extends WalkTransport {
 		if (!uri.isRemote())
 			return false;
 		final String s = uri.getScheme();
-		return "http".equals(s) || "https".equals(s);
+		return "http".equals(s) || "https".equals(s) || "ftp".equals(s);
 	}
 
 	private final URL baseUrl;
