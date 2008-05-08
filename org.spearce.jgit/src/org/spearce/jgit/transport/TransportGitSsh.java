@@ -66,14 +66,42 @@ class TransportGitSsh extends PackTransport {
 		return new SshFetchConnection();
 	}
 
-	static void sq(final StringBuilder cmd, final String val) {
-		for (int i = 0; i < val.length(); i++) {
+	private static void sq(final StringBuilder cmd, final String val) {
+		int i = 0;
+
+		if (val.length() == 0)
+			return;
+		if (val.matches("^~[A-Za-z0-9_-]+$")) {
+			// If the string is just "~user" we can assume they
+			// mean "~user/" and evaluate it within the shell.
+			//
+			cmd.append(val);
+			cmd.append('/');
+			return;
+		}
+
+		if (val.matches("^~[A-Za-z0-9_-]*/.*$")) {
+			// If the string is of "~/path" or "~user/path"
+			// we must not escape ~/ or ~user/ from the shell
+			// as we need that portion to be evaluated.
+			//
+			i = val.indexOf('/') + 1;
+			cmd.append(val.substring(0, i));
+			if (i == val.length())
+				return;
+		}
+
+		cmd.append('\'');
+		for (; i < val.length(); i++) {
 			final char c = val.charAt(i);
 			if (c == '\'')
 				cmd.append("'\\''");
+			else if (c == '!')
+				cmd.append("'\\!'");
 			else
 				cmd.append(c);
 		}
+		cmd.append('\'');
 	}
 
 	Session openSession() throws TransportException {
@@ -102,11 +130,14 @@ class TransportGitSsh extends PackTransport {
 			throws TransportException {
 		try {
 			final ChannelExec channel = (ChannelExec) sock.openChannel("exec");
+			String path = uri.getPath();
+			if (uri.getScheme() != null && uri.getPath().startsWith("/~"))
+				path = (uri.getPath().substring(1));
+
 			final StringBuilder cmd = new StringBuilder();
-			cmd.append(exe);
-			cmd.append(" '");
-			sq(cmd, uri.getPath());
-			cmd.append("'");
+			sq(cmd, exe);
+			cmd.append(' ');
+			sq(cmd, path);
 			channel.setCommand(cmd.toString());
 			channel.setErrStream(System.err);
 			channel.connect();
