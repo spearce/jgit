@@ -16,6 +16,7 @@
  */
 package org.spearce.egit.core;
 
+import java.io.File;
 import java.io.IOException;
 
 import org.eclipse.core.resources.IFile;
@@ -91,22 +92,24 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 		try {
 			final RepositoryMapping map1 = RepositoryMapping.getMapping(source);
 			if (map1 == null) {
-				tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(),
-						0, "Not in a git versioned project", null));
-				return NOT_ALLOWED;
+				// Source is not in a Git controlled project, fine
+				return FINISH_FOR_ME;
 			}
-
 			final GitIndex index1 = map1.getRepository().getIndex();
-
 			final RepositoryMapping map2 = RepositoryMapping.getMapping(destination);
+			final File sourceFile = source.getLocation().toFile();
 			if (map2 == null) {
+				if (index1.getEntry(Repository.stripWorkDir(map1.getWorkDir(), sourceFile)) == null) {
+					// if the source resource is not tracked by Git that is ok too
+					return FINISH_FOR_ME;
+				}
 				tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(),
-						0, "Not in a git versioned project", null));
+						0, "Destination not in a git versioned project", null));
 				return NOT_ALLOWED;
 			}
 			GitIndex index2 = map2.getRepository().getIndex();
 			tree.standardMoveFile(source, destination, updateFlags, monitor);
-			if (index1.remove(map1.getWorkDir(), source.getLocation().toFile())) {
+			if (index1.remove(map1.getWorkDir(), sourceFile)) {
 				index2.add(map2.getWorkDir(), destination.getLocation().toFile());
 				index1.write();
 				if (index2 != index1)
