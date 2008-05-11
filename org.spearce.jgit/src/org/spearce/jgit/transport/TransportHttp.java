@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -135,11 +136,20 @@ class TransportHttp extends WalkTransport {
 
 		@Override
 		FileStream open(final String path) throws IOException {
-			final URL u = new URL(objectsUrl, path);
-			final URLConnection c = u.openConnection();
-			final InputStream in = c.getInputStream();
-			final int len = c.getContentLength();
-			return new FileStream(in, len);
+			final URL base = objectsUrl;
+			try {
+				final URL u = new URL(base, path);
+				final URLConnection c = u.openConnection();
+				final InputStream in = c.getInputStream();
+				final int len = c.getContentLength();
+				return new FileStream(in, len);
+			} catch (ConnectException ce) {
+				// The standard J2SE error message is not very useful.
+				//
+				if ("Connection timed out: connect".equals(ce.getMessage()))
+					throw new ConnectException("Connection timed out: " + base);
+				throw new ConnectException(ce.getMessage() + " " + base);
+			}
 		}
 
 		void readAdvertisedRefs(final WalkFetchConnection c)
