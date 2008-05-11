@@ -16,6 +16,10 @@
  */
 package org.spearce.egit.ui;
 
+import java.net.Authenticator;
+import java.net.ProxySelector;
+
+import org.eclipse.core.net.proxy.IProxyService;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
@@ -143,6 +147,7 @@ public class Activator extends AbstractUIPlugin {
 		super.start(context);
 		traceVerbose = isOptionSet("/trace/verbose");
 		setupSSH(context);
+		setupProxy(context);
 	}
 
 	private void setupSSH(final BundleContext context) {
@@ -152,6 +157,18 @@ public class Activator extends AbstractUIPlugin {
 		if (ssh != null) {
 			SshSessionFactory.setInstance(new EclipseSshSessionFactory(
 					(IJSchService) context.getService(ssh)));
+		}
+	}
+
+	private void setupProxy(final BundleContext context) {
+		final ServiceReference proxy;
+
+		proxy = context.getServiceReference(IProxyService.class.getName());
+		if (proxy != null) {
+			ProxySelector.setDefault(new EclipseProxySelector(
+					(IProxyService) context.getService(proxy)));
+			Authenticator.setDefault(new EclipseAuthenticator(
+					(IProxyService) context.getService(proxy)));
 		}
 	}
 

@@ -22,6 +22,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ConnectException;
 import java.net.MalformedURLException;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -57,6 +60,8 @@ class TransportHttp extends WalkTransport {
 
 	private final URL objectsUrl;
 
+	private final ProxySelector proxySelector;
+
 	TransportHttp(final Repository local, final URIish uri)
 			throws NotSupportedException {
 		super(local, uri);
@@ -69,6 +74,7 @@ class TransportHttp extends WalkTransport {
 		} catch (MalformedURLException e) {
 			throw new NotSupportedException("Invalid URL " + uri, e);
 		}
+		proxySelector = ProxySelector.getDefault();
 	}
 
 	@Override
@@ -79,7 +85,11 @@ class TransportHttp extends WalkTransport {
 		return r;
 	}
 
-	static class HttpObjectDB extends WalkRemoteObjectDatabase {
+	Proxy proxyFor(final URL u) throws URISyntaxException {
+		return proxySelector.select(u.toURI()).get(0);
+	}
+
+	class HttpObjectDB extends WalkRemoteObjectDatabase {
 		private static final String INFO_REFS = "../info/refs";
 
 		private final URL objectsUrl;
@@ -139,7 +149,7 @@ class TransportHttp extends WalkTransport {
 			final URL base = objectsUrl;
 			try {
 				final URL u = new URL(base, path);
-				final URLConnection c = u.openConnection();
+				final URLConnection c = u.openConnection(proxyFor(u));
 				final InputStream in = c.getInputStream();
 				final int len = c.getContentLength();
 				return new FileStream(in, len);
@@ -149,6 +159,11 @@ class TransportHttp extends WalkTransport {
 				if ("Connection timed out: connect".equals(ce.getMessage()))
 					throw new ConnectException("Connection timed out: " + base);
 				throw new ConnectException(ce.getMessage() + " " + base);
+			} catch (URISyntaxException e) {
+				final ConnectException err;
+				err = new ConnectException("Cannot determine proxy for " + base);
+				err.initCause(e);
+				throw err;
 			}
 		}
 
