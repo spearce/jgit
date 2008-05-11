@@ -22,12 +22,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.spearce.jgit.errors.CompoundException;
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.ObjectWritingException;
@@ -125,6 +127,15 @@ class WalkFetchConnection extends FetchConnection {
 	 */
 	private final Set<String> packsConsidered;
 
+	/**
+	 * Errors received while trying to obtain an object.
+	 * <p>
+	 * If the fetch winds up failing because we cannot locate a specific object
+	 * then we need to report all errors related to that object back to the
+	 * caller as there may be cascading failures.
+	 */
+	private final HashMap<ObjectId, List<Throwable>> fetchErrors;
+
 	WalkFetchConnection(final WalkTransport walkTransport,
 			final WalkRemoteObjectDatabase w) {
 		local = walkTransport.local;
@@ -140,6 +151,8 @@ class WalkFetchConnection extends FetchConnection {
 
 		noAlternatesYet = new LinkedList<WalkRemoteObjectDatabase>();
 		noAlternatesYet.add(w);
+
+		fetchErrors = new HashMap<ObjectId, List<Throwable>>();
 
 		revWalk = new RevWalk(local);
 		treeWalk = new TreeWalk(local);
@@ -227,8 +240,14 @@ class WalkFetchConnection extends FetchConnection {
 
 		else if (obj instanceof RevTag)
 			processTag(obj);
+
 		else
 			throw new TransportException("Unknown object type " + obj.getId());
+
+		// If we had any prior errors fetching this object they are
+		// now resolved, as the object was parsed successfully.
+		//
+		fetchErrors.remove(id.copy());
 	}
 
 	private void processBlob(final RevObject obj) throws TransportException {
@@ -339,6 +358,7 @@ class WalkFetchConnection extends FetchConnection {
 				} catch (IOException e) {
 					// Try another repository.
 					//
+					recordError(id, e);
 					continue;
 				} finally {
 					pm.endTask();
@@ -356,9 +376,9 @@ class WalkFetchConnection extends FetchConnection {
 
 			// Try to expand the first alternate we haven't expanded yet.
 			//
-			Collection<WalkRemoteObjectDatabase> alts = expandOneAlternate(pm);
-			if (alts != null && !alts.isEmpty()) {
-				for (final WalkRemoteObjectDatabase alt : alts) {
+			Collection<WalkRemoteObjectDatabase> al = expandOneAlternate(id, pm);
+			if (al != null && !al.isEmpty()) {
+				for (final WalkRemoteObjectDatabase alt : al) {
 					remotes.add(alt);
 					noPacksYet.add(alt);
 					noAlternatesYet.add(alt);
@@ -366,7 +386,19 @@ class WalkFetchConnection extends FetchConnection {
 				continue;
 			}
 
-			throw new TransportException("Cannot get " + id + ".");
+			// We could not obtain the object. There may be reasons why.
+			//
+			List<Throwable> failures = fetchErrors.get(id.copy());
+			final TransportException te;
+
+			te = new TransportException("Cannot get " + id + ".");
+			if (failures != null && !failures.isEmpty()) {
+				if (failures.size() == 1)
+					te.initCause(failures.get(0));
+				else
+					te.initCause(new CompoundException(failures));
+			}
+			throw te;
 		}
 	}
 
@@ -379,26 +411,53 @@ class WalkFetchConnection extends FetchConnection {
 		while (packItr.hasNext() && !monitor.isCancelled()) {
 			final RemotePack pack = packItr.next();
 			try {
-				if (pack.index == null) {
-					pack.openIndex(monitor);
-					if (pack.index == null) {
-						// Hmm? It wouldn't open. Likely we just
-						// were cancelled in the middle of the open
-						// and aborted that operation.
-						//
-						continue;
-					}
-				}
+				pack.openIndex(monitor);
+			} catch (IOException err) {
+				// If the index won't open its either not found or
+				// its a format we don't recognize. In either case
+				// we may still be able to obtain the object from
+				// another source, so don't consider it a failure.
+				//
+				recordError(id, err);
+				packItr.remove();
+				continue;
+			}
 
-				if (!pack.index.hasObject(id)) {
-					// Not in this pack. Try another.
-					continue;
-				}
+			if (monitor.isCancelled()) {
+				// If we were cancelled while the index was opening
+				// the open may have aborted. We can't search an
+				// unopen index.
+				//
+				return false;
+			}
 
+			if (!pack.index.hasObject(id)) {
+				// Not in this pack? Try another.
+				//
+				continue;
+			}
+
+			// It should be in the associated pack. Download that
+			// and attach it to the local repository so we can use
+			// all of the contained objects.
+			//
+			try {
 				pack.downloadPack(monitor);
 			} catch (IOException err) {
+				// If the pack failed to download, index correctly,
+				// or open in the local repository we may still be
+				// able to obtain this object from another pack or
+				// an alternate.
+				//
+				recordError(id, err);
 				continue;
 			} finally {
+				// If the pack was good its in the local repository
+				// and Repository.hasObject(id) will succeed in the
+				// future, so we do not need this data anymore. If
+				// it failed the index and pack are unusable and we
+				// shouldn't consult them again.
+				//
 				pack.tmpIdx.delete();
 				packItr.remove();
 			}
@@ -408,6 +467,8 @@ class WalkFetchConnection extends FetchConnection {
 				// the object, but after indexing we didn't
 				// actually find it in the pack.
 				//
+				recordError(id, new FileNotFoundException("Object " + id
+						+ " not found in " + pack.packName + "."));
 				continue;
 			}
 
@@ -447,6 +508,7 @@ class WalkFetchConnection extends FetchConnection {
 			// Not available in a loose format from this alternate?
 			// Try another strategy to get the object.
 			//
+			recordError(id, e);
 			return false;
 		} catch (IOException e) {
 			throw new TransportException("Cannot download " + id + ".", e);
@@ -519,7 +581,7 @@ class WalkFetchConnection extends FetchConnection {
 	}
 
 	private Collection<WalkRemoteObjectDatabase> expandOneAlternate(
-			final ProgressMonitor pm) {
+			final AnyObjectId id, final ProgressMonitor pm) {
 		while (!noAlternatesYet.isEmpty()) {
 			final WalkRemoteObjectDatabase wrr = noAlternatesYet.removeFirst();
 			try {
@@ -531,6 +593,7 @@ class WalkFetchConnection extends FetchConnection {
 			} catch (IOException e) {
 				// Try another repository.
 				//
+				recordError(id, e);
 			} finally {
 				pm.endTask();
 			}
@@ -627,6 +690,16 @@ class WalkFetchConnection extends FetchConnection {
 						+ treeWalk.getPathString() + " in " + tree + ".");
 			}
 		}
+	}
+
+	private void recordError(final AnyObjectId id, final Throwable what) {
+		final ObjectId objId = id.copy();
+		List<Throwable> errors = fetchErrors.get(objId);
+		if (errors == null) {
+			errors = new ArrayList<Throwable>(2);
+			fetchErrors.put(objId, errors);
+		}
+		errors.add(what);
 	}
 
 	private class RemotePack {
