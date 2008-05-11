@@ -19,6 +19,7 @@ package org.spearce.jgit.pgm;
 import java.io.File;
 import java.util.Arrays;
 
+import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Repository;
 
 /** Command line entry point. */
@@ -40,6 +41,10 @@ public class Main {
 				err.printStackTrace();
 			System.exit(128);
 		} catch (Exception err) {
+			if (!showStackTrace && err.getCause() != null
+					&& err instanceof TransportException)
+				System.err.println("fatal: " + err.getCause().getMessage());
+
 			if (err.getClass().getName().startsWith("org.spearce.jgit.errors.")) {
 				System.err.println("fatal: " + err.getMessage());
 				if (showStackTrace)
