@@ -37,7 +37,7 @@ public abstract class ObjectLoader {
 			md.update((byte) ' ');
 			md.update(Constants.encodeASCII(getSize()));
 			md.update((byte) 0);
-			md.update(getBytes());
+			md.update(getCachedBytes());
 			objectId = ObjectId.fromRaw(md.digest());
 		}
 		return objectId;
