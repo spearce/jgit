@@ -292,7 +292,7 @@ public class ObjectWriter {
 
 		try {
 			byte[] header;
-			int r;
+			int n;
 
 			header = Constants.encodeASCII(type);
 			md.update(header);
@@ -313,11 +313,11 @@ public class ObjectWriter {
 				deflateStream.write((byte) 0);
 
 			while (len > 0
-					&& (r = is.read(buf, 0, (int) Math.min(len, buf.length))) > 0) {
-				md.update(buf, 0, r);
+					&& (n = is.read(buf, 0, (int) Math.min(len, buf.length))) > 0) {
+				md.update(buf, 0, n);
 				if (deflateStream != null)
-					deflateStream.write(buf, 0, r);
-				len -= r;
+					deflateStream.write(buf, 0, n);
+				len -= n;
 			}
 
 			if (len != 0)
