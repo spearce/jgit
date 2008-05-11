@@ -20,6 +20,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import org.eclipse.jsch.core.IJSchService;
+import org.eclipse.jsch.ui.UserInfoPrompter;
 import org.spearce.jgit.transport.SshSessionFactory;
 
 import com.jcraft.jsch.JSchException;
@@ -39,6 +40,8 @@ class EclipseSshSessionFactory extends SshSessionFactory {
 				: -1, user != null ? user : userName());
 		if (pass != null)
 			session.setPassword(pass);
+		else
+			new UserInfoPrompter(session);
 		return session;
 	}
 
