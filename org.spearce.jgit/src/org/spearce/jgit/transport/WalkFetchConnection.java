@@ -477,9 +477,9 @@ class WalkFetchConnection extends FetchConnection {
 		}
 
 		if (!AnyObjectId.equals(id, uol.getId()))
-			throw new IOException("Incorrect hash for " + id + "; computed "
-					+ uol.getId() + " as a " + uol.getType() + " from "
-					+ compressed.length + " bytes.");
+			throw new TransportException("Incorrect hash for " + id
+					+ "; computed " + uol.getId() + " as a " + uol.getType()
+					+ " from " + compressed.length + " bytes.");
 	}
 
 	private void saveLooseObject(final AnyObjectId id, final byte[] compressed)
