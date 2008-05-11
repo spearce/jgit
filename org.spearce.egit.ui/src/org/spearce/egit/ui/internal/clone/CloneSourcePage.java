@@ -267,7 +267,7 @@ class CloneSourcePage extends WizardPage {
 	}
 
 	private static Group createGroup(final Composite parent, final String text) {
-		final Group g = new Group(parent, SWT.BORDER);
+		final Group g = new Group(parent, SWT.NONE);
 		final GridLayout layout = new GridLayout();
 		layout.numColumns = 2;
 		g.setLayout(layout);
