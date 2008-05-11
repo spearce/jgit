@@ -26,7 +26,10 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.osgi.util.NLS;
@@ -43,6 +46,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
+import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.Constants;
@@ -68,6 +72,8 @@ class SourceBranchPage extends WizardPage {
 	private Table availTable;
 
 	private boolean allSelected;
+
+	private String transportError;
 
 	SourceBranchPage(final CloneSourcePage sp) {
 		super(SourceBranchPage.class.getName());
@@ -173,6 +179,11 @@ class SourceBranchPage extends WizardPage {
 
 	@Override
 	public boolean isPageComplete() {
+		if (transportError != null) {
+			setErrorMessage(transportError);
+			return false;
+		}
+
 		if (getSelectedBranches().isEmpty()) {
 			setErrorMessage(UIText.SourceBranchPage_errorBranchRequired);
 			return false;
@@ -187,8 +198,7 @@ class SourceBranchPage extends WizardPage {
 		try {
 			newURI = sourcePage.getURI();
 		} catch (URISyntaxException e) {
-			setErrorMessage(e.getReason());
-			setPageComplete(false);
+			transportError(e.getReason());
 			return;
 		}
 
@@ -197,13 +207,13 @@ class SourceBranchPage extends WizardPage {
 		label.getParent().layout();
 
 		if (newURI.equals(validated)) {
-			setErrorMessage(null);
-			setPageComplete(true);
+			setPageComplete(isPageComplete());
 			return;
 		}
 
 		setErrorMessage(null);
 		setPageComplete(false);
+		transportError = null;
 		head = null;
 		available = new ArrayList<Ref>();
 		availTable.removeAll();
@@ -266,12 +276,16 @@ class SourceBranchPage extends WizardPage {
 				}
 			});
 		} catch (InvocationTargetException e) {
-			setErrorMessage(e.getCause().getMessage());
-			setPageComplete(false);
+			Throwable why = e.getCause();
+			ErrorDialog.openError(getShell(),
+					UIText.SourceBranchPage_transportError,
+					UIText.SourceBranchPage_cannotListBranches, new Status(
+							IStatus.ERROR, Activator.getPluginId(), 0, why
+									.getMessage(), why.getCause()));
+			transportError(why.getMessage());
 			return;
 		} catch (InterruptedException e) {
-			setErrorMessage("Connection attempt interrupted.");
-			setPageComplete(false);
+			transportError(UIText.SourceBranchPage_interrupted);
 			return;
 		}
 
@@ -288,6 +302,12 @@ class SourceBranchPage extends WizardPage {
 		notifyChanged();
 		setErrorMessage(null);
 		setPageComplete(isPageComplete());
+	}
+
+	private void transportError(final String msg) {
+		transportError = msg;
+		setErrorMessage(msg);
+		setPageComplete(false);
 	}
 
 	private void notifyChanged() {
