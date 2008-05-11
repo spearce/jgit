@@ -532,7 +532,8 @@ public class RevWalk implements Iterable<RevCommit> {
 				throw new IllegalArgumentException("Bad object type: " + type);
 			}
 			objects.add(r);
-		}
+		} else if ((r.flags & PARSED) == 0)
+			r.parse(this);
 		return r;
 	}
 
