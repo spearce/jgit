@@ -131,9 +131,8 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 	private static final byte[] digits = { '0', '1', '2', '3', '4', '5', '6',
 			'7', '8', '9' };
 
-	private static final String TYPE_BLOB = Constants.TYPE_BLOB;
-
-	private static final byte[] hblob = Constants.encodeASCII(TYPE_BLOB);
+	private static final byte[] hblob = Constants
+			.encodedTypeString(Constants.OBJ_BLOB);
 
 	private byte[] idBufferBlob(final Entry e) {
 		try {

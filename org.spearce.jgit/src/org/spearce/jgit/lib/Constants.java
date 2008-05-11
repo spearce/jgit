@@ -65,6 +65,14 @@ public final class Constants {
 	 */
 	public static final String TYPE_TAG = "tag";
 
+	private static final byte[] ENCODED_TYPE_COMMIT = encodeASCII(TYPE_COMMIT);
+
+	private static final byte[] ENCODED_TYPE_BLOB = encodeASCII(TYPE_BLOB);
+
+	private static final byte[] ENCODED_TYPE_TREE = encodeASCII(TYPE_TREE);
+
+	private static final byte[] ENCODED_TYPE_TAG = encodeASCII(TYPE_TAG);
+
 	/** An unknown or invalid object type code. */
 	public static final int OBJ_BAD = -1;
 
@@ -207,6 +215,30 @@ public final class Constants {
 			return TYPE_BLOB;
 		case OBJ_TAG:
 			return TYPE_TAG;
+		default:
+			throw new IllegalArgumentException("Bad object type: " + typeCode);
+		}
+	}
+
+	/**
+	 * Convert an OBJ_* type constant to an ASCII encoded string constant.
+	 * <p>
+	 * The ASCII encoded string is often the canonical representation of
+	 * the type within a loose object header, or within a tag header.
+	 *
+	 * @param typeCode the type code, from a pack representation.
+	 * @return the canonical ASCII encoded name of this type.
+	 */
+	public static byte[] encodedTypeString(final int typeCode) {
+		switch (typeCode) {
+		case OBJ_COMMIT:
+			return ENCODED_TYPE_COMMIT;
+		case OBJ_TREE:
+			return ENCODED_TYPE_TREE;
+		case OBJ_BLOB:
+			return ENCODED_TYPE_BLOB;
+		case OBJ_TAG:
+			return ENCODED_TYPE_TAG;
 		default:
 			throw new IllegalArgumentException("Bad object type: " + typeCode);
 		}

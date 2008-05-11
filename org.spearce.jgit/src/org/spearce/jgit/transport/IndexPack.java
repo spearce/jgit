@@ -55,21 +55,6 @@ public class IndexPack {
 
 	private static final int BUFFER_SIZE = 2048;
 
-	private static final byte[] COMMIT;
-
-	private static final byte[] TREE;
-
-	private static final byte[] TAG;
-
-	private static final byte[] BLOB;
-
-	static {
-		COMMIT = Constants.encodeASCII(Constants.TYPE_COMMIT);
-		TREE = Constants.encodeASCII(Constants.TYPE_TREE);
-		TAG = Constants.encodeASCII(Constants.TYPE_TAG);
-		BLOB = Constants.encodeASCII(Constants.TYPE_BLOB);
-	}
-
 	/**
 	 * Create an index pack instance to load a new pack into a repository.
 	 * <p>
@@ -274,10 +259,10 @@ public class IndexPack {
 
 	private void resolveDeltas(final ObjectEntry oe) throws IOException {
 		if (baseById.containsKey(oe) || baseByPos.containsKey(new Long(oe.pos)))
-			resolveDeltas(oe.pos, null, null, oe);
+			resolveDeltas(oe.pos, Constants.OBJ_BAD, null, oe);
 	}
 
-	private void resolveDeltas(final long pos, byte[] type, byte[] data,
+	private void resolveDeltas(final long pos, int type, byte[] data,
 			ObjectEntry oe) throws IOException {
 		position(pos);
 		int c = readFromFile();
@@ -292,19 +277,10 @@ public class IndexPack {
 
 		switch (typeCode) {
 		case Constants.OBJ_COMMIT:
-			type = COMMIT;
-			data = inflateFromFile((int) sz);
-			break;
 		case Constants.OBJ_TREE:
-			type = TREE;
-			data = inflateFromFile((int) sz);
-			break;
 		case Constants.OBJ_BLOB:
-			type = BLOB;
-			data = inflateFromFile((int) sz);
-			break;
 		case Constants.OBJ_TAG:
-			type = TAG;
+			type = typeCode;
 			data = inflateFromFile((int) sz);
 			break;
 		case Constants.OBJ_OFS_DELTA: {
@@ -325,7 +301,7 @@ public class IndexPack {
 		}
 
 		if (oe == null) {
-			objectDigest.update(type);
+			objectDigest.update(Constants.encodedTypeString(type));
 			objectDigest.update((byte) ' ');
 			objectDigest.update(Constants.encodeASCII(data.length));
 			objectDigest.update((byte) 0);
@@ -338,7 +314,7 @@ public class IndexPack {
 		resolveChildDeltas(pos, type, data, oe);
 	}
 
-	private void resolveChildDeltas(final long pos, byte[] type, byte[] data,
+	private void resolveChildDeltas(final long pos, int type, byte[] data,
 			ObjectEntry oe) throws IOException {
 		final ArrayList<UnresolvedDelta> a = baseById.remove(oe);
 		final ArrayList<UnresolvedDelta> b = baseByPos.remove(new Long(pos));
@@ -374,25 +350,7 @@ public class IndexPack {
 			final ObjectLoader ldr = repo.openObject(baseId);
 			final byte[] data = ldr.getBytes();
 			final int typeCode = ldr.getType();
-			final byte[] type;
 			final ObjectEntry oe;
-
-			switch (typeCode) {
-			case Constants.OBJ_COMMIT:
-				type = COMMIT;
-				break;
-			case Constants.OBJ_TREE:
-				type = TREE;
-				break;
-			case Constants.OBJ_BLOB:
-				type = BLOB;
-				break;
-			case Constants.OBJ_TAG:
-				type = TAG;
-				break;
-			default:
-				throw new IOException("Unknown object type " + typeCode + ".");
-			}
 
 			oe = new ObjectEntry(end, baseId);
 			entries[entryCount++] = oe;
@@ -400,7 +358,7 @@ public class IndexPack {
 			writeWhole(def, typeCode, data);
 			end = packOut.getFilePointer();
 
-			resolveChildDeltas(oe.pos, type, data, oe);
+			resolveChildDeltas(oe.pos, typeCode, data, oe);
 			if (progress.isCancelled())
 				throw new IOException("Download cancelled during indexing");
 		}
@@ -542,16 +500,10 @@ public class IndexPack {
 
 		switch (typeCode) {
 		case Constants.OBJ_COMMIT:
-			whole(COMMIT, pos, sz);
-			break;
 		case Constants.OBJ_TREE:
-			whole(TREE, pos, sz);
-			break;
 		case Constants.OBJ_BLOB:
-			whole(BLOB, pos, sz);
-			break;
 		case Constants.OBJ_TAG:
-			whole(TAG, pos, sz);
+			whole(typeCode, pos, sz);
 			break;
 		case Constants.OBJ_OFS_DELTA: {
 			c = readFromInput() & 0xff;
@@ -594,9 +546,9 @@ public class IndexPack {
 		}
 	}
 
-	private void whole(final byte[] type, final long pos, final long sz)
+	private void whole(final int type, final long pos, final long sz)
 			throws IOException {
-		objectDigest.update(type);
+		objectDigest.update(Constants.encodedTypeString(type));
 		objectDigest.update((byte) ' ');
 		objectDigest.update(Constants.encodeASCII(sz));
 		objectDigest.update((byte) 0);

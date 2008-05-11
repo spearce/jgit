@@ -33,7 +33,7 @@ public abstract class ObjectLoader {
 	public ObjectId getId() throws IOException {
 		if (objectId == null) {
 			final MessageDigest md = Constants.newMessageDigest();
-			md.update(Constants.encodeASCII(Constants.typeString(getType())));
+			md.update(Constants.encodedTypeString(getType()));
 			md.update((byte) ' ');
 			md.update(Constants.encodeASCII(getSize()));
 			md.update((byte) 0);
