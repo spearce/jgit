@@ -66,13 +66,15 @@ public class UnpackedObjectLoader extends ObjectLoader {
 	 * 
 	 * @param compressed
 	 *            entire content of the loose object file.
-	 * @throws IOException
+	 * @throws CorruptObjectException
+	 *             The compressed data supplied does not match the format for a
+	 *             valid loose object.
 	 */
-	public UnpackedObjectLoader(final byte[] compressed) throws IOException {
+	public UnpackedObjectLoader(final byte[] compressed) throws CorruptObjectException {
 		this(compressed, null);
 	}
 
-	private UnpackedObjectLoader(final byte[] compressed, final ObjectId id) throws IOException {
+	private UnpackedObjectLoader(final byte[] compressed, final ObjectId id) throws CorruptObjectException {
 		setId(id);
 
 		// Try to determine if this is a legacy format loose object or
@@ -93,7 +95,7 @@ public class UnpackedObjectLoader extends ObjectLoader {
 					avail += inflater.inflate(hdr, avail, hdr.length - avail);
 				} catch (DataFormatException dfe) {
 					final CorruptObjectException coe;
-					coe = new CorruptObjectException(getId(), "bad stream");
+					coe = new CorruptObjectException(id, "bad stream");
 					coe.initCause(dfe);
 					inflater.end();
 					throw coe;
@@ -154,7 +156,7 @@ public class UnpackedObjectLoader extends ObjectLoader {
 			bytes = new byte[objectSize];
 			if (pos < avail)
 				System.arraycopy(hdr, pos, bytes, 0, avail - pos);
-			decompress(inflater, avail - pos);
+			decompress(id, inflater, avail - pos);
 		} else {
 			int p = 0;
 			int c = compressed[p++] & 0xff;
@@ -182,24 +184,25 @@ public class UnpackedObjectLoader extends ObjectLoader {
 			bytes = new byte[objectSize];
 			final Inflater inflater = new Inflater(false);
 			inflater.setInput(compressed, p, compressed.length - p);
-			decompress(inflater, 0);
+			decompress(id, inflater, 0);
 		}
 	}
 
-	private void decompress(final Inflater inf, int p) throws IOException {
+	private void decompress(final ObjectId id, final Inflater inf, int p)
+			throws CorruptObjectException {
 		try {
 			while (!inf.finished())
 				p += inf.inflate(bytes, p, objectSize - p);
 		} catch (DataFormatException dfe) {
 			final CorruptObjectException coe;
-			coe = new CorruptObjectException(getId(), "bad stream");
+			coe = new CorruptObjectException(id, "bad stream");
 			coe.initCause(dfe);
 			throw coe;
 		} finally {
 			inf.end();
 		}
 		if (p != objectSize)
-			new CorruptObjectException(getId(), "incorrect length");
+			new CorruptObjectException(id, "incorrect length");
 	}
 
 	public int getType() {
