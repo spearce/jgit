@@ -17,8 +17,11 @@
 package org.spearce.jgit.pgm;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Arrays;
 
+import org.spearce.jgit.awtui.AwtAuthenticator;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Repository;
 
@@ -34,6 +37,8 @@ public class Main {
 	 */
 	public static void main(final String[] argv) {
 		try {
+			AwtAuthenticator.install();
+			configureHttpProxy();
 			execute(argv);
 		} catch (Die err) {
 			System.err.println("fatal: " + err.getMessage());
@@ -124,5 +129,36 @@ public class Main {
 	private static void usage() {
 		System.err.println("jgit [--git-dir=path] cmd ...");
 		System.exit(1);
+	}
+
+	private static void configureHttpProxy() {
+		final String s = System.getenv("http_proxy");
+		if (s == null || s.equals(""))
+			return;
+
+		final URL u;
+		try {
+			u = new URL(s);
+		} catch (MalformedURLException e) {
+			throw new Die("Invalid http_proxy: " + s + ": " + e.getMessage());
+		}
+		if (!"http".equals(u.getProtocol()))
+			throw new Die("Invalid http_proxy: " + s + ": Only http supported.");
+
+		final String proxyHost = u.getHost();
+		final int proxyPort = u.getPort();
+
+		System.setProperty("http.proxyHost", proxyHost);
+		if (proxyPort > 0)
+			System.setProperty("http.proxyPort", String.valueOf(proxyPort));
+
+		final String userpass = u.getUserInfo();
+		if (userpass != null && userpass.contains(":")) {
+			final int c = userpass.indexOf(':');
+			final String user = userpass.substring(0, c);
+			final String pass = userpass.substring(c + 1);
+			AwtAuthenticator.add(new AwtAuthenticator.CachedAuthentication(
+					proxyHost, proxyPort, user, pass));
+		}
 	}
 }
