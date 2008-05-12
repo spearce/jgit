@@ -51,6 +51,8 @@ class CommitMessageViewer extends TextViewer {
 
 	private Color sys_linkColor;
 
+	private Color sys_darkgray;
+
 	private Cursor sys_linkCursor;
 
 	private Cursor sys_normalCursor;
@@ -65,6 +67,7 @@ class CommitMessageViewer extends TextViewer {
 		t.setFont(Activator.getFont(UIPreferences.THEME_CommitMessageFont));
 
 		sys_linkColor = t.getDisplay().getSystemColor(SWT.COLOR_BLUE);
+		sys_darkgray = t.getDisplay().getSystemColor(SWT.COLOR_DARK_GRAY);
 		sys_linkCursor = t.getDisplay().getSystemCursor(SWT.CURSOR_HAND);
 		sys_normalCursor = t.getCursor();
 
@@ -178,6 +181,7 @@ class CommitMessageViewer extends TextViewer {
 			d.append("\n");
 		}
 
+		makeGrayText(d, styles);
 		d.append("\n");
 		String msg = commit.getFullMessage();
 		if (fill)
@@ -190,10 +194,32 @@ class CommitMessageViewer extends TextViewer {
 		while (matcher.find()) {
 			styles.add(new StyleRange(h0 + matcher.start(), matcher.end()-matcher.start(), null,  null, SWT.ITALIC));
 		}
+
 		final StyleRange[] arr = new StyleRange[styles.size()];
 		styles.toArray(arr);
 		setDocument(new Document(d.toString()));
 		getTextWidget().setStyleRanges(arr);
+	}
+
+	private void makeGrayText(StringBuilder d,
+			ArrayList<StyleRange> styles) {
+		int p0 = 0;
+		for (int i = 0; i<styles.size(); ++i) {
+			StyleRange r = styles.get(i);
+			if (p0 < r.start) {
+				StyleRange nr = new StyleRange(p0, r.start  - p0, sys_darkgray, null);
+				styles.add(i, nr);
+				p0 = r.start;
+			} else {
+				if (r.foreground == null)
+					r.foreground = sys_darkgray;
+				p0 = r.start + r.length;
+			}
+		}
+		if (d.length() - 1 > p0) {
+			StyleRange nr = new StyleRange(p0, d.length() - p0, sys_darkgray, null);
+			styles.add(nr);
+		}
 	}
 
 	private void addLink(final StringBuilder d,
