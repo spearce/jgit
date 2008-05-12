@@ -39,8 +39,8 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 	public void test003_PutRemote() throws IOException {
 		File cfgFile = writeTrashFile("config_003", "");
 		RepositoryConfig repositoryConfig = new RepositoryConfig(null, cfgFile);
-		repositoryConfig.putString("sec", "ext", "name", "value");
-		repositoryConfig.putString("sec", "ext", "name2", "value2");
+		repositoryConfig.setString("sec", "ext", "name", "value");
+		repositoryConfig.setString("sec", "ext", "name2", "value2");
 		repositoryConfig.save();
 		checkFile(cfgFile, "[sec \"ext\"]\n\tname = value\n\tname2 = value2\n");
 	}
@@ -48,7 +48,7 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 	public void test004_PutSimple() throws IOException {
 		File cfgFile = writeTrashFile("config_004", "");
 		RepositoryConfig repositoryConfig = new RepositoryConfig(null, cfgFile);
-		repositoryConfig.putString("my", null, "somename", "false");
+		repositoryConfig.setString("my", null, "somename", "false");
 		repositoryConfig.save();
 		checkFile(cfgFile, "[my]\n\tsomename = false\n");
 	}

@@ -21,6 +21,7 @@ import java.util.EnumSet;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.revwalk.filter.AndRevFilter;
 import org.spearce.jgit.revwalk.filter.RevFilter;
 import org.spearce.jgit.treewalk.filter.TreeFilter;
 
@@ -35,11 +36,8 @@ import org.spearce.jgit.treewalk.filter.TreeFilter;
 class StartGenerator extends Generator {
 	private final RevWalk walker;
 
-	private final AbstractRevQueue pending;
-
 	StartGenerator(final RevWalk w) {
 		walker = w;
-		pending = new FIFORevQueue();
 	}
 
 	@Override
@@ -48,20 +46,31 @@ class StartGenerator extends Generator {
 	}
 
 	@Override
-	void add(final RevCommit c) {
-		pending.add(c);
-	}
-
-	@Override
 	RevCommit next() throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
 		Generator g;
 
 		final RevWalk w = walker;
-		final RevFilter rf = w.getRevFilter();
+		RevFilter rf = w.getRevFilter();
 		final TreeFilter tf = w.getTreeFilter();
+		AbstractRevQueue q = walker.queue;
+
+		if (rf == RevFilter.MERGE_BASE) {
+			// Computing for merge bases is a special case and does not
+			// use the bulk of the generator pipeline.
+			//
+			if (tf != TreeFilter.ALL)
+				throw new IllegalStateException("Cannot combine TreeFilter "
+						+ tf + " with RevFilter " + rf + ".");
+
+			final MergeBaseGenerator mbg = new MergeBaseGenerator(w);
+			walker.pending = mbg;
+			walker.queue = AbstractRevQueue.EMPTY_QUEUE;
+			mbg.init(q);
+			return mbg.next();
+		}
+
 		final EnumSet<RevSort> sort = w.getRevSort();
-		AbstractRevQueue q = pending;
 		boolean boundary = sort.contains(RevSort.BOUNDARY);
 
 		if (boundary && !q.anybodyHasFlag(RevWalk.UNINTERESTING)) {
@@ -72,24 +81,26 @@ class StartGenerator extends Generator {
 			boundary = false;
 		}
 
-		if (sort.contains(RevSort.COMMIT_TIME_DESC))
+		int pendingOutputType = 0;
+		if (sort.contains(RevSort.START_ORDER) && !(q instanceof FIFORevQueue))
+			q = new FIFORevQueue(q);
+		if (sort.contains(RevSort.COMMIT_TIME_DESC)
+				&& !(q instanceof DateRevQueue))
 			q = new DateRevQueue(q);
-		if (tf != TreeFilter.ALL)
-			g = new TreeFilterPendingGenerator(w, q, rf, tf);
-		else
-			g = new AbstractPendingGenerator(w, q, rf) {
-				@Override
-				boolean include(final RevCommit c) {
-					return true;
-				}
-			};
+		if (tf != TreeFilter.ALL) {
+			rf = AndRevFilter.create(rf, new RewriteTreeFilter(w, tf));
+			pendingOutputType |= HAS_REWRITE | NEEDS_REWRITE;
+		}
+
+		walker.queue = q;
+		g = new PendingGenerator(w, q, rf, pendingOutputType);
 
 		if (boundary) {
 			// Because the boundary generator may produce uninteresting
 			// commits we cannot allow the pending generator to dispose
 			// of them early.
 			//
-			((AbstractPendingGenerator) g).canDispose = false;
+			((PendingGenerator) g).canDispose = false;
 		}
 
 		if ((g.outputType() & NEEDS_REWRITE) != 0) {

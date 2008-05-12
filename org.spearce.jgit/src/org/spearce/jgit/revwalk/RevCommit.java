@@ -55,6 +55,7 @@ public class RevCommit extends RevObject {
 		super(id);
 	}
 
+	@Override
 	void parse(final RevWalk walk) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
 		final ObjectLoader ldr = walk.db.openObject(walk.curs, this);
@@ -72,34 +73,36 @@ public class RevCommit extends RevObject {
 		tree = walk.lookupTree(idBuffer);
 
 		int ptr = 46;
-		RevCommit[] pList = new RevCommit[1];
-		int nParents = 0;
-		for (;;) {
-			if (raw[ptr] != 'p')
-				break;
-			idBuffer.fromString(raw, ptr + 7);
-			final RevCommit p = walk.lookupCommit(idBuffer);
-			if (nParents == 0)
-				pList[nParents++] = p;
-			else if (nParents == 1) {
-				pList = new RevCommit[] { pList[0], p };
-				nParents = 2;
-			} else {
-				if (pList.length <= nParents) {
-					RevCommit[] old = pList;
-					pList = new RevCommit[pList.length + 32];
-					System.arraycopy(old, 0, pList, 0, nParents);
+		if (parents == null) {
+			RevCommit[] pList = new RevCommit[1];
+			int nParents = 0;
+			for (;;) {
+				if (raw[ptr] != 'p')
+					break;
+				idBuffer.fromString(raw, ptr + 7);
+				final RevCommit p = walk.lookupCommit(idBuffer);
+				if (nParents == 0)
+					pList[nParents++] = p;
+				else if (nParents == 1) {
+					pList = new RevCommit[] { pList[0], p };
+					nParents = 2;
+				} else {
+					if (pList.length <= nParents) {
+						RevCommit[] old = pList;
+						pList = new RevCommit[pList.length + 32];
+						System.arraycopy(old, 0, pList, 0, nParents);
+					}
+					pList[nParents++] = p;
 				}
-				pList[nParents++] = p;
+				ptr += 48;
 			}
-			ptr += 48;
+			if (nParents != pList.length) {
+				RevCommit[] old = pList;
+				pList = new RevCommit[nParents];
+				System.arraycopy(old, 0, pList, 0, nParents);
+			}
+			parents = pList;
 		}
-		if (nParents != pList.length) {
-			RevCommit[] old = pList;
-			pList = new RevCommit[nParents];
-			System.arraycopy(old, 0, pList, 0, nParents);
-		}
-		parents = pList;
 
 		// extract time from "committer "
 		ptr = RawParseUtils.committer(raw, ptr);
@@ -110,6 +113,49 @@ public class RevCommit extends RevObject {
 
 		buffer = raw;
 		flags |= PARSED;
+	}
+
+	static void carryFlags(RevCommit c, final int carry) {
+		for (;;) {
+			final RevCommit[] pList = c.parents;
+			if (pList == null)
+				return;
+			final int n = pList.length;
+			if (n == 0)
+				return;
+
+			for (int i = 1; i < n; i++) {
+				final RevCommit p = pList[i];
+				p.flags |= carry;
+				carryFlags(p, carry);
+			}
+
+			c = pList[0];
+			c.flags |= carry;
+		}
+	}
+
+	void carryFlags(final int carryMask) {
+		final int carry = flags & carryMask;
+		if (carry == 0)
+			return;
+		carryFlags(this, carry);
+	}
+
+	/**
+	 * Carry a RevFlag set on this commit to its parents.
+	 * <p>
+	 * If this commit is parsed, has parents, and has the supplied flag set on
+	 * it we automatically add it to the parents, grand-parents, and so on until
+	 * an unparsed commit or a commit with no parents is discovered. This
+	 * permits applications to force a flag through the history chain when
+	 * necessary.
+	 * 
+	 * @param flag
+	 *            the single flag value to carry back onto parents.
+	 */
+	public void carry(final RevFlag flag) {
+		carryFlags(flags & flag.mask);
 	}
 
 	/**
@@ -162,6 +208,20 @@ public class RevCommit extends RevObject {
 	 */
 	public final RevCommit getParent(final int nth) {
 		return parents[nth];
+	}
+
+	/**
+	 * Obtain an array of all parents (<b>NOTE - THIS IS NOT A COPY</b>).
+	 * <p>
+	 * This method is exposed only to provide very fast, efficient access to
+	 * this commit's parent list. Applications relying on this list should be
+	 * very careful to ensure they do not modify its contents during their use
+	 * of it.
+	 * 
+	 * @return the array of parents.
+	 */
+	public final RevCommit[] getParents() {
+		return parents;
 	}
 
 	/**
@@ -294,7 +354,6 @@ public class RevCommit extends RevObject {
 	 * basic information can be correctly cleared out.
 	 */
 	public void reset() {
-		flags &= PARSED;
 		inDegree = 0;
 	}
 

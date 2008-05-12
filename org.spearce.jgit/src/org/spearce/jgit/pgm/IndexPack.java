@@ -24,10 +24,13 @@ import org.spearce.jgit.lib.TextProgressMonitor;
 class IndexPack extends TextBuiltin {
 	@Override
 	void execute(final String[] args) throws Exception {
+		boolean fixThin = false;
 		int argi = 0;
 		for (; argi < args.length; argi++) {
 			final String a = args[argi];
-			if ("--".equals(a)) {
+			if ("--fix-thin".equals(a))
+				fixThin = true;
+			else if ("--".equals(a)) {
 				argi++;
 				break;
 			} else
@@ -41,9 +44,10 @@ class IndexPack extends TextBuiltin {
 
 		final File base = new File(args[argi]);
 		final BufferedInputStream in;
-		final org.spearce.jgit.fetch.IndexPack ip;
+		final org.spearce.jgit.transport.IndexPack ip;
 		in = new BufferedInputStream(System.in);
-		ip = new org.spearce.jgit.fetch.IndexPack(in, base);
+		ip = new org.spearce.jgit.transport.IndexPack(db, in, base);
+		ip.setFixThin(fixThin);
 		ip.index(new TextProgressMonitor());
 	}
 }

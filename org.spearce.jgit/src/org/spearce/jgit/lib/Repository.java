@@ -58,8 +58,9 @@ import org.spearce.jgit.util.FS;
  *
  */
 public class Repository {
-	private static final String[] refSearchPaths = { "", "refs/", "refs/tags/",
-		Constants.HEADS_PREFIX + "/", "refs/" + Constants.REMOTES_PREFIX + "/" };
+	private static final String[] refSearchPaths = { "", "refs/",
+			Constants.TAGS_PREFIX + "/", Constants.HEADS_PREFIX + "/",
+			Constants.REMOTES_PREFIX + "/" };
 
 	private final File gitDir;
 
@@ -171,7 +172,8 @@ public class Repository {
 
 		new File(gitDir, "branches").mkdir();
 		new File(gitDir, "remotes").mkdir();
-		writeSymref("HEAD", "refs/heads/master");
+		final String master = Constants.HEADS_PREFIX + "/" + Constants.MASTER;
+		writeSymref(Constants.HEAD, master);
 
 		getConfig().create();
 		getConfig().save();
@@ -472,6 +474,23 @@ public class Repository {
 	}
 
 	/**
+	 * Create a command to update (or create) a ref in this repository.
+	 * 
+	 * @param ref
+	 *            name of the ref the caller wants to modify.
+	 * @return an update command. The caller must finish populating this command
+	 *         and then invoke one of the update methods to actually make a
+	 *         change.
+	 * @throws IOException
+	 *             a symbolic ref was passed in and could not be resolved back
+	 *             to the base ref, as the symbolic ref could not be read.
+	 */
+	public RefUpdate updateRef(final String ref) throws IOException {
+		final Ref r = readRef(ref, true);
+		return new RefUpdate(this, r, fileForRef(r.getName()));
+	}
+
+	/**
 	 * Parse a git revision string and return an object id.
 	 *
 	 * Currently supported is combinations of these.
@@ -674,6 +693,35 @@ public class Repository {
 	}
 
 	/**
+	 * Add a single existing pack to the list of available pack files.
+	 * 
+	 * @param pack
+	 *            path of the pack file to open.
+	 * @param idx
+	 *            path of the corresponding index file.
+	 * @throws IOException
+	 *             index file could not be opened, read, or is not recognized as
+	 *             a Git pack file index.
+	 */
+	public void openPack(final File pack, final File idx) throws IOException {
+		final String p = pack.getName();
+		final String i = idx.getName();
+		if (p.length() != 50 || !p.startsWith("pack-") || !p.endsWith(".pack"))
+		    throw new IllegalArgumentException("Not a valid pack " + pack);
+		if (i.length() != 49 || !i.startsWith("pack-") || !i.endsWith(".idx"))
+		    throw new IllegalArgumentException("Not a valid pack " + idx);
+		if (!p.substring(0,45).equals(i.substring(0,45)))
+			throw new IllegalArgumentException("Pack " + pack
+					+ "does not match index " + idx);
+
+		final PackFile[] cur = packs;
+		final PackFile[] arr = new PackFile[cur.length + 1];
+		System.arraycopy(cur, 0, arr, 1, cur.length);
+		arr[0] = new PackFile(this, idx, pack);
+		packs = arr;
+	}
+
+	/**
 	 * Scan the object dirs, including alternates for packs
 	 * to use.
 	 */
@@ -830,7 +878,7 @@ public class Repository {
 	 */
 	public String getBranch() throws IOException {
 		try {
-			final File ptr = new File(getDirectory(),"HEAD");
+			final File ptr = new File(getDirectory(), Constants.HEAD);
 			final BufferedReader br = new BufferedReader(new FileReader(ptr));
 			String ref;
 			try {
@@ -1104,68 +1152,9 @@ public class Repository {
 	}
 
 	/**
-	 * @param name
-	 *            The "remote" name in this repo
-	 * @return information about how a remote repository is beging tracked
-	 */
-	public RemoteSpec getRemoteSpec(String name) {
-		String url = getConfig().getString("remote."+name, null, "url");
-		String fetchPattern = getConfig().getString("remote."+name, null, "fetch");
-		String pushPattern = getConfig().getString("remote."+name, null, "push");
-		return new RemoteSpec(name, url, fetchPattern, pushPattern);
-	}
-
-	/**
-	 * Setup repository configuration for a new remote
-	 * 
-	 * @param remote
-	 *            remote name, e.g. "origin"
-	 * @param url
-	 *            fetch url, e.g. "git://repo.or.cz/egit.git"
-	 * @param branch
-	 *            local branch name, e.g. "master"
-	 */
-	public void configureDefaultBranch(final String remote, final String url, final String branch) {
-		config.putString(RepositoryConfig.REMOTE_SECTION, remote, "url",
-				url);
-		config.putString(RepositoryConfig.REMOTE_SECTION, remote, "fetch",
-				"+" + Constants.HEADS_PREFIX + "/*:" + Constants.REMOTES_PREFIX + "/" + remote + "/*");
-		config.putString(RepositoryConfig.BRANCH_SECTION, branch, "remote",
-				remote);
-		config.putString(RepositoryConfig.BRANCH_SECTION, Constants.MASTER, "merge",
-				Constants.HEADS_PREFIX + "/" + branch);
-	}
-
-	/**
 	 * @return the workdir file, i.e. where the files are checked out
 	 */
 	public File getWorkDir() {
 		return getDirectory().getParentFile();
 	}
-
-	/**
-	 * Setup HEAD and "master" refs for a new repository.
-	 *
-	 * @param remoteBranch
-	 *            The remote branch to start with
-	 * @param branch
-	 *            The local branch to configure, initially starting at
-	 *            remoteBranch
-	 * @return the commit references by the new HEAD
-	 * @throws IOException
-	 */
-	public Commit setupHEADRef(final String remoteBranch, final String branch) throws IOException {
-		Commit mapCommit = mapCommit(remoteBranch);
-		String refName = Constants.HEADS_PREFIX + "/" + branch;
-		LockFile masterRef = lockRef(refName);
-		try {
-			masterRef.write(mapCommit.getCommitId());
-			masterRef.commit();
-		} finally {
-			masterRef.unlock();
-		}
-		writeSymref(Constants.HEAD, refName);
-		return mapCommit;
-	}
-
 }

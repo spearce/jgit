@@ -28,6 +28,8 @@ public class Ref {
 
 	private ObjectId objectId;
 
+	private ObjectId peeledObjectId;
+
 	/**
 	 * Create a new ref pairing.
 	 * 
@@ -40,6 +42,24 @@ public class Ref {
 	public Ref(final String refName, final ObjectId id) {
 		name = refName;
 		objectId = id;
+	}
+
+	/**
+	 * Create a new ref pairing.
+	 * 
+	 * @param refName
+	 *            name of this ref.
+	 * @param id
+	 *            current value of the ref. May be null to indicate a ref that
+	 *            does not exist yet.
+	 * @param peel
+	 *            peeled value of the ref's tag. May be null if this is not a
+	 *            tag or the peeled value is not known.
+	 */
+	public Ref(final String refName, final ObjectId id, final ObjectId peel) {
+		name = refName;
+		objectId = id;
+		peeledObjectId = peel;
 	}
 
 	/**
@@ -58,6 +78,17 @@ public class Ref {
 	 */
 	public ObjectId getObjectId() {
 		return objectId;
+	}
+
+	/**
+	 * Cached value of <code>ref^{}</code> (the ref peeled to commit).
+	 * 
+	 * @return if this ref is an annotated tag the id of the commit (or tree or
+	 *         blob) that the annotated tag refers to; null if this ref does not
+	 *         refer to an annotated tag.
+	 */
+	public ObjectId getPeeledObjectId() {
+		return peeledObjectId;
 	}
 
 	public String toString() {

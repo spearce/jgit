@@ -18,6 +18,7 @@ package org.spearce.jgit.revwalk;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Iterator;
 
@@ -124,8 +125,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	/** Number of flag bits we keep internal for our own use. See above flags. */
 	static final int RESERVED_FLAGS = 6;
 
-	/** Flags we must automatically carry from a child to a parent commit. */
-	static final int CARRY_MASK = UNINTERESTING;
+	private static final int APP_FLAGS = -1 & ~((1 << RESERVED_FLAGS) - 1);
 
 	final Repository db;
 
@@ -135,9 +135,15 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	private final ObjectIdSubclassMap<RevObject> objects;
 
-	private int nextFlagBit = RESERVED_FLAGS;
+	private int freeFlags = APP_FLAGS;
+
+	private int delayFreeFlags;
+
+	int carryFlags;
 
 	private final ArrayList<RevCommit> roots;
+
+	AbstractRevQueue queue;
 
 	Generator pending;
 
@@ -159,6 +165,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		idBuffer = new MutableObjectId();
 		objects = new ObjectIdSubclassMap<RevObject>();
 		roots = new ArrayList<RevCommit>();
+		queue = new FIFORevQueue();
 		pending = new StartGenerator(this);
 		sorting = EnumSet.of(RevSort.NONE);
 		filter = RevFilter.ALL;
@@ -205,14 +212,39 @@ public class RevWalk implements Iterable<RevCommit> {
 	 */
 	public void markStart(final RevCommit c) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
-		assertNotStarted();
 		if ((c.flags & SEEN) != 0)
 			return;
 		if ((c.flags & PARSED) == 0)
 			c.parse(this);
 		c.flags |= SEEN;
 		roots.add(c);
-		pending.add(c);
+		queue.add(c);
+	}
+
+	/**
+	 * Mark commits to start graph traversal from.
+	 * 
+	 * @param list
+	 *            commits to start traversing from. The commits passed must be
+	 *            from this same revision walker.
+	 * @throws MissingObjectException
+	 *             one of the commits supplied is not available from the object
+	 *             database. This usually indicates the supplied commit is
+	 *             invalid, but the reference was constructed during an earlier
+	 *             invocation to {@link #lookupCommit(AnyObjectId)}.
+	 * @throws IncorrectObjectTypeException
+	 *             the object was not parsed yet and it was discovered during
+	 *             parsing that it is not actually a commit. This usually
+	 *             indicates the caller supplied a non-commit SHA-1 to
+	 *             {@link #lookupCommit(AnyObjectId)}.
+	 * @throws IOException
+	 *             a pack file or loose object could not be read.
+	 */
+	public void markStart(final Collection<RevCommit> list)
+			throws MissingObjectException, IncorrectObjectTypeException,
+			IOException {
+		for (final RevCommit c : list)
+			markStart(c);
 	}
 
 	/**
@@ -251,9 +283,58 @@ public class RevWalk implements Iterable<RevCommit> {
 	public void markUninteresting(final RevCommit c)
 			throws MissingObjectException, IncorrectObjectTypeException,
 			IOException {
-		assertNotStarted();
 		c.flags |= UNINTERESTING;
+		c.carryFlags(UNINTERESTING);
 		markStart(c);
+	}
+
+	/**
+	 * Determine if a commit is reachable from another commit.
+	 * <p>
+	 * A commit <code>base</code> is an ancestor of <code>tip</code> if we
+	 * can find a path of commits that leads from <code>tip</code> and ends at
+	 * <code>base</code>.
+	 * <p>
+	 * This utility function resets the walker, inserts the two supplied
+	 * commits, and then executes a walk until an answer can be obtained.
+	 * Currently allocated RevFlags that have been added to RevCommit instances
+	 * will be retained through the reset.
+	 * 
+	 * @param base
+	 *            commit the caller thinks is reachable from <code>tip</code>.
+	 * @param tip
+	 *            commit to start iteration from, and which is most likely a
+	 *            descendant (child) of <code>base</code>.
+	 * @return true if there is a path directly from <code>tip</code> to
+	 *         <code>base</code> (and thus <code>base</code> is fully merged
+	 *         into <code>tip</code>); false otherwise.
+	 * @throws MissingObjectException
+	 *             one or or more of the next commit's parents are not available
+	 *             from the object database, but were thought to be candidates
+	 *             for traversal. This usually indicates a broken link.
+	 * @throws IncorrectObjectTypeException
+	 *             one or or more of the next commit's parents are not actually
+	 *             commit objects.
+	 * @throws IOException
+	 *             a pack file or loose object could not be read.
+	 */
+	public boolean isMergedInto(final RevCommit base, final RevCommit tip)
+			throws MissingObjectException, IncorrectObjectTypeException,
+			IOException {
+		final RevFilter oldRF = filter;
+		final TreeFilter oldTF = treeFilter;
+		try {
+			finishDelayedFreeFlags();
+			reset(~freeFlags & ~RESERVED_FLAGS);
+			filter = RevFilter.MERGE_BASE;
+			treeFilter = TreeFilter.ALL;
+			markStart(tip);
+			markStart(base);
+			return next() == base;
+		} finally {
+			filter = oldRF;
+			treeFilter = oldTF;
+		}
 	}
 
 	/**
@@ -283,6 +364,21 @@ public class RevWalk implements Iterable<RevCommit> {
 	 */
 	public EnumSet<RevSort> getRevSort() {
 		return sorting.clone();
+	}
+
+	/**
+	 * Select a single sorting strategy for the returned commits.
+	 * <p>
+	 * Disables all sorting strategies, then enables only the single strategy
+	 * supplied by the caller.
+	 * 
+	 * @param s
+	 *            a sorting strategy to enable.
+	 */
+	public void sort(final RevSort s) {
+		assertNotStarted();
+		sorting.clear();
+		sorting.add(s);
 	}
 
 	/**
@@ -476,10 +572,8 @@ public class RevWalk implements Iterable<RevCommit> {
 			IOException {
 		RevObject c = parseAny(id);
 		while (c instanceof RevTag) {
-			final RevTag t = ((RevTag) c);
-			if ((t.flags & PARSED) == 0)
-				t.parse(this);
-			c = t.getObject();
+			c = ((RevTag) c).getObject();
+			parse(c);
 		}
 		return (RevCommit) c;
 	}
@@ -534,8 +628,29 @@ public class RevWalk implements Iterable<RevCommit> {
 				throw new IllegalArgumentException("Bad object type: " + type);
 			}
 			objects.add(r);
-		}
+		} else if ((r.flags & PARSED) == 0)
+			r.parse(this);
 		return r;
+	}
+
+	/**
+	 * Ensure the object's content has been parsed.
+	 * <p>
+	 * This method only returns successfully if the object exists and was parsed
+	 * without error.
+	 * 
+	 * @param obj
+	 *            the object the caller needs to be parsed.
+	 * @throws MissingObjectException
+	 *             the supplied does not exist.
+	 * @throws IOException
+	 *             a pack file or loose object could not be read.
+	 */
+	public void parse(final RevObject obj) throws MissingObjectException,
+			IOException {
+		if ((obj.flags & PARSED) != 0)
+			return;
+		obj.parse(this);
 	}
 
 	/**
@@ -552,18 +667,137 @@ public class RevWalk implements Iterable<RevCommit> {
 	 *             too many flags have been reserved on this revision walker.
 	 */
 	public RevFlag newFlag(final String name) {
-		if (nextFlagBit == 32)
-			throw new IllegalArgumentException(32 - RESERVED_FLAGS
-					+ " flags already created.");
-		return new RevFlag(this, name, 1 << nextFlagBit++);
+		final int m = allocFlag();
+		return new RevFlag(this, name, m);
 	}
 
-	/** Resets internal state and allows this instance to be used again. */
+	int allocFlag() {
+		if (freeFlags == 0)
+			throw new IllegalArgumentException(32 - RESERVED_FLAGS
+					+ " flags already created.");
+		final int m = Integer.lowestOneBit(freeFlags);
+		freeFlags &= ~m;
+		return m;
+	}
+
+	/**
+	 * Automatically carry a flag from a child commit to its parents.
+	 * <p>
+	 * A carried flag is copied from the child commit onto its parents when the
+	 * child commit is popped from the lowest level of walk's internal graph.
+	 * 
+	 * @param flag
+	 *            the flag to carry onto parents, if set on a descendant.
+	 */
+	public void carry(final RevFlag flag) {
+		if ((freeFlags & flag.mask) != 0)
+			throw new IllegalArgumentException(flag.name + " is disposed.");
+		if (flag.walker != this)
+			throw new IllegalArgumentException(flag.name + " not from this.");
+		carryFlags |= flag.mask;
+	}
+
+	/**
+	 * Automatically carry flags from a child commit to its parents.
+	 * <p>
+	 * A carried flag is copied from the child commit onto its parents when the
+	 * child commit is popped from the lowest level of walk's internal graph.
+	 * 
+	 * @param set
+	 *            the flags to carry onto parents, if set on a descendant.
+	 */
+	public void carry(final Collection<RevFlag> set) {
+		for (final RevFlag flag : set)
+			carry(flag);
+	}
+
+	/**
+	 * Allow a flag to be recycled for a different use.
+	 * <p>
+	 * Recycled flags always come back as a different Java object instance when
+	 * assigned again by {@link #newFlag(String)}.
+	 * <p>
+	 * If the flag was previously being carried, the carrying request is
+	 * removed. Disposing of a carried flag while a traversal is in progress has
+	 * an undefined behavior.
+	 * 
+	 * @param flag
+	 *            the to recycle.
+	 */
+	public void disposeFlag(final RevFlag flag) {
+		freeFlag(flag.mask);
+	}
+
+	void freeFlag(final int mask) {
+		if (isNotStarted()) {
+			freeFlags |= mask;
+			carryFlags &= ~mask;
+		} else {
+			delayFreeFlags |= mask;
+		}
+	}
+
+	private void finishDelayedFreeFlags() {
+		if (delayFreeFlags != 0) {
+			freeFlags |= delayFreeFlags;
+			carryFlags &= delayFreeFlags;
+			delayFreeFlags = 0;
+		}
+	}
+
+	/**
+	 * Resets internal state and allows this instance to be used again.
+	 * <p>
+	 * Unlike {@link #dispose()} previously acquired RevObject (and RevCommit)
+	 * instances are not invalidated. RevFlag instances are not invalidated, but
+	 * are removed from all RevObjects.
+	 */
 	public void reset() {
+		reset(0);
+	}
+
+	/**
+	 * Resets internal state and allows this instance to be used again.
+	 * <p>
+	 * Unlike {@link #dispose()} previously acquired RevObject (and RevCommit)
+	 * instances are not invalidated. RevFlag instances are not invalidated, but
+	 * are removed from all RevObjects.
+	 * 
+	 * @param retainFlags
+	 *            application flags that should <b>not</b> be cleared from
+	 *            existing commit objects.
+	 */
+	public void resetRetain(final RevFlagSet retainFlags) {
+		reset(retainFlags.mask);
+	}
+
+	/**
+	 * Resets internal state and allows this instance to be used again.
+	 * <p>
+	 * Unlike {@link #dispose()} previously acquired RevObject (and RevCommit)
+	 * instances are not invalidated. RevFlag instances are not invalidated, but
+	 * are removed from all RevObjects.
+	 * 
+	 * @param retainFlags
+	 *            application flags that should <b>not</b> be cleared from
+	 *            existing commit objects.
+	 */
+	public void resetRetain(final RevFlag... retainFlags) {
+		int mask = 0;
+		for (final RevFlag flag : retainFlags)
+			mask |= flag.mask;
+		reset(mask);
+	}
+
+	private void reset(int retainFlags) {
+		finishDelayedFreeFlags();
+		retainFlags |= PARSED;
+
 		final FIFORevQueue q = new FIFORevQueue();
 		for (final RevCommit c : roots) {
 			if ((c.flags & SEEN) == 0)
 				continue;
+			c.flags &= retainFlags;
 			c.reset();
 			q.add(c);
 		}
@@ -575,13 +809,33 @@ public class RevWalk implements Iterable<RevCommit> {
 			for (final RevCommit p : c.parents) {
 				if ((p.flags & SEEN) == 0)
 					continue;
-				p.reset();
+				p.flags &= retainFlags;
 				q.add(p);
 			}
 		}
 
 		curs.release();
 		roots.clear();
+		queue = new FIFORevQueue();
+		pending = new StartGenerator(this);
+	}
+
+	/**
+	 * Dispose all internal state and invalidate all RevObject instances.
+	 * <p>
+	 * All RevObject (and thus RevCommit, etc.) instances previously acquired
+	 * from this RevWalk are invalidated by a dispose call. Applications must
+	 * not retain or use RevObject instances obtained prior to the dispose call.
+	 * All RevFlag instances are also invalidated, and must not be reused.
+	 */
+	public void dispose() {
+		freeFlags = APP_FLAGS;
+		delayFreeFlags = 0;
+		carryFlags = 0;
+		objects.clear();
+		curs.release();
+		roots.clear();
+		queue = new FIFORevQueue();
 		pending = new StartGenerator(this);
 	}
 
@@ -641,9 +895,13 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	/** Throws an exception if we have started producing output. */
 	protected void assertNotStarted() {
-		if (pending instanceof StartGenerator)
+		if (isNotStarted())
 			return;
 		throw new IllegalStateException("Output has already been started.");
+	}
+
+	private boolean isNotStarted() {
+		return pending instanceof StartGenerator;
 	}
 
 	/**

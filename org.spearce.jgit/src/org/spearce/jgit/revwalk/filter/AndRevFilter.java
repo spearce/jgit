@@ -43,6 +43,10 @@ public abstract class AndRevFilter extends RevFilter {
 	 * @return a filter that must match both input filters.
 	 */
 	public static RevFilter create(final RevFilter a, final RevFilter b) {
+		if (a == ALL)
+			return b;
+		if (b == ALL)
+			return a;
 		return new Binary(a, b);
 	}
 

@@ -27,6 +27,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -48,8 +49,7 @@ public class RepositoryConfig {
 	 *         configuration file from their home directory.
 	 */
 	public static RepositoryConfig openUserConfig() {
-		return new RepositoryConfig(null, new File(System
-				.getProperty("user.home"), ".gitconfig"));
+		return new RepositoryConfig(null, new File(FS.userHome(), ".gitconfig"));
 	}
 
 	private final RepositoryConfig baseConfig;
@@ -70,10 +70,6 @@ public class RepositoryConfig {
 
 	private Map<String, Object> byName;
 
-	private Map<String, Entry> lastInEntry;
-
-	private Map<String, Entry> lastInGroup;
-	
 	private static final String MAGIC_EMPTY_VALUE = "%%magic%%empty%%";
 
 	RepositoryConfig(final Repository repo) {
@@ -228,8 +224,50 @@ public class RepositoryConfig {
 		}
 		return val;
 	}
-	
+
+	/**
+	 * @param section
+	 * @param subsection
+	 * @param name
+	 * @return array of zero or more values from the configuration.
+	 */
+	public String[] getStringList(final String section, String subsection,
+			final String name) {
+		final Object o = getRawEntry(section, subsection, name);
+		if (o instanceof List) {
+			final List lst = (List) o;
+			final String[] r = new String[lst.size()];
+			for (int i = 0; i < r.length; i++) {
+				final String val = ((Entry) lst.get(i)).value;
+				r[i] = MAGIC_EMPTY_VALUE.equals(val) ? "" : val;
+			}
+			return r;
+		}
+
+		if (o instanceof Entry) {
+			final String val = ((Entry) o).value;
+			return new String[] { MAGIC_EMPTY_VALUE.equals(val) ? "" : val };
+		}
+
+		if (baseConfig != null)
+			return baseConfig.getStringList(section, subsection, name);
+		return new String[0];
+	}
+
 	private String getRawString(final String section, final String subsection,
+			final String name) {
+		final Object o = getRawEntry(section, subsection, name);
+		if (o instanceof List) {
+			return ((Entry) ((List) o).get(0)).value;
+		} else if (o instanceof Entry) {
+			return ((Entry) o).value;
+		} else if (baseConfig != null)
+			return baseConfig.getRawString(section, subsection, name);
+		else
+			return null;
+	}
+
+	private Object getRawEntry(final String section, final String subsection,
 			final String name) {
 		if (!readFile) {
 			try {
@@ -249,14 +287,7 @@ public class RepositoryConfig {
 			ss = "";
 		final Object o;
 		o = byName.get(section.toLowerCase() + ss + "." + name.toLowerCase());
-		if (o instanceof List) {
-			return ((Entry) ((List) o).get(0)).value;
-		} else if (o instanceof Entry) {
-			return ((Entry) o).value;
-		} else if (baseConfig != null)
-			return baseConfig.getRawString(section, subsection, name);
-		else
-			return null;
+		return o;
 	}
 
 	/**
@@ -277,36 +308,135 @@ public class RepositoryConfig {
 	 * @param value
 	 *            parameter value, e.g. "true"
 	 */
-	public void putString(final String section, final String subsection,
+	public void setString(final String section, final String subsection,
 			final String name, final String value) {
-		Entry pe = null;
-		for (int i = 0; i < entries.size(); ++i) {
-			pe = entries.get(i);
-			if (pe.base.equals(section)
-					&& (pe.extendedBase == null && subsection == null || pe.extendedBase != null
-							&& pe.extendedBase.equals(subsection)))
-				break;
-			pe = null;
+		setStringList(section, subsection, name, Collections
+				.singletonList(value));
+	}
+
+	/**
+	 * Remove a configuration value.
+	 * 
+	 * @param section
+	 *            section name, e.g "branch"
+	 * @param subsection
+	 *            optional subsection value, e.g. a branch name
+	 * @param name
+	 *            parameter name, e.g. "filemode"
+	 */
+	public void unsetString(final String section, final String subsection,
+			final String name) {
+		setStringList(section, subsection, name, Collections
+				.<String> emptyList());
+	}
+
+	/**
+	 * Set a configuration value.
+	 * 
+	 * <pre>
+	 * [section &quot;subsection&quot;]
+	 *         name = value
+	 * </pre>
+	 * 
+	 * @param section
+	 *            section name, e.g "branch"
+	 * @param subsection
+	 *            optional subsection value, e.g. a branch name
+	 * @param name
+	 *            parameter name, e.g. "filemode"
+	 * @param values
+	 *            list of zero or more values for this key.
+	 */
+	public void setStringList(final String section, final String subsection,
+			final String name, final List<String> values) {
+		// Update our parsed cache of values for future reference.
+		//
+		String key = section.toLowerCase();
+		if (subsection != null)
+			key += "." + subsection.toLowerCase();
+		key += "." + name.toLowerCase();
+		if (values.size() == 0)
+			byName.remove(key);
+		else if (values.size() == 1)
+			byName.put(key, values.get(0));
+		else
+			byName.put(key, new ArrayList<String>(values));
+
+		int entryIndex = 0;
+		int valueIndex = 0;
+		int insertPosition = -1;
+
+		// Reset the first n Entry objects that match this input name.
+		//
+		while (entryIndex < entries.size() && valueIndex < values.size()) {
+			final Entry e = entries.get(entryIndex++);
+			if (e.match(section, subsection, name)) {
+				e.value = values.get(valueIndex++);
+				insertPosition = entryIndex;
+			}
 		}
 
-		// TODO: This doesn't work in general, so we must revise this code
-		if (pe == null) {
-			pe = new Entry();
-			pe.prefix = null;
-			pe.suffix = null;
-			pe.base = section;
-			pe.extendedBase = subsection;
-			add(pe);
+		// Remove any extra Entry objects that we no longer need.
+		//
+		if (valueIndex == values.size() && entryIndex < entries.size()) {
+			while (entryIndex < entries.size()) {
+				final Entry e = entries.get(entryIndex++);
+				if (e.match(section, subsection, name))
+					entries.remove(--entryIndex);
+			}
 		}
 
-		Entry e = new Entry();
-		e.prefix = null;
-		e.suffix = null;
-		e.base = section;
-		e.extendedBase = subsection;
-		e.name = name;
-		e.value = value;
-		add(e);
+		// Insert new Entry objects for additional/new values.
+		//
+		if (valueIndex < values.size() && entryIndex == entries.size()){
+			if (insertPosition < 0) {
+				// We didn't find a matching key above, but maybe there
+				// is already a section available that matches.  Insert
+				// after the last key of that section.
+				//
+				insertPosition = findSectionEnd(section, subsection);
+			}
+			if (insertPosition < 0) {
+				// We didn't find any matching section header for this key,
+				// so we must create a new section header at the end.
+				//
+				final Entry e = new Entry();
+				e.prefix = null;
+				e.suffix = null;
+				e.base = section;
+				e.extendedBase = subsection;
+				entries.add(e);
+				insertPosition = entries.size();
+			}
+			while (valueIndex < values.size()) {
+				final Entry e = new Entry();
+				e.prefix = null;
+				e.suffix = null;
+				e.base = section;
+				e.extendedBase = subsection;
+				e.name = name;
+				e.value = values.get(valueIndex++);
+				entries.add(insertPosition++, e);
+			}
+		}
+	}
+
+	private int findSectionEnd(final String section, final String subsection) {
+		for (int i = 0; i < entries.size(); i++) {
+			Entry e = entries.get(i);
+			if (e.match(section, subsection, null)) {
+				i++;
+				while (i < entries.size()) {
+					e = entries.get(i);
+					if (e.match(section, subsection, e.name))
+						i++;
+					else
+						break;
+				}
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	/**
@@ -482,8 +612,6 @@ public class RepositoryConfig {
 	private void clear() {
 		entries = new ArrayList<Entry>();
 		byName = new HashMap<String, Object>();
-		lastInEntry = new HashMap<String, Entry>();
-		lastInGroup = new HashMap<String, Entry>();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -511,9 +639,7 @@ public class RepositoryConfig {
 				} else if (o instanceof List) {
 					((List<Entry>) o).add(e);
 				}
-				lastInEntry.put(key, e);
 			}
-			lastInGroup.put(group, e);
 		}
 	}
 
@@ -743,5 +869,19 @@ public class RepositoryConfig {
 		String value;
 
 		String suffix;
+
+		boolean match(final String aBase, final String aExtendedBase,
+				final String aName) {
+			return eq(base, aBase) && eq(extendedBase, aExtendedBase)
+					&& eq(name, aName);
+		}
+
+		private static boolean eq(final String a, final String b) {
+			if (a == b)
+				return true;
+			if (a == null || b == null)
+				return false;
+			return a.equals(b);
+		}
 	}
 }

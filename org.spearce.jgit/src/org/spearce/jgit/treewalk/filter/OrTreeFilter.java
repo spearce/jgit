@@ -42,6 +42,8 @@ public abstract class OrTreeFilter extends TreeFilter {
 	 * @return a filter that must match at least one input filter.
 	 */
 	public static TreeFilter create(final TreeFilter a, final TreeFilter b) {
+		if (a == ALL || b == ALL)
+			return ALL;
 		return new Binary(a, b);
 	}
 

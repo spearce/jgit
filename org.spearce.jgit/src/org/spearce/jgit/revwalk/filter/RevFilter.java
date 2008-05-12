@@ -120,6 +120,31 @@ public abstract class RevFilter {
 	};
 
 	/**
+	 * Selects only merge bases of the starting points (thread safe).
+	 * <p>
+	 * This is a special case filter that cannot be combined with any other
+	 * filter. Its include method always throws an exception as context
+	 * information beyond the arguments is necessary to determine if the
+	 * supplied commit is a merge base.
+	 */
+	public static final RevFilter MERGE_BASE = new RevFilter() {
+		@Override
+		public boolean include(final RevWalk walker, final RevCommit c) {
+			throw new UnsupportedOperationException("Cannot be combined.");
+		}
+
+		@Override
+		public RevFilter clone() {
+			return this;
+		}
+
+		@Override
+		public String toString() {
+			return "MERGE_BASE";
+		}
+	};
+
+	/**
 	 * Create a new filter that does the opposite of this filter.
 	 *
 	 * @return a new filter that includes commits this filter rejects.

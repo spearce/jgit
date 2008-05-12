@@ -33,4 +33,17 @@ public class NotSupportedException extends IOException {
 	public NotSupportedException(final String s) {
 		super(s);
 	}
+
+	/**
+	 * Construct a NotSupportedException for some issue JGit cannot yet handle.
+	 * 
+	 * @param s
+	 *            message describing the issue
+	 * @param why
+	 *            a lower level implementation specific issue.
+	 */
+	public NotSupportedException(final String s, final Throwable why) {
+		super(s);
+		initCause(why);
+	}
 }

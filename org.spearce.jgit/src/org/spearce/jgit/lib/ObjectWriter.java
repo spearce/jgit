@@ -103,7 +103,7 @@ public class ObjectWriter {
 	 */
 	public ObjectId writeBlob(final long len, final InputStream is)
 			throws IOException {
-		return writeObject(Constants.TYPE_BLOB, len, is, true);
+		return writeObject(Constants.OBJ_BLOB, len, is, true);
 	}
 
 	/**
@@ -142,7 +142,7 @@ public class ObjectWriter {
 
 	private ObjectId writeTree(final long len, final InputStream is)
 			throws IOException {
-		return writeObject(Constants.TYPE_TREE, len, is, true);
+		return writeObject(Constants.OBJ_TREE, len, is, true);
 	}
 
 	/**
@@ -245,12 +245,12 @@ public class ObjectWriter {
 
 	private ObjectId writeCommit(final long len, final InputStream is)
 			throws IOException {
-		return writeObject(Constants.TYPE_COMMIT, len, is, true);
+		return writeObject(Constants.OBJ_COMMIT, len, is, true);
 	}
 
 	private ObjectId writeTag(final long len, final InputStream is)
 		throws IOException {
-		return writeObject(Constants.TYPE_TAG, len, is, true);
+		return writeObject(Constants.OBJ_TAG, len, is, true);
 	}
 
 	/**
@@ -264,11 +264,11 @@ public class ObjectWriter {
 	 */
 	public ObjectId computeBlobSha1(final long len, final InputStream is)
 			throws IOException {
-		return writeObject(Constants.TYPE_BLOB, len, is, false);
+		return writeObject(Constants.OBJ_BLOB, len, is, false);
 	}
 
 	@SuppressWarnings("null")
-	ObjectId writeObject(final String type, long len, final InputStream is,
+	ObjectId writeObject(final int type, long len, final InputStream is,
 			boolean store) throws IOException {
 		final File t;
 		final DeflaterOutputStream deflateStream;
@@ -292,9 +292,9 @@ public class ObjectWriter {
 
 		try {
 			byte[] header;
-			int r;
+			int n;
 
-			header = Constants.encodeASCII(type);
+			header = Constants.encodedTypeString(type);
 			md.update(header);
 			if (deflateStream != null)
 				deflateStream.write(header);
@@ -313,11 +313,11 @@ public class ObjectWriter {
 				deflateStream.write((byte) 0);
 
 			while (len > 0
-					&& (r = is.read(buf, 0, (int) Math.min(len, buf.length))) > 0) {
-				md.update(buf, 0, r);
+					&& (n = is.read(buf, 0, (int) Math.min(len, buf.length))) > 0) {
+				md.update(buf, 0, n);
 				if (deflateStream != null)
-					deflateStream.write(buf, 0, r);
-				len -= r;
+					deflateStream.write(buf, 0, n);
+				len -= n;
 			}
 
 			if (len != 0)

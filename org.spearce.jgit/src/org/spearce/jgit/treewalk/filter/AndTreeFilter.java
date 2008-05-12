@@ -42,6 +42,10 @@ public abstract class AndTreeFilter extends TreeFilter {
 	 * @return a filter that must match both input filters.
 	 */
 	public static TreeFilter create(final TreeFilter a, final TreeFilter b) {
+		if (a == ALL)
+			return b;
+		if (b == ALL)
+			return a;
 		return new Binary(a, b);
 	}
 

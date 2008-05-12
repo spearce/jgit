@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
+import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.ObjectId;
@@ -60,6 +61,8 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 	 * @param id
 	 *            identity of the tree being parsed; used only in exception
 	 *            messages if data corruption is found.
+	 * @throws MissingObjectException
+	 *             the object supplied is not available from the repository.
 	 * @throws IncorrectObjectTypeException
 	 *             the object supplied as an argument is not actually a tree and
 	 *             cannot be parsed as though it were a tree.
@@ -69,6 +72,8 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 	public void reset(final Repository repo, final ObjectId id)
 			throws IncorrectObjectTypeException, IOException {
 		final ObjectLoader ldr = repo.openObject(id);
+		if (ldr == null)
+			throw new MissingObjectException(id, Constants.TYPE_TREE);
 		final byte[] subtreeData = ldr.getCachedBytes();
 		if (ldr.getType() != Constants.OBJ_TREE)
 			throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);

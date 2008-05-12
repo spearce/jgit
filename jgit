@@ -1,7 +1,9 @@
 #!/bin/sh
 
-cp=`dirname $0`
-cp="$cp/org.spearce.jgit/bin"
+jgit_home=`dirname $0`
+cp="$jgit_home/org.spearce.jgit/bin"
+cp="$cp:$jgit_home/org.spearce.jgit/lib/jsch-0.1.37.jar"
+unset jgit_home
 java_args=
 
 # Cleanup paths for Cygwin.

@@ -30,14 +30,19 @@ public class TextProgressMonitor implements ProgressMonitor {
 
 	private int totalWork;
 
+	/** Initialize a new progress monitor. */
+	public TextProgressMonitor() {
+		taskBeganAt = System.currentTimeMillis();
+	}
+
 	public void start(final int totalTasks) {
 		// Ignore the number of tasks.
+		taskBeganAt = System.currentTimeMillis();
 	}
 
 	public void beginTask(final String title, final int total) {
 		endTask();
 		msg = title;
-		taskBeganAt = System.currentTimeMillis();
 		lastWorked = 0;
 		totalWork = total;
 	}
@@ -47,13 +52,11 @@ public class TextProgressMonitor implements ProgressMonitor {
 			return;
 
 		final int cmp = lastWorked + completed;
-		if (!output && System.currentTimeMillis() - taskBeganAt < 1000)
+		if (!output && System.currentTimeMillis() - taskBeganAt < 500)
 			return;
 		if (totalWork == UNKNOWN) {
-			if (cmp % 100 == 0) {
-				display(cmp);
-				System.err.flush();
-			}
+			display(cmp);
+			System.err.flush();
 		} else {
 			if ((cmp * 100 / totalWork) != (lastWorked * 100) / totalWork) {
 				display(cmp);
