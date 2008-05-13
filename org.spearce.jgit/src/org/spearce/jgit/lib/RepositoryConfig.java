@@ -790,7 +790,9 @@ public class RepositoryConfig {
 			r.mark(1);
 			int c = r.read();
 			if (c < 0) {
-				throw new IOException("Unexpected end of config file.");
+				if (value.length() == 0)
+					throw new IOException("Unexpected end of config file.");
+				break;
 			}
 			if ('\n' == c) {
 				if (quote) {
