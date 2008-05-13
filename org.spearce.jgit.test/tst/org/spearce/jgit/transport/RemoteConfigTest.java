@@ -55,6 +55,8 @@ public class RemoteConfigTest extends RepositoryTestCase {
 		assertNotNull(allURIs);
 		assertNotNull(rc.getFetchRefSpecs());
 		assertNotNull(rc.getPushRefSpecs());
+		assertNotNull(rc.getTagOpt());
+		assertSame(TagOpt.AUTO_FOLLOW, rc.getTagOpt());
 
 		assertEquals(1, allURIs.size());
 		assertEquals("http://www.spearce.org/egit.git", allURIs.get(0));
@@ -67,6 +69,24 @@ public class RemoteConfigTest extends RepositoryTestCase {
 		assertEquals("refs/remotes/spearce/*", spec.getDestination());
 
 		assertEquals(0, rc.getPushRefSpecs().size());
+	}
+
+	public void testSimpleNoTags() throws Exception {
+		writeConfig("[remote \"spearce\"]\n"
+				+ "url = http://www.spearce.org/egit.git\n"
+				+ "fetch = +refs/heads/*:refs/remotes/spearce/*\n"
+				+ "tagopt = --no-tags\n");
+		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "spearce");
+		assertSame(TagOpt.NO_TAGS, rc.getTagOpt());
+	}
+
+	public void testSimpleAlwaysTags() throws Exception {
+		writeConfig("[remote \"spearce\"]\n"
+				+ "url = http://www.spearce.org/egit.git\n"
+				+ "fetch = +refs/heads/*:refs/remotes/spearce/*\n"
+				+ "tagopt = --tags\n");
+		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "spearce");
+		assertSame(TagOpt.FETCH_TAGS, rc.getTagOpt());
 	}
 
 	public void testMirror() throws Exception {
@@ -348,5 +368,37 @@ public class RemoteConfigTest extends RepositoryTestCase {
 				+ "\trepositoryformatversion = 0\n" + "\tfilemode = true\n"
 				+ "[remote \"spearce\"]\n" + "\turl = /some/dir\n"
 				+ "\tfetch = +refs/heads/*:refs/remotes/spearce/*\n");
+	}
+
+	public void testSaveNoTags() throws Exception {
+		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "origin");
+		rc.addURI(new URIish("/some/dir"));
+		rc.addFetchRefSpec(new RefSpec("+refs/heads/*:refs/remotes/"
+				+ rc.getName() + "/*"));
+		rc.setTagOpt(TagOpt.NO_TAGS);
+		rc.update(db.getConfig());
+		db.getConfig().save();
+
+		checkFile(new File(db.getDirectory(), "config"), "[core]\n"
+				+ "\trepositoryformatversion = 0\n" + "\tfilemode = true\n"
+				+ "[remote \"origin\"]\n" + "\turl = /some/dir\n"
+				+ "\tfetch = +refs/heads/*:refs/remotes/origin/*\n"
+				+ "\ttagopt = --no-tags\n");
+	}
+
+	public void testSaveAllTags() throws Exception {
+		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "origin");
+		rc.addURI(new URIish("/some/dir"));
+		rc.addFetchRefSpec(new RefSpec("+refs/heads/*:refs/remotes/"
+				+ rc.getName() + "/*"));
+		rc.setTagOpt(TagOpt.FETCH_TAGS);
+		rc.update(db.getConfig());
+		db.getConfig().save();
+
+		checkFile(new File(db.getDirectory(), "config"), "[core]\n"
+				+ "\trepositoryformatversion = 0\n" + "\tfilemode = true\n"
+				+ "[remote \"origin\"]\n" + "\turl = /some/dir\n"
+				+ "\tfetch = +refs/heads/*:refs/remotes/origin/*\n"
+				+ "\ttagopt = --tags\n");
 	}
 }

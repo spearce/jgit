@@ -44,6 +44,8 @@ public class RemoteConfig {
 
 	private static final String KEY_RECEIVEPACK = "receivepack";
 
+	private static final String KEY_TAGOPT = "tagopt";
+
 	/** Default value for {@link #getUploadPack()} if not specified. */
 	public static final String DEFAULT_UPLOAD_PACK = "git-upload-pack";
 
@@ -61,6 +63,8 @@ public class RemoteConfig {
 	private String uploadpack;
 
 	private String receivepack;
+
+	private TagOpt tagopt;
 
 	/**
 	 * Parse a remote block from an existing configuration file.
@@ -108,6 +112,9 @@ public class RemoteConfig {
 		if (val == null)
 			val = DEFAULT_RECEIVE_PACK;
 		receivepack = val;
+
+		val = rc.getString(SECTION, name, KEY_TAGOPT);
+		tagopt = TagOpt.fromOption(val);
 	}
 
 	/**
@@ -136,6 +143,7 @@ public class RemoteConfig {
 
 		set(rc, KEY_UPLOADPACK, getUploadPack(), DEFAULT_UPLOAD_PACK);
 		set(rc, KEY_RECEIVEPACK, getReceivePack(), DEFAULT_RECEIVE_PACK);
+		set(rc, KEY_TAGOPT, getTagOpt().option(), TagOpt.AUTO_FOLLOW.option());
 	}
 
 	private void set(final RepositoryConfig rc, final String key,
@@ -282,5 +290,24 @@ public class RemoteConfig {
 	 */
 	public String getReceivePack() {
 		return receivepack;
+	}
+
+	/**
+	 * Get the description of how annotated tags should be treated during fetch.
+	 * 
+	 * @return option indicating the behavior of annotated tags in fetch.
+	 */
+	public TagOpt getTagOpt() {
+		return tagopt;
+	}
+
+	/**
+	 * Set the description of how annotated tags should be treated on fetch.
+	 * 
+	 * @param option
+	 *            method to use when handling annotated tags.
+	 */
+	public void setTagOpt(final TagOpt option) {
+		tagopt = option != null ? option : TagOpt.AUTO_FOLLOW;
 	}
 }
