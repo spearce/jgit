@@ -126,20 +126,17 @@ public class RevCommit extends RevObject {
 
 			for (int i = 1; i < n; i++) {
 				final RevCommit p = pList[i];
+				if ((p.flags & carry) == carry)
+					continue;
 				p.flags |= carry;
 				carryFlags(p, carry);
 			}
 
 			c = pList[0];
+			if ((c.flags & carry) == carry)
+				return;
 			c.flags |= carry;
 		}
-	}
-
-	void carryFlags(final int carryMask) {
-		final int carry = flags & carryMask;
-		if (carry == 0)
-			return;
-		carryFlags(this, carry);
 	}
 
 	/**
@@ -155,7 +152,9 @@ public class RevCommit extends RevObject {
 	 *            the single flag value to carry back onto parents.
 	 */
 	public void carry(final RevFlag flag) {
-		carryFlags(flags & flag.mask);
+		final int carry = flags & flag.mask;
+		if (carry != 0)
+			carryFlags(this, carry);
 	}
 
 	/**

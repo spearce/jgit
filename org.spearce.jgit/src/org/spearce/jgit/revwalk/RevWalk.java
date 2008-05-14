@@ -139,7 +139,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	private int delayFreeFlags;
 
-	int carryFlags;
+	int carryFlags = UNINTERESTING;
 
 	private final ArrayList<RevCommit> roots;
 
@@ -284,7 +284,7 @@ public class RevWalk implements Iterable<RevCommit> {
 			throws MissingObjectException, IncorrectObjectTypeException,
 			IOException {
 		c.flags |= UNINTERESTING;
-		c.carryFlags(UNINTERESTING);
+		carryFlagsImpl(c);
 		markStart(c);
 	}
 
@@ -831,7 +831,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	public void dispose() {
 		freeFlags = APP_FLAGS;
 		delayFreeFlags = 0;
-		carryFlags = 0;
+		carryFlags = UNINTERESTING;
 		objects.clear();
 		curs.release();
 		roots.clear();
@@ -913,5 +913,11 @@ public class RevWalk implements Iterable<RevCommit> {
 	 */
 	protected RevCommit createCommit(final AnyObjectId id) {
 		return new RevCommit(id);
+	}
+
+	void carryFlagsImpl(final RevCommit c) {
+		final int carry = c.flags & carryFlags;
+		if (carry != 0)
+			RevCommit.carryFlags(c, carry);
 	}
 }

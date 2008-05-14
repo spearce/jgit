@@ -47,8 +47,6 @@ class PendingGenerator extends Generator {
 
 	private final int output;
 
-	private final int carryMask;
-
 	boolean canDispose;
 
 	PendingGenerator(final RevWalk w, final AbstractRevQueue p,
@@ -57,7 +55,6 @@ class PendingGenerator extends Generator {
 		pending = p;
 		filter = f;
 		output = out;
-		carryMask = w.carryFlags | UNINTERESTING;
 		canDispose = true;
 	}
 
@@ -93,7 +90,7 @@ class PendingGenerator extends Generator {
 					p.flags |= SEEN;
 					pending.add(p);
 				}
-				c.carryFlags(carryMask);
+				walker.carryFlagsImpl(c);
 
 				if ((c.flags & UNINTERESTING) != 0) {
 					if (pending.everbodyHasFlag(UNINTERESTING))
