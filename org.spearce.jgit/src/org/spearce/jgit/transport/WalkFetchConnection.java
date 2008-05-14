@@ -261,11 +261,8 @@ class WalkFetchConnection extends FetchConnection {
 		try {
 			treeWalk.reset(new ObjectId[] { obj });
 			while (treeWalk.next()) {
-				final FileMode mode;
-				final int sType;
-
-				mode = FileMode.fromBits(treeWalk.getRawMode(0));
-				sType = mode.getObjectType();
+				final FileMode mode = treeWalk.getFileMode(0);
+				final int sType = mode.getObjectType();
 
 				switch (sType) {
 				case Constants.OBJ_BLOB:
@@ -664,7 +661,7 @@ class WalkFetchConnection extends FetchConnection {
 		tree.add(COMPLETE);
 		treeWalk.reset(new ObjectId[] { tree });
 		while (treeWalk.next()) {
-			final FileMode mode = FileMode.fromBits(treeWalk.getRawMode(0));
+			final FileMode mode = treeWalk.getFileMode(0);
 			final int sType = mode.getObjectType();
 
 			switch (sType) {

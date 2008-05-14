@@ -409,6 +409,20 @@ public class TreeWalk {
 	}
 
 	/**
+	 * Obtain the {@link FileMode} for the current entry.
+	 * <p>
+	 * Every added tree supplies a mode, even if the tree does not contain the
+	 * current entry. In the latter case {@link FileMode#MISSING} is returned.
+	 * 
+	 * @param nth
+	 *            tree to obtain the mode from.
+	 * @return mode for the current entry of the nth tree.
+	 */
+	public FileMode getFileMode(final int nth) {
+		return FileMode.fromBits(getRawMode(nth));
+	}
+
+	/**
 	 * Obtain the ObjectId for the current entry.
 	 * <p>
 	 * Using this method to compare ObjectId values between trees of this walker

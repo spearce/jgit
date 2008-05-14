@@ -51,7 +51,7 @@ class LsTree extends TextBuiltin {
 			walk.addTree(resolve(n));
 
 		while (walk.next()) {
-			final FileMode mode = FileMode.fromBits(walk.getRawMode(0));
+			final FileMode mode = walk.getFileMode(0);
 			if (mode == FileMode.TREE)
 				out.print('0');
 			out.print(mode);

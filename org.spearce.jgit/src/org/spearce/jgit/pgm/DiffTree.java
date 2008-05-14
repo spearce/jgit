@@ -68,7 +68,7 @@ class DiffTree extends TextBuiltin {
 			for (int i = 1; i < nTree; i++)
 				out.print(':');
 			for (int i = 0; i < nTree; i++) {
-				final FileMode m = FileMode.fromBits(walk.getRawMode(i));
+				final FileMode m = walk.getFileMode(i);
 				final String s = m.toString();
 				for (int pad = 6 - s.length(); pad > 0; pad--)
 					out.print('0');
