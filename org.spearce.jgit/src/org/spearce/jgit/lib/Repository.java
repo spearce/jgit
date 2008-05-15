@@ -966,7 +966,7 @@ public class Repository {
 				newPackedRefs.put(name, id);
 			}
 		} catch (IOException e) {
-			throw new Error("Cannot read packed refs",e);
+			throw new RuntimeException("Cannot read packed refs",e);
 		} finally {
 			if (fileReader != null) {
 				try {
