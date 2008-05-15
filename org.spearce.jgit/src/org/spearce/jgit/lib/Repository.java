@@ -903,13 +903,6 @@ public class Repository {
 			return ref;
 		}
 	}
-
-	/**
-	 * @return names of all local branches
-	 */
-	public Collection<String> getBranches() {
-		return listRefs("heads");
-	}
 	
 	/**
 	 * @return the names of all refs (local and remotes branches, tags)
