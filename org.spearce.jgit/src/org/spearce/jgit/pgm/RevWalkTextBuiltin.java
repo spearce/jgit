@@ -17,6 +17,7 @@
 package org.spearce.jgit.pgm;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.spearce.jgit.lib.Constants;
@@ -44,8 +45,7 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 
 	@Override
 	final void execute(String[] args) throws Exception {
-		walk = createWalk();
-
+		final EnumSet<RevSort> sorting = EnumSet.noneOf(RevSort.class);
 		final List<String> argList = new ArrayList<String>();
 		final List<RevFilter> revLimiter = new ArrayList<RevFilter>();
 		List<PathFilter> pathLimiter = null;
@@ -64,13 +64,13 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 				revLimiter.add(MessageRevFilter.create(a.substring("--grep="
 						.length())));
 			else if ("--date-order".equals(a))
-				walk.sort(RevSort.COMMIT_TIME_DESC, true);
+				sorting.add(RevSort.COMMIT_TIME_DESC);
 			else if ("--topo-order".equals(a))
-				walk.sort(RevSort.TOPO, true);
+				sorting.add(RevSort.TOPO);
 			else if ("--reverse".equals(a))
-				walk.sort(RevSort.REVERSE, true);
+				sorting.add(RevSort.REVERSE);
 			else if ("--boundary".equals(a))
-				walk.sort(RevSort.BOUNDARY, true);
+				sorting.add(RevSort.BOUNDARY);
 			else if ("--parents".equals(a))
 				parents = true;
 			else if ("--total-count".equals(a))
@@ -78,6 +78,10 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 			else
 				argList.add(a);
 		}
+
+		walk = createWalk();
+		for (final RevSort s : sorting)
+			walk.sort(s, true);
 
 		if (pathLimiter != null && !pathLimiter.isEmpty())
 			walk.setTreeFilter(AndTreeFilter.create(PathFilterGroup
