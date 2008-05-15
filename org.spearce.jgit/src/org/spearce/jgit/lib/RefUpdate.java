@@ -88,7 +88,7 @@ public class RefUpdate {
 	}
 
 	/** Repository the ref is stored in. */
-	private final Repository db;
+	private final RefDatabase db;
 
 	/** Name of the ref. */
 	private final String name;
@@ -114,7 +114,7 @@ public class RefUpdate {
 	/** Result of the update operation. */
 	private Result result = Result.NOT_ATTEMPTED;
 
-	RefUpdate(final Repository r, final Ref ref, final File f) {
+	RefUpdate(final RefDatabase r, final Ref ref, final File f) {
 		db = r;
 		name = ref.getName();
 		oldValue = ref.getObjectId();
@@ -245,7 +245,7 @@ public class RefUpdate {
 		if (!lock.lock())
 			return Result.LOCK_FAILURE;
 		try {
-			oldValue = lock.readCurrentObjectId();
+			oldValue = db.idOf(name);
 			if (oldValue == null)
 				return store(lock, Result.NEW);
 			if (oldValue.equals(newValue))
@@ -272,7 +272,7 @@ public class RefUpdate {
 	 *             an unexpected IO error occurred while writing changes.
 	 */
 	public Result update() throws IOException {
-		return update(new RevWalk(db));
+		return update(new RevWalk(db.getRepository()));
 	}
 
 	/**
@@ -301,7 +301,7 @@ public class RefUpdate {
 		if (!lock.lock())
 			return Result.LOCK_FAILURE;
 		try {
-			oldValue = lock.readCurrentObjectId();
+			oldValue = db.idOf(name);
 			if (oldValue == null)
 				return store(lock, Result.NEW);
 
@@ -328,6 +328,7 @@ public class RefUpdate {
 
 	private Result store(final LockFile lock, final Result status)
 			throws IOException {
+		lock.setNeedStatInformation(true);
 		lock.write(newValue);
 		String msg = getRefLogMessage();
 		if (msg != null && refLogIncludeResult) {
@@ -338,9 +339,11 @@ public class RefUpdate {
 			else if (status == Result.NEW)
 				msg += ": created";
 		}
-		RefLogWriter.writeReflog(db, oldValue, newValue, msg, getName());
+		RefLogWriter.writeReflog(db.getRepository(), oldValue, newValue, msg,
+				getName());
 		if (!lock.commit())
 			return Result.LOCK_FAILURE;
+		db.stored(name, newValue, lock.getCommitLastModified());
 		return status;
 	}
 }

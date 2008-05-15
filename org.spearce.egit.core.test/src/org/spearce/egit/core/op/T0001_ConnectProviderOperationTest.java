@@ -79,7 +79,7 @@ public class T0001_ConnectProviderOperationTest extends GitTestCase {
 		RefUpdate lck = thisGit.updateRef("refs/heads/master");
 		assertNotNull("obtained lock", lck);
 		lck.setNewObjectId(id);
-		assertEquals(RefUpdate.Result.FORCED, lck.forceUpdate());
+		assertEquals(RefUpdate.Result.NEW, lck.forceUpdate());
 
 		// helper asserts, this is not what we are really testing
 		assertTrue("blob missing", new File(gitDir,

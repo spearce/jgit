@@ -26,8 +26,6 @@ import java.io.OutputStream;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 
-import org.spearce.jgit.util.NB;
-
 /**
  * Git style file locking and replacement.
  * <p>
@@ -118,43 +116,6 @@ public class LockFile {
 			return false;
 		copyCurrentContent();
 		return true;
-	}
-
-	/**
-	 * Read the current file as a hex formatted ObjectId.
-	 * <p>
-	 * This method is useful when doing safe updates of loose ref files.
-	 * 
-	 * @return ObjectId read from the file; null if the file does not exist yet.
-	 * @throws IOException
-	 *             the current file exists but could not be read due to an
-	 *             unexpected IO read error. The caller does not hold the lock.
-	 */
-	public ObjectId readCurrentObjectId() throws IOException {
-		try {
-			final FileInputStream fis = new FileInputStream(ref);
-			try {
-				final byte[] hex = new byte[Constants.OBJECT_ID_LENGTH * 2];
-				NB.readFully(fis, hex, 0, hex.length);
-				return ObjectId.fromString(hex, 0);
-			} finally {
-				fis.close();
-			}
-		} catch (FileNotFoundException fnfe) {
-			// Don't worry about a file that doesn't exist yet, it
-			// conceptually has no current content to copy.
-			//
-			return null;
-		} catch (IOException ioe) {
-			unlock();
-			throw ioe;
-		} catch (RuntimeException ioe) {
-			unlock();
-			throw ioe;
-		} catch (Error ioe) {
-			unlock();
-			throw ioe;
-		}
 	}
 
 	/**

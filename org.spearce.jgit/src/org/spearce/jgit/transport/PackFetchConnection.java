@@ -262,9 +262,9 @@ abstract class PackFetchConnection extends FetchConnection {
 	}
 
 	private void markReachable(final int maxTime) throws IOException {
-		for (final String name : local.getAllRefs()) {
+		for (final Ref r : local.getAllRefs().values()) {
 			try {
-				final RevCommit o = walk.parseCommit(local.resolve(name));
+				final RevCommit o = walk.parseCommit(r.getObjectId());
 				o.add(REACHABLE);
 				reachableCommits.add(o);
 			} catch (IOException readError) {

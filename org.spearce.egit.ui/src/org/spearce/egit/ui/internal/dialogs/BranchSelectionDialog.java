@@ -17,7 +17,7 @@
 package org.spearce.egit.ui.internal.dialogs;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -129,9 +129,9 @@ public class BranchSelectionDialog extends Dialog {
 
 	private void fillTreeWithBranches() throws IOException {
 		String branch = repo.getFullBranch();
-		Collection<String> branches = repo.getAllRefs();
-
-		Collections.sort((List<String>) branches);
+		List<String> branches = new ArrayList<String>(repo.getAllRefs()
+				.keySet());
+		Collections.sort(branches);
 		
 		TreeItem curItem = null;
 		TreeItem curSubItem = null;

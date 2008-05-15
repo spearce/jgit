@@ -599,11 +599,11 @@ class WalkFetchConnection extends FetchConnection {
 	}
 
 	private void markLocalRefsComplete() throws TransportException {
-		for (final String name : local.getAllRefs()) {
+		for (final Ref r : local.getAllRefs().values()) {
 			try {
-				markLocalObjComplete(revWalk.parseAny(local.resolve(name)));
+				markLocalObjComplete(revWalk.parseAny(r.getObjectId()));
 			} catch (IOException readError) {
-				throw new TransportException("Local ref " + name
+				throw new TransportException("Local ref " + r.getName()
 						+ " is missing object(s).", readError);
 			}
 		}

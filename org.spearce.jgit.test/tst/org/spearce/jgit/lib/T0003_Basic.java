@@ -366,6 +366,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		w.close();
 
 		Tag mapTag20 = db.mapTag("test020");
+		assertNotNull("have tag test020", mapTag20);
 		assertEquals("blob", mapTag20.getType());
 		assertEquals("test020 tagged\n", mapTag20.getMessage());
 		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag20.getAuthor());

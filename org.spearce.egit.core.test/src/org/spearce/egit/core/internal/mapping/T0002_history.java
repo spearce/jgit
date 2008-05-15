@@ -80,7 +80,7 @@ public class T0002_history extends GitTestCase {
 		RefUpdate lck = thisGit.updateRef("refs/heads/master");
 		assertNotNull("obtained lock", lck);
 		lck.setNewObjectId(commitId);
-		assertEquals(RefUpdate.Result.FORCED, lck.forceUpdate());
+		assertEquals(RefUpdate.Result.NEW, lck.forceUpdate());
 
 		ConnectProviderOperation operation = new ConnectProviderOperation(
 				project.getProject(), null);

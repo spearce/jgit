@@ -19,6 +19,7 @@ package org.spearce.egit.core.internal.storage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 import org.eclipse.core.internal.resources.ResourceException;
 import org.eclipse.core.resources.IResourceStatus;
@@ -28,11 +29,11 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.team.core.history.IFileRevision;
 import org.eclipse.team.core.history.ITag;
-import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.GitTag;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.PersonIdent;
+import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.treewalk.TreeWalk;
@@ -100,15 +101,13 @@ class CommitFileRevision extends GitFileRevision {
 
 	public ITag[] getTags() {
 		final Collection<GitTag> ret = new ArrayList<GitTag>();
-		for (final String tagName : db.getTags()) {
-			try {
-				final ObjectId id = db.resolve(tagName);
-				if (AnyObjectId.equals(id, commit))
-					ret.add(new GitTag(tagName));
-			} catch (IOException e) {
-				Activator.logError("Cannot parse Git tag " + tagName + " in "
-						+ db.getDirectory(), e);
-			}
+		for (final Map.Entry<String, Ref> tag : db.getTags().entrySet()) {
+			final ObjectId ref = tag.getValue().getPeeledObjectId();
+			if (ref == null)
+				continue;
+			if (!AnyObjectId.equals(ref, commit))
+				continue;
+			ret.add(new GitTag(tag.getKey()));
 		}
 		return ret.toArray(new ITag[ret.size()]);
 	}
