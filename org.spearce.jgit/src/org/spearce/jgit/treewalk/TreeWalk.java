@@ -122,7 +122,7 @@ public class TreeWalk {
 
 	private TreeFilter filter;
 
-	private AbstractTreeIterator[] trees = {};
+	private AbstractTreeIterator[] trees;
 
 	private boolean recursive;
 
@@ -141,6 +141,7 @@ public class TreeWalk {
 	public TreeWalk(final Repository repo) {
 		db = repo;
 		filter = TreeFilter.ALL;
+		trees = new AbstractTreeIterator[] { new EmptyTreeIterator() };
 	}
 
 	/**
