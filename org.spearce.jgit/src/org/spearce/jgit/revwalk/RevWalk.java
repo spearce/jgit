@@ -752,7 +752,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * instances are not invalidated. RevFlag instances are not invalidated, but
 	 * are removed from all RevObjects.
 	 */
-	public void reset() {
+	public final void reset() {
 		reset(0);
 	}
 
@@ -767,7 +767,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 *            application flags that should <b>not</b> be cleared from
 	 *            existing commit objects.
 	 */
-	public void resetRetain(final RevFlagSet retainFlags) {
+	public final void resetRetain(final RevFlagSet retainFlags) {
 		reset(retainFlags.mask);
 	}
 
@@ -782,14 +782,25 @@ public class RevWalk implements Iterable<RevCommit> {
 	 *            application flags that should <b>not</b> be cleared from
 	 *            existing commit objects.
 	 */
-	public void resetRetain(final RevFlag... retainFlags) {
+	public final void resetRetain(final RevFlag... retainFlags) {
 		int mask = 0;
 		for (final RevFlag flag : retainFlags)
 			mask |= flag.mask;
 		reset(mask);
 	}
 
-	private void reset(int retainFlags) {
+	/**
+	 * Resets internal state and allows this instance to be used again.
+	 * <p>
+	 * Unlike {@link #dispose()} previously acquired RevObject (and RevCommit)
+	 * instances are not invalidated. RevFlag instances are not invalidated, but
+	 * are removed from all RevObjects.
+	 * 
+	 * @param retainFlags
+	 *            application flags that should <b>not</b> be cleared from
+	 *            existing commit objects.
+	 */
+	protected void reset(int retainFlags) {
 		finishDelayedFreeFlags();
 		retainFlags |= PARSED;
 
