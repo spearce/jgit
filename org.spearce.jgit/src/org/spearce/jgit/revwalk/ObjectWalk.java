@@ -256,6 +256,44 @@ public class ObjectWalk extends RevWalk {
 	}
 
 	/**
+	 * Verify all interesting objects are available, and reachable.
+	 * <p>
+	 * Callers should populate starting points and ending points with
+	 * {@link #markStart(RevObject)} and {@link #markUninteresting(RevObject)}
+	 * and then use this method to verify all objects between those two points
+	 * exist in the repository and are readable.
+	 * <p>
+	 * This method returns successfully if everything is connected; it throws an
+	 * exception if there is a connectivity problem. The exception message
+	 * provides some detail about the connectivity failure.
+	 * 
+	 * @throws MissingObjectException
+	 *             one or or more of the next objects are not available from the
+	 *             object database, but were thought to be candidates for
+	 *             traversal. This usually indicates a broken link.
+	 * @throws IncorrectObjectTypeException
+	 *             one or or more of the objects in a tree do not match the type
+	 *             indicated.
+	 * @throws IOException
+	 *             a pack file or loose object could not be read.
+	 */
+	public void checkConnectivity() throws MissingObjectException,
+			IncorrectObjectTypeException, IOException {
+		for (;;) {
+			final RevCommit c = next();
+			if (c == null)
+				break;
+		}
+		for (;;) {
+			final RevObject o = nextObject();
+			if (o == null)
+				break;
+			if (o instanceof RevBlob && !db.hasObject(o))
+				throw new MissingObjectException(o, Constants.TYPE_BLOB);
+		}
+	}
+
+	/**
 	 * Get the current object's complete path.
 	 * <p>
 	 * This method is not very efficient and is primarily meant for debugging
