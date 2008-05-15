@@ -26,12 +26,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
+import org.spearce.jgit.revwalk.ObjectWalk;
 import org.spearce.jgit.revwalk.RevWalk;
 
 class FetchProcess {
@@ -73,7 +75,7 @@ class FetchProcess {
 				else
 					expandSingle(conn, spec, matched);
 			}
-			if (!askFor.isEmpty())
+			if (!askFor.isEmpty() && !askForIsComplete())
 				conn.fetch(monitor, askFor.values());
 		} finally {
 			conn.close();
@@ -118,6 +120,22 @@ class FetchProcess {
 			}
 			pw.close();
 			lock.commit();
+		}
+	}
+
+	private boolean askForIsComplete() throws TransportException {
+		try {
+			final ObjectWalk ow = new ObjectWalk(transport.local);
+			for (final ObjectId want : askFor.keySet())
+				ow.markStart(ow.parseAny(want));
+			for (final Ref ref : transport.local.getAllRefs().values())
+				ow.markUninteresting(ow.parseAny(ref.getObjectId()));
+			ow.checkConnectivity();
+			return true;
+		} catch (MissingObjectException e) {
+			return false;
+		} catch (IOException e) {
+			throw new TransportException("Unable to check connectivity.", e);
 		}
 	}
 
