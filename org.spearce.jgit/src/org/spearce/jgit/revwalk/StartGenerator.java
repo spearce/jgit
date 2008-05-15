@@ -73,6 +73,13 @@ class StartGenerator extends Generator {
 		final EnumSet<RevSort> sort = w.getRevSort();
 		boolean boundary = sort.contains(RevSort.BOUNDARY);
 
+		if (!boundary && walker instanceof ObjectWalk) {
+			// The object walker requires boundary support to color
+			// trees and blobs at the boundary uninteresting so it
+			// does not produce those in the result.
+			//
+			boundary = true;
+		}
 		if (boundary && !q.anybodyHasFlag(RevWalk.UNINTERESTING)) {
 			// If we were not fed uninteresting commits we will never
 			// construct a boundary. There is no reason to include the

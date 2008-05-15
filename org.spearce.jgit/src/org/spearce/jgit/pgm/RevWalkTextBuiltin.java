@@ -21,7 +21,9 @@ import java.util.EnumSet;
 import java.util.List;
 
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.revwalk.ObjectWalk;
 import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.revwalk.RevObject;
 import org.spearce.jgit.revwalk.RevSort;
 import org.spearce.jgit.revwalk.RevWalk;
 import org.spearce.jgit.revwalk.filter.AndRevFilter;
@@ -36,6 +38,8 @@ import org.spearce.jgit.treewalk.filter.TreeFilter;
 
 abstract class RevWalkTextBuiltin extends TextBuiltin {
 	RevWalk walk;
+
+	boolean objects = false;
 
 	boolean parents = false;
 
@@ -63,6 +67,8 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 			else if (a.startsWith("--grep="))
 				revLimiter.add(MessageRevFilter.create(a.substring("--grep="
 						.length())));
+			else if ("--objects".equals(a))
+				objects = true;
 			else if ("--date-order".equals(a))
 				sorting.add(RevSort.COMMIT_TIME_DESC);
 			else if ("--topo-order".equals(a))
@@ -129,6 +135,8 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 	}
 
 	protected RevWalk createWalk() {
+		if (objects)
+			return new ObjectWalk(db);
 		return new RevWalk(db);
 	}
 
@@ -138,8 +146,22 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 			n++;
 			show(c);
 		}
+		if (walk instanceof ObjectWalk) {
+			final ObjectWalk ow = (ObjectWalk) walk;
+			for (;;) {
+				final RevObject obj = ow.nextObject();
+				if (obj == null)
+					break;
+				show(ow, obj);
+			}
+		}
 		return n;
 	}
 
 	protected abstract void show(final RevCommit c) throws Exception;
+
+	protected void show(final ObjectWalk objectWalk,
+			final RevObject currentObject) throws Exception {
+		// Do nothing by default. Most applications cannot show an object.
+	}
 }

@@ -16,8 +16,11 @@
  */
 package org.spearce.jgit.pgm;
 
+import org.spearce.jgit.revwalk.ObjectWalk;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevFlag;
+import org.spearce.jgit.revwalk.RevObject;
+import org.spearce.jgit.revwalk.RevTree;
 
 class RevList extends RevWalkTextBuiltin {
 	@Override
@@ -31,5 +34,21 @@ class RevList extends RevWalkTextBuiltin {
 				c.getParent(i).getId().copyTo(outbuffer, out);
 			}
 		out.println();
+	}
+
+	@Override
+	protected void show(final ObjectWalk ow, final RevObject obj)
+			throws Exception {
+		if (obj.has(RevFlag.UNINTERESTING))
+			out.print('-');
+		obj.getId().copyTo(outbuffer, out);
+		final String path = ow.getPathString();
+		if (path != null) {
+			out.print(' ');
+			out.print(path);
+		} else if (obj instanceof RevTree)
+			out.print(' ');
+		out.println();
+
 	}
 }
