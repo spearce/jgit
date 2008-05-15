@@ -18,10 +18,12 @@ package org.spearce.jgit.lib;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -948,34 +950,31 @@ public class Repository {
 		}
 		if (packedRefsFile.lastModified() == packedrefstime)
 			return;
-		Map<String,ObjectId> newPackedRefs = new HashMap<String,ObjectId>();
-		FileReader fileReader = null;
+		final Map<String, ObjectId> newPackedRefs = new HashMap<String, ObjectId>();
 		try {
-			fileReader = new FileReader(packedRefsFile);
-			BufferedReader b=new BufferedReader(fileReader);
-			String p;
-			while ((p = b.readLine()) != null) {
-				if (p.charAt(0) == '#')
-					continue;
-				if (p.charAt(0) == '^') {
-					continue;
+			final BufferedReader b = new BufferedReader(new InputStreamReader(
+					new FileInputStream(packedRefsFile),
+					Constants.CHARACTER_ENCODING));
+			try {
+				String p;
+				while ((p = b.readLine()) != null) {
+					if (p.charAt(0) == '#')
+						continue;
+					if (p.charAt(0) == '^')
+						continue;
+
+					int spos = p.indexOf(' ');
+					ObjectId id = ObjectId.fromString(p.substring(0, spos));
+					String name = p.substring(spos + 1);
+					newPackedRefs.put(name, id);
 				}
-				int spos = p.indexOf(' ');
-				ObjectId id = ObjectId.fromString(p.substring(0,spos));
-				String name = p.substring(spos+1);
-				newPackedRefs.put(name, id);
+			} finally {
+				b.close();
 			}
+		} catch (FileNotFoundException noPackedRefs) {
+			// Ignore it and leave the new map empty.
 		} catch (IOException e) {
-			throw new RuntimeException("Cannot read packed refs",e);
-		} finally {
-			if (fileReader != null) {
-				try {
-					fileReader.close();
-				} catch (IOException e) {
-					// Cannot do anything more here
-					e.printStackTrace();
-				}
-			}
+			throw new RuntimeException("Cannot read packed refs", e);
 		}
 		packedRefs = newPackedRefs;
 	}
