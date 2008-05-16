@@ -18,7 +18,7 @@ import org.spearce.jgit.lib.FileTreeEntry;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.PersonIdent;
-import org.spearce.jgit.lib.LockFile;
+import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 
@@ -76,10 +76,10 @@ public class T0001_ConnectProviderOperationTest extends GitTestCase {
 		commit.setCommitter(commit.getAuthor());
 		commit.setMessage("testNewUnsharedFile\n\nJunit tests\n");
 		ObjectId id = writer.writeCommit(commit);
-		LockFile lck = thisGit.lockRef("refs/heads/master");
+		RefUpdate lck = thisGit.updateRef("refs/heads/master");
 		assertNotNull("obtained lock", lck);
-		lck.write(id);
-		assertTrue("committed lock", lck.commit());
+		lck.setNewObjectId(id);
+		assertEquals(RefUpdate.Result.FORCED, lck.forceUpdate());
 
 		// helper asserts, this is not what we are really testing
 		assertTrue("blob missing", new File(gitDir,

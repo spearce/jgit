@@ -170,6 +170,8 @@ public class Tag {
 		if (getTagId() != null)
 			throw new IllegalStateException("exists " + getTagId());
 		final ObjectId id;
+		final RefUpdate ru;
+
 		if (tagger!=null || message!=null || type!=null) {
 			ObjectId tagid = new ObjectWriter(objdb).writeTag(this);
 			setTagId(tagid);
@@ -177,12 +179,12 @@ public class Tag {
 		} else {
 			id = objId;
 		}
-		final LockFile lck = objdb.lockRef("refs/tags/" + getTag());
-		if (lck == null)
+
+		ru = objdb.updateRef(Constants.TAGS_PREFIX + "/" + getTag());
+		ru.setNewObjectId(id);
+		ru.setRefLogMessage("tagged " + getTag(), false);
+		if (ru.forceUpdate() == RefUpdate.Result.LOCK_FAILURE)
 			throw new ObjectWritingException("Unable to lock tag " + getTag());
-		lck.write(id);
-		if (!lck.commit())
-			throw new ObjectWritingException("Unable to write tag " + getTag());
 	}
 
 	public String toString() {

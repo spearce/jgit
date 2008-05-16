@@ -34,7 +34,7 @@ import org.spearce.jgit.lib.FileTreeEntry;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.PersonIdent;
-import org.spearce.jgit.lib.LockFile;
+import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 
@@ -77,10 +77,10 @@ public class T0002_history extends GitTestCase {
 		commit.setMessage("Foo\n\nMessage");
 		commit.setTree(tree);
 		ObjectId commitId = objectWriter.writeCommit(commit);
-		LockFile lck = thisGit.lockRef("refs/heads/master");
+		RefUpdate lck = thisGit.updateRef("refs/heads/master");
 		assertNotNull("obtained lock", lck);
-		lck.write(commitId);
-		assertTrue("committed lock", lck.commit());
+		lck.setNewObjectId(commitId);
+		assertEquals(RefUpdate.Result.FORCED, lck.forceUpdate());
 
 		ConnectProviderOperation operation = new ConnectProviderOperation(
 				project.getProject(), null);

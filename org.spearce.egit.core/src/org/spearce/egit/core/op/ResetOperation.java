@@ -27,10 +27,11 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.team.core.TeamException;
 import org.spearce.jgit.lib.Commit;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.ObjectId;
-import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.RefLogWriter;
+import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tag;
 import org.spearce.jgit.lib.Tree;
@@ -171,20 +172,15 @@ public class ResetOperation implements IWorkspaceRunnable {
 	}
 
 	private void writeRef() throws TeamException {
-		LockFile lockRef;
 		try {
-			lockRef = repository.lockRef("HEAD");
+			final RefUpdate ru = repository.updateRef(Constants.HEAD);
+			ru.setNewObjectId(commit.getCommitId());
+			ru.setRefLogMessage("reset", false);
+			if (ru.forceUpdate() == RefUpdate.Result.LOCK_FAILURE)
+				throw new TeamException("Can't update " + ru.getName());
 		} catch (IOException e) {
-			throw new TeamException("Could not lock ref for HEAD", e);
+			throw new TeamException("Updating " + Constants.HEAD + " failed", e);
 		}
-		try {
-			lockRef.write(commit.getCommitId());
-		} catch (IOException e) {
-			throw new TeamException("Could not write ref for HEAD", e);
-		}
-		
-		if (!lockRef.commit()) 
-			throw new TeamException("writing ref failed");
 	}
 
 	private void readIndex() throws TeamException {

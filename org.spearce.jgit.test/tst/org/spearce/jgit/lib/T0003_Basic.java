@@ -498,19 +498,19 @@ public class T0003_Basic extends RepositoryTestCase {
 		ObjectId resolve = db.resolve("HEAD");
 		assertEquals("7f822839a2fe9760f386cbbbcb3f92c5fe81def7", resolve.toString());
 
-		LockFile lockRef = db.lockRef("HEAD");
+		RefUpdate lockRef = db.updateRef("HEAD");
 		ObjectId newId = ObjectId.fromString("07f822839a2fe9760f386cbbbcb3f92c5fe81def");
-		lockRef.write(newId);
-		assertTrue(lockRef.commit());
+		lockRef.setNewObjectId(newId);
+		assertEquals(RefUpdate.Result.FORCED, lockRef.forceUpdate());
 
 		assertTrue(new File(db.getDirectory(), "refs/heads/foobar").exists());
 		assertEquals(newId, db.resolve("refs/heads/foobar"));
 
 		// Again. The ref already exists
-		LockFile lockRef2 = db.lockRef("HEAD");
+		RefUpdate lockRef2 = db.updateRef("HEAD");
 		ObjectId newId2 = ObjectId.fromString("7f822839a2fe9760f386cbbbcb3f92c5fe81def7");
-		lockRef2.write(newId2);
-		assertTrue(lockRef2.commit());
+		lockRef2.setNewObjectId(newId2);
+		assertEquals(RefUpdate.Result.FORCED, lockRef2.forceUpdate());
 
 		assertTrue(new File(db.getDirectory(), "refs/heads/foobar").exists());
 		assertEquals(newId2, db.resolve("refs/heads/foobar"));

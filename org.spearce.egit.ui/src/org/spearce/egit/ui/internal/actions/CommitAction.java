@@ -41,11 +41,10 @@ import org.spearce.egit.ui.internal.dialogs.CommitDialog;
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.IndexDiff;
-import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.PersonIdent;
-import org.spearce.jgit.lib.RefLogWriter;
+import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
@@ -208,17 +207,13 @@ public class CommitAction extends RepositoryAction {
 
 			ObjectWriter writer = new ObjectWriter(repo);
 			commit.setCommitId(writer.writeCommit(commit));
-			System.out.println("Commit iD: " + commit.getCommitId());
 
-			LockFile lockRef = repo.lockRef("HEAD");
-			lockRef.write(commit.getCommitId());
-			if (lockRef.commit()) {
-				System.out.println("Success!!!!");
-				updateReflog(repo, commitMessage, currentHeadId, commit
-						.getCommitId(), commit.getCommitter());
-			} else {
-				throw new TeamException("Failed to update HEAD to commit "
-						+ commit.getCommitId());
+			final RefUpdate ru = repo.updateRef("HEAD");
+			ru.setNewObjectId(commit.getCommitId());
+			ru.setRefLogMessage(buildReflogMessage(commitMessage), false);
+			if (ru.forceUpdate() == RefUpdate.Result.LOCK_FAILURE) {
+				throw new TeamException("Failed to update " + ru.getName()
+						+ " to commit " + commit.getCommitId() + ".");
 			}
 		}
 		return commitMessage;
@@ -285,17 +280,6 @@ public class CommitAction extends RepositoryAction {
 						+ ": " + newMember.getId() + " idx id: "
 						+ idxEntry.getObjectId());
 			}
-		}
-	}
-
-	private void updateReflog(Repository repo, String fullCommitMessage,
-			ObjectId parentId, ObjectId commitId, PersonIdent committer) throws TeamException {
-		String reflogMessage = buildReflogMessage(fullCommitMessage);
-		try {
-			RefLogWriter.writeReflog(repo, parentId, commitId, reflogMessage, "HEAD");
-			RefLogWriter.writeReflog(repo, parentId, commitId, reflogMessage, repo.getFullBranch());
-		} catch (IOException e) {
-			throw new TeamException("Writing reflogs", e);
 		}
 	}
 
