@@ -91,9 +91,8 @@ public class T0001_ConnectProviderOperationTest extends GitTestCase {
 				"objects/08/ccc3d91a14d337a45f355d3d63bd97fd5e4db9").exists());
 		assertTrue("tree missing", new File(gitDir,
 				"objects/9d/aeec817090098f05eeca858e3a552d78b0a346").exists());
-
 		assertTrue("commit missing", new File(gitDir,
-				"objects/45/df73fd9abbc2c61620c036948b1157e4d21253").exists());
+				"objects/09/6f1a84091b90b6d9fb12f95848da69496305c1").exists());
 
 		ConnectProviderOperation operation = new ConnectProviderOperation(
 				project.getProject(), null);
