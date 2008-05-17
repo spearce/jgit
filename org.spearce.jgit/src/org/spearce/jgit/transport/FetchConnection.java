@@ -117,6 +117,29 @@ public abstract class FetchConnection {
 		doFetch(monitor, want);
 	}
 
+	/**
+	 * Fetch objects this repository does not yet contain.
+	 * <p>
+	 * Implementations are free to use network connections as necessary to
+	 * efficiently (for both client and server) transfer objects from the remote
+	 * repository into this repository. When possible implementations should
+	 * avoid replacing/overwriting/duplicating an object already available in
+	 * the local destination repository. Locally available objects and packs
+	 * should always be preferred over remotely available objects and packs.
+	 * 
+	 * @param monitor
+	 *            progress feedback to inform the end-user about the status of
+	 *            the object transfer. Implementors should poll the monitor at
+	 *            regular intervals to look for cancellation requests from the
+	 *            user.
+	 * @param want
+	 *            one or more refs that were previously passed to
+	 *            {@link #available(Map)} by the implementation. These refs
+	 *            indicate the objects the caller wants copied.
+	 * @throws TransportException
+	 *             objects could not be copied due to a network failure,
+	 *             protocol error, or error on remote side.
+	 */
 	protected abstract void doFetch(ProgressMonitor monitor,
 			Collection<Ref> want) throws TransportException;
 
