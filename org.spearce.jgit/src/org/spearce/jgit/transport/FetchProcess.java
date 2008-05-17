@@ -22,13 +22,17 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.errors.TransportException;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ProgressMonitor;
@@ -43,6 +47,9 @@ class FetchProcess {
 	/** List of things we want to fetch from the remote repository. */
 	private final Collection<RefSpec> toFetch;
 
+	/** How to handle annotated tags, if any are advertised. */
+	private final TagOpt tagopt;
+
 	/** Set of refs we will actually wind up asking to obtain. */
 	private final HashMap<ObjectId, Ref> askFor = new HashMap<ObjectId, Ref>();
 
@@ -52,15 +59,16 @@ class FetchProcess {
 	/** Records to be recorded into FETCH_HEAD. */
 	private final ArrayList<FetchHeadRecord> fetchHeadUpdates = new ArrayList<FetchHeadRecord>();
 
-	FetchProcess(final Transport t, final Collection<RefSpec> f) {
+	private FetchConnection conn;
+
+	FetchProcess(final Transport t, final Collection<RefSpec> f, final TagOpt o) {
 		transport = t;
 		toFetch = f;
+		tagopt = o;
 	}
 
 	void execute(final ProgressMonitor monitor, final FetchResult result)
 			throws NotSupportedException, TransportException {
-		FetchConnection conn;
-
 		askFor.clear();
 		localUpdates.clear();
 		fetchHeadUpdates.clear();
@@ -71,15 +79,49 @@ class FetchProcess {
 			final Set<Ref> matched = new HashSet<Ref>();
 			for (final RefSpec spec : toFetch) {
 				if (spec.isWildcard())
-					expandWildcard(conn, spec, matched);
+					expandWildcard(spec, matched);
 				else
-					expandSingle(conn, spec, matched);
+					expandSingle(spec, matched);
 			}
-			if (!askFor.isEmpty() && !askForIsComplete())
+
+			Collection<Ref> additionalTags = Collections.<Ref> emptyList();
+			if (tagopt == TagOpt.AUTO_FOLLOW)
+				additionalTags = expandAutoFollowTags();
+			else if (tagopt == TagOpt.FETCH_TAGS)
+				expandFetchTags();
+
+			final boolean includedTags;
+			if (!askFor.isEmpty() && !askForIsComplete()) {
 				conn.fetch(monitor, askFor.values());
+				includedTags = conn.didFetchIncludeTags();
+
+				// Connection was used for object transfer. If we
+				// do another fetch we must open a new connection.
+				//
+				closeConnection();
+			} else {
+				includedTags = false;
+			}
+
+			if (tagopt == TagOpt.AUTO_FOLLOW && !additionalTags.isEmpty()) {
+				// There are more tags that we want to follow, but
+				// not all were asked for on the initial request.
+				//
+				askFor.clear();
+				for (final Ref r : additionalTags) {
+					final ObjectId id = r.getPeeledObjectId();
+					if (id == null || transport.local.hasObject(id))
+						wantTag(r);
+				}
+
+				if (!askFor.isEmpty() && (!includedTags || !askForIsComplete())) {
+					reopenConnection();
+					if (!askFor.isEmpty())
+						conn.doFetch(monitor, askFor.values());
+				}
+			}
 		} finally {
-			conn.close();
-			conn = null;
+			closeConnection();
 		}
 
 		final RevWalk walk = new RevWalk(transport.local);
@@ -100,6 +142,63 @@ class FetchProcess {
 				throw new TransportException("Failure updating FETCH_HEAD: "
 						+ err.getMessage(), err);
 			}
+		}
+	}
+
+	private void closeConnection() {
+		if (conn != null) {
+			conn.close();
+			conn = null;
+		}
+	}
+
+	private void reopenConnection() throws NotSupportedException,
+			TransportException {
+		if (conn != null)
+			return;
+
+		conn = transport.openFetch();
+
+		// Since we opened a new connection we cannot be certain
+		// that the system we connected to has the same exact set
+		// of objects available (think round-robin DNS and mirrors
+		// that aren't updated at the same time).
+		//
+		// We rebuild our askFor list using only the refs that the
+		// new connection has offered to us.
+		//
+		final HashMap<ObjectId, Ref> avail = new HashMap<ObjectId, Ref>();
+		for (final Ref r : conn.getRefs())
+			avail.put(r.getObjectId(), r);
+
+		final Collection<Ref> wants = new ArrayList<Ref>(askFor.values());
+		askFor.clear();
+		for (final Ref want : wants) {
+			final Ref newRef = avail.get(want.getObjectId());
+			if (newRef != null) {
+				askFor.put(newRef.getObjectId(), newRef);
+			} else {
+				removeFetchHeadRecord(want.getObjectId());
+				removeTrackingRefUpdate(want.getObjectId());
+			}
+		}
+	}
+
+	private void removeTrackingRefUpdate(final ObjectId want) {
+		final Iterator<TrackingRefUpdate> i = localUpdates.iterator();
+		while (i.hasNext()) {
+			final TrackingRefUpdate u = i.next();
+			if (u.getNewObjectId().equals(want))
+				i.remove();
+		}
+	}
+
+	private void removeFetchHeadRecord(final ObjectId want) {
+		final Iterator<FetchHeadRecord> i = fetchHeadUpdates.iterator();
+		while (i.hasNext()) {
+			final FetchHeadRecord fh = i.next();
+			if (fh.newValue.equals(want))
+				i.remove();
 		}
 	}
 
@@ -139,16 +238,16 @@ class FetchProcess {
 		}
 	}
 
-	private void expandWildcard(final FetchConnection conn, final RefSpec spec,
-			final Set<Ref> matched) throws TransportException {
+	private void expandWildcard(final RefSpec spec, final Set<Ref> matched)
+			throws TransportException {
 		for (final Ref src : conn.getRefs()) {
 			if (spec.matchSource(src) && matched.add(src))
 				want(src, spec.expandFromSource(src));
 		}
 	}
 
-	private void expandSingle(final FetchConnection conn, final RefSpec spec,
-			final Set<Ref> matched) throws TransportException {
+	private void expandSingle(final RefSpec spec, final Set<Ref> matched)
+			throws TransportException {
 		final Ref src = conn.getRef(spec.getSource());
 		if (src == null) {
 			throw new TransportException("Remote does not have "
@@ -156,6 +255,46 @@ class FetchProcess {
 		}
 		if (matched.add(src))
 			want(src, spec);
+	}
+
+	private Collection<Ref> expandAutoFollowTags() throws TransportException {
+		final Collection<Ref> additionalTags = new ArrayList<Ref>();
+		final Map<String, Ref> have = transport.local.getAllRefs();
+		for (final Ref r : conn.getRefs()) {
+			if (!isTag(r))
+				continue;
+			if (r.getPeeledObjectId() == null) {
+				additionalTags.add(r);
+				continue;
+			}
+
+			final Ref local = have.get(r.getName());
+			if (local != null) {
+				if (!r.getObjectId().equals(local.getObjectId()))
+					wantTag(r);
+			} else if (askFor.containsKey(r.getPeeledObjectId())
+					|| transport.local.hasObject(r.getPeeledObjectId()))
+				wantTag(r);
+			else
+				additionalTags.add(r);
+		}
+		return additionalTags;
+	}
+
+	private void expandFetchTags() throws TransportException {
+		final Map<String, Ref> have = transport.local.getAllRefs();
+		for (final Ref r : conn.getRefs()) {
+			if (!isTag(r))
+				continue;
+			final Ref local = have.get(r.getName());
+			if (local == null || !r.getObjectId().equals(local.getObjectId()))
+				wantTag(r);
+		}
+	}
+
+	private void wantTag(final Ref r) throws TransportException {
+		want(r, new RefSpec().setSource(r.getName())
+				.setDestination(r.getName()));
 	}
 
 	private void want(final Ref src, final RefSpec spec)
@@ -189,5 +328,13 @@ class FetchProcess {
 	private TrackingRefUpdate createUpdate(final RefSpec spec,
 			final ObjectId newId) throws IOException {
 		return new TrackingRefUpdate(transport.local, spec, newId, "fetch");
+	}
+
+	private static boolean isTag(final Ref r) {
+		return isTag(r.getName());
+	}
+
+	private static boolean isTag(final String name) {
+		return name.startsWith(Constants.TAGS_PREFIX + "/");
 	}
 }

@@ -266,7 +266,7 @@ public abstract class Transport {
 		}
 
 		final FetchResult result = new FetchResult();
-		new FetchProcess(this, toFetch).execute(monitor, result);
+		new FetchProcess(this, toFetch, tagopt).execute(monitor, result);
 		return result;
 	}
 
