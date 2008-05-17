@@ -151,6 +151,11 @@ abstract class PackFetchConnection extends FetchConnection {
 		pckOut = new PacketLineOut(out);
 	}
 
+	@Override
+	public boolean didFetchIncludeTags() {
+		return includeTags;
+	}
+
 	protected void readAdvertisedRefs() throws TransportException {
 		try {
 			readAdvertisedRefsImpl();

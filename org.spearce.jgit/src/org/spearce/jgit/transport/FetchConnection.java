@@ -144,6 +144,27 @@ public abstract class FetchConnection {
 			Collection<Ref> want) throws TransportException;
 
 	/**
+	 * Did the last {@link #fetch(ProgressMonitor, Collection)} get tags?
+	 * <p>
+	 * Some Git aware transports are able to implicitly grab an annotated tag if
+	 * {@link TagOpt#AUTO_FOLLOW} or {@link TagOpt#FETCH_TAGS} was selected and
+	 * the object the tag peels to (references) was transferred as part of the
+	 * last {@link #doFetch(ProgressMonitor, Collection)} call. If it is
+	 * possible for such tags to have been included in the transfer this method
+	 * returns true, allowing the caller to attempt tag discovery.
+	 * <p>
+	 * By returning only true/false (and not the actual list of tags obtained)
+	 * the transport itself does not need to be aware of whether or not tags
+	 * were included in the transfer.
+	 * 
+	 * @return true if the last fetch call implicitly included tag objects;
+	 *         false if tags were not implicitly obtained.
+	 */
+	public boolean didFetchIncludeTags() {
+		return false;
+	}
+
+	/**
 	 * Close any resources used by this connection.
 	 * <p>
 	 * If the remote repository is contacted by a network socket this method
