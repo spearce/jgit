@@ -82,6 +82,7 @@ public abstract class Transport {
 		final Transport tn = open(local, cfg.getURIs().get(0));
 		tn.setOptionUploadPack(cfg.getUploadPack());
 		tn.fetch = cfg.getFetchRefSpecs();
+		tn.tagopt = cfg.getTagOpt();
 		return tn;
 	}
 
@@ -132,6 +133,17 @@ public abstract class Transport {
 	private List<RefSpec> fetch = Collections.<RefSpec> emptyList();
 
 	/**
+	 * How {@link #fetch(ProgressMonitor, Collection)} should handle tags.
+	 * <p>
+	 * We default to {@link TagOpt#NO_TAGS} so as to avoid fetching annotated
+	 * tags during one-shot fetches used for later merges. This prevents
+	 * dragging down tags from repositories that we do not have established
+	 * tracking branches for. If we do not track the source repository, we most
+	 * likely do not care about any tags it publishes.
+	 */
+	private TagOpt tagopt = TagOpt.NO_TAGS;
+
+	/**
 	 * Create a new transport instance.
 	 * 
 	 * @param local
@@ -178,6 +190,25 @@ public abstract class Transport {
 			optionUploadPack = where;
 		else
 			optionUploadPack = RemoteConfig.DEFAULT_UPLOAD_PACK;
+	}
+
+	/**
+	 * Get the description of how annotated tags should be treated during fetch.
+	 * 
+	 * @return option indicating the behavior of annotated tags in fetch.
+	 */
+	public TagOpt getTagOpt() {
+		return tagopt;
+	}
+
+	/**
+	 * Set the description of how annotated tags should be treated on fetch.
+	 * 
+	 * @param option
+	 *            method to use when handling annotated tags.
+	 */
+	public void setTagOpt(final TagOpt option) {
+		tagopt = option != null ? option : TagOpt.AUTO_FOLLOW;
 	}
 
 	/**
