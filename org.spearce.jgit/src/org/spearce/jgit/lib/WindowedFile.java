@@ -143,16 +143,7 @@ public class WindowedFile {
 	 */
 	public int read(long position, final byte[] dstbuf, int dstoff,
 			final int cnt, final WindowCursor curs) throws IOException {
-		int remaining = cnt;
-		while (remaining > 0 && position < length) {
-			final int r = curs.copy(this, (int) (position >> WindowCache.szb),
-					((int) position) & WindowCache.szm, dstbuf, dstoff,
-					remaining);
-			position += r;
-			dstoff += r;
-			remaining -= r;
-		}
-		return cnt - remaining;
+		return curs.copy(this, position, dstbuf, dstoff, cnt);
 	}
 
 	/**
@@ -187,22 +178,11 @@ public class WindowedFile {
 			final WindowCursor curs) throws IOException, DataFormatException {
 		final Inflater inf = InflaterCache.get();
 		try {
-			readCompressed(position, dstbuf, curs, inf);
+			if (curs.inflate(this, position, dstbuf, 0, inf) != dstbuf.length)
+				throw new EOFException("Short compressed stream at " + position);
 		} finally {
 			InflaterCache.release(inf);
 		}
-	}
-
-	void readCompressed(long pos, final byte[] dstbuf, final WindowCursor curs,
-			final Inflater inf) throws IOException, DataFormatException {
-		int dstoff = 0;
-		dstoff = curs.inflate(this, (int) (pos >> WindowCache.szb), ((int) pos)
-				& WindowCache.szm, dstbuf, dstoff, inf);
-		pos >>= WindowCache.szb;
-		while (!inf.finished())
-			dstoff = curs.inflate(this, (int) ++pos, 0, dstbuf, dstoff, inf);
-		if (dstoff != dstbuf.length)
-			throw new EOFException();
 	}
 
 	/**
@@ -255,19 +235,17 @@ public class WindowedFile {
 		fd = null;
 	}
 
-	void loadWindow(final WindowCursor curs, final int windowId)
-			throws IOException {
-		final long position = windowId << WindowCache.szb;
-		final int windowSize = getWindowSize(windowId);
+	void loadWindow(final WindowCursor curs, final int windowId,
+			final long pos, final int windowSize) throws IOException {
 		if (WindowCache.mmap) {
 			final MappedByteBuffer map = fd.getChannel().map(MapMode.READ_ONLY,
-					position, windowSize);
+					pos, windowSize);
 			if (map.hasArray()) {
 				final byte[] b = map.array();
-				curs.window = new ByteArrayWindow(this, windowId, b);
+				curs.window = new ByteArrayWindow(this, pos, windowId, b);
 				curs.handle = b;
 			} else {
-				curs.window = new ByteBufferWindow(this, windowId, map);
+				curs.window = new ByteBufferWindow(this, pos, windowId, map);
 				curs.handle = map;
 			}
 			return;
@@ -275,16 +253,10 @@ public class WindowedFile {
 
 		final byte[] b = new byte[windowSize];
 		synchronized (fd) {
-			fd.seek(position);
+			fd.seek(pos);
 			fd.readFully(b);
 		}
-		curs.window = new ByteArrayWindow(this, windowId, b);
+		curs.window = new ByteArrayWindow(this, pos, windowId, b);
 		curs.handle = b;
-	}
-
-	int getWindowSize(final int id) {
-		final int sz = WindowCache.sz;
-		final long position = id << WindowCache.szb;
-		return length < position + sz ? (int) (length - position) : sz;
 	}
 }

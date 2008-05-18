@@ -18,10 +18,8 @@ public final class WindowCursor {
 	 * 
 	 * @param provider
 	 *            the file the desired window is stored within.
-	 * @param id
-	 *            unique id number of this window within the file.
-	 * @param pos
-	 *            offset within the window to start copying from.
+	 * @param position
+	 *            position within the file to read from.
 	 * @param dstbuf
 	 *            destination buffer to copy into.
 	 * @param dstoff
@@ -37,11 +35,18 @@ public final class WindowCursor {
 	 *             this cursor does not match the provider or id and the proper
 	 *             window could not be acquired through the provider's cache.
 	 */
-	int copy(final WindowedFile provider, final int id, final int pos,
-			final byte[] dstbuf, final int dstoff, final int cnt)
-			throws IOException {
-		pin(provider, id);
-		return window.copy(handle, pos, dstbuf, dstoff, cnt);
+	int copy(final WindowedFile provider, long position, final byte[] dstbuf,
+			int dstoff, final int cnt) throws IOException {
+		final long length = provider.length();
+		int need = cnt;
+		while (need > 0 && position < length) {
+			pin(provider, position);
+			final int r = window.copy(handle, position, dstbuf, dstoff, need);
+			position += r;
+			dstoff += r;
+			need -= r;
+		}
+		return cnt - need;
 	}
 
 	/**
@@ -49,10 +54,8 @@ public final class WindowCursor {
 	 * 
 	 * @param provider
 	 *            the file the desired window is stored within.
-	 * @param id
-	 *            unique id number of this window within the file.
-	 * @param pos
-	 *            offset within the window to start supplying input from.
+	 * @param position
+	 *            position within the file to read from.
 	 * @param dstbuf
 	 *            destination buffer the inflater should output decompressed
 	 *            data to.
@@ -75,18 +78,23 @@ public final class WindowCursor {
 	 *             the inflater encountered an invalid chunk of data. Data
 	 *             stream corruption is likely.
 	 */
-	int inflate(final WindowedFile provider, final int id, final int pos,
-			final byte[] dstbuf, final int dstoff, final Inflater inf)
+	int inflate(final WindowedFile provider, long position,
+			final byte[] dstbuf, int dstoff, final Inflater inf)
 			throws IOException, DataFormatException {
-		pin(provider, id);
-		return window.inflate(handle, pos, dstbuf, dstoff, inf);
+		for (;;) {
+			pin(provider, position);
+			dstoff = window.inflate(handle, position, dstbuf, dstoff, inf);
+			if (inf.finished())
+				return dstoff;
+			position = window.end;
+		}
 	}
 
-	private void pin(final WindowedFile provider, final int id)
+	private void pin(final WindowedFile provider, final long position)
 			throws IOException {
 		final ByteWindow w = window;
-		if (w == null || w.provider != provider || w.id != id)
-			WindowCache.get(this, provider, id);
+		if (w == null || !w.contains(provider, position))
+			WindowCache.get(this, provider, position);
 	}
 
 	/** Release the current window cursor. */

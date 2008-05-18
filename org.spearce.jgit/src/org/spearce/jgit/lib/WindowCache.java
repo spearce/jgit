@@ -36,19 +36,17 @@ public class WindowCache {
 		return Integer.numberOfTrailingZeros(newSize);
 	}
 
-	private static final int maxByteCount;
+	private static int maxByteCount;
 
-	static final int sz;
+	private static int windowSize;
 
-	static final int szb;
+	private static int windowSizeShift;
 
-	static final int szm;
-
-	static final boolean mmap;
+	static boolean mmap;
 
 	static final ReferenceQueue<?> clearedWindowQueue;
 
-	private static final ByteWindow[] windows;
+	private static ByteWindow[] windows;
 
 	private static int openWindowCount;
 
@@ -58,11 +56,10 @@ public class WindowCache {
 
 	static {
 		maxByteCount = 10 * MB;
-		szb = bits(8 * KB);
-		sz = 1 << szb;
-		szm = (1 << szb) - 1;
+		windowSizeShift = bits(8 * KB);
+		windowSize = 1 << windowSizeShift;
 		mmap = false;
-		windows = new ByteWindow[maxByteCount / sz];
+		windows = new ByteWindow[maxByteCount / windowSize];
 		clearedWindowQueue = new ReferenceQueue<Object>();
 	}
 
@@ -85,8 +82,60 @@ public class WindowCache {
 	public static void reconfigure(final int packedGitLimit,
 			final int packedGitWindowSize, final boolean packedGitMMAP,
 			final int deltaBaseCacheLimit) {
-		// fix me
+		reconfigureImpl(packedGitLimit, packedGitWindowSize, packedGitMMAP);
 		UnpackedObjectCache.reconfigure(deltaBaseCacheLimit);
+	}
+
+	private static synchronized void reconfigureImpl(final int packedGitLimit,
+			final int packedGitWindowSize, final boolean packedGitMMAP) {
+		boolean prune = false;
+		boolean evictAll = false;
+
+		if (maxByteCount < packedGitLimit) {
+			maxByteCount = packedGitLimit;
+		} else if (maxByteCount > packedGitLimit) {
+			maxByteCount = packedGitLimit;
+			prune = true;
+		}
+
+		if (bits(packedGitWindowSize) != windowSizeShift) {
+			windowSizeShift = bits(packedGitWindowSize);
+			windowSize = 1 << windowSizeShift;
+			evictAll = true;
+		}
+
+		if (mmap != packedGitMMAP) {
+			mmap = packedGitMMAP;
+			evictAll = true;
+		}
+
+		if (evictAll) {
+			// We have to throw away every window we have. None
+			// of them are suitable for the new configuration.
+			//
+			for (int i = 0; i < openWindowCount; i++) {
+				final ByteWindow win = windows[i];
+				if (--win.provider.openCount == 0)
+					win.provider.cacheClose();
+				windows[i] = null;
+			}
+			windows = new ByteWindow[maxByteCount / windowSize];
+			openWindowCount = 0;
+			openByteCount = 0;
+		} else if (prune) {
+			// Our memory limit was decreased so we should try
+			// to drop windows to ensure we meet the new lower
+			// limit we were just given.
+			//
+			final int wincnt = maxByteCount / windowSize;
+			releaseMemory(wincnt, null, 0, 0);
+
+			if (wincnt != windows.length) {
+				final ByteWindow[] n = new ByteWindow[wincnt];
+				System.arraycopy(windows, 0, n, 0, openWindowCount);
+				windows = n;
+			}
+		}
 	}
 
 	/**
@@ -98,17 +147,16 @@ public class WindowCache {
 	 * @param wp
 	 *            the provider of the window. If the window is not currently in
 	 *            the cache then the provider will be asked to load it.
-	 * @param id
-	 *            the id, unique only within the scope of the specific provider
-	 *            <code>wp</code>. Typically this id is the byte offset
-	 *            within the file divided by the window size, but its meaning is
-	 *            left open to the provider.
+	 * @param position
+	 *            offset (in bytes) within the file that the caller needs access
+	 *            to.
 	 * @throws IOException
 	 *             the window was not found in the cache and the given provider
 	 *             was unable to load the window on demand.
 	 */
 	public static synchronized final void get(final WindowCursor curs,
-			final WindowedFile wp, final int id) throws IOException {
+			final WindowedFile wp, final long position) throws IOException {
+		final int id = (int) (position >> windowSizeShift);
 		int idx = binarySearch(wp, id);
 		if (0 <= idx) {
 			final ByteWindow<?> w = windows[idx];
@@ -149,6 +197,22 @@ public class WindowCache {
 		}
 
 		idx = -(idx + 1);
+		final int wSz = windowSize(wp, id);
+		idx = releaseMemory(windows.length, wp, idx, wSz);
+
+		if (idx < 0)
+			idx = 0;
+		final int toMove = openWindowCount - idx;
+		if (toMove > 0)
+			System.arraycopy(windows, idx, windows, idx + 1, toMove);
+		wp.loadWindow(curs, id, id << windowSizeShift, wSz);
+		windows[idx] = curs.window;
+		openWindowCount++;
+		openByteCount += curs.window.size;
+	}
+
+	private static int releaseMemory(final int maxWindowCount,
+			final WindowedFile willRead, int insertionIndex, final int willAdd) {
 		for (;;) {
 			final ByteWindow<?> w = (ByteWindow<?>) clearedWindowQueue.poll();
 			if (w == null)
@@ -158,7 +222,7 @@ public class WindowCache {
 				continue; // Must have been evicted by our other controls.
 
 			final WindowedFile p = w.provider;
-			if (--p.openCount == 0 && p != wp)
+			if (--p.openCount == 0 && p != willRead)
 				p.cacheClose();
 
 			openByteCount -= w.size;
@@ -166,13 +230,12 @@ public class WindowCache {
 			if (toMove > 0)
 				System.arraycopy(windows, oldest + 1, windows, oldest, toMove);
 			windows[--openWindowCount] = null;
-			if (oldest < idx)
-				idx--;
+			if (oldest < insertionIndex)
+				insertionIndex--;
 		}
 
-		final int wSz = wp.getWindowSize(id);
-		while (openWindowCount == windows.length
-				|| (openWindowCount > 0 && openByteCount + wSz > maxByteCount)) {
+		while (openWindowCount >= maxWindowCount
+				|| (openWindowCount > 0 && openByteCount + willAdd > maxByteCount)) {
 			int oldest = 0;
 			for (int k = openWindowCount - 1; k > 0; k--) {
 				if (windows[k].lastAccessed < windows[oldest].lastAccessed)
@@ -181,7 +244,7 @@ public class WindowCache {
 
 			final ByteWindow w = windows[oldest];
 			final WindowedFile p = w.provider;
-			if (--p.openCount == 0 && p != wp)
+			if (--p.openCount == 0 && p != willRead)
 				p.cacheClose();
 
 			openByteCount -= w.size;
@@ -190,19 +253,11 @@ public class WindowCache {
 				System.arraycopy(windows, oldest + 1, windows, oldest, toMove);
 			windows[--openWindowCount] = null;
 			w.enqueue();
-			if (oldest < idx)
-				idx--;
+			if (oldest < insertionIndex)
+				insertionIndex--;
 		}
 
-		if (idx < 0)
-			idx = 0;
-		final int toMove = openWindowCount - idx;
-		if (toMove > 0)
-			System.arraycopy(windows, idx, windows, idx + 1, toMove);
-		wp.loadWindow(curs, id);
-		windows[idx] = curs.window;
-		openWindowCount++;
-		openByteCount += curs.window.size;
+		return insertionIndex;
 	}
 
 	private static final int binarySearch(final WindowedFile sprov,
@@ -253,6 +308,12 @@ public class WindowCache {
 			wp.openCount = 0;
 			wp.cacheClose();
 		}
+	}
+
+	private static int windowSize(final WindowedFile file, final int id) {
+		final long len = file.length();
+		final long pos = id << windowSizeShift;
+		return len < pos + windowSize ? (int) (len - pos) : windowSize;
 	}
 
 	private WindowCache() {

@@ -28,14 +28,17 @@ final class ByteArrayWindow extends ByteWindow<byte[]> {
 	 * 
 	 * @param o
 	 *            the WindowedFile providing data access
+	 * @param p
+	 *            the file offset.
 	 * @param d
 	 *            an id provided by the WindowedFile. See
-	 *            {@link WindowCache#get(WindowCursor, WindowedFile, int)}.
+	 *            {@link WindowCache#get(WindowCursor, WindowedFile, long)}.
 	 * @param b
 	 *            byte array for storage
 	 */
-	ByteArrayWindow(final WindowedFile o, final int d, final byte[] b) {
-		super(o, d, b, b.length);
+	ByteArrayWindow(final WindowedFile o, final long p, final int d,
+			final byte[] b) {
+		super(o, p, d, b, b.length);
 	}
 
 	int copy(final byte[] array, final int p, final byte[] b, final int o, int n) {
