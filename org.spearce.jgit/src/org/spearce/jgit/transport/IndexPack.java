@@ -35,6 +35,7 @@ import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.BinaryDelta;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.InflaterCache;
 import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdMap;
@@ -85,7 +86,7 @@ public class IndexPack {
 
 	private final Repository repo;
 
-	private final Inflater inflater;
+	private Inflater inflater;
 
 	private final MessageDigest objectDigest;
 
@@ -140,7 +141,7 @@ public class IndexPack {
 			final File dstBase) throws IOException {
 		repo = db;
 		in = src;
-		inflater = new Inflater(false);
+		inflater = InflaterCache.get();
 		buf = new byte[BUFFER_SIZE];
 		objectData = new byte[BUFFER_SIZE];
 		objectDigest = Constants.newMessageDigest();
@@ -224,10 +225,13 @@ public class IndexPack {
 					writeIdx();
 
 			} finally {
+				final Inflater inf = inflater;
+				inflater = null;
+				InflaterCache.release(inf);
+
 				progress.endTask();
 				if (packOut != null)
 					packOut.close();
-				inflater.end();
 			}
 
 			if (dstPack != null)

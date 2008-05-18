@@ -185,12 +185,11 @@ public class WindowedFile {
 
 	void readCompressed(final long position, final byte[] dstbuf,
 			final WindowCursor curs) throws IOException, DataFormatException {
-		final Inflater inf = WindowCache.borrowInflater();
+		final Inflater inf = InflaterCache.get();
 		try {
 			readCompressed(position, dstbuf, curs, inf);
 		} finally {
-			inf.reset();
-			WindowCache.returnInflater(inf);
+			InflaterCache.release(inf);
 		}
 	}
 

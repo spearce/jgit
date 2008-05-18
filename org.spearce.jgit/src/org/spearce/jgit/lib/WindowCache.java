@@ -18,7 +18,6 @@ package org.spearce.jgit.lib;
 
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
-import java.util.zip.Inflater;
 
 /**
  * The WindowCache manages reusable <code>Windows</code> and inflaters used by
@@ -36,8 +35,6 @@ public class WindowCache {
 			throw new IllegalArgumentException("Window size must be power of 2");
 		return Integer.numberOfTrailingZeros(newSize);
 	}
-
-	private static final Inflater[] inflaterCache;
 
 	private static final int maxByteCount;
 
@@ -57,8 +54,6 @@ public class WindowCache {
 
 	private static int openByteCount;
 
-	private static int openInflaterCount;
-
 	private static int accessClock;
 
 	static {
@@ -68,7 +63,6 @@ public class WindowCache {
 		szm = (1 << szb) - 1;
 		mmap = false;
 		windows = new ByteWindow[maxByteCount / sz];
-		inflaterCache = new Inflater[4];
 		clearedWindowQueue = new ReferenceQueue<Object>();
 	}
 
@@ -93,22 +87,6 @@ public class WindowCache {
 			final int deltaBaseCacheLimit) {
 		// fix me
 		UnpackedObjectCache.reconfigure(deltaBaseCacheLimit);
-	}
-
-	synchronized static Inflater borrowInflater() {
-		if (openInflaterCount > 0) {
-			final Inflater r = inflaterCache[--openInflaterCount];
-			inflaterCache[openInflaterCount] = null;
-			return r;
-		}
-		return new Inflater(false);
-	}
-
-	synchronized static void returnInflater(final Inflater i) {
-		if (openInflaterCount == inflaterCache.length)
-			i.end();
-		else
-			inflaterCache[openInflaterCount++] = i;
 	}
 
 	/**
