@@ -92,7 +92,10 @@ public class ResetOperation implements IWorkspaceRunnable {
 		monitor.worked(1);
 		
 		if (type != ResetType.SOFT) {
-			readIndex();
+			if (type == ResetType.MIXED)
+				resetIndex();
+			else
+				readIndex();
 			writeIndex();
 		}
 		monitor.worked(1);
@@ -191,6 +194,16 @@ public class ResetOperation implements IWorkspaceRunnable {
 		try {
 			newTree = commit.getTree();
 			index = repository.getIndex();
+		} catch (IOException e) {
+			throw new TeamException("Reading index", e);
+		}
+	}
+
+	private void resetIndex() throws TeamException {
+		try {
+			newTree = commit.getTree();
+			index = repository.getIndex();
+			index.readTree(newTree);
 		} catch (IOException e) {
 			throw new TeamException("Reading index", e);
 		}

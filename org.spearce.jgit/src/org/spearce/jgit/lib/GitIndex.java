@@ -665,7 +665,15 @@ public class GitIndex {
 		}
 	}
 
-	void readTree(Tree t) throws IOException {
+	/**
+	 * Read a Tree recursively into the index
+	 *
+	 * @param t The tree to read
+	 *
+	 * @throws IOException
+	 */
+	public void readTree(Tree t) throws IOException {
+		entries.clear();
 		readTree("", t);
 	}
 
