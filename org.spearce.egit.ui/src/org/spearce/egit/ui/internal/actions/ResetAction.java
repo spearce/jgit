@@ -24,7 +24,7 @@ import org.spearce.egit.ui.internal.dialogs.BranchSelectionDialog;
 import org.spearce.jgit.lib.Repository;
 
 /**
- * An acton to reset the current branch to a specific revision.
+ * An action to reset the current branch to a specific revision.
  *
  * @see ResetOperation
  */
