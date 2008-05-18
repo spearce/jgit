@@ -178,7 +178,7 @@ public class WindowCache {
 			final ByteWindow<?> w = (ByteWindow<?>) clearedWindowQueue.poll();
 			if (w == null)
 				break;
-			final int oldest = binarySearch(w.provider,w.id);
+			final int oldest = binarySearch(w.provider, w.id);
 			if (oldest < 0 || windows[oldest] != w)
 				continue; // Must have been evicted by our other controls.
 
