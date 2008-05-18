@@ -162,6 +162,9 @@ public class GitHistoryPage extends HistoryPage {
 	/** Revision walker that allocated our graph's commit nodes. */
 	private SWTWalk currentWalk;
 
+	/** Last HEAD */
+	private AnyObjectId currentHeadId;
+
 	/**
 	 * Highlight flag that can be applied to commits to make them stand out.
 	 * <p>
@@ -521,8 +524,18 @@ public class GitHistoryPage extends HistoryPage {
 		if (db == null)
 			return false;
 
+		final AnyObjectId headId;
+		try {
+			headId = db.resolve("HEAD");
+		} catch (IOException e) {
+			Activator.logError("Cannot parse HEAD in: "
+					+ db.getDirectory().getAbsolutePath(), e);
+			return false;
+		}
+
 		if (currentWalk == null || currentWalk.getRepository() != db
-				|| pathChange(pathFilters, paths)) {
+				|| pathChange(pathFilters, paths)
+				|| headId != null && !headId.equals(currentHeadId)) {
 			currentWalk = new SWTWalk(db);
 			currentWalk.sort(RevSort.COMMIT_TIME_DESC, true);
 			currentWalk.sort(RevSort.BOUNDARY, true);
@@ -531,13 +544,12 @@ public class GitHistoryPage extends HistoryPage {
 			currentWalk.reset();
 		}
 
+		if (headId == null)
+			return false;
 		try {
-			final AnyObjectId headId = db.resolve("HEAD");
-			if (headId == null)
-				return false;
 			currentWalk.markStart(currentWalk.parseCommit(headId));
 		} catch (IOException e) {
-			Activator.logError("Cannot parse HEAD in: "
+			Activator.logError("Cannot read HEAD commit " + headId + " in: "
 					+ db.getDirectory().getAbsolutePath(), e);
 			return false;
 		}
