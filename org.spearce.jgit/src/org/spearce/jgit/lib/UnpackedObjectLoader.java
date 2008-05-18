@@ -23,6 +23,8 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 import org.spearce.jgit.errors.CorruptObjectException;
+import org.spearce.jgit.util.MutableInteger;
+import org.spearce.jgit.util.RawParseUtils;
 
 /**
  * Loose object loader. This class loads an object not
@@ -105,60 +107,17 @@ public class UnpackedObjectLoader extends ObjectLoader {
 				if (avail < 5)
 					throw new CorruptObjectException(id, "no header");
 
-				int pos;
-				switch (hdr[0]) {
-				case 'b':
-					if (hdr[1] != 'l' || hdr[2] != 'o' || hdr[3] != 'b'
-							|| hdr[4] != ' ')
-						throw new CorruptObjectException(id, "invalid type");
-					objectType = Constants.OBJ_BLOB;
-					pos = 5;
-					break;
-				case 'c':
-					if (avail < 7 || hdr[1] != 'o' || hdr[2] != 'm'
-							|| hdr[3] != 'm' || hdr[4] != 'i' || hdr[5] != 't'
-							|| hdr[6] != ' ')
-						throw new CorruptObjectException(id, "invalid type");
-					objectType = Constants.OBJ_COMMIT;
-					pos = 7;
-					break;
-				case 't':
-					switch (hdr[1]) {
-					case 'a':
-						if (hdr[2] != 'g' || hdr[3] != ' ')
-							throw new CorruptObjectException(id, "invalid type");
-						objectType = Constants.OBJ_TAG;
-						pos = 4;
-						break;
-					case 'r':
-						if (hdr[2] != 'e' || hdr[3] != 'e' || hdr[4] != ' ')
-							throw new CorruptObjectException(id, "invalid type");
-						objectType = Constants.OBJ_TREE;
-						pos = 5;
-						break;
-					default:
-						throw new CorruptObjectException(id, "invalid type");
-					}
-					break;
-				default:
-					throw new CorruptObjectException(id, "invalid type");
-				}
-
-				int tempSize = 0;
-				while (pos < avail) {
-					final int c = hdr[pos++];
-					if (0 == c)
-						break;
-					else if (c < '0' || c > '9')
-						throw new CorruptObjectException(id, "invalid length");
-					tempSize *= 10;
-					tempSize += c - '0';
-				}
-				objectSize = tempSize;
+				final MutableInteger p = new MutableInteger();
+				objectType = Constants.decodeTypeString(id, hdr, (byte) ' ', p);
+				objectSize = RawParseUtils.parseBase10(hdr, p.value, p);
+				if (objectSize < 0)
+					throw new CorruptObjectException(id, "negative size");
+				if (hdr[p.value++] != 0)
+					throw new CorruptObjectException(id, "garbage after size");
 				bytes = new byte[objectSize];
-				if (pos < avail)
-					System.arraycopy(hdr, pos, bytes, 0, avail - pos);
-				decompress(id, inflater, avail - pos);
+				if (p.value < avail)
+					System.arraycopy(hdr, p.value, bytes, 0, avail - p.value);
+				decompress(id, inflater, avail - p.value);
 			} else {
 				int p = 0;
 				int c = compressed[p++] & 0xff;

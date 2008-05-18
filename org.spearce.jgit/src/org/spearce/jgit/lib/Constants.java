@@ -20,6 +20,9 @@ import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import org.spearce.jgit.errors.CorruptObjectException;
+import org.spearce.jgit.util.MutableInteger;
+
 /** Misc. constants used throughout JGit. */
 public final class Constants {
 	/** Hash function used natively by Git for all objects. */
@@ -241,6 +244,81 @@ public final class Constants {
 			return ENCODED_TYPE_TAG;
 		default:
 			throw new IllegalArgumentException("Bad object type: " + typeCode);
+		}
+	}
+
+	/**
+	 * Parse an encoded type string into a type constant.
+	 * 
+	 * @param id
+	 *            object id this type string came from; may be null if that is
+	 *            not known at the time the parse is occurring.
+	 * @param typeString
+	 *            string version of the type code.
+	 * @param endMark
+	 *            character immediately following the type string. Usually ' '
+	 *            (space) or '\n' (line feed).
+	 * @param offset
+	 *            position within <code>typeString</code> where the parse
+	 *            should start. Updated with the new position (just past
+	 *            <code>endMark</code> when the parse is successful.
+	 * @return a type code constant (one of {@link #OBJ_BLOB},
+	 *         {@link #OBJ_COMMIT}, {@link #OBJ_TAG}, {@link #OBJ_TREE}.
+	 * @throws CorruptObjectException
+	 *             there is no valid type identified by <code>typeString</code>.
+	 */
+	public static int decodeTypeString(final ObjectId id,
+			final byte[] typeString, final byte endMark,
+			final MutableInteger offset) throws CorruptObjectException {
+		try {
+			int position = offset.value;
+			switch (typeString[position]) {
+			case 'b':
+				if (typeString[position + 1] != 'l'
+						|| typeString[position + 2] != 'o'
+						|| typeString[position + 3] != 'b'
+						|| typeString[position + 4] != endMark)
+					throw new CorruptObjectException(id, "invalid type");
+				offset.value = position + 5;
+				return Constants.OBJ_BLOB;
+
+			case 'c':
+				if (typeString[position + 1] != 'o'
+						|| typeString[position + 2] != 'm'
+						|| typeString[position + 3] != 'm'
+						|| typeString[position + 4] != 'i'
+						|| typeString[position + 5] != 't'
+						|| typeString[position + 6] != endMark)
+					throw new CorruptObjectException(id, "invalid type");
+				offset.value = position + 7;
+				return Constants.OBJ_COMMIT;
+
+			case 't':
+				switch (typeString[position + 1]) {
+				case 'a':
+					if (typeString[position + 2] != 'g'
+							|| typeString[position + 3] != endMark)
+						throw new CorruptObjectException(id, "invalid type");
+					offset.value = position + 4;
+					return Constants.OBJ_TAG;
+
+				case 'r':
+					if (typeString[position + 2] != 'e'
+							|| typeString[position + 3] != 'e'
+							|| typeString[position + 4] != endMark)
+						throw new CorruptObjectException(id, "invalid type");
+					offset.value = position + 5;
+					return Constants.OBJ_TREE;
+
+				default:
+					throw new CorruptObjectException(id, "invalid type");
+				}
+
+			default:
+				throw new CorruptObjectException(id, "invalid type");
+			}
+		} catch (ArrayIndexOutOfBoundsException bad) {
+			throw new CorruptObjectException(id, "invalid type");
 		}
 	}
 

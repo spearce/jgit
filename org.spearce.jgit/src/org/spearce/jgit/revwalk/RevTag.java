@@ -23,9 +23,10 @@ import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Constants;
-import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.Tag;
+import org.spearce.jgit.util.MutableInteger;
+import org.spearce.jgit.util.RawParseUtils;
 
 /** An annotated tag. */
 public class RevTag extends RevObject {
@@ -59,59 +60,17 @@ public class RevTag extends RevObject {
 
 	void parseCanonical(final RevWalk walk, final byte[] rawTag)
 			throws CorruptObjectException {
+		final MutableInteger pos = new MutableInteger();
 		final int oType;
-		int pos;
 
-		switch (rawTag[53 + 0]) {
-		case 'b':
-			if (rawTag[53 + 1] != 'l' || rawTag[53 + 2] != 'o'
-					|| rawTag[53 + 3] != 'b' || rawTag[53 + 4] != '\n')
-				throw new CorruptObjectException(this, "invalid type");
-			oType = Constants.OBJ_BLOB;
-			pos = 53 + 5;
-			break;
-		case 'c':
-			if (rawTag[53 + 1] != 'o' || rawTag[53 + 2] != 'm'
-					|| rawTag[53 + 3] != 'm' || rawTag[53 + 4] != 'i'
-					|| rawTag[53 + 5] != 't' || rawTag[53 + 6] != '\n')
-				throw new CorruptObjectException(this, "invalid type");
-			oType = Constants.OBJ_COMMIT;
-			pos = 53 + 7;
-			break;
-		case 't':
-			switch (rawTag[53 + 1]) {
-			case 'a':
-				if (rawTag[53 + 2] != 'g' || rawTag[53 + 3] != '\n')
-					throw new CorruptObjectException(this, "invalid type");
-				oType = Constants.OBJ_TAG;
-				pos = 53 + 4;
-				break;
-			case 'r':
-				if (rawTag[53 + 2] != 'e' || rawTag[53 + 3] != 'e'
-						|| rawTag[53 + 4] != '\n')
-					throw new CorruptObjectException(this, "invalid type");
-				oType = Constants.OBJ_TREE;
-				pos = 53 + 5;
-				break;
-			default:
-				throw new CorruptObjectException(this, "invalid type");
-			}
-			break;
-		default:
-			throw new CorruptObjectException(this, "invalid type");
-		}
+		pos.value = 53; // "object $sha1\ntype "
+		oType = Constants.decodeTypeString(this, rawTag, (byte) '\n', pos);
+		walk.idBuffer.fromString(rawTag, 7);
+		object = walk.lookupAny(walk.idBuffer, oType);
 
-		object = walk.lookupAny(ObjectId.fromString(rawTag, 7), oType);
-
-		pos += 4;
-		int nameEnd = pos;
-		while (rawTag[nameEnd] != '\n')
-			nameEnd++;
-		final char[] nameBuf = new char[nameEnd - pos];
-		for (int i = 0; i < nameBuf.length; i++)
-			nameBuf[i] = (char) rawTag[pos++];
-
-		name = new String(nameBuf);
+		int p = pos.value += 4; // "tag "
+		final int nameEnd = RawParseUtils.next(rawTag, p, '\n') - 1;
+		name = RawParseUtils.decode(Constants.CHARSET, rawTag, p, nameEnd);
 		buffer = rawTag;
 		flags |= PARSED;
 	}
