@@ -21,11 +21,9 @@ import java.lang.ref.SoftReference;
 class UnpackedObjectCache {
 	private static final int CACHE_SZ = 256;
 
-	private static final SoftReference<Entry> DEAD;
+	private static final int MB = 1024 * 1024;
 
-	static {
-		DEAD = new SoftReference<Entry>(null);
-	}
+	private static final SoftReference<Entry> DEAD;
 
 	private static int hash(final WindowedFile pack, final long position) {
 		int h = pack.hash + (int) position;
@@ -34,25 +32,33 @@ class UnpackedObjectCache {
 		return h % CACHE_SZ;
 	}
 
-	private final int maxByteCount;
+	private static int maxByteCount;
 
-	private final Slot[] cache;
+	private static final Slot[] cache;
 
-	private Slot lruHead;
+	private static Slot lruHead;
 
-	private Slot lruTail;
+	private static Slot lruTail;
 
-	private int openByteCount;
+	private static int openByteCount;
 
-	UnpackedObjectCache(final int deltaBaseCacheLimit) {
-		maxByteCount = deltaBaseCacheLimit;
+	static {
+		DEAD = new SoftReference<Entry>(null);
+		maxByteCount = 10 * MB;
 
 		cache = new Slot[CACHE_SZ];
 		for (int i = 0; i < CACHE_SZ; i++)
 			cache[i] = new Slot();
 	}
 
-	synchronized Entry get(final WindowedFile pack, final long position) {
+	static synchronized void reconfigure(final int dbLimit) {
+		if (maxByteCount != dbLimit) {
+			maxByteCount = dbLimit;
+			releaseMemory();
+		}
+	}
+
+	static synchronized Entry get(final WindowedFile pack, final long position) {
 		final Slot e = cache[hash(pack, position)];
 		if (e.provider == pack && e.position == position) {
 			final Entry buf = e.data.get();
@@ -64,8 +70,8 @@ class UnpackedObjectCache {
 		return null;
 	}
 
-	synchronized void store(final WindowedFile pack, final long position,
-			final byte[] data, final int objectType) {
+	static synchronized void store(final WindowedFile pack,
+			final long position, final byte[] data, final int objectType) {
 		if (data.length > maxByteCount)
 			return; // Too large to cache.
 
@@ -73,6 +79,15 @@ class UnpackedObjectCache {
 		clearEntry(e);
 
 		openByteCount += data.length;
+		releaseMemory();
+
+		e.provider = pack;
+		e.position = position;
+		e.data = new SoftReference<Entry>(new Entry(data, objectType));
+		moveToHead(e);
+	}
+
+	private static void releaseMemory() {
 		while (openByteCount > maxByteCount && lruTail != null) {
 			final Slot currOldest = lruTail;
 			final Slot nextOldest = currOldest.lruPrev;
@@ -87,14 +102,9 @@ class UnpackedObjectCache {
 				nextOldest.lruNext = null;
 			lruTail = nextOldest;
 		}
-
-		e.provider = pack;
-		e.position = position;
-		e.data = new SoftReference<Entry>(new Entry(data, objectType));
-		moveToHead(e);
 	}
 
-	synchronized void purge(final WindowedFile file) {
+	static synchronized void purge(final WindowedFile file) {
 		for (final Slot e : cache) {
 			if (e.provider == file) {
 				clearEntry(e);
@@ -103,7 +113,7 @@ class UnpackedObjectCache {
 		}
 	}
 
-	private void moveToHead(final Slot e) {
+	private static void moveToHead(final Slot e) {
 		unlink(e);
 		e.lruPrev = null;
 		e.lruNext = lruHead;
@@ -114,7 +124,7 @@ class UnpackedObjectCache {
 		lruHead = e;
 	}
 
-	private void unlink(final Slot e) {
+	private static void unlink(final Slot e) {
 		final Slot prev = e.lruPrev;
 		final Slot next = e.lruNext;
 		if (prev != null)
@@ -123,12 +133,16 @@ class UnpackedObjectCache {
 			next.lruPrev = prev;
 	}
 
-	private void clearEntry(final Slot e) {
+	private static void clearEntry(final Slot e) {
 		final Entry old = e.data.get();
 		if (old != null)
 			openByteCount -= old.data.length;
 		e.provider = null;
 		e.data = DEAD;
+	}
+
+	private UnpackedObjectCache() {
+		throw new UnsupportedOperationException();
 	}
 
 	static class Entry {

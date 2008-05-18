@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -49,8 +48,6 @@ import java.util.zip.Inflater;
  * </p>
  */
 public class WindowedFile {
-	final WindowCache cache;
-
 	private final File fPath;
 
 	final int hash;
@@ -65,18 +62,10 @@ public class WindowedFile {
 	/**
 	 * Open a file for reading through window caching.
 	 * 
-	 * @param winCache
-	 *            the cache this file will maintain its windows in. All windows
-	 *            in the same cache will be considered for cache eviction, so
-	 *            multiple files from the same Git repository probably should
-	 *            use the same window cache.
 	 * @param file
-	 *            the file to open. The file will be opened for reading only,
-	 *            unless {@link FileChannel.MapMode#READ_WRITE} or {@link FileChannel.MapMode#PRIVATE}
-	 *            is given.
+	 *            the file to open.
 	 */
-	public WindowedFile(final WindowCache winCache, final File file) {
-		cache = winCache;
+	public WindowedFile(final File file) {
 		fPath = file;
 		hash = System.identityHashCode(this);
 		length = Long.MAX_VALUE;
@@ -93,7 +82,7 @@ public class WindowedFile {
 
 	/**
 	 * Get the path name of this file.
-	 *
+	 * 
 	 * @return the absolute path name of the file.
 	 */
 	public String getName() {
@@ -122,8 +111,7 @@ public class WindowedFile {
 	 *             trying to load it in from the operating system failed.
 	 */
 	public int read(final long position, final byte[] dstbuf,
-			final WindowCursor curs)
-			throws IOException {
+			final WindowCursor curs) throws IOException {
 		return read(position, dstbuf, 0, dstbuf.length, curs);
 	}
 
@@ -157,8 +145,9 @@ public class WindowedFile {
 			final int cnt, final WindowCursor curs) throws IOException {
 		int remaining = cnt;
 		while (remaining > 0 && position < length) {
-			final int r = curs.copy(this, (int) (position >> cache.szb),
-					((int) position) & cache.szm, dstbuf, dstoff, remaining);
+			final int r = curs.copy(this, (int) (position >> WindowCache.szb),
+					((int) position) & WindowCache.szm, dstbuf, dstoff,
+					remaining);
 			position += r;
 			dstoff += r;
 			remaining -= r;
@@ -189,30 +178,28 @@ public class WindowedFile {
 	 *             could be read.
 	 */
 	public void readFully(final long position, final byte[] dstbuf,
-			final WindowCursor curs)
-			throws IOException {
+			final WindowCursor curs) throws IOException {
 		if (read(position, dstbuf, 0, dstbuf.length, curs) != dstbuf.length)
 			throw new EOFException();
 	}
 
 	void readCompressed(final long position, final byte[] dstbuf,
-			final WindowCursor curs)
-			throws IOException, DataFormatException {
-		final Inflater inf = cache.borrowInflater();
+			final WindowCursor curs) throws IOException, DataFormatException {
+		final Inflater inf = WindowCache.borrowInflater();
 		try {
 			readCompressed(position, dstbuf, curs, inf);
 		} finally {
 			inf.reset();
-			cache.returnInflater(inf);
+			WindowCache.returnInflater(inf);
 		}
 	}
 
 	void readCompressed(long pos, final byte[] dstbuf, final WindowCursor curs,
 			final Inflater inf) throws IOException, DataFormatException {
 		int dstoff = 0;
-		dstoff = curs.inflate(this, (int) (pos >> cache.szb), ((int) pos)
-				& cache.szm, dstbuf, dstoff, inf);
-		pos >>= cache.szb;
+		dstoff = curs.inflate(this, (int) (pos >> WindowCache.szb), ((int) pos)
+				& WindowCache.szm, dstbuf, dstoff, inf);
+		pos >>= WindowCache.szb;
 		while (!inf.finished())
 			dstoff = curs.inflate(this, (int) ++pos, 0, dstbuf, dstoff, inf);
 		if (dstoff != dstbuf.length)
@@ -238,7 +225,7 @@ public class WindowedFile {
 
 	/** Close this file and remove all open windows. */
 	public void close() {
-		cache.purge(this);
+		WindowCache.purge(this);
 	}
 
 	void cacheOpen() throws IOException {
@@ -271,9 +258,9 @@ public class WindowedFile {
 
 	void loadWindow(final WindowCursor curs, final int windowId)
 			throws IOException {
-		final long position = windowId << cache.szb;
+		final long position = windowId << WindowCache.szb;
 		final int windowSize = getWindowSize(windowId);
-		if (cache.mmap) {
+		if (WindowCache.mmap) {
 			final MappedByteBuffer map = fd.getChannel().map(MapMode.READ_ONLY,
 					position, windowSize);
 			if (map.hasArray()) {
@@ -297,8 +284,8 @@ public class WindowedFile {
 	}
 
 	int getWindowSize(final int id) {
-		final int sz = cache.sz;
-		final long position = id << cache.szb;
+		final int sz = WindowCache.sz;
+		final long position = id << WindowCache.szb;
 		return length < position + sz ? (int) (length - position) : sz;
 	}
 }

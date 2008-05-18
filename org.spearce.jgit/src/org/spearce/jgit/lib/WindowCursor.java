@@ -86,7 +86,7 @@ public final class WindowCursor {
 			throws IOException {
 		final ByteWindow w = window;
 		if (w == null || w.provider != provider || w.id != id)
-			provider.cache.get(this, provider, id);
+			WindowCache.get(this, provider, id);
 	}
 
 	/** Release the current window cursor. */

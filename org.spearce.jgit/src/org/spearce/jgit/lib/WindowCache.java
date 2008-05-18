@@ -25,56 +25,59 @@ import java.util.zip.Inflater;
  * the other windowed file access classes.
  */
 public class WindowCache {
-	private static final int bits(int sz) {
-		if (sz < 4096)
+	private static final int KB = 1024;
+
+	private static final int MB = 1024 * KB;
+
+	private static final int bits(int newSize) {
+		if (newSize < 4096)
 			throw new IllegalArgumentException("Invalid window size");
-		if (Integer.bitCount(sz) != 1)
+		if (Integer.bitCount(newSize) != 1)
 			throw new IllegalArgumentException("Window size must be power of 2");
-		return Integer.numberOfTrailingZeros(sz);
+		return Integer.numberOfTrailingZeros(newSize);
 	}
 
-	private final Inflater[] inflaterCache;
+	private static final Inflater[] inflaterCache;
 
-	private final int maxByteCount;
+	private static final int maxByteCount;
 
-	final int sz;
+	static final int sz;
 
-	final int szb;
+	static final int szb;
 
-	final int szm;
+	static final int szm;
 
-	final boolean mmap;
+	static final boolean mmap;
 
-	final ReferenceQueue<?> clearedWindowQueue;
+	static final ReferenceQueue<?> clearedWindowQueue;
 
-	final UnpackedObjectCache deltaBaseCache;
+	private static final ByteWindow[] windows;
 
-	private final ByteWindow[] windows;
+	private static int openWindowCount;
 
-	private int openWindowCount;
+	private static int openByteCount;
 
-	private int openByteCount;
+	private static int openInflaterCount;
 
-	private int openInflaterCount;
+	private static int accessClock;
 
-	private int accessClock;
-
-	/**
-	 * Create a new window cache, using configured values.
-	 * 
-	 * @param cfg
-	 *            repository (or global user) configuration to control the
-	 *            cache. If cache parameters are not specified by the given
-	 *            configuration they will use default values.
-	 */
-	public WindowCache(final RepositoryConfig cfg) {
-		this(cfg.getCore().getPackedGitLimit(), cfg.getCore()
-				.getPackedGitWindowSize(), cfg.getCore().isPackedGitMMAP(), cfg
-				.getCore().getDeltaBaseCacheLimit());
+	static {
+		maxByteCount = 10 * MB;
+		szb = bits(8 * KB);
+		sz = 1 << szb;
+		szm = (1 << szb) - 1;
+		mmap = false;
+		windows = new ByteWindow[maxByteCount / sz];
+		inflaterCache = new Inflater[4];
+		clearedWindowQueue = new ReferenceQueue<Object>();
 	}
 
 	/**
-	 * Create a new window cache, using specified values.
+	 * Modify the configuration of the window cache.
+	 * <p>
+	 * The new configuration is applied immediately. If the new limits are
+	 * smaller than what what is currently cached, older entries will be purged
+	 * as soon as possible to allow the cache to meet the new limit.
 	 * 
 	 * @param packedGitLimit
 	 *            maximum number of bytes to hold within this instance.
@@ -85,20 +88,14 @@ public class WindowCache {
 	 * @param deltaBaseCacheLimit
 	 *            number of bytes to hold in the delta base cache.
 	 */
-	public WindowCache(final int packedGitLimit, final int packedGitWindowSize,
-			final boolean packedGitMMAP, final int deltaBaseCacheLimit) {
-		maxByteCount = packedGitLimit;
-		szb = bits(packedGitWindowSize);
-		sz = 1 << szb;
-		szm = (1 << szb) - 1;
-		mmap = packedGitMMAP;
-		windows = new ByteWindow[maxByteCount / sz];
-		inflaterCache = new Inflater[4];
-		clearedWindowQueue = new ReferenceQueue<Object>();
-		deltaBaseCache = new UnpackedObjectCache(deltaBaseCacheLimit);
+	public static void reconfigure(final int packedGitLimit,
+			final int packedGitWindowSize, final boolean packedGitMMAP,
+			final int deltaBaseCacheLimit) {
+		// fix me
+		UnpackedObjectCache.reconfigure(deltaBaseCacheLimit);
 	}
 
-	synchronized Inflater borrowInflater() {
+	synchronized static Inflater borrowInflater() {
 		if (openInflaterCount > 0) {
 			final Inflater r = inflaterCache[--openInflaterCount];
 			inflaterCache[openInflaterCount] = null;
@@ -107,7 +104,7 @@ public class WindowCache {
 		return new Inflater(false);
 	}
 
-	synchronized void returnInflater(final Inflater i) {
+	synchronized static void returnInflater(final Inflater i) {
 		if (openInflaterCount == inflaterCache.length)
 			i.end();
 		else
@@ -132,7 +129,7 @@ public class WindowCache {
 	 *             the window was not found in the cache and the given provider
 	 *             was unable to load the window on demand.
 	 */
-	public synchronized final void get(final WindowCursor curs,
+	public static synchronized final void get(final WindowCursor curs,
 			final WindowedFile wp, final int id) throws IOException {
 		int idx = binarySearch(wp, id);
 		if (0 <= idx) {
@@ -230,7 +227,8 @@ public class WindowCache {
 		openByteCount += curs.window.size;
 	}
 
-	private final int binarySearch(final WindowedFile sprov, final int sid) {
+	private static final int binarySearch(final WindowedFile sprov,
+			final int sid) {
 		if (openWindowCount == 0)
 			return -1;
 		final int shc = sprov.hash;
@@ -262,7 +260,7 @@ public class WindowCache {
 	 *            the window provider whose windows should be removed from the
 	 *            cache.
 	 */
-	public synchronized final void purge(final WindowedFile wp) {
+	public static synchronized final void purge(final WindowedFile wp) {
 		int d = 0;
 		for (int s = 0; s < openWindowCount; s++) {
 			final ByteWindow win = windows[s];
@@ -277,5 +275,9 @@ public class WindowCache {
 			wp.openCount = 0;
 			wp.cacheClose();
 		}
+	}
+
+	private WindowCache() {
+		throw new UnsupportedOperationException();
 	}
 }

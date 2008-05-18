@@ -62,8 +62,6 @@ public class GitProjectData {
 
 	private static RepositoryChangeListener[] repositoryChangeListeners = {};
 
-	private static WindowCache windows;
-
 	@SuppressWarnings("synthetic-access")
 	private static final IResourceChangeListener rcl = new RCL();
 
@@ -230,27 +228,22 @@ public class GitProjectData {
 		final Reference r = (Reference) repositoryCache.get(gitDir);
 		Repository d = r != null ? (Repository) r.get() : null;
 		if (d == null) {
-			d = new Repository(getWindowCache(), gitDir);
+			d = new Repository(gitDir);
 			repositoryCache.put(gitDir, new WeakReference(d));
 		}
 		return d;
 	}
 
 	/**
-	 * Obtain the global window cache for the workspace.
-	 * 
-	 * @return shared global cache for all projects.
+	 * Update the settings for the global window cache of the workspace.
 	 */
-	public static synchronized WindowCache getWindowCache() {
-		if (windows == null) {
-			Preferences p = Activator.getDefault().getPluginPreferences();
-			int wLimit = p.getInt(GitCorePreferences.core_packedGitLimit);
-			int wSize = p.getInt(GitCorePreferences.core_packedGitWindowSize);
-			boolean mmap = p.getBoolean(GitCorePreferences.core_packedGitMMAP);
-			int dbLimit = p.getInt(GitCorePreferences.core_deltaBaseCacheLimit);
-			windows = new WindowCache(wLimit, wSize, mmap, dbLimit);
-		}
-		return windows;
+	public static void reconfigureWindowCache() {
+		Preferences p = Activator.getDefault().getPluginPreferences();
+		int wLimit = p.getInt(GitCorePreferences.core_packedGitLimit);
+		int wSize = p.getInt(GitCorePreferences.core_packedGitWindowSize);
+		boolean mmap = p.getBoolean(GitCorePreferences.core_packedGitMMAP);
+		int dbLimit = p.getInt(GitCorePreferences.core_deltaBaseCacheLimit);
+		WindowCache.reconfigure(wLimit, wSize, mmap, dbLimit);
 	}
 
 	private final IProject project;

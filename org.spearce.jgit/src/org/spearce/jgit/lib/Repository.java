@@ -66,36 +66,18 @@ public class Repository {
 
 	private PackFile[] packs;
 
-	private final WindowCache windows;
-
 	private GitIndex index;
-
-	/**
-	 * Construct a representation of this git repo managing a Git repository.
-	 *
-	 * @param d
-	 *            GIT_DIR
-	 * @throws IOException
-	 */
-	public Repository(final File d) throws IOException {
-		this(null, d);
-	}
 
 	/**
 	 * Construct a representation of a Git repository.
 	 * 
-	 * @param wc
-	 *            cache this repository's data will be cached through during
-	 *            access. May be shared with another repository, or null to
-	 *            indicate this repository should allocate its own private
-	 *            cache.
 	 * @param d
 	 *            GIT_DIR (the location of the repository metadata).
 	 * @throws IOException
 	 *             the repository appears to already exist but cannot be
 	 *             accessed.
 	 */
-	public Repository(final WindowCache wc, final File d) throws IOException {
+	public Repository(final File d) throws IOException {
 		gitDir = d.getAbsoluteFile();
 		try {
 			objectsDirs = readObjectsDirs(FS.resolve(gitDir, "objects"),
@@ -121,7 +103,6 @@ public class Repository {
 		} else {
 			getConfig().create();
 		}
-		windows = wc != null ? wc : new WindowCache(getConfig());
 		if (isExisting)
 			scanForPacks();
 	}
@@ -186,13 +167,6 @@ public class Repository {
 	 */
 	public RepositoryConfig getConfig() {
 		return config;
-	}
-
-	/**
-	 * @return the cache needed for accessing packed objects in this repository.
-	 */
-	public WindowCache getWindowCache() {
-		return windows;
 	}
 
 	/**

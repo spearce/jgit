@@ -56,7 +56,7 @@ abstract class ByteWindow<T> extends SoftReference<T> {
 	 */
 	@SuppressWarnings("unchecked")
 	ByteWindow(final WindowedFile o, final int d, final T ref, final int sz) {
-		super(ref, (ReferenceQueue<T>)o.cache.clearedWindowQueue);
+		super(ref, (ReferenceQueue<T>)WindowCache.clearedWindowQueue);
 		provider = o;
 		size = sz;
 		id = d;

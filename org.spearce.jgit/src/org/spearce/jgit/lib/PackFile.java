@@ -30,13 +30,9 @@ import org.spearce.jgit.util.NB;
 public class PackFile {
 	private static final byte[] SIGNATURE = { 'P', 'A', 'C', 'K' };
 
-	private final Repository repo;
-
 	private final WindowedFile pack;
 
 	private final PackIndex idx;
-
-	private final UnpackedObjectCache deltaBaseCache;
 
 	/**
 	 * Construct a reader for an existing, pre-indexed packfile.
@@ -52,8 +48,7 @@ public class PackFile {
 	 */
 	public PackFile(final Repository parentRepo, final File idxFile,
 			final File packFile) throws IOException {
-		repo = parentRepo;
-		pack = new WindowedFile(repo.getWindowCache(), packFile) {
+		pack = new WindowedFile(packFile) {
 			@Override
 			protected void onOpen() throws IOException {
 				readPackHeader();
@@ -64,7 +59,6 @@ public class PackFile {
 		} catch (IOException ioe) {
 			throw ioe;
 		}
-		deltaBaseCache = pack.cache.deltaBaseCache;
 	}
 
 	final PackedObjectLoader resolveBase(final WindowCursor curs, final long ofs)
@@ -127,16 +121,16 @@ public class PackFile {
 	 * Close the resources utilized by this repository
 	 */
 	public void close() {
-		deltaBaseCache.purge(pack);
+		UnpackedObjectCache.purge(pack);
 		pack.close();
 	}
 
 	final UnpackedObjectCache.Entry readCache(final long position) {
-		return deltaBaseCache.get(pack, position);
+		return UnpackedObjectCache.get(pack, position);
 	}
 
 	final void saveCache(final long position, final byte[] data, final int type) {
-		deltaBaseCache.store(pack, position, data, type);
+		UnpackedObjectCache.store(pack, position, data, type);
 	}
 
 	final byte[] decompress(final long position, final int totalSize,

@@ -250,12 +250,6 @@ public class UIText extends NLS {
 	/** */
 	public static String WindowCachePreferencePage_packedGitMMAP;
 
-	/** */
-	public static String WindowCachePreferencePage_note;
-
-	/** */
-	public static String WindowCachePreferencePage_needRestart;
-
 	static {
 		initializeMessages(UIText.class.getPackage().getName() + ".uitext",
 				UIText.class);

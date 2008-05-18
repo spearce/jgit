@@ -32,7 +32,6 @@ import org.eclipse.osgi.util.NLS;
 import org.eclipse.ui.IImportWizard;
 import org.eclipse.ui.IWorkbench;
 import org.spearce.egit.core.op.CloneOperation;
-import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.Constants;
@@ -87,7 +86,7 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 		final String branch = cloneDestination.getInitialBranch();
 		final File gitdir = new File(workdir, ".git");
 		try {
-			db = new Repository(GitProjectData.getWindowCache(), gitdir);
+			db = new Repository(gitdir);
 			db.create();
 			db.writeSymref(Constants.HEAD, branch);
 
