@@ -718,6 +718,15 @@ public class Repository {
 				final String n = indexName.substring(0, indexName.length() - 4);
 				final File idxFile = new File(packDir, n + ".idx");
 				final File packFile = new File(packDir, n + ".pack");
+
+				if (!packFile.isFile()) {
+					// Sometimes C Git's http fetch transport leaves a
+					// .idx file behind and does not download the .pack.
+					// We have to skip over such useless indexes.
+					//
+					continue;
+				}
+
 				try {
 					packList.add(new PackFile(this, idxFile, packFile));
 				} catch (IOException ioe) {
