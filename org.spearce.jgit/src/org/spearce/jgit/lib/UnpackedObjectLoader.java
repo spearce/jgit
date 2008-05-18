@@ -84,107 +84,111 @@ public class UnpackedObjectLoader extends ObjectLoader {
 		// evenly divisible by 31. Otherwise its a new style loose
 		// object.
 		//
-		final int fb = compressed[0] & 0xff;
-		if (fb == 0x78 && (((fb << 8) | compressed[1] & 0xff) % 31) == 0) {
-			final Inflater inflater = new Inflater(false);
-			inflater.setInput(compressed);
-			final byte[] hdr = new byte[64];
-			int avail = 0;
-			while (!inflater.finished() && avail < hdr.length)
-				try {
-					avail += inflater.inflate(hdr, avail, hdr.length - avail);
-				} catch (DataFormatException dfe) {
-					final CorruptObjectException coe;
-					coe = new CorruptObjectException(id, "bad stream");
-					coe.initCause(dfe);
-					inflater.end();
-					throw coe;
-				}
-			if (avail < 5)
-				throw new CorruptObjectException(id, "no header");
+		final Inflater inflater = InflaterCache.get();
+		try {
+			final int fb = compressed[0] & 0xff;
+			if (fb == 0x78 && (((fb << 8) | compressed[1] & 0xff) % 31) == 0) {
+				inflater.setInput(compressed);
+				final byte[] hdr = new byte[64];
+				int avail = 0;
+				while (!inflater.finished() && avail < hdr.length)
+					try {
+						avail += inflater.inflate(hdr, avail, hdr.length
+								- avail);
+					} catch (DataFormatException dfe) {
+						final CorruptObjectException coe;
+						coe = new CorruptObjectException(id, "bad stream");
+						coe.initCause(dfe);
+						inflater.end();
+						throw coe;
+					}
+				if (avail < 5)
+					throw new CorruptObjectException(id, "no header");
 
-			int pos;
-			switch (hdr[0]) {
-			case 'b':
-				if (hdr[1] != 'l' || hdr[2] != 'o' || hdr[3] != 'b'
-						|| hdr[4] != ' ')
-					throw new CorruptObjectException(id, "invalid type");
-				objectType = Constants.OBJ_BLOB;
-				pos = 5;
-				break;
-			case 'c':
-				if (avail < 7 || hdr[1] != 'o' || hdr[2] != 'm'
-						|| hdr[3] != 'm' || hdr[4] != 'i' || hdr[5] != 't'
-						|| hdr[6] != ' ')
-					throw new CorruptObjectException(id, "invalid type");
-				objectType = Constants.OBJ_COMMIT;
-				pos = 7;
-				break;
-			case 't':
-				switch (hdr[1]) {
-				case 'a':
-					if (hdr[2] != 'g' || hdr[3] != ' ')
+				int pos;
+				switch (hdr[0]) {
+				case 'b':
+					if (hdr[1] != 'l' || hdr[2] != 'o' || hdr[3] != 'b'
+							|| hdr[4] != ' ')
 						throw new CorruptObjectException(id, "invalid type");
-					objectType = Constants.OBJ_TAG;
-					pos = 4;
-					break;
-				case 'r':
-					if (hdr[2] != 'e' || hdr[3] != 'e' || hdr[4] != ' ')
-						throw new CorruptObjectException(id, "invalid type");
-					objectType = Constants.OBJ_TREE;
+					objectType = Constants.OBJ_BLOB;
 					pos = 5;
+					break;
+				case 'c':
+					if (avail < 7 || hdr[1] != 'o' || hdr[2] != 'm'
+							|| hdr[3] != 'm' || hdr[4] != 'i' || hdr[5] != 't'
+							|| hdr[6] != ' ')
+						throw new CorruptObjectException(id, "invalid type");
+					objectType = Constants.OBJ_COMMIT;
+					pos = 7;
+					break;
+				case 't':
+					switch (hdr[1]) {
+					case 'a':
+						if (hdr[2] != 'g' || hdr[3] != ' ')
+							throw new CorruptObjectException(id, "invalid type");
+						objectType = Constants.OBJ_TAG;
+						pos = 4;
+						break;
+					case 'r':
+						if (hdr[2] != 'e' || hdr[3] != 'e' || hdr[4] != ' ')
+							throw new CorruptObjectException(id, "invalid type");
+						objectType = Constants.OBJ_TREE;
+						pos = 5;
+						break;
+					default:
+						throw new CorruptObjectException(id, "invalid type");
+					}
 					break;
 				default:
 					throw new CorruptObjectException(id, "invalid type");
 				}
-				break;
-			default:
-				throw new CorruptObjectException(id, "invalid type");
-			}
 
-			int tempSize = 0;
-			while (pos < avail) {
-				final int c = hdr[pos++];
-				if (0 == c)
+				int tempSize = 0;
+				while (pos < avail) {
+					final int c = hdr[pos++];
+					if (0 == c)
+						break;
+					else if (c < '0' || c > '9')
+						throw new CorruptObjectException(id, "invalid length");
+					tempSize *= 10;
+					tempSize += c - '0';
+				}
+				objectSize = tempSize;
+				bytes = new byte[objectSize];
+				if (pos < avail)
+					System.arraycopy(hdr, pos, bytes, 0, avail - pos);
+				decompress(id, inflater, avail - pos);
+			} else {
+				int p = 0;
+				int c = compressed[p++] & 0xff;
+				final int typeCode = (c >> 4) & 7;
+				int size = c & 15;
+				int shift = 4;
+				while ((c & 0x80) != 0) {
+					c = compressed[p++] & 0xff;
+					size += (c & 0x7f) << shift;
+					shift += 7;
+				}
+
+				switch (typeCode) {
+				case Constants.OBJ_COMMIT:
+				case Constants.OBJ_TREE:
+				case Constants.OBJ_BLOB:
+				case Constants.OBJ_TAG:
+					objectType = typeCode;
 					break;
-				else if (c < '0' || c > '9')
-					throw new CorruptObjectException(id, "invalid length");
-				tempSize *= 10;
-				tempSize += c - '0';
-			}
-			objectSize = tempSize;
-			bytes = new byte[objectSize];
-			if (pos < avail)
-				System.arraycopy(hdr, pos, bytes, 0, avail - pos);
-			decompress(id, inflater, avail - pos);
-		} else {
-			int p = 0;
-			int c = compressed[p++] & 0xff;
-			final int typeCode = (c >> 4) & 7;
-			int size = c & 15;
-			int shift = 4;
-			while ((c & 0x80) != 0) {
-				c = compressed[p++] & 0xff;
-				size += (c & 0x7f) << shift;
-				shift += 7;
-			}
+				default:
+					throw new CorruptObjectException(id, "invalid type");
+				}
 
-			switch (typeCode) {
-			case Constants.OBJ_COMMIT:
-			case Constants.OBJ_TREE:
-			case Constants.OBJ_BLOB:
-			case Constants.OBJ_TAG:
-				objectType = typeCode;
-				break;
-			default:
-				throw new CorruptObjectException(id, "invalid type");
+				objectSize = size;
+				bytes = new byte[objectSize];
+				inflater.setInput(compressed, p, compressed.length - p);
+				decompress(id, inflater, 0);
 			}
-
-			objectSize = size;
-			bytes = new byte[objectSize];
-			final Inflater inflater = new Inflater(false);
-			inflater.setInput(compressed, p, compressed.length - p);
-			decompress(id, inflater, 0);
+		} finally {
+			InflaterCache.release(inflater);
 		}
 	}
 
@@ -198,8 +202,6 @@ public class UnpackedObjectLoader extends ObjectLoader {
 			coe = new CorruptObjectException(id, "bad stream");
 			coe.initCause(dfe);
 			throw coe;
-		} finally {
-			inf.end();
 		}
 		if (p != objectSize)
 			new CorruptObjectException(id, "incorrect length");
