@@ -97,14 +97,6 @@
                menubarPath="team.main/group1"
                tooltip="%CommitAction_tooltip"/>
 	  </objectContribution>
-      <objectContribution
-            objectClass="org.eclipse.core.resources.IFile"
-            adaptable="true"
-            id="org.spearce.egit.ui.IFileContributions">
-         <filter name="projectPersistentProperty"
-               value="org.eclipse.team.core.repository=org.spearce.egit.core.GitProvider">
-         </filter>
-      </objectContribution>
    </extension>
 
    <extension
