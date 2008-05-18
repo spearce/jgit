@@ -233,7 +233,7 @@ public class WindowedFile {
 	 *             not understand its version header information.
 	 */
 	protected void onOpen() throws IOException {
-		fd.getFD(); // Silly Eclipse requires us to throw.
+		// Do nothing by default.
 	}
 
 	/** Close this file and remove all open windows. */
