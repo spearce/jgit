@@ -310,7 +310,7 @@ public class GitResourceDecorator extends LabelProvider implements
 
 						decoration.addOverlay(UIIcons.OVR_SHARED);
 
-						if (entry.isModified(mapped.getWorkDir())) {
+						if (entry.isModified(mapped.getWorkDir(), true)) {
 							decoration.addPrefix(">");
 							decoration.addSuffix("(not updated)");
 							orState(rsrc.getParent(), CHANGED);
