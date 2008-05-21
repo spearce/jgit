@@ -211,7 +211,7 @@ public class GitHistoryPage extends HistoryPage {
 		layoutSashForm(graphDetailSplit, SPLIT_GRAPH);
 		layoutSashForm(revInfoSplit, SPLIT_INFO);
 
-		popupMgr = new MenuManager(POPUP_ID);
+		popupMgr = new MenuManager(null, POPUP_ID);
 		attachCommitSelectionChanged();
 		createLocalToolbarActions();
 		createStandardActions();
