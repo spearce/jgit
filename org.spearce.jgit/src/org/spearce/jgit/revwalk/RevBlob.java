@@ -38,6 +38,7 @@
 package org.spearce.jgit.revwalk;
 
 import org.spearce.jgit.lib.AnyObjectId;
+import org.spearce.jgit.lib.Constants;
 
 /** A binary file, or a symbolic link. */
 public class RevBlob extends RevObject {
@@ -54,5 +55,10 @@ public class RevBlob extends RevObject {
 	@Override
 	void parse(final RevWalk walk) {
 		flags |= PARSED;
+	}
+	
+	@Override
+	public int getType() {
+		return Constants.OBJ_BLOB;
 	}
 }

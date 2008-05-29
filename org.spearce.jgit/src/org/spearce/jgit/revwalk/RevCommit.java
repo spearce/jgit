@@ -135,6 +135,11 @@ public class RevCommit extends RevObject {
 		buffer = raw;
 		flags |= PARSED;
 	}
+	
+	@Override
+	public int getType() {
+		return Constants.OBJ_COMMIT;
+	}
 
 	static void carryFlags(RevCommit c, final int carry) {
 		for (;;) {
