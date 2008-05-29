@@ -41,6 +41,9 @@ public class UIText extends NLS {
 	public static String ExistingOrNewPage_createNew;
 
 	/** */
+	public static String ExistingOrNewPage_createInParent;
+
+	/** */
 	public static String GitCloneWizard_title;
 
 	/** */

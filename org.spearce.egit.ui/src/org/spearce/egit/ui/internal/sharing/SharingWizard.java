@@ -36,6 +36,8 @@ public class SharingWizard extends Wizard implements IConfigurationWizard {
 
 	private File newGitDir;
 
+	private boolean useParent;
+
 	/**
 	 * Construct the Git Sharing Wizard for connecting Git project to Eclipse
 	 */
@@ -46,7 +48,14 @@ public class SharingWizard extends Wizard implements IConfigurationWizard {
 
 	public void init(final IWorkbench workbench, final IProject p) {
 		project = p;
-		newGitDir = new File(project.getLocation().toFile(), ".git");
+		calculateNewGitDir();
+	}
+
+	private void calculateNewGitDir() {
+		File pdir = project.getLocation().toFile();
+		if (useParent)
+			pdir = pdir.getParentFile();
+		newGitDir = new File(pdir, ".git");
 	}
 
 	public void addPages() {
@@ -99,5 +108,10 @@ public class SharingWizard extends Wizard implements IConfigurationWizard {
 					UIText.SharingWizard_failed, status, status.getSeverity());
 			return false;
 		}
+	}
+
+	void setUseParent(boolean selection) {
+		useParent = selection;
+		calculateNewGitDir();
 	}
 }

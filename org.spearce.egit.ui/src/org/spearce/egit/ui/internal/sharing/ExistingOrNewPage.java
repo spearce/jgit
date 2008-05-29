@@ -19,6 +19,7 @@ import org.spearce.egit.ui.UIText;
 
 class ExistingOrNewPage extends WizardPage {
 	final SharingWizard myWizard;
+	private Button createInParent;
 
 	ExistingOrNewPage(final SharingWizard w) {
 		super(ExistingOrNewPage.class.getName());
@@ -45,6 +46,7 @@ class ExistingOrNewPage extends WizardPage {
 
 			public void widgetSelected(final SelectionEvent e) {
 				myWizard.setUseExisting();
+				createInParent.setEnabled(false);
 			}
 		});
 		useExisting.setSelection(true);
@@ -59,9 +61,24 @@ class ExistingOrNewPage extends WizardPage {
 
 			public void widgetSelected(final SelectionEvent e) {
 				myWizard.setCreateNew();
+				createInParent.setEnabled(true);
 			}
 		});
 
+		createInParent = new Button(g, SWT.CHECK);
+		createInParent.setEnabled(createNew.getSelection());
+		createInParent.setText(UIText.ExistingOrNewPage_createInParent);
+		createInParent.addSelectionListener(new SelectionListener() {
+			public void widgetDefaultSelected(SelectionEvent e) {
+				widgetSelected(e);
+			}
+
+			public void widgetSelected(SelectionEvent e) {
+				myWizard.setUseParent(createInParent.getSelection());
+			}
+		});
+		createInParent.setSelection(true);
+		myWizard.setUseParent(createInParent.getSelection());
 		setControl(g);
 	}
 }
