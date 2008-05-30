@@ -74,6 +74,35 @@ public class MutableObjectId extends AnyObjectId {
 	}
 
 	/**
+	 * Convert an ObjectId from binary representation expressed in integers.
+	 * 
+	 * @param ints
+	 *            the raw int buffer to read from. At least 5 integers must be
+	 *            available within this integers array.
+	 */
+	public void fromRaw(final int[] ints) {
+		fromRaw(ints, 0);
+	}
+
+	/**
+	 * Convert an ObjectId from binary representation expressed in integers.
+	 * 
+	 * @param ints
+	 *            the raw int buffer to read from. At least 5 integers after p
+	 *            must be available within this integers array.
+	 * @param p
+	 *            position to read the first integer of data from.
+	 * 
+	 */
+	public void fromRaw(final int[] ints, final int p) {
+		w1 = ints[p];
+		w2 = ints[p + 1];
+		w3 = ints[p + 2];
+		w4 = ints[p + 3];
+		w5 = ints[p + 4];
+	}
+
+	/**
 	 * Convert an ObjectId from hex characters (US-ASCII).
 	 * 
 	 * @param buf
