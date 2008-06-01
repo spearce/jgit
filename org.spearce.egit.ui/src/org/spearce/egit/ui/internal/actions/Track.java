@@ -8,20 +8,51 @@
  *******************************************************************************/
 package org.spearce.egit.ui.internal.actions;
 
-import java.util.List;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 
-import org.eclipse.core.resources.IWorkspaceRunnable;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.action.IAction;
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.spearce.egit.core.op.TrackOperation;
 
 /**
  * An action to add resources to the Git repository.
- *
+ * 
  * @see TrackOperation
  */
-public class Track extends AbstractOperationAction {
-	protected IWorkspaceRunnable createOperation(final IAction act,
-			final List sel) {
-		return sel.isEmpty() ? null : new TrackOperation(sel);
+public class Track extends RepositoryAction {
+
+	@Override
+	public void run(IAction action) {
+		try {
+			final TrackOperation op = new TrackOperation(Arrays
+					.asList(getSelectedResources()));
+			getTargetPart().getSite().getWorkbenchWindow().run(true, false,
+					new IRunnableWithProgress() {
+						public void run(IProgressMonitor arg0)
+								throws InvocationTargetException,
+								InterruptedException {
+							try {
+								op.run(arg0);
+							} catch (CoreException e) {
+								MessageDialog.openError(getShell(),
+										"Track failed", e.getMessage());
+							}
+						}
+					});
+		} catch (InvocationTargetException e) {
+			MessageDialog.openError(getShell(), "Track failed", e.getMessage());
+		} catch (InterruptedException e) {
+			MessageDialog.openError(getShell(), "Track failed", e.getMessage());
+		}
+	}
+
+	@Override
+	public boolean isEnabled() {
+		return getSelectedAdaptables(getSelection(), IResource.class).length > 0;
 	}
 }

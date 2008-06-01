@@ -240,6 +240,17 @@
 		       toolbarPath="org.spearce.egit.ui"
 		       tooltip="%ResetAction_tooltip">
 		</action>
+		<action
+		       class="org.spearce.egit.ui.internal.actions.Track"
+		       disabledIcon="icons/toolbar/trackd.png"
+		       icon="icons/toolbar/tracke.png"
+		       id="org.spearce.egit.ui.trackaction"
+		       label="%TrackAction_label"
+		       menubarPath="org.spearce.egit.ui.gitmenu/repo"
+		       style="push"
+		       toolbarPath="org.spearce.egit.ui"
+		       tooltip="Start tracking the selected resources">
+		</action>
       </actionSet>
    </extension>
 </plugin>
