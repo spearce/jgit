@@ -61,7 +61,7 @@ public abstract class PackIndex {
 	 * implementation for that format will be constructed and returned to the
 	 * caller. The file may or may not be held open by the returned instance.
 	 * </p>
-	 *
+	 * 
 	 * @param idxFile
 	 *            existing pack .idx to read.
 	 * @return access implementation for the requested file.
@@ -118,7 +118,7 @@ public abstract class PackIndex {
 
 	/**
 	 * Obtain the total number of objects described by this index.
-	 *
+	 * 
 	 * @return number of objects in this index, and likewise in the associated
 	 *         pack that this index was generated from.
 	 */
@@ -126,7 +126,7 @@ public abstract class PackIndex {
 
 	/**
 	 * Locate the file offset position for the requested object.
-	 *
+	 * 
 	 * @param objId
 	 *            name of the object to locate within the pack.
 	 * @return offset of the object's header and compressed content; -1 if the
