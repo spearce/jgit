@@ -40,6 +40,7 @@ package org.spearce.jgit.lib;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.zip.DataFormatException;
 
 import org.spearce.jgit.util.NB;
@@ -49,7 +50,7 @@ import org.spearce.jgit.util.NB;
  * delta packed format yielding high compression of lots of object where some
  * objects are similar.
  */
-public class PackFile {
+public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	private final WindowedFile pack;
 
 	private final PackIndex idx;
@@ -143,6 +144,22 @@ public class PackFile {
 	public void close() {
 		UnpackedObjectCache.purge(pack);
 		pack.close();
+	}
+
+	/**
+	 * Provide iterator over entries in associated pack index, that should also
+	 * exist in this pack file. Objects returned by such iterator are mutable
+	 * during iteration.
+	 * <p>
+	 * Iterator returns objects in SHA-1 lexicographical order.
+	 * </p>
+	 * 
+	 * @return iterator over entries of associated pack index
+	 * 
+	 * @see PackIndex#iterator()
+	 */
+	public Iterator<PackIndex.MutableEntry> iterator() {
+		return idx.iterator();
 	}
 
 	/**

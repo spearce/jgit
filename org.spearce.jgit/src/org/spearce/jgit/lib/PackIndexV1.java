@@ -40,6 +40,8 @@ package org.spearce.jgit.lib;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.util.NB;
@@ -103,5 +105,34 @@ class PackIndexV1 extends PackIndex {
 				low = mid + 1;
 		} while (low < high);
 		return -1;
+	}
+
+	public Iterator<MutableEntry> iterator() {
+		return new IndexV1Iterator();
+	}
+
+	private class IndexV1Iterator extends EntriesIterator {
+		private int levelOne;
+
+		private int levelTwo;
+
+		public MutableEntry next() {
+			for (; levelOne < idxdata.length; levelOne++) {
+				if (idxdata[levelOne] == null)
+					continue;
+
+				if (levelTwo < idxdata[levelOne].length) {
+					long offset = NB.decodeUInt32(idxdata[levelOne], levelTwo);
+					objectId.setOffset(offset);
+					objectId.fromRaw(idxdata[levelOne], levelTwo + 4);
+					levelTwo += Constants.OBJECT_ID_LENGTH + 4;
+					returnedNumber++;
+					return objectId;
+				} else {
+					levelTwo = 0;
+				}
+			}
+			throw new NoSuchElementException();
+		}
 	}
 }

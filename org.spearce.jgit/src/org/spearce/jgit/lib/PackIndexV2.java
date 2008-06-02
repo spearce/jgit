@@ -40,6 +40,8 @@ package org.spearce.jgit.lib;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import org.spearce.jgit.util.NB;
 
@@ -174,4 +176,38 @@ class PackIndexV2 extends PackIndex {
 		} while (low < high);
 		return -1;
 	}
+
+	public Iterator<MutableEntry> iterator() {
+		return new EntriesIteratorV2();
+	}
+
+	private class EntriesIteratorV2 extends EntriesIterator {
+		private int levelOne;
+
+		private int levelTWo;
+
+		public MutableEntry next() {
+			for (; levelOne < names.length; levelOne++) {
+				if (levelTWo < names[levelOne].length) {
+					objectId.fromRaw(names[levelOne], levelTWo);
+					int arrayIdx = levelTWo / (Constants.OBJECT_ID_LENGTH / 4)
+							* 4;
+					long offset = NB.decodeUInt32(offset32[levelOne], arrayIdx);
+					if ((offset & IS_O64) != 0) {
+						arrayIdx = (8 * (int) (offset & ~IS_O64));
+						offset = NB.decodeUInt64(offset64, arrayIdx);
+					}
+					objectId.setOffset(offset);
+
+					levelTWo += Constants.OBJECT_ID_LENGTH / 4;
+					returnedNumber++;
+					return objectId;
+				} else {
+					levelTWo = 0;
+				}
+			}
+			throw new NoSuchElementException();
+		}
+	}
+
 }
