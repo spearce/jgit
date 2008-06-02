@@ -145,6 +145,16 @@ public class PackFile {
 		pack.close();
 	}
 
+	/**
+	 * Obtain the total number of objects available in this pack. This method
+	 * relies on pack index, giving number of effectively available objects.
+	 * 
+	 * @return number of objects in index of this pack, likewise in this pack
+	 */
+	long getObjectCount() {
+		return idx.getObjectCount();
+	}
+
 	final UnpackedObjectCache.Entry readCache(final long position) {
 		return UnpackedObjectCache.get(pack, position);
 	}
