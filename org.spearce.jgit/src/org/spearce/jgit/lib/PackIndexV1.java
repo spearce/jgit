@@ -64,9 +64,9 @@ class PackIndexV1 extends PackIndex {
 		for (int k = 0; k < idxHeader.length; k++) {
 			int n;
 			if (k == 0) {
-				n = (int)(idxHeader[k]);
+				n = (int) (idxHeader[k]);
 			} else {
-				n = (int)(idxHeader[k]-idxHeader[k-1]);
+				n = (int) (idxHeader[k] - idxHeader[k - 1]);
 			}
 			if (n > 0) {
 				idxdata[k] = new byte[n * (Constants.OBJECT_ID_LENGTH + 4)];
@@ -94,11 +94,11 @@ class PackIndexV1 extends PackIndex {
 			if (cmp < 0)
 				high = mid;
 			else if (cmp == 0) {
-				int b0 = data[pos-4] & 0xff;
-				int b1 = data[pos-3] & 0xff;
-				int b2 = data[pos-2] & 0xff;
-				int b3 = data[pos-1] & 0xff;
-				return (((long)b0) << 24) | ( b1 << 16 ) | ( b2 << 8 ) | (b3);
+				int b0 = data[pos - 4] & 0xff;
+				int b1 = data[pos - 3] & 0xff;
+				int b2 = data[pos - 2] & 0xff;
+				int b3 = data[pos - 1] & 0xff;
+				return (((long) b0) << 24) | (b1 << 16) | (b2 << 8) | (b3);
 			} else
 				low = mid + 1;
 		} while (low < high);
