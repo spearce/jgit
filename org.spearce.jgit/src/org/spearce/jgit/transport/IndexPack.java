@@ -74,8 +74,6 @@ public class IndexPack {
 	/** Progress message when computing names of delta compressed objects. */
 	public static final String PROGRESS_RESOLVE_DELTA = "Resolving deltas";
 
-	private static final byte[] SIGNATURE = { 'P', 'A', 'C', 'K' };
-
 	private static final int BUFFER_SIZE = 2048;
 
 	/**
@@ -477,10 +475,10 @@ public class IndexPack {
 	}
 
 	private void readPackHeader() throws IOException {
-		final int hdrln = SIGNATURE.length + 4 + 4;
+		final int hdrln = Constants.PACK_SIGNATURE.length + 4 + 4;
 		final int p = fillFromInput(hdrln);
-		for (int k = 0; k < SIGNATURE.length; k++)
-			if (buf[p + k] != SIGNATURE[k])
+		for (int k = 0; k < Constants.PACK_SIGNATURE.length; k++)
+			if (buf[p + k] != Constants.PACK_SIGNATURE[k])
 				throw new IOException("Not a PACK file.");
 
 		final long vers = NB.decodeUInt32(buf, p + 4);

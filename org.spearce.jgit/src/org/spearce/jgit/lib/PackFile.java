@@ -50,8 +50,6 @@ import org.spearce.jgit.util.NB;
  * objects are similar.
  */
 public class PackFile {
-	private static final byte[] SIGNATURE = { 'P', 'A', 'C', 'K' };
-
 	private final WindowedFile pack;
 
 	private final PackIndex idx;
@@ -165,17 +163,17 @@ public class PackFile {
 	private void readPackHeader() throws IOException {
 		final WindowCursor curs = new WindowCursor();
 		long position = 0;
-		final byte[] sig = new byte[SIGNATURE.length];
+		final byte[] sig = new byte[Constants.PACK_SIGNATURE.length];
 		final byte[] intbuf = new byte[4];
 		final long vers;
 
-		if (pack.read(position, sig, curs) != SIGNATURE.length)
+		if (pack.read(position, sig, curs) != Constants.PACK_SIGNATURE.length)
 			throw new IOException("Not a PACK file.");
-		for (int k = 0; k < SIGNATURE.length; k++) {
-			if (sig[k] != SIGNATURE[k])
+		for (int k = 0; k < Constants.PACK_SIGNATURE.length; k++) {
+			if (sig[k] != Constants.PACK_SIGNATURE[k])
 				throw new IOException("Not a PACK file.");
 		}
-		position += SIGNATURE.length;
+		position += Constants.PACK_SIGNATURE.length;
 
 		pack.readFully(position, intbuf, curs);
 		vers = NB.decodeUInt32(intbuf, 0);

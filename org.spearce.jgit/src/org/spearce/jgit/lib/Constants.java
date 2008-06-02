@@ -188,6 +188,14 @@ public final class Constants {
 	 */
 	public static final int OBJ_REF_DELTA = 7;
 
+	/**
+	 * Pack file signature that occurs at file header - identifies file as Git
+	 * packfile formatted.
+	 * <p>
+	 * <b>This constant is fixed and is defined by the Git packfile format.</b>
+	 */
+	public static final byte[] PACK_SIGNATURE = { 'P', 'A', 'C', 'K' };
+	
 	/** Native character encoding for commit messages, file names... */
 	public static final String CHARACTER_ENCODING = "UTF-8";
 
