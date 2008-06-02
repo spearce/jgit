@@ -45,9 +45,9 @@ import java.util.zip.DataFormatException;
 import org.spearce.jgit.util.NB;
 
 /**
- * A Git version 2 pack file representation. A pack file contains
- * Git objects in delta packed format yielding high compression of
- * lots of object where some objects are similar.
+ * A Git version 2 pack file representation. A pack file contains Git objects in
+ * delta packed format yielding high compression of lots of object where some
+ * objects are similar.
  */
 public class PackFile {
 	private static final byte[] SIGNATURE = { 'P', 'A', 'C', 'K' };
@@ -58,7 +58,7 @@ public class PackFile {
 
 	/**
 	 * Construct a reader for an existing, pre-indexed packfile.
-	 *
+	 * 
 	 * @param parentRepo
 	 *            Git repository holding this pack file
 	 * @param idxFile
@@ -188,13 +188,11 @@ public class PackFile {
 		if (idx.getObjectCount() != objectCnt)
 			throw new IOException("Pack index"
 					+ " object count mismatch; expected " + objectCnt
-					+ " found " + idx.getObjectCount() + ": "
-					+ pack.getName());
+					+ " found " + idx.getObjectCount() + ": " + pack.getName());
 	}
 
 	private PackedObjectLoader reader(final WindowCursor curs,
-			final long objOffset)
-			throws IOException {
+			final long objOffset) throws IOException {
 		long pos = objOffset;
 		int p = 0;
 		final byte[] ib = curs.tempId;
