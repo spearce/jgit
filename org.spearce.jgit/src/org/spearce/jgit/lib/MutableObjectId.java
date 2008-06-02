@@ -46,6 +46,27 @@ import org.spearce.jgit.util.NB;
  */
 public class MutableObjectId extends AnyObjectId {
 	/**
+	 * Empty constructor. Initialize object with default (zeros) value.
+	 */
+	public MutableObjectId() {
+		super();
+	}
+
+	/**
+	 * Copying constructor.
+	 * 
+	 * @param src
+	 *            original entry, to copy id from
+	 */
+	MutableObjectId(MutableObjectId src) {
+		this.w1 = src.w1;
+		this.w2 = src.w2;
+		this.w3 = src.w3;
+		this.w4 = src.w4;
+		this.w5 = src.w5;
+	}
+
+	/**
 	 * Convert an ObjectId from raw binary representation.
 	 * 
 	 * @param bs
