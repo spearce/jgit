@@ -1,19 +1,12 @@
-/*
- *  Copyright (C) 2007 Dave Watson <dwatson@mimvista.com>
+/*******************************************************************************
+ * Copyright (C) 2007, Dave Watson <dwatson@mimvista.com>
+ * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
- *  License, version 2.1, as published by the Free Software Foundation.
- *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
- */
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * See LICENSE for the full license text, also available.
+ *******************************************************************************/
 package org.spearce.egit.core.op;
 
 import java.io.File;
@@ -27,10 +20,11 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.team.core.TeamException;
 import org.spearce.jgit.lib.Commit;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.ObjectId;
-import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.RefLogWriter;
+import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tag;
 import org.spearce.jgit.lib.Tree;
@@ -174,20 +168,15 @@ public class ResetOperation implements IWorkspaceRunnable {
 	}
 
 	private void writeRef() throws TeamException {
-		LockFile lockRef;
 		try {
-			lockRef = repository.lockRef("HEAD");
+			final RefUpdate ru = repository.updateRef(Constants.HEAD);
+			ru.setNewObjectId(commit.getCommitId());
+			ru.setRefLogMessage("reset", false);
+			if (ru.forceUpdate() == RefUpdate.Result.LOCK_FAILURE)
+				throw new TeamException("Can't update " + ru.getName());
 		} catch (IOException e) {
-			throw new TeamException("Could not lock ref for HEAD", e);
+			throw new TeamException("Updating " + Constants.HEAD + " failed", e);
 		}
-		try {
-			lockRef.write(commit.getCommitId());
-		} catch (IOException e) {
-			throw new TeamException("Could not write ref for HEAD", e);
-		}
-		
-		if (!lockRef.commit()) 
-			throw new TeamException("writing ref failed");
 	}
 
 	private void readIndex() throws TeamException {

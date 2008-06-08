@@ -1,20 +1,41 @@
 /*
- *  Copyright (C) 2007,2008  Robin Rosenberg
- *  Copyright (C) 2008  Shawn Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public
- *  License, version 2, as published by the Free Software Foundation.
+ * All rights reserved.
  *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  General Public License for more details.
+ * Redistribution and use in source and binary forms, with or
+ * without modification, are permitted provided that the following
+ * conditions are met:
  *
- *  You should have received a copy of the GNU General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following
+ *   disclaimer in the documentation and/or other materials provided
+ *   with the distribution.
+ *
+ * - Neither the name of the Git Development Community nor the
+ *   names of its contributors may be used to endorse or promote
+ *   products derived from this software without specific prior
+ *   written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.spearce.jgit.transport;
 
 import java.io.BufferedInputStream;
@@ -123,9 +144,12 @@ abstract class PackFetchConnection extends FetchConnection {
 
 	private boolean sideband;
 
+	private boolean includeTags;
+
 	PackFetchConnection(final PackTransport packTransport) {
 		local = packTransport.local;
 		uri = packTransport.uri;
+		includeTags = packTransport.getTagOpt() != TagOpt.NO_TAGS;
 
 		walk = new RevWalk(local);
 		reachableCommits = new RevCommitList<RevCommit>();
@@ -146,6 +170,11 @@ abstract class PackFetchConnection extends FetchConnection {
 
 		pckIn = new PacketLineIn(in);
 		pckOut = new PacketLineOut(out);
+	}
+
+	@Override
+	public boolean didFetchIncludeTags() {
+		return includeTags;
 	}
 
 	protected void readAdvertisedRefs() throws TransportException {
@@ -262,9 +291,9 @@ abstract class PackFetchConnection extends FetchConnection {
 	}
 
 	private void markReachable(final int maxTime) throws IOException {
-		for (final String name : local.getAllRefs()) {
+		for (final Ref r : local.getAllRefs().values()) {
 			try {
-				final RevCommit o = walk.parseCommit(local.resolve(name));
+				final RevCommit o = walk.parseCommit(r.getObjectId());
 				o.add(REACHABLE);
 				reachableCommits.add(o);
 			} catch (IOException readError) {
@@ -330,7 +359,8 @@ abstract class PackFetchConnection extends FetchConnection {
 
 	private String enableCapabilities() {
 		final StringBuilder line = new StringBuilder();
-		wantCapability(line, OPTION_INCLUDE_TAG);
+		if (includeTags)
+			includeTags = wantCapability(line, OPTION_INCLUDE_TAG);
 		wantCapability(line, OPTION_OFS_DELTA);
 		multiAck = wantCapability(line, OPTION_MULTI_ACK);
 		thinPack = wantCapability(line, OPTION_THIN_PACK);

@@ -1,19 +1,40 @@
 /*
- *  Copyright (C) 2008  Shawn Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public
- *  License, version 2, as published by the Free Software Foundation.
+ * All rights reserved.
  *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  General Public License for more details.
+ * Redistribution and use in source and binary forms, with or
+ * without modification, are permitted provided that the following
+ * conditions are met:
  *
- *  You should have received a copy of the GNU General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following
+ *   disclaimer in the documentation and/or other materials provided
+ *   with the distribution.
+ *
+ * - Neither the name of the Git Development Community nor the
+ *   names of its contributors may be used to endorse or promote
+ *   products derived from this software without specific prior
+ *   written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.spearce.jgit.lib;
 
 import java.lang.ref.SoftReference;
@@ -21,11 +42,9 @@ import java.lang.ref.SoftReference;
 class UnpackedObjectCache {
 	private static final int CACHE_SZ = 256;
 
-	private static final SoftReference<Entry> DEAD;
+	private static final int MB = 1024 * 1024;
 
-	static {
-		DEAD = new SoftReference<Entry>(null);
-	}
+	private static final SoftReference<Entry> DEAD;
 
 	private static int hash(final WindowedFile pack, final long position) {
 		int h = pack.hash + (int) position;
@@ -34,25 +53,33 @@ class UnpackedObjectCache {
 		return h % CACHE_SZ;
 	}
 
-	private final int maxByteCount;
+	private static int maxByteCount;
 
-	private final Slot[] cache;
+	private static final Slot[] cache;
 
-	private Slot lruHead;
+	private static Slot lruHead;
 
-	private Slot lruTail;
+	private static Slot lruTail;
 
-	private int openByteCount;
+	private static int openByteCount;
 
-	UnpackedObjectCache(final int deltaBaseCacheLimit) {
-		maxByteCount = deltaBaseCacheLimit;
+	static {
+		DEAD = new SoftReference<Entry>(null);
+		maxByteCount = 10 * MB;
 
 		cache = new Slot[CACHE_SZ];
 		for (int i = 0; i < CACHE_SZ; i++)
 			cache[i] = new Slot();
 	}
 
-	synchronized Entry get(final WindowedFile pack, final long position) {
+	static synchronized void reconfigure(final int dbLimit) {
+		if (maxByteCount != dbLimit) {
+			maxByteCount = dbLimit;
+			releaseMemory();
+		}
+	}
+
+	static synchronized Entry get(final WindowedFile pack, final long position) {
 		final Slot e = cache[hash(pack, position)];
 		if (e.provider == pack && e.position == position) {
 			final Entry buf = e.data.get();
@@ -64,8 +91,8 @@ class UnpackedObjectCache {
 		return null;
 	}
 
-	synchronized void store(final WindowedFile pack, final long position,
-			final byte[] data, final int objectType) {
+	static synchronized void store(final WindowedFile pack,
+			final long position, final byte[] data, final int objectType) {
 		if (data.length > maxByteCount)
 			return; // Too large to cache.
 
@@ -73,6 +100,15 @@ class UnpackedObjectCache {
 		clearEntry(e);
 
 		openByteCount += data.length;
+		releaseMemory();
+
+		e.provider = pack;
+		e.position = position;
+		e.data = new SoftReference<Entry>(new Entry(data, objectType));
+		moveToHead(e);
+	}
+
+	private static void releaseMemory() {
 		while (openByteCount > maxByteCount && lruTail != null) {
 			final Slot currOldest = lruTail;
 			final Slot nextOldest = currOldest.lruPrev;
@@ -87,14 +123,9 @@ class UnpackedObjectCache {
 				nextOldest.lruNext = null;
 			lruTail = nextOldest;
 		}
-
-		e.provider = pack;
-		e.position = position;
-		e.data = new SoftReference<Entry>(new Entry(data, objectType));
-		moveToHead(e);
 	}
 
-	synchronized void purge(final WindowedFile file) {
+	static synchronized void purge(final WindowedFile file) {
 		for (final Slot e : cache) {
 			if (e.provider == file) {
 				clearEntry(e);
@@ -103,7 +134,7 @@ class UnpackedObjectCache {
 		}
 	}
 
-	private void moveToHead(final Slot e) {
+	private static void moveToHead(final Slot e) {
 		unlink(e);
 		e.lruPrev = null;
 		e.lruNext = lruHead;
@@ -114,7 +145,7 @@ class UnpackedObjectCache {
 		lruHead = e;
 	}
 
-	private void unlink(final Slot e) {
+	private static void unlink(final Slot e) {
 		final Slot prev = e.lruPrev;
 		final Slot next = e.lruNext;
 		if (prev != null)
@@ -123,12 +154,16 @@ class UnpackedObjectCache {
 			next.lruPrev = prev;
 	}
 
-	private void clearEntry(final Slot e) {
+	private static void clearEntry(final Slot e) {
 		final Entry old = e.data.get();
 		if (old != null)
 			openByteCount -= old.data.length;
 		e.provider = null;
 		e.data = DEAD;
+	}
+
+	private UnpackedObjectCache() {
+		throw new UnsupportedOperationException();
 	}
 
 	static class Entry {

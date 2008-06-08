@@ -1,19 +1,11 @@
-/*
- *  Copyright (C) 2006,2007  Robin Rosenberg
+/*******************************************************************************
+ * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
- *  License, version 2.1, as published by the Free Software Foundation.
- *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
- */
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * See LICENSE for the full license text, also available.
+ *******************************************************************************/
 package org.spearce.egit.core.internal.mapping;
 
 import java.io.File;
@@ -34,7 +26,7 @@ import org.spearce.jgit.lib.FileTreeEntry;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.PersonIdent;
-import org.spearce.jgit.lib.LockFile;
+import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 
@@ -77,10 +69,10 @@ public class T0002_history extends GitTestCase {
 		commit.setMessage("Foo\n\nMessage");
 		commit.setTree(tree);
 		ObjectId commitId = objectWriter.writeCommit(commit);
-		LockFile lck = thisGit.lockRef("refs/heads/master");
+		RefUpdate lck = thisGit.updateRef("refs/heads/master");
 		assertNotNull("obtained lock", lck);
-		lck.write(commitId);
-		assertTrue("committed lock", lck.commit());
+		lck.setNewObjectId(commitId);
+		assertEquals(RefUpdate.Result.NEW, lck.forceUpdate());
 
 		ConnectProviderOperation operation = new ConnectProviderOperation(
 				project.getProject(), null);

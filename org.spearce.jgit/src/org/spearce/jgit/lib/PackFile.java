@@ -1,19 +1,41 @@
 /*
- *  Copyright (C) 2006  Shawn Pearce <spearce@spearce.org>
+ * Copyright (C) 2007, Robin Rosenberg <robin.rosenberg@dewire.com>
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public
- *  License, version 2, as published by the Free Software Foundation.
+ * All rights reserved.
  *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  General Public License for more details.
+ * Redistribution and use in source and binary forms, with or
+ * without modification, are permitted provided that the following
+ * conditions are met:
  *
- *  You should have received a copy of the GNU General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following
+ *   disclaimer in the documentation and/or other materials provided
+ *   with the distribution.
+ *
+ * - Neither the name of the Git Development Community nor the
+ *   names of its contributors may be used to endorse or promote
+ *   products derived from this software without specific prior
+ *   written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.spearce.jgit.lib;
 
 import java.io.File;
@@ -30,13 +52,9 @@ import org.spearce.jgit.util.NB;
 public class PackFile {
 	private static final byte[] SIGNATURE = { 'P', 'A', 'C', 'K' };
 
-	private final Repository repo;
-
 	private final WindowedFile pack;
 
 	private final PackIndex idx;
-
-	private final UnpackedObjectCache deltaBaseCache;
 
 	/**
 	 * Construct a reader for an existing, pre-indexed packfile.
@@ -52,8 +70,7 @@ public class PackFile {
 	 */
 	public PackFile(final Repository parentRepo, final File idxFile,
 			final File packFile) throws IOException {
-		repo = parentRepo;
-		pack = new WindowedFile(repo.getWindowCache(), packFile) {
+		pack = new WindowedFile(packFile) {
 			@Override
 			protected void onOpen() throws IOException {
 				readPackHeader();
@@ -64,7 +81,6 @@ public class PackFile {
 		} catch (IOException ioe) {
 			throw ioe;
 		}
-		deltaBaseCache = pack.cache.deltaBaseCache;
 	}
 
 	final PackedObjectLoader resolveBase(final WindowCursor curs, final long ofs)
@@ -127,16 +143,16 @@ public class PackFile {
 	 * Close the resources utilized by this repository
 	 */
 	public void close() {
-		deltaBaseCache.purge(pack);
+		UnpackedObjectCache.purge(pack);
 		pack.close();
 	}
 
 	final UnpackedObjectCache.Entry readCache(final long position) {
-		return deltaBaseCache.get(pack, position);
+		return UnpackedObjectCache.get(pack, position);
 	}
 
 	final void saveCache(final long position, final byte[] data, final int type) {
-		deltaBaseCache.store(pack, position, data, type);
+		UnpackedObjectCache.store(pack, position, data, type);
 	}
 
 	final byte[] decompress(final long position, final int totalSize,

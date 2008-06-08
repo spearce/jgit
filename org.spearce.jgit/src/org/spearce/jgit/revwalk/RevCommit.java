@@ -1,19 +1,40 @@
 /*
- *  Copyright (C) 2008  Shawn Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public
- *  License, version 2, as published by the Free Software Foundation.
+ * All rights reserved.
  *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  General Public License for more details.
+ * Redistribution and use in source and binary forms, with or
+ * without modification, are permitted provided that the following
+ * conditions are met:
  *
- *  You should have received a copy of the GNU General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following
+ *   disclaimer in the documentation and/or other materials provided
+ *   with the distribution.
+ *
+ * - Neither the name of the Git Development Community nor the
+ *   names of its contributors may be used to endorse or promote
+ *   products derived from this software without specific prior
+ *   written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.spearce.jgit.revwalk;
 
 import java.io.IOException;
@@ -126,20 +147,17 @@ public class RevCommit extends RevObject {
 
 			for (int i = 1; i < n; i++) {
 				final RevCommit p = pList[i];
+				if ((p.flags & carry) == carry)
+					continue;
 				p.flags |= carry;
 				carryFlags(p, carry);
 			}
 
 			c = pList[0];
+			if ((c.flags & carry) == carry)
+				return;
 			c.flags |= carry;
 		}
-	}
-
-	void carryFlags(final int carryMask) {
-		final int carry = flags & carryMask;
-		if (carry == 0)
-			return;
-		carryFlags(this, carry);
 	}
 
 	/**
@@ -155,7 +173,9 @@ public class RevCommit extends RevObject {
 	 *            the single flag value to carry back onto parents.
 	 */
 	public void carry(final RevFlag flag) {
-		carryFlags(flags & flag.mask);
+		final int carry = flags & flag.mask;
+		if (carry != 0)
+			carryFlags(this, carry);
 	}
 
 	/**

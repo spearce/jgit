@@ -1,19 +1,11 @@
-/*
- *  Copyright (C) 2006  Shawn Pearce <spearce@spearce.org>
+/*******************************************************************************
+ * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
- *  License, version 2.1, as published by the Free Software Foundation.
- *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
- */
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * See LICENSE for the full license text, also available.
+ *******************************************************************************/
 package org.spearce.egit.core.project;
 
 import java.io.File;
@@ -61,8 +53,6 @@ public class GitProjectData {
 	private static final Map repositoryCache = new HashMap();
 
 	private static RepositoryChangeListener[] repositoryChangeListeners = {};
-
-	private static WindowCache windows;
 
 	@SuppressWarnings("synthetic-access")
 	private static final IResourceChangeListener rcl = new RCL();
@@ -230,27 +220,22 @@ public class GitProjectData {
 		final Reference r = (Reference) repositoryCache.get(gitDir);
 		Repository d = r != null ? (Repository) r.get() : null;
 		if (d == null) {
-			d = new Repository(getWindowCache(), gitDir);
+			d = new Repository(gitDir);
 			repositoryCache.put(gitDir, new WeakReference(d));
 		}
 		return d;
 	}
 
 	/**
-	 * Obtain the global window cache for the workspace.
-	 * 
-	 * @return shared global cache for all projects.
+	 * Update the settings for the global window cache of the workspace.
 	 */
-	public static synchronized WindowCache getWindowCache() {
-		if (windows == null) {
-			Preferences p = Activator.getDefault().getPluginPreferences();
-			int wLimit = p.getInt(GitCorePreferences.core_packedGitLimit);
-			int wSize = p.getInt(GitCorePreferences.core_packedGitWindowSize);
-			boolean mmap = p.getBoolean(GitCorePreferences.core_packedGitMMAP);
-			int dbLimit = p.getInt(GitCorePreferences.core_deltaBaseCacheLimit);
-			windows = new WindowCache(wLimit, wSize, mmap, dbLimit);
-		}
-		return windows;
+	public static void reconfigureWindowCache() {
+		Preferences p = Activator.getDefault().getPluginPreferences();
+		int wLimit = p.getInt(GitCorePreferences.core_packedGitLimit);
+		int wSize = p.getInt(GitCorePreferences.core_packedGitWindowSize);
+		boolean mmap = p.getBoolean(GitCorePreferences.core_packedGitMMAP);
+		int dbLimit = p.getInt(GitCorePreferences.core_deltaBaseCacheLimit);
+		WindowCache.reconfigure(wLimit, wSize, mmap, dbLimit);
 	}
 
 	private final IProject project;

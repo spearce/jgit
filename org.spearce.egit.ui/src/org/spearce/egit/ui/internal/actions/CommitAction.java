@@ -1,20 +1,14 @@
-/*
- *  Copyright (C) 2007 David Watson <dwatson@mimvista.com>
+/*******************************************************************************
+ * Copyright (C) 2007, Dave Watson <dwatson@mimvista.com>
+ * Copyright (C) 2007, Jing Xue <jingxue@digizenstudio.com>
+ * Copyright (C) 2007, Robin Rosenberg <me@lathund.dewire.com>
+ * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
- *  License, version 2.1, as published by the Free Software Foundation.
- *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
- */
-
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * See LICENSE for the full license text, also available.
+ *******************************************************************************/
 package org.spearce.egit.ui.internal.actions;
 
 import java.io.File;
@@ -41,11 +35,10 @@ import org.spearce.egit.ui.internal.dialogs.CommitDialog;
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.IndexDiff;
-import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.PersonIdent;
-import org.spearce.jgit.lib.RefLogWriter;
+import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
@@ -208,17 +201,13 @@ public class CommitAction extends RepositoryAction {
 
 			ObjectWriter writer = new ObjectWriter(repo);
 			commit.setCommitId(writer.writeCommit(commit));
-			System.out.println("Commit iD: " + commit.getCommitId());
 
-			LockFile lockRef = repo.lockRef("HEAD");
-			lockRef.write(commit.getCommitId());
-			if (lockRef.commit()) {
-				System.out.println("Success!!!!");
-				updateReflog(repo, commitMessage, currentHeadId, commit
-						.getCommitId(), commit.getCommitter());
-			} else {
-				throw new TeamException("Failed to update HEAD to commit "
-						+ commit.getCommitId());
+			final RefUpdate ru = repo.updateRef("HEAD");
+			ru.setNewObjectId(commit.getCommitId());
+			ru.setRefLogMessage(buildReflogMessage(commitMessage), false);
+			if (ru.forceUpdate() == RefUpdate.Result.LOCK_FAILURE) {
+				throw new TeamException("Failed to update " + ru.getName()
+						+ " to commit " + commit.getCommitId() + ".");
 			}
 		}
 		return commitMessage;
@@ -285,17 +274,6 @@ public class CommitAction extends RepositoryAction {
 						+ ": " + newMember.getId() + " idx id: "
 						+ idxEntry.getObjectId());
 			}
-		}
-	}
-
-	private void updateReflog(Repository repo, String fullCommitMessage,
-			ObjectId parentId, ObjectId commitId, PersonIdent committer) throws TeamException {
-		String reflogMessage = buildReflogMessage(fullCommitMessage);
-		try {
-			RefLogWriter.writeReflog(repo, parentId, commitId, reflogMessage, "HEAD");
-			RefLogWriter.writeReflog(repo, parentId, commitId, reflogMessage, repo.getFullBranch());
-		} catch (IOException e) {
-			throw new TeamException("Writing reflogs", e);
 		}
 	}
 

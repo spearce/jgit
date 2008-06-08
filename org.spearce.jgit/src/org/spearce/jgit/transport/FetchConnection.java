@@ -1,19 +1,40 @@
 /*
- *  Copyright (C) 2008  Shawn Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public
- *  License, version 2, as published by the Free Software Foundation.
+ * All rights reserved.
  *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  General Public License for more details.
+ * Redistribution and use in source and binary forms, with or
+ * without modification, are permitted provided that the following
+ * conditions are met:
  *
- *  You should have received a copy of the GNU General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following
+ *   disclaimer in the documentation and/or other materials provided
+ *   with the distribution.
+ *
+ * - Neither the name of the Git Development Community nor the
+ *   names of its contributors may be used to endorse or promote
+ *   products derived from this software without specific prior
+ *   written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.spearce.jgit.transport;
 
 import java.util.Collection;
@@ -117,8 +138,52 @@ public abstract class FetchConnection {
 		doFetch(monitor, want);
 	}
 
+	/**
+	 * Fetch objects this repository does not yet contain.
+	 * <p>
+	 * Implementations are free to use network connections as necessary to
+	 * efficiently (for both client and server) transfer objects from the remote
+	 * repository into this repository. When possible implementations should
+	 * avoid replacing/overwriting/duplicating an object already available in
+	 * the local destination repository. Locally available objects and packs
+	 * should always be preferred over remotely available objects and packs.
+	 * 
+	 * @param monitor
+	 *            progress feedback to inform the end-user about the status of
+	 *            the object transfer. Implementors should poll the monitor at
+	 *            regular intervals to look for cancellation requests from the
+	 *            user.
+	 * @param want
+	 *            one or more refs that were previously passed to
+	 *            {@link #available(Map)} by the implementation. These refs
+	 *            indicate the objects the caller wants copied.
+	 * @throws TransportException
+	 *             objects could not be copied due to a network failure,
+	 *             protocol error, or error on remote side.
+	 */
 	protected abstract void doFetch(ProgressMonitor monitor,
 			Collection<Ref> want) throws TransportException;
+
+	/**
+	 * Did the last {@link #fetch(ProgressMonitor, Collection)} get tags?
+	 * <p>
+	 * Some Git aware transports are able to implicitly grab an annotated tag if
+	 * {@link TagOpt#AUTO_FOLLOW} or {@link TagOpt#FETCH_TAGS} was selected and
+	 * the object the tag peels to (references) was transferred as part of the
+	 * last {@link #doFetch(ProgressMonitor, Collection)} call. If it is
+	 * possible for such tags to have been included in the transfer this method
+	 * returns true, allowing the caller to attempt tag discovery.
+	 * <p>
+	 * By returning only true/false (and not the actual list of tags obtained)
+	 * the transport itself does not need to be aware of whether or not tags
+	 * were included in the transfer.
+	 * 
+	 * @return true if the last fetch call implicitly included tag objects;
+	 *         false if tags were not implicitly obtained.
+	 */
+	public boolean didFetchIncludeTags() {
+		return false;
+	}
 
 	/**
 	 * Close any resources used by this connection.

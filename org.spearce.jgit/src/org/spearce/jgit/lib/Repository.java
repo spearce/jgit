@@ -1,19 +1,42 @@
 /*
- *  Copyright (C) 2006  Shawn Pearce <spearce@spearce.org>
+ * Copyright (C) 2007, Dave Watson <dwatson@mimvista.com>
+ * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public
- *  License, version 2, as published by the Free Software Foundation.
+ * All rights reserved.
  *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  General Public License for more details.
+ * Redistribution and use in source and binary forms, with or
+ * without modification, are permitted provided that the following
+ * conditions are met:
  *
- *  You should have received a copy of the GNU General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following
+ *   disclaimer in the documentation and/or other materials provided
+ *   with the distribution.
+ *
+ * - Neither the name of the Git Development Community nor the
+ *   names of its contributors may be used to endorse or promote
+ *   products derived from this software without specific prior
+ *   written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.spearce.jgit.lib;
 
 import java.io.BufferedReader;
@@ -26,10 +49,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
-import org.spearce.jgit.errors.ObjectWritingException;
 import org.spearce.jgit.errors.RevisionSyntaxException;
 import org.spearce.jgit.stgit.StGitPatch;
 import org.spearce.jgit.util.FS;
@@ -58,52 +79,28 @@ import org.spearce.jgit.util.FS;
  *
  */
 public class Repository {
-	private static final String[] refSearchPaths = { "", "refs/",
-			Constants.TAGS_PREFIX + "/", Constants.HEADS_PREFIX + "/",
-			Constants.REMOTES_PREFIX + "/" };
-
 	private final File gitDir;
 
 	private final File[] objectsDirs;
 
-	private final File refsDir;
-
-	private final File packedRefsFile;
-
 	private final RepositoryConfig config;
 
-	private PackFile[] packs;
+	private final RefDatabase refs;
 
-	private final WindowCache windows;
+	private PackFile[] packs;
 
 	private GitIndex index;
 
 	/**
-	 * Construct a representation of this git repo managing a Git repository.
-	 *
-	 * @param d
-	 *            GIT_DIR
-	 * @throws IOException
-	 */
-	public Repository(final File d) throws IOException {
-		this(null, d);
-	}
-
-	/**
 	 * Construct a representation of a Git repository.
 	 * 
-	 * @param wc
-	 *            cache this repository's data will be cached through during
-	 *            access. May be shared with another repository, or null to
-	 *            indicate this repository should allocate its own private
-	 *            cache.
 	 * @param d
 	 *            GIT_DIR (the location of the repository metadata).
 	 * @throws IOException
 	 *             the repository appears to already exist but cannot be
 	 *             accessed.
 	 */
-	public Repository(final WindowCache wc, final File d) throws IOException {
+	public Repository(final File d) throws IOException {
 		gitDir = d.getAbsoluteFile();
 		try {
 			objectsDirs = readObjectsDirs(FS.resolve(gitDir, "objects"),
@@ -113,8 +110,7 @@ public class Repository {
 			ex.initCause(e);
 			throw ex;
 		}
-		refsDir = FS.resolve(gitDir, "refs");
-		packedRefsFile = FS.resolve(gitDir, "packed-refs");
+		refs = new RefDatabase(this);
 		packs = new PackFile[0];
 		config = new RepositoryConfig(this);
 
@@ -130,7 +126,6 @@ public class Repository {
 		} else {
 			getConfig().create();
 		}
-		windows = wc != null ? wc : new WindowCache(getConfig());
 		if (isExisting)
 			scanForPacks();
 	}
@@ -161,19 +156,16 @@ public class Repository {
 		}
 
 		gitDir.mkdirs();
+		refs.create();
 
 		objectsDirs[0].mkdirs();
 		new File(objectsDirs[0], "pack").mkdir();
 		new File(objectsDirs[0], "info").mkdir();
 
-		refsDir.mkdir();
-		new File(refsDir, "heads").mkdir();
-		new File(refsDir, "tags").mkdir();
-
 		new File(gitDir, "branches").mkdir();
 		new File(gitDir, "remotes").mkdir();
 		final String master = Constants.HEADS_PREFIX + "/" + Constants.MASTER;
-		writeSymref(Constants.HEAD, master);
+		refs.link(Constants.HEAD, master);
 
 		getConfig().create();
 		getConfig().save();
@@ -198,13 +190,6 @@ public class Repository {
 	 */
 	public RepositoryConfig getConfig() {
 		return config;
-	}
-
-	/**
-	 * @return the cache needed for accessing packed objects in this repository.
-	 */
-	public WindowCache getWindowCache() {
-		return windows;
 	}
 
 	/**
@@ -461,19 +446,6 @@ public class Repository {
 	}
 
 	/**
-	 * Get a locked handle to a ref suitable for updating or creating.
-	 *
-	 * @param ref name to lock
-	 * @return a locked ref
-	 * @throws IOException
-	 */
-	public LockFile lockRef(final String ref) throws IOException {
-		final Ref r = readRef(ref, true);
-		final LockFile l = new LockFile(fileForRef(r.getName()));
-		return l.lock() ? l : null;
-	}
-
-	/**
 	 * Create a command to update (or create) a ref in this repository.
 	 * 
 	 * @param ref
@@ -486,8 +458,7 @@ public class Repository {
 	 *             to the base ref, as the symbolic ref could not be read.
 	 */
 	public RefUpdate updateRef(final String ref) throws IOException {
-		final Ref r = readRef(ref, true);
-		return new RefUpdate(this, r, fileForRef(r.getName()));
+		return refs.newUpdate(ref);
 	}
 
 	/**
@@ -671,11 +642,8 @@ public class Repository {
 	private ObjectId resolveSimple(final String revstr) throws IOException {
 		if (ObjectId.isId(revstr))
 			return ObjectId.fromString(revstr);
-		final Ref r = readRef(revstr, false);
-		if (r != null) {
-			return r.getObjectId();
-		}
-		return null;
+		final Ref r = refs.readRef(revstr);
+		return r != null ? r.getObjectId() : null;
 	}
 
 	/**
@@ -747,6 +715,15 @@ public class Repository {
 				final String n = indexName.substring(0, indexName.length() - 4);
 				final File idxFile = new File(packDir, n + ".idx");
 				final File packFile = new File(packDir, n + ".pack");
+
+				if (!packFile.isFile()) {
+					// Sometimes C Git's http fetch transport leaves a
+					// .idx file behind and does not download the .pack.
+					// We have to skip over such useless indexes.
+					//
+					continue;
+				}
+
 				try {
 					packList.add(new PackFile(this, idxFile, packFile));
 				} catch (IOException ioe) {
@@ -767,68 +744,7 @@ public class Repository {
      */
     public void writeSymref(final String name, final String target)
 			throws IOException {
-		final byte[] content = ("ref: " + target + "\n").getBytes("UTF-8");
-		final LockFile lck = new LockFile(fileForRef(name));
-		if (!lck.lock())
-			throw new ObjectWritingException("Unable to lock " + name);
-		try {
-			lck.write(content);
-		} catch (IOException ioe) {
-			throw new ObjectWritingException("Unable to write " + name, ioe);
-		}
-		if (!lck.commit())
-			throw new ObjectWritingException("Unable to write " + name);
-	}
-
-	private Ref readRef(final String revstr, final boolean missingOk)
-			throws IOException {
-		refreshPackedRefsCache();
-		for (int k = 0; k < refSearchPaths.length; k++) {
-			final Ref r = readRefBasic(refSearchPaths[k] + revstr);
-			if (missingOk || r.getObjectId() != null) {
-				return r;
-			}
-		}
-		return null;
-	}
-
-	private Ref readRefBasic(String name) throws IOException {
-		int depth = 0;
-		REF_READING: do {
-			// prefer unpacked ref to packed ref
-			final File f = fileForRef(name);
-			if (!f.isFile()) {
-				// look for packed ref, since this one doesn't exist
-				ObjectId id = packedRefs.get(name);
-				if (id != null)
-					return new Ref(name, id);
-				
-				// no packed ref found, return blank one
-				return new Ref(name, null);
-			}
-
-			final BufferedReader br = new BufferedReader(new FileReader(f));
-			try {
-				final String line = br.readLine();
-				if (line == null || line.length() == 0)
-					return new Ref(name, null);
-				else if (line.startsWith("ref: ")) {
-					name = line.substring("ref: ".length());
-					continue REF_READING;
-				} else if (ObjectId.isId(line))
-					return new Ref(name, ObjectId.fromString(line));
-				throw new IOException("Not a ref: " + name + ": " + line);
-			} finally {
-				br.close();
-			}
-		} while (depth++ < 5);
-		throw new IOException("Exceed maximum ref depth.  Circular reference?");
-	}
-
-	private File fileForRef(final String name) {
-		if (name.startsWith("refs/"))
-			return new File(refsDir, name.substring("refs/".length()));
-		return new File(gitDir, name);
+		refs.link(name, target);
 	}
 
 	public String toString() {
@@ -903,88 +819,20 @@ public class Repository {
 			return ref;
 		}
 	}
-
-	/**
-	 * @return names of all local branches
-	 */
-	public Collection<String> getBranches() {
-		return listRefs("heads");
-	}
 	
 	/**
-	 * @return the names of all refs (local and remotes branches, tags)
+	 * @return all known refs (heads, tags, remotes).
 	 */
-	public Collection<String> getAllRefs() {
-		return listRefs("");
-	}
-	
-	private Collection<String> listRefs(String refSubDir) {
-		// add / to end, unless empty
-		if (refSubDir.length() > 0 && refSubDir.charAt(refSubDir.length() -1 ) != '/')
-			refSubDir += "/";
-		
-		Collection<String> branchesRaw = listFilesRecursively(new File(refsDir, refSubDir), null);
-		ArrayList<String> branches = new ArrayList<String>();
-		for (String b : branchesRaw) {
-			branches.add("refs/" + refSubDir + b);
-		}
-		
-		refreshPackedRefsCache();
-		Set<String> keySet = packedRefs.keySet();
-		for (String s : keySet)
-			if (s.startsWith("refs/" + refSubDir) && !branches.contains(s))
-				branches.add(s);
-		return branches;
+	public Map<String, Ref> getAllRefs() {
+		return refs.getAllRefs();
 	}
 
 	/**
-	 * @return all git tags
+	 * @return all tags; key is short tag name ("v1.0") and value of the entry
+	 *         contains the ref with the full tag name ("refs/tags/v1.0").
 	 */
-	public Collection<String> getTags() {
-		return listRefs("tags");
-	}
-
-	private Map<String,ObjectId> packedRefs = new HashMap<String,ObjectId>();
-	private long packedrefstime = 0;
-
-	private void refreshPackedRefsCache() {
-		if (!packedRefsFile.exists()) {
-			if (packedRefs.size() > 0)
-				packedRefs = new HashMap<String,ObjectId>();
-			return;
-		}
-		if (packedRefsFile.lastModified() == packedrefstime)
-			return;
-		Map<String,ObjectId> newPackedRefs = new HashMap<String,ObjectId>();
-		FileReader fileReader = null;
-		try {
-			fileReader = new FileReader(packedRefsFile);
-			BufferedReader b=new BufferedReader(fileReader);
-			String p;
-			while ((p = b.readLine()) != null) {
-				if (p.charAt(0) == '#')
-					continue;
-				if (p.charAt(0) == '^') {
-					continue;
-				}
-				int spos = p.indexOf(' ');
-				ObjectId id = ObjectId.fromString(p.substring(0,spos));
-				String name = p.substring(spos+1);
-				newPackedRefs.put(name, id);
-			}
-		} catch (IOException e) {
-			throw new Error("Cannot read packed refs",e);
-		} finally {
-			if (fileReader != null) {
-				try {
-					fileReader.close();
-				} catch (IOException e) {
-					// Cannot do anything more here
-					e.printStackTrace();
-				}
-			}
-		}
-		packedRefs = newPackedRefs;
+	public Map<String, Ref> getTags() {
+		return refs.getTags();
 	}
 
 	/**
@@ -1033,29 +881,10 @@ public class Repository {
 		}
 		return ret;
 	}
-
-	private Collection<String> listFilesRecursively(File root, File start) {
-		if (start == null)
-			start = root;
-		Collection<String> ret = new ArrayList<String>();
-		File[] files = start.listFiles();
-		for (int i = 0; i < files.length; ++i) {
-			if (files[i].isDirectory())
-				ret.addAll(listFilesRecursively(root, files[i]));
-			else if (files[i].length() == 41) {
-				String name = files[i].toString().substring(
-						root.toString().length() + 1);
-				if (File.separatorChar != '/')
-					name = name.replace(File.separatorChar, '/');
-				ret.add(name);
-			}
-		}
-		return ret;
-	}
 	
 	/** Clean up stale caches */
 	public void refreshFromDisk() {
-		packedRefs = null;
+		refs.clearCache();
 	}
 
 	/**

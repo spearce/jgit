@@ -1,19 +1,41 @@
 /*
- *  Copyright (C) 2006  Shawn Pearce <spearce@spearce.org>
+ * Copyright (C) 2007, Robin Rosenberg <robin.rosenberg@dewire.com>
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public
- *  License, version 2, as published by the Free Software Foundation.
+ * All rights reserved.
  *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  General Public License for more details.
+ * Redistribution and use in source and binary forms, with or
+ * without modification, are permitted provided that the following
+ * conditions are met:
  *
- *  You should have received a copy of the GNU General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following
+ *   disclaimer in the documentation and/or other materials provided
+ *   with the distribution.
+ *
+ * - Neither the name of the Git Development Community nor the
+ *   names of its contributors may be used to endorse or promote
+ *   products derived from this software without specific prior
+ *   written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.spearce.jgit.lib;
 
 import java.util.zip.Deflater;
@@ -24,29 +46,10 @@ import java.util.zip.Deflater;
 public class CoreConfig {
 	private static final int DEFAULT_COMPRESSION = Deflater.DEFAULT_COMPRESSION;
 
-	private static final int MB = 1024 * 1024;
-
 	private final int compression;
-
-	private final int packedGitWindowSize;
-
-	private final int packedGitLimit;
-
-	private final boolean packedGitMMAP;
-
-	private final int deltaBaseCacheLimit;
 
 	CoreConfig(final RepositoryConfig rc) {
 		compression = rc.getInt("core", "compression", DEFAULT_COMPRESSION);
-		int win = rc.getInt("core", "packedgitwindowsize", 32 * MB);
-		if (win < 4096)
-			win = 4096;
-		if (Integer.bitCount(win) != 1)
-			win = Integer.highestOneBit(win);
-		packedGitWindowSize = win;
-		packedGitLimit = rc.getInt("core", "packedgitlimit", 256 * MB);
-		packedGitMMAP = rc.getBoolean("core", "packedgitmmap", true);
-		deltaBaseCacheLimit = rc.getInt("core", "deltabasecachelimit", 16 * MB);
 	}
 
 	/**
@@ -55,41 +58,5 @@ public class CoreConfig {
 	 */
 	public int getCompression() {
 		return compression;
-	}
-
-	/**
-	 * The maximum window size to mmap/read in a burst.
-	 *
-	 * @return number of bytes in a window.  Always a power of two.
-	 */
-	public int getPackedGitWindowSize() {
-		return packedGitWindowSize;
-	}
-
-	/**
-	 * The maximum number of bytes to allow in the cache at once.
-	 *
-	 * @return number of bytes to cache at any time.
-	 */
-	public int getPackedGitLimit() {
-		return packedGitLimit;
-	}
-
-	/**
-	 * Enable mmap for packfile data access?
-	 *
-	 * @return true if mmap should be preferred.
-	 */
-	public boolean isPackedGitMMAP() {
-		return packedGitMMAP;
-	}
-
-	/**
-	 * Maximum number of bytes to reserve for caching base objects.
-	 *
-	 * @return number of bytes to cache for base objects in pack files.
-	 */
-	public int getDeltaBaseCacheLimit() {
-		return deltaBaseCacheLimit;
 	}
 }

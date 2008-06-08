@@ -1,6 +1,6 @@
             == Java GIT and Eclipse GIT plugin ==
 
-Parts of this package are licensed under the GPL, and others are
+Parts of this package are licensed under the BSD, and others are
 licensed under the LGPL and EPL.  Please refer to the COPYING
 and LICENSE files for the complete licenses within each package,
 and please refer to the individual source file header to determine
@@ -17,8 +17,8 @@ three for packaging.
     to exercise the library.  The library provides functions to
     read and write a GIT formatted repository.
 
-    All portions of jgit are covered by the GPL.  Absolute no EPL
-    contributions are accepted within this package.
+    All portions of jgit are covered by the BSD.  Absolutely no GPL,
+    LGPL or EPL contributions are accepted within this package.
 
   org.spearce.egit.core/
 

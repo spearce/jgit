@@ -102,14 +102,18 @@ is trivially correct or after the list reached a consensus, send it
 
 (4) Check the license
 
-Some parts of egit/jgit are licensed under the GNU Public License
-(GPL), GNU Lesser General Public License (LGPL), and others under
-the Eclipse Public License (EPL).  Because of this split licensing
-model *every* file within the project *must* list which license
-covers it in the header of the file.  Any new contributions to an
-existing file *must* be submitted under the current license of
-that file.  Any new files *must* clearly indicate which license
-they are provided under in the file header.
+Some parts of egit/jgit are licensed under one of the:
+
+ * 3-clause (new-style) BSD,
+ * GNU Public License (GPL),
+ * GNU Lesser General Public License (LGPL),
+ * Eclipse Public License (EPL).
+
+Because of this split licensing model *every* file within the project
+*must* list which license covers it in the header of the file.
+Any new contributions to an existing file *must* be submitted under
+the current license of that file.  Any new files *must* clearly
+indicate which license they are provided under in the file header.
 
 Please verify that you are legally allowed and willing to submit your
 changes under the license covering each file *prior* to submitting

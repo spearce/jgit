@@ -1,19 +1,10 @@
-/*
- *  Copyright (C) 2006  Shawn Pearce <spearce@spearce.org>
+/*******************************************************************************
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
- *  License, version 2.1, as published by the Free Software Foundation.
- *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
- */
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * See LICENSE for the full license text, also available.
+ *******************************************************************************/
 package org.spearce.egit.core.op;
 
 import java.io.File;
@@ -35,7 +26,6 @@ import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryFinder;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.Repository;
-import org.spearce.jgit.lib.WindowCache;
 
 /**
  * Connects Eclipse to an existing Git repository, or creates a new one.
@@ -67,7 +57,6 @@ public class ConnectProviderOperation implements IWorkspaceRunnable {
 
 		m.beginTask(CoreText.ConnectProviderOperation_connecting, 100);
 		try {
-			final WindowCache windows = GitProjectData.getWindowCache();
 			final Collection repos = new ArrayList();
 
 			if (newGitDir != null) {
@@ -77,7 +66,7 @@ public class ConnectProviderOperation implements IWorkspaceRunnable {
 					m.subTask(CoreText.ConnectProviderOperation_creating);
 					Activator.trace("Creating repository " + newGitDir);
 
-					db = new Repository(windows, newGitDir);
+					db = new Repository(newGitDir);
 					db.create();
 					repos.add(new RepositoryMapping(project, db.getDirectory(),
 							null));

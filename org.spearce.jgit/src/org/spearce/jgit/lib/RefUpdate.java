@@ -1,19 +1,40 @@
 /*
- *  Copyright (C) 2008  Shawn Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public
- *  License, version 2, as published by the Free Software Foundation.
+ * All rights reserved.
  *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  General Public License for more details.
+ * Redistribution and use in source and binary forms, with or
+ * without modification, are permitted provided that the following
+ * conditions are met:
  *
- *  You should have received a copy of the GNU General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following
+ *   disclaimer in the documentation and/or other materials provided
+ *   with the distribution.
+ *
+ * - Neither the name of the Git Development Community nor the
+ *   names of its contributors may be used to endorse or promote
+ *   products derived from this software without specific prior
+ *   written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.spearce.jgit.lib;
 
 import java.io.File;
@@ -88,7 +109,7 @@ public class RefUpdate {
 	}
 
 	/** Repository the ref is stored in. */
-	private final Repository db;
+	private final RefDatabase db;
 
 	/** Name of the ref. */
 	private final String name;
@@ -114,7 +135,7 @@ public class RefUpdate {
 	/** Result of the update operation. */
 	private Result result = Result.NOT_ATTEMPTED;
 
-	RefUpdate(final Repository r, final Ref ref, final File f) {
+	RefUpdate(final RefDatabase r, final Ref ref, final File f) {
 		db = r;
 		name = ref.getName();
 		oldValue = ref.getObjectId();
@@ -245,7 +266,7 @@ public class RefUpdate {
 		if (!lock.lock())
 			return Result.LOCK_FAILURE;
 		try {
-			oldValue = lock.readCurrentObjectId();
+			oldValue = db.idOf(name);
 			if (oldValue == null)
 				return store(lock, Result.NEW);
 			if (oldValue.equals(newValue))
@@ -272,7 +293,7 @@ public class RefUpdate {
 	 *             an unexpected IO error occurred while writing changes.
 	 */
 	public Result update() throws IOException {
-		return update(new RevWalk(db));
+		return update(new RevWalk(db.getRepository()));
 	}
 
 	/**
@@ -301,7 +322,7 @@ public class RefUpdate {
 		if (!lock.lock())
 			return Result.LOCK_FAILURE;
 		try {
-			oldValue = lock.readCurrentObjectId();
+			oldValue = db.idOf(name);
 			if (oldValue == null)
 				return store(lock, Result.NEW);
 
@@ -328,6 +349,7 @@ public class RefUpdate {
 
 	private Result store(final LockFile lock, final Result status)
 			throws IOException {
+		lock.setNeedStatInformation(true);
 		lock.write(newValue);
 		String msg = getRefLogMessage();
 		if (msg != null && refLogIncludeResult) {
@@ -338,9 +360,11 @@ public class RefUpdate {
 			else if (status == Result.NEW)
 				msg += ": created";
 		}
-		RefLogWriter.writeReflog(db, oldValue, newValue, msg, getName());
+		RefLogWriter.writeReflog(db.getRepository(), oldValue, newValue, msg,
+				getName());
 		if (!lock.commit())
 			return Result.LOCK_FAILURE;
+		db.stored(name, newValue, lock.getCommitLastModified());
 		return status;
 	}
 }

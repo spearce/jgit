@@ -1,19 +1,41 @@
 /*
- *  Copyright (C) 2008  Shawn Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public
- *  License, version 2, as published by the Free Software Foundation.
+ * All rights reserved.
  *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  General Public License for more details.
+ * Redistribution and use in source and binary forms, with or
+ * without modification, are permitted provided that the following
+ * conditions are met:
  *
- *  You should have received a copy of the GNU General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following
+ *   disclaimer in the documentation and/or other materials provided
+ *   with the distribution.
+ *
+ * - Neither the name of the Git Development Community nor the
+ *   names of its contributors may be used to endorse or promote
+ *   products derived from this software without specific prior
+ *   written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.spearce.jgit.transport;
 
 import java.net.URISyntaxException;
@@ -82,6 +104,7 @@ public abstract class Transport {
 		final Transport tn = open(local, cfg.getURIs().get(0));
 		tn.setOptionUploadPack(cfg.getUploadPack());
 		tn.fetch = cfg.getFetchRefSpecs();
+		tn.tagopt = cfg.getTagOpt();
 		return tn;
 	}
 
@@ -132,6 +155,17 @@ public abstract class Transport {
 	private List<RefSpec> fetch = Collections.<RefSpec> emptyList();
 
 	/**
+	 * How {@link #fetch(ProgressMonitor, Collection)} should handle tags.
+	 * <p>
+	 * We default to {@link TagOpt#NO_TAGS} so as to avoid fetching annotated
+	 * tags during one-shot fetches used for later merges. This prevents
+	 * dragging down tags from repositories that we do not have established
+	 * tracking branches for. If we do not track the source repository, we most
+	 * likely do not care about any tags it publishes.
+	 */
+	private TagOpt tagopt = TagOpt.NO_TAGS;
+
+	/**
 	 * Create a new transport instance.
 	 * 
 	 * @param local
@@ -178,6 +212,25 @@ public abstract class Transport {
 			optionUploadPack = where;
 		else
 			optionUploadPack = RemoteConfig.DEFAULT_UPLOAD_PACK;
+	}
+
+	/**
+	 * Get the description of how annotated tags should be treated during fetch.
+	 * 
+	 * @return option indicating the behavior of annotated tags in fetch.
+	 */
+	public TagOpt getTagOpt() {
+		return tagopt;
+	}
+
+	/**
+	 * Set the description of how annotated tags should be treated on fetch.
+	 * 
+	 * @param option
+	 *            method to use when handling annotated tags.
+	 */
+	public void setTagOpt(final TagOpt option) {
+		tagopt = option != null ? option : TagOpt.AUTO_FOLLOW;
 	}
 
 	/**
@@ -235,7 +288,7 @@ public abstract class Transport {
 		}
 
 		final FetchResult result = new FetchResult();
-		new FetchProcess(this, toFetch).execute(monitor, result);
+		new FetchProcess(this, toFetch, tagopt).execute(monitor, result);
 		return result;
 	}
 

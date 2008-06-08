@@ -1,24 +1,49 @@
 /*
- *  Copyright (C) 2006  Shawn Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public
- *  License, version 2, as published by the Free Software Foundation.
+ * All rights reserved.
  *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  General Public License for more details.
+ * Redistribution and use in source and binary forms, with or
+ * without modification, are permitted provided that the following
+ * conditions are met:
  *
- *  You should have received a copy of the GNU General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following
+ *   disclaimer in the documentation and/or other materials provided
+ *   with the distribution.
+ *
+ * - Neither the name of the Git Development Community nor the
+ *   names of its contributors may be used to endorse or promote
+ *   products derived from this software without specific prior
+ *   written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package org.spearce.jgit.lib;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import org.spearce.jgit.errors.CorruptObjectException;
+import org.spearce.jgit.util.MutableInteger;
 
 /** Misc. constants used throughout JGit. */
 public final class Constants {
@@ -241,6 +266,81 @@ public final class Constants {
 			return ENCODED_TYPE_TAG;
 		default:
 			throw new IllegalArgumentException("Bad object type: " + typeCode);
+		}
+	}
+
+	/**
+	 * Parse an encoded type string into a type constant.
+	 * 
+	 * @param id
+	 *            object id this type string came from; may be null if that is
+	 *            not known at the time the parse is occurring.
+	 * @param typeString
+	 *            string version of the type code.
+	 * @param endMark
+	 *            character immediately following the type string. Usually ' '
+	 *            (space) or '\n' (line feed).
+	 * @param offset
+	 *            position within <code>typeString</code> where the parse
+	 *            should start. Updated with the new position (just past
+	 *            <code>endMark</code> when the parse is successful.
+	 * @return a type code constant (one of {@link #OBJ_BLOB},
+	 *         {@link #OBJ_COMMIT}, {@link #OBJ_TAG}, {@link #OBJ_TREE}.
+	 * @throws CorruptObjectException
+	 *             there is no valid type identified by <code>typeString</code>.
+	 */
+	public static int decodeTypeString(final ObjectId id,
+			final byte[] typeString, final byte endMark,
+			final MutableInteger offset) throws CorruptObjectException {
+		try {
+			int position = offset.value;
+			switch (typeString[position]) {
+			case 'b':
+				if (typeString[position + 1] != 'l'
+						|| typeString[position + 2] != 'o'
+						|| typeString[position + 3] != 'b'
+						|| typeString[position + 4] != endMark)
+					throw new CorruptObjectException(id, "invalid type");
+				offset.value = position + 5;
+				return Constants.OBJ_BLOB;
+
+			case 'c':
+				if (typeString[position + 1] != 'o'
+						|| typeString[position + 2] != 'm'
+						|| typeString[position + 3] != 'm'
+						|| typeString[position + 4] != 'i'
+						|| typeString[position + 5] != 't'
+						|| typeString[position + 6] != endMark)
+					throw new CorruptObjectException(id, "invalid type");
+				offset.value = position + 7;
+				return Constants.OBJ_COMMIT;
+
+			case 't':
+				switch (typeString[position + 1]) {
+				case 'a':
+					if (typeString[position + 2] != 'g'
+							|| typeString[position + 3] != endMark)
+						throw new CorruptObjectException(id, "invalid type");
+					offset.value = position + 4;
+					return Constants.OBJ_TAG;
+
+				case 'r':
+					if (typeString[position + 2] != 'e'
+							|| typeString[position + 3] != 'e'
+							|| typeString[position + 4] != endMark)
+						throw new CorruptObjectException(id, "invalid type");
+					offset.value = position + 5;
+					return Constants.OBJ_TREE;
+
+				default:
+					throw new CorruptObjectException(id, "invalid type");
+				}
+
+			default:
+				throw new CorruptObjectException(id, "invalid type");
+			}
+		} catch (ArrayIndexOutOfBoundsException bad) {
+			throw new CorruptObjectException(id, "invalid type");
 		}
 	}
 

@@ -1,19 +1,11 @@
-/*
- *  Copyright (C) 2008  Roger C. Soares
+/*******************************************************************************
+ * Copyright (C) 2008, Roger C. Soares <rogersoares@intelinet.com.br>
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
- *  License, version 2.1, as published by the Free Software Foundation.
- *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
- */
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * See LICENSE for the full license text, also available.
+ *******************************************************************************/
 package org.spearce.egit.ui.internal.clone;
 
 import java.io.File;
@@ -32,7 +24,6 @@ import org.eclipse.osgi.util.NLS;
 import org.eclipse.ui.IImportWizard;
 import org.eclipse.ui.IWorkbench;
 import org.spearce.egit.core.op.CloneOperation;
-import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.Constants;
@@ -87,7 +78,7 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 		final String branch = cloneDestination.getInitialBranch();
 		final File gitdir = new File(workdir, ".git");
 		try {
-			db = new Repository(GitProjectData.getWindowCache(), gitdir);
+			db = new Repository(gitdir);
 			db.create();
 			db.writeSymref(Constants.HEAD, branch);
 
