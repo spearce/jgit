@@ -1,9 +1,9 @@
             == Java GIT and Eclipse GIT plugin ==
 
 Parts of this package are licensed under the BSD, and others are
-licensed under the LGPL and EPL.  Please refer to the COPYING
-and LICENSE files for the complete licenses within each package,
-and please refer to the individual source file header to determine
+licensed under the EPL.  Please refer to the COPYING and LICENSE 
+files for the complete licenses within each package, and please 
+refer to the individual source file header to determine
 which license covers it.
 
 
@@ -20,42 +20,49 @@ three for packaging.
     All portions of jgit are covered by the BSD.  Absolutely no GPL,
     LGPL or EPL contributions are accepted within this package.
 
+  org.spearce.jgit.test/
+    Unit tests for org.spearce.jgit and the same licensing rules.
+
   org.spearce.egit.core/
 
     An Eclipse plugin providing an interface to org.spearce.jgit
     and support routines to allow processing against the Eclipse
     workspace and resource APIs, rather than the standard Java
     file APIs.  It also supplies the team provider implementation.
-
-    Portions of this package are covered under the LGPL and others
-    under the EPL.  Refer to individual file headers for details.
+    Everything here is EPL.
 
   org.spearce.egit.ui/
 
     An Eclipse plugin providing the user interface on top of
     org.spearce.egit.core.
 
-    Portions of this package are covered under the LGPL and others
-    under the EPL.  Refer to individual file headers for details.
+    Everything here is EPL.
 
   org.spearce.egit.core.test/
 
     Unit tests for org.spearce.egit.core.
 
+    Everything here is EPL.
+
   org.spearce.egit/
 
     A plugin for packaging
+
+    Everything here is EPL.
 
   org.spearce.egit-feature
 
     Also packaging. This project is for building an Eclipse "feature"
     out of the plugins above.
 
+    Everything here is EPL.
+
   org.spearce.egit-updatesite/
 
     This package is for producing and update site, i.e. a web site
     you can point your eclipse at and just upgrade.
 
+    Everything here is EPL.
 
             == WARNINGS / CAVEATS              ==
 
