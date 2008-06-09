@@ -46,6 +46,27 @@ import org.spearce.jgit.util.NB;
  */
 public class MutableObjectId extends AnyObjectId {
 	/**
+	 * Empty constructor. Initialize object with default (zeros) value.
+	 */
+	public MutableObjectId() {
+		super();
+	}
+
+	/**
+	 * Copying constructor.
+	 * 
+	 * @param src
+	 *            original entry, to copy id from
+	 */
+	MutableObjectId(MutableObjectId src) {
+		this.w1 = src.w1;
+		this.w2 = src.w2;
+		this.w3 = src.w3;
+		this.w4 = src.w4;
+		this.w5 = src.w5;
+	}
+
+	/**
 	 * Convert an ObjectId from raw binary representation.
 	 * 
 	 * @param bs
@@ -71,6 +92,35 @@ public class MutableObjectId extends AnyObjectId {
 		w3 = NB.decodeInt32(bs, p + 8);
 		w4 = NB.decodeInt32(bs, p + 12);
 		w5 = NB.decodeInt32(bs, p + 16);
+	}
+
+	/**
+	 * Convert an ObjectId from binary representation expressed in integers.
+	 * 
+	 * @param ints
+	 *            the raw int buffer to read from. At least 5 integers must be
+	 *            available within this integers array.
+	 */
+	public void fromRaw(final int[] ints) {
+		fromRaw(ints, 0);
+	}
+
+	/**
+	 * Convert an ObjectId from binary representation expressed in integers.
+	 * 
+	 * @param ints
+	 *            the raw int buffer to read from. At least 5 integers after p
+	 *            must be available within this integers array.
+	 * @param p
+	 *            position to read the first integer of data from.
+	 * 
+	 */
+	public void fromRaw(final int[] ints, final int p) {
+		w1 = ints[p];
+		w2 = ints[p + 1];
+		w3 = ints[p + 2];
+		w4 = ints[p + 3];
+		w5 = ints[p + 4];
 	}
 
 	/**

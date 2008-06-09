@@ -42,6 +42,7 @@ import java.io.IOException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.AnyObjectId;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 
 /** Base object type accessed during revision walking. */
@@ -56,6 +57,13 @@ public abstract class RevObject extends ObjectId {
 
 	abstract void parse(RevWalk walk) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException;
+	
+	/**
+	 * Get Git object type. See {@link Constants}.
+	 * 
+	 * @return object type
+	 */
+	public abstract int getType();
 
 	/**
 	 * Get the name of this object.

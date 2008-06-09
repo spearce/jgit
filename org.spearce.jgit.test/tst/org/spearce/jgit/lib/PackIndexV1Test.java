@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
  *
  * All rights reserved.
  *
@@ -35,30 +35,20 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.spearce.jgit.revwalk;
+package org.spearce.jgit.lib;
 
-import org.spearce.jgit.lib.AnyObjectId;
-import org.spearce.jgit.lib.Constants;
+import java.io.File;
 
-/** A binary file, or a symbolic link. */
-public class RevBlob extends RevObject {
-	/**
-	 * Create a new blob reference.
-	 * 
-	 * @param id
-	 *            object name for the blob.
-	 */
-	protected RevBlob(final AnyObjectId id) {
-		super(id);
+public class PackIndexV1Test extends PackIndexTest {
+	@Override
+	public File getFileForPack34be9032() {
+		return new File(new File("tst"),
+				"pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.idx");
 	}
 
 	@Override
-	void parse(final RevWalk walk) {
-		flags |= PARSED;
-	}
-	
-	@Override
-	public int getType() {
-		return Constants.OBJ_BLOB;
+	public File getFileForPackdf2982f28() {
+		return new File(new File("tst"),
+				"pack-df2982f284bbabb6bdb59ee3fcc6eb0983e20371.idx");
 	}
 }

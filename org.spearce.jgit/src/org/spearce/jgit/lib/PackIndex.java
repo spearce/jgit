@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
  *
  * All rights reserved.
  *
@@ -41,6 +42,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Iterator;
 
 import org.spearce.jgit.util.NB;
 
@@ -53,7 +55,7 @@ import org.spearce.jgit.util.NB;
  * by ObjectId.
  * </p>
  */
-public abstract class PackIndex {
+public abstract class PackIndex implements Iterable<PackIndex.MutableEntry> {
 	/**
 	 * Open an existing pack <code>.idx</code> file for reading.
 	 * <p>
@@ -61,7 +63,7 @@ public abstract class PackIndex {
 	 * implementation for that format will be constructed and returned to the
 	 * caller. The file may or may not be held open by the returned instance.
 	 * </p>
-	 *
+	 * 
 	 * @param idxFile
 	 *            existing pack .idx to read.
 	 * @return access implementation for the requested file.
@@ -117,8 +119,21 @@ public abstract class PackIndex {
 	}
 
 	/**
+	 * Provide iterator that gives access to index entries. Note, that iterator
+	 * returns reference to mutable object, the same reference in each call -
+	 * for performance reason. If client needs immutable objects, it must copy
+	 * returned object on its own.
+	 * <p>
+	 * Iterator returns objects in SHA-1 lexicographical order.
+	 * </p>
+	 * 
+	 * @return iterator over pack index entries
+	 */
+	public abstract Iterator<MutableEntry> iterator();
+
+	/**
 	 * Obtain the total number of objects described by this index.
-	 *
+	 * 
 	 * @return number of objects in this index, and likewise in the associated
 	 *         pack that this index was generated from.
 	 */
@@ -126,7 +141,7 @@ public abstract class PackIndex {
 
 	/**
 	 * Locate the file offset position for the requested object.
-	 *
+	 * 
 	 * @param objId
 	 *            name of the object to locate within the pack.
 	 * @return offset of the object's header and compressed content; -1 if the
@@ -134,4 +149,67 @@ public abstract class PackIndex {
 	 *         associated pack.
 	 */
 	abstract long findOffset(AnyObjectId objId);
+
+	/**
+	 * Represent mutable entry of pack index consisting of object id and offset
+	 * in pack (both mutable).
+	 * 
+	 */
+	public static class MutableEntry extends MutableObjectId {
+		private long offset;
+
+		/**
+		 * Empty constructor. Object fields should be filled in later.
+		 */
+		public MutableEntry() {
+			super();
+		}
+
+		/**
+		 * Returns offset for this index object entry
+		 * 
+		 * @return offset of this object in a pack file
+		 */
+		public long getOffset() {
+			return offset;
+		}
+
+		void setOffset(long offset) {
+			this.offset = offset;
+		}
+
+		private MutableEntry(MutableEntry src) {
+			super(src);
+			this.offset = src.offset;
+		}
+
+		/**
+		 * Returns mutable copy of this mutable entry.
+		 * 
+		 * @return copy of this mutable entry
+		 */
+		public MutableEntry cloneEntry() {
+			return new MutableEntry(this);
+		}
+	}
+
+	protected abstract class EntriesIterator implements Iterator<MutableEntry> {
+		protected MutableEntry objectId = new MutableEntry();
+
+		protected long returnedNumber = 0;
+
+		public boolean hasNext() {
+			return returnedNumber < getObjectCount();
+		}
+
+		/**
+		 * Implementation must update {@link #returnedNumber} before returning
+		 * element.
+		 */
+		public abstract MutableEntry next();
+
+		public void remove() {
+			throw new UnsupportedOperationException();
+		}
+	}
 }

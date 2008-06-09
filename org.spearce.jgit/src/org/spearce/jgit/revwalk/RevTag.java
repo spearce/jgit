@@ -96,6 +96,11 @@ public class RevTag extends RevObject {
 		flags |= PARSED;
 	}
 
+	@Override
+	public int getType() {
+		return Constants.OBJ_TAG;
+	}
+	
 	/**
 	 * Parse this tag buffer for display.
 	 * 

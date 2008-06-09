@@ -40,25 +40,24 @@ package org.spearce.jgit.lib;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.zip.DataFormatException;
 
 import org.spearce.jgit.util.NB;
 
 /**
- * A Git version 2 pack file representation. A pack file contains
- * Git objects in delta packed format yielding high compression of
- * lots of object where some objects are similar.
+ * A Git version 2 pack file representation. A pack file contains Git objects in
+ * delta packed format yielding high compression of lots of object where some
+ * objects are similar.
  */
-public class PackFile {
-	private static final byte[] SIGNATURE = { 'P', 'A', 'C', 'K' };
-
+public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	private final WindowedFile pack;
 
 	private final PackIndex idx;
 
 	/**
 	 * Construct a reader for an existing, pre-indexed packfile.
-	 *
+	 * 
 	 * @param parentRepo
 	 *            Git repository holding this pack file
 	 * @param idxFile
@@ -147,6 +146,32 @@ public class PackFile {
 		pack.close();
 	}
 
+	/**
+	 * Provide iterator over entries in associated pack index, that should also
+	 * exist in this pack file. Objects returned by such iterator are mutable
+	 * during iteration.
+	 * <p>
+	 * Iterator returns objects in SHA-1 lexicographical order.
+	 * </p>
+	 * 
+	 * @return iterator over entries of associated pack index
+	 * 
+	 * @see PackIndex#iterator()
+	 */
+	public Iterator<PackIndex.MutableEntry> iterator() {
+		return idx.iterator();
+	}
+
+	/**
+	 * Obtain the total number of objects available in this pack. This method
+	 * relies on pack index, giving number of effectively available objects.
+	 * 
+	 * @return number of objects in index of this pack, likewise in this pack
+	 */
+	long getObjectCount() {
+		return idx.getObjectCount();
+	}
+
 	final UnpackedObjectCache.Entry readCache(final long position) {
 		return UnpackedObjectCache.get(pack, position);
 	}
@@ -165,17 +190,17 @@ public class PackFile {
 	private void readPackHeader() throws IOException {
 		final WindowCursor curs = new WindowCursor();
 		long position = 0;
-		final byte[] sig = new byte[SIGNATURE.length];
+		final byte[] sig = new byte[Constants.PACK_SIGNATURE.length];
 		final byte[] intbuf = new byte[4];
 		final long vers;
 
-		if (pack.read(position, sig, curs) != SIGNATURE.length)
+		if (pack.read(position, sig, curs) != Constants.PACK_SIGNATURE.length)
 			throw new IOException("Not a PACK file.");
-		for (int k = 0; k < SIGNATURE.length; k++) {
-			if (sig[k] != SIGNATURE[k])
+		for (int k = 0; k < Constants.PACK_SIGNATURE.length; k++) {
+			if (sig[k] != Constants.PACK_SIGNATURE[k])
 				throw new IOException("Not a PACK file.");
 		}
-		position += SIGNATURE.length;
+		position += Constants.PACK_SIGNATURE.length;
 
 		pack.readFully(position, intbuf, curs);
 		vers = NB.decodeUInt32(intbuf, 0);
@@ -188,13 +213,11 @@ public class PackFile {
 		if (idx.getObjectCount() != objectCnt)
 			throw new IOException("Pack index"
 					+ " object count mismatch; expected " + objectCnt
-					+ " found " + idx.getObjectCount() + ": "
-					+ pack.getName());
+					+ " found " + idx.getObjectCount() + ": " + pack.getName());
 	}
 
 	private PackedObjectLoader reader(final WindowCursor curs,
-			final long objOffset)
-			throws IOException {
+			final long objOffset) throws IOException {
 		long pos = objOffset;
 		int p = 0;
 		final byte[] ib = curs.tempId;

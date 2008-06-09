@@ -107,6 +107,13 @@ public class ObjectIdSubclassMap<V extends ObjectId> {
 		size++;
 	}
 
+	/**
+	 * @return number of objects in map
+	 */
+	public int size() {
+		return size;
+	}
+
 	private final int index(final AnyObjectId id) {
 		return (id.w1 >>> 1) % obj_hash.length;
 	}

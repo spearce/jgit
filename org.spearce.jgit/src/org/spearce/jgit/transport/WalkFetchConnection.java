@@ -66,7 +66,6 @@ import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.UnpackedObjectLoader;
 import org.spearce.jgit.revwalk.DateRevQueue;
-import org.spearce.jgit.revwalk.RevBlob;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevFlag;
 import org.spearce.jgit.revwalk.RevObject;
@@ -251,20 +250,22 @@ class WalkFetchConnection extends FetchConnection {
 		//
 		obj.dispose();
 
-		if (obj instanceof RevBlob)
-			processBlob(obj);
-
-		else if (obj instanceof RevTree)
+		switch (obj.getType()) {
+		case Constants.OBJ_BLOB:
+			processBlob(obj);	
+			break;
+		case Constants.OBJ_TREE:
 			processTree(obj);
-
-		else if (obj instanceof RevCommit)
+			break;
+		case Constants.OBJ_COMMIT:
 			processCommit(obj);
-
-		else if (obj instanceof RevTag)
+			break;
+		case Constants.OBJ_TAG:
 			processTag(obj);
-
-		else
+			break;
+		default:
 			throw new TransportException("Unknown object type " + obj.getId());
+		}
 
 		// If we had any prior errors fetching this object they are
 		// now resolved, as the object was parsed successfully.
@@ -632,19 +633,24 @@ class WalkFetchConnection extends FetchConnection {
 	}
 
 	private void markLocalObjComplete(RevObject obj) throws IOException {
-		while (obj instanceof RevTag) {
+		while (obj.getType() == Constants.OBJ_TAG) {
 			obj.add(COMPLETE);
 			obj.dispose();
 			obj = ((RevTag) obj).getObject();
 			revWalk.parse(obj);
 		}
 
-		if (obj instanceof RevBlob)
+		switch (obj.getType()) {
+		case Constants.OBJ_BLOB:
 			obj.add(COMPLETE);
-		else if (obj instanceof RevCommit)
+			break;
+		case Constants.OBJ_COMMIT:			
 			pushLocalCommit((RevCommit) obj);
-		else if (obj instanceof RevTree)
+			break;
+		case Constants.OBJ_TREE:
 			markTreeComplete((RevTree) obj);
+			break;
+		}
 	}
 
 	private void markLocalCommitsComplete(final int until)
