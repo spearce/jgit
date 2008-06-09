@@ -55,6 +55,8 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 
 	private final PackIndex idx;
 
+	private PackReverseIndex reverseIdx;
+
 	/**
 	 * Construct a reader for an existing, pre-indexed packfile.
 	 * 
@@ -172,6 +174,18 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		return idx.getObjectCount();
 	}
 
+	/**
+	 * Search for object id with the specified start offset in associated pack
+	 * (reverse) index.
+	 *
+	 * @param offset
+	 *            start offset of object to find
+	 * @return object id for this offset, or null if no object was found
+	 */
+	ObjectId findObjectForOffset(final long offset) {
+		return getReverseIdx().findObject(offset);
+	}
+
 	final UnpackedObjectCache.Entry readCache(final long position) {
 		return UnpackedObjectCache.get(pack, position);
 	}
@@ -263,5 +277,11 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		default:
 			throw new IOException("Unknown object type " + typeCode + ".");
 		}
+	}
+
+	private PackReverseIndex getReverseIdx() {
+		if (reverseIdx == null)
+			reverseIdx = new PackReverseIndex(idx);
+		return reverseIdx;
 	}
 }

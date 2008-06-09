@@ -40,6 +40,7 @@ package org.spearce.jgit.lib;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -57,6 +58,8 @@ class PackIndexV2 extends PackIndex {
 
 	private long objectCnt;
 
+	private final long[] fanoutTable;
+
 	/** 256 arrays of contiguous object names. */
 	private int[][] names;
 
@@ -69,7 +72,7 @@ class PackIndexV2 extends PackIndex {
 	PackIndexV2(final InputStream fd) throws IOException {
 		final byte[] fanoutRaw = new byte[4 * FANOUT];
 		NB.readFully(fd, fanoutRaw, 0, fanoutRaw.length);
-		final long[] fanoutTable = new long[FANOUT];
+		fanoutTable = new long[FANOUT];
 		for (int k = 0; k < FANOUT; k++)
 			fanoutTable[k] = NB.decodeUInt32(fanoutRaw, k * 4);
 		objectCnt = fanoutTable[FANOUT - 1];
@@ -148,6 +151,34 @@ class PackIndexV2 extends PackIndex {
 	@Override
 	long getObjectCount() {
 		return objectCnt;
+	}
+
+	@Override
+	long getOffset64Count() {
+		return offset64.length / 8;
+	}
+
+	@Override
+	ObjectId getObjectId(final long nthPosition) {
+		int levelOne = Arrays.binarySearch(fanoutTable, nthPosition + 1);
+		long base;
+		if (levelOne >= 0) {
+			// If we hit the bucket exactly the item is in the bucket, or
+			// any bucket before it which has the same object count.
+			//
+			base = fanoutTable[levelOne];
+			while (levelOne > 0 && base == fanoutTable[levelOne - 1])
+				levelOne--;
+		} else {
+			// The item is in the bucket we would insert it into.
+			//
+			levelOne = -(levelOne + 1);
+		}
+
+		base = levelOne > 0 ? fanoutTable[levelOne - 1] : 0;
+		final int p = (int) (nthPosition - base);
+		final int p4 = p << 2;
+		return ObjectId.fromRaw(names[levelOne], p4 + p); // p * 5
 	}
 
 	@Override
