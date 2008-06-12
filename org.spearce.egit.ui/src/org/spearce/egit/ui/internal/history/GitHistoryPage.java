@@ -534,8 +534,13 @@ public class GitHistoryPage extends HistoryPage {
 		}
 
 		if (currentWalk == null || currentWalk.getRepository() != db
-				|| pathChange(pathFilters, paths)
-				|| headId != null && !headId.equals(currentHeadId)) {
+				|| pathChange(pathFilters, paths) || headId != null
+				&& !headId.equals(currentHeadId)) {
+			// TODO Do not dispose SWTWalk just because HEAD changed
+			// In theory we should be able to update the graph and
+			// not dispose of the SWTWalk, even if HEAD was reset to
+			// HEAD^1 and the old HEAD commit should not be visible.
+			//
 			currentWalk = new SWTWalk(db);
 			currentWalk.sort(RevSort.COMMIT_TIME_DESC, true);
 			currentWalk.sort(RevSort.BOUNDARY, true);
