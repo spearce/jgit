@@ -276,6 +276,22 @@ public abstract class AnyObjectId implements Comparable {
 	}
 
 	/**
+	 * Copy this ObjectId to an int array.
+	 *
+	 * @param b
+	 *            the buffer to copy to.
+	 * @param o
+	 *            the offset within b to write at.
+	 */
+	public void copyRawTo(final int[] b, final int o) {
+		b[o] = w1;
+		b[o + 1] = w2;
+		b[o + 2] = w3;
+		b[o + 3] = w4;
+		b[o + 4] = w5;
+	}
+
+	/**
 	 * Copy this ObjectId to an output writer in raw binary.
 	 * 
 	 * @param w
