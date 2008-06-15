@@ -198,7 +198,7 @@ public class ObjectWalk extends RevWalk {
 				return null;
 			if ((r.flags & UNINTERESTING) != 0) {
 				markTreeUninteresting(r.getTree());
-				if (getRevSort().contains(RevSort.BOUNDARY))
+				if (hasRevSort(RevSort.BOUNDARY))
 					return r;
 				continue;
 			}
