@@ -40,6 +40,7 @@ package org.spearce.jgit.lib;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel.MapMode;
@@ -193,6 +194,48 @@ public class WindowedFile {
 			final WindowCursor curs) throws IOException {
 		if (read(position, dstbuf, 0, dstbuf.length, curs) != dstbuf.length)
 			throw new EOFException();
+	}
+
+	/**
+	 * Copy the requested number of bytes to the provided output stream.
+	 * <p>
+	 * This routine always reads until either the requested number of bytes has
+	 * been copied or EOF has been reached.
+	 * </p>
+	 *
+	 * @param position
+	 *            the starting offset, as measured in bytes from the beginning
+	 *            of this file, to copy from.
+	 * @param buf
+	 *            temporary buffer to copy bytes into. In case of a big amount
+	 *            of data to copy, size of at least few kB is recommended. It
+	 *            does not need to be of size <code>cnt</code>, however.
+	 * @param cnt
+	 *            number of bytes to copy. Must not exceed
+	 *            <code>file.length - position</code>.
+	 * @param out
+	 *            output stream where read data is written out. No buffering is
+	 *            guaranteed by this method.
+	 * @param curs
+	 *            current cursor for reading data from the file.
+	 * @throws IOException
+	 *             a necessary window was not found in the window cache and
+	 *             trying to load it in from the operating system failed.
+	 * @throws EOFException
+	 *             the file ended before <code>cnt</code> bytes could be read.
+	 */
+	public void copyToStream(long position, final byte[] buf, long cnt,
+			final OutputStream out, final WindowCursor curs)
+			throws IOException, EOFException {
+		while (cnt > 0) {
+			int toRead = (int) Math.min(cnt, buf.length);
+			int read = read(position, buf, 0, toRead, curs);
+			if (read != toRead)
+				throw new EOFException();
+			position += read;
+			cnt -= read;
+			out.write(buf, 0, read);
+		}
 	}
 
 	void readCompressed(final long position, final byte[] dstbuf,
