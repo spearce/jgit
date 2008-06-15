@@ -184,13 +184,13 @@ class PackIndexV2 extends PackIndex {
 	private class EntriesIteratorV2 extends EntriesIterator {
 		private int levelOne;
 
-		private int levelTWo;
+		private int levelTwo;
 
 		public MutableEntry next() {
 			for (; levelOne < names.length; levelOne++) {
-				if (levelTWo < names[levelOne].length) {
-					objectId.fromRaw(names[levelOne], levelTWo);
-					int arrayIdx = levelTWo / (Constants.OBJECT_ID_LENGTH / 4)
+				if (levelTwo < names[levelOne].length) {
+					objectId.fromRaw(names[levelOne], levelTwo);
+					int arrayIdx = levelTwo / (Constants.OBJECT_ID_LENGTH / 4)
 							* 4;
 					long offset = NB.decodeUInt32(offset32[levelOne], arrayIdx);
 					if ((offset & IS_O64) != 0) {
@@ -199,11 +199,11 @@ class PackIndexV2 extends PackIndex {
 					}
 					objectId.setOffset(offset);
 
-					levelTWo += Constants.OBJECT_ID_LENGTH / 4;
+					levelTwo += Constants.OBJECT_ID_LENGTH / 4;
 					returnedNumber++;
 					return objectId;
 				} else {
-					levelTWo = 0;
+					levelTwo = 0;
 				}
 			}
 			throw new NoSuchElementException();
