@@ -184,6 +184,20 @@ class PackIndexV2 extends PackIndex {
 	@Override
 	long findOffset(final AnyObjectId objId) {
 		final int levelOne = objId.getFirstByte();
+		final int levelTwo = binarySearchLevelTwo(objId, levelOne);
+		if (levelTwo == -1)
+			return -1;
+		final long p = NB.decodeUInt32(offset32[levelOne], levelTwo << 2);
+		if ((p & IS_O64) != 0)
+			return NB.decodeUInt64(offset64, (8 * (int) (p & ~IS_O64)));
+		return p;
+	}
+
+	public Iterator<MutableEntry> iterator() {
+		return new EntriesIteratorV2();
+	}
+
+	private int binarySearchLevelTwo(final AnyObjectId objId, final int levelOne) {
 		final int[] data = names[levelOne];
 		int high = offset32[levelOne].length >> 2;
 		if (high == 0)
@@ -198,18 +212,11 @@ class PackIndexV2 extends PackIndex {
 			if (cmp < 0)
 				high = mid;
 			else if (cmp == 0) {
-				final long p = NB.decodeUInt32(offset32[levelOne], mid4);
-				if ((p & IS_O64) != 0)
-					return NB.decodeUInt64(offset64, (8 * (int) (p & ~IS_O64)));
-				return p;
+				return mid;
 			} else
 				low = mid + 1;
 		} while (low < high);
 		return -1;
-	}
-
-	public Iterator<MutableEntry> iterator() {
-		return new EntriesIteratorV2();
 	}
 
 	private class EntriesIteratorV2 extends EntriesIterator {
