@@ -66,6 +66,13 @@ public abstract class ObjectLoader {
 	}
 
 	/**
+	 * @return true if id of loaded object is already known, false otherwise.
+	 */
+	protected boolean hasComputedId() {
+		return objectId != null;
+	}
+
+	/**
 	 * Set the SHA-1 id of the object handled by this loader
 	 * 
 	 * @param id
@@ -113,4 +120,21 @@ public abstract class ObjectLoader {
 	 *             the object cannot be read.
 	 */
 	public abstract byte[] getCachedBytes() throws IOException;
+
+	/**
+	 * @return raw object type from object header, as stored in storage (pack,
+	 *         loose file). This may be different from {@link #getType()} result
+	 *         for packs (see {@link Constants}).
+	 * @throws IOException
+	 *             when type cannot be read from the object header.
+	 */
+	public abstract int getRawType() throws IOException;
+
+	/**
+	 * @return raw size of object from object header (pack, loose file).
+	 *         Interpretation of this value depends on {@link #getRawType()}.
+	 * @throws IOException
+	 *             when raw size cannot be read from the object header.
+	 */
+	public abstract long getRawSize() throws IOException;
 }

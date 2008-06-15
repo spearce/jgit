@@ -208,4 +208,14 @@ public class UnpackedObjectLoader extends ObjectLoader {
 	public byte[] getCachedBytes() throws IOException {
 		return bytes;
 	}
+
+	@Override
+	public int getRawType() {
+		return objectType;
+	}
+
+	@Override
+	public long getRawSize() {
+		return objectSize;
+	}
 }

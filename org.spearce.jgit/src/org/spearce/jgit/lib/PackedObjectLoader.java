@@ -39,6 +39,7 @@
 package org.spearce.jgit.lib;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * Base class for a set of object loader classes for packed objects.
@@ -50,15 +51,18 @@ abstract class PackedObjectLoader extends ObjectLoader {
 
 	protected final long dataOffset;
 
+	protected final long objectOffset;
+
 	protected int objectType;
 
 	protected int objectSize;
 
 	PackedObjectLoader(final WindowCursor c, final PackFile pr,
-			final long offset) {
+			final long dataOffset, final long objectOffset) {
 		curs = c;
 		pack = pr;
-		dataOffset = offset;
+		this.dataOffset = dataOffset;
+		this.objectOffset = objectOffset;
 	}
 
 	public int getType() throws IOException {
@@ -82,4 +86,40 @@ abstract class PackedObjectLoader extends ObjectLoader {
 		System.arraycopy(data, 0, copy, 0, data.length);
 		return data;
 	}
+
+	/**
+	 * Copy raw object representation from storage to provided output stream.
+	 * <p>
+	 * Copied data doesn't include object header. User must provide temporary
+	 * buffer used during copying by underlying I/O layer.
+	 * </p>
+	 *
+	 * @param out
+	 *            output stream when data is copied. No buffering is guaranteed.
+	 * @param buf
+	 *            temporary buffer used during copying. Recommended size is at
+	 *            least few kB.
+	 * @throws IOException
+	 *             when the object cannot be read.
+	 */
+	public void copyRawData(OutputStream out, byte buf[]) throws IOException {
+		pack.copyRawData(this, out, buf);
+	}
+
+	/**
+	 * @return true if this loader is capable of fast raw-data copying basing on
+	 *         compressed data checksum; false if raw-data copying needs
+	 *         uncompressing and compressing data
+	 */
+	public boolean supportsFastCopyRawData() {
+		return pack.supportsFastCopyRawData();
+	}
+
+	/**
+	 * @return id of delta base object for this object representation. null if
+	 *         object is not stored as delta.
+	 * @throws IOException
+	 *             when delta base cannot read.
+	 */
+	public abstract ObjectId getDeltaBase() throws IOException;
 }

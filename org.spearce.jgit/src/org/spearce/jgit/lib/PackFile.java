@@ -38,11 +38,16 @@
 
 package org.spearce.jgit.lib;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Iterator;
+import java.util.zip.CRC32;
+import java.util.zip.CheckedOutputStream;
 import java.util.zip.DataFormatException;
 
+import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.util.NB;
 
 /**
@@ -201,6 +206,52 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		return dstbuf;
 	}
 
+	final void copyRawData(final PackedObjectLoader loader,
+			final OutputStream out, final byte buf[]) throws IOException {
+		final long objectOffset = loader.objectOffset;
+		final long dataOffset = loader.dataOffset;
+		final int cnt = (int) (findEndOffset(objectOffset) - dataOffset);
+		final WindowCursor curs = loader.curs;
+
+		if (idx.hasCRC32Support()) {
+			final CRC32 crc = new CRC32();
+			int headerCnt = (int) (dataOffset - objectOffset);
+			while (headerCnt > 0) {
+				int toRead = Math.min(headerCnt, buf.length);
+				int read = pack.read(objectOffset, buf, 0, toRead, curs);
+				if (read != toRead)
+					throw new EOFException();
+				crc.update(buf, 0, read);
+				headerCnt -= toRead;
+			}
+			final CheckedOutputStream crcOut = new CheckedOutputStream(out, crc);
+			pack.copyToStream(dataOffset, buf, cnt, crcOut, curs);
+			final long computed = crc.getValue();
+
+			ObjectId id;
+			if (loader.hasComputedId())
+				id = loader.getId();
+			else
+				id = findObjectForOffset(objectOffset);
+			final long expected = idx.findCRC32(id);
+			if (computed != expected)
+				throw new CorruptObjectException(id,
+						"Possible data corruption - CRC32 of raw pack data (object offset "
+								+ objectOffset
+								+ ") mismatch CRC32 from pack index");
+		} else {
+			pack.copyToStream(dataOffset, buf, cnt, out, curs);
+
+			// read to verify against Adler32 zlib checksum
+			loader.getCachedBytes();
+		}
+	}
+
+	boolean supportsFastCopyRawData() {
+		return idx.hasCRC32Support();
+	}
+
+
 	private void readPackHeader() throws IOException {
 		final WindowCursor curs = new WindowCursor();
 		long position = 0;
@@ -252,8 +303,8 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		case Constants.OBJ_TREE:
 		case Constants.OBJ_BLOB:
 		case Constants.OBJ_TAG:
-			return new WholePackedObjectLoader(curs, this, pos, typeCode,
-					(int) dataSize);
+			return new WholePackedObjectLoader(curs, this, pos, objOffset,
+					typeCode, (int) dataSize);
 
 		case Constants.OBJ_OFS_DELTA: {
 			pack.readFully(pos, ib, curs);
@@ -267,16 +318,22 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 				ofs += (c & 127);
 			}
 			return new DeltaOfsPackedObjectLoader(curs, this, pos + p,
-					(int) dataSize, objOffset - ofs);
+					objOffset, (int) dataSize, objOffset - ofs);
 		}
 		case Constants.OBJ_REF_DELTA: {
 			pack.readFully(pos, ib, curs);
 			return new DeltaRefPackedObjectLoader(curs, this, pos + ib.length,
-					(int) dataSize, ObjectId.fromRaw(ib));
+					objOffset, (int) dataSize, ObjectId.fromRaw(ib));
 		}
 		default:
 			throw new IOException("Unknown object type " + typeCode + ".");
 		}
+	}
+
+	private long findEndOffset(final long startOffset)
+			throws CorruptObjectException {
+		final long maxOffset = pack.length() - Constants.OBJECT_ID_LENGTH;
+		return getReverseIdx().findNextOffset(startOffset, maxOffset);
 	}
 
 	private PackReverseIndex getReverseIdx() {

@@ -40,17 +40,34 @@ package org.spearce.jgit.lib;
 
 import java.io.IOException;
 
+import org.spearce.jgit.errors.CorruptObjectException;
+
 /** Reads a deltified object which uses an offset to find its base. */
 class DeltaOfsPackedObjectLoader extends DeltaPackedObjectLoader {
 	private final long deltaBase;
 
 	DeltaOfsPackedObjectLoader(final WindowCursor curs, final PackFile pr,
-			final long offset, final int deltaSz, final long base) {
-		super(curs, pr, offset, deltaSz);
+			final long dataOffset, final long objectOffset, final int deltaSz,
+			final long base) {
+		super(curs, pr, dataOffset, objectOffset, deltaSz);
 		deltaBase = base;
 	}
 
 	protected PackedObjectLoader getBaseLoader() throws IOException {
 		return pack.resolveBase(curs, deltaBase);
+	}
+
+	@Override
+	public int getRawType() {
+		return Constants.OBJ_OFS_DELTA;
+	}
+
+	@Override
+	public ObjectId getDeltaBase() throws IOException {
+		final ObjectId id = pack.findObjectForOffset(deltaBase);
+		if (id == null)
+			throw new CorruptObjectException(
+					"Offset-written delta base for object not found in a pack");
+		return id;
 	}
 }

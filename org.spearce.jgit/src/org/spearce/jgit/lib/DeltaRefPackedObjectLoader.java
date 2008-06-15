@@ -47,8 +47,9 @@ class DeltaRefPackedObjectLoader extends DeltaPackedObjectLoader {
 	private final ObjectId deltaBase;
 
 	DeltaRefPackedObjectLoader(final WindowCursor curs, final PackFile pr,
-			final long offset, final int deltaSz, final ObjectId base) {
-		super(curs, pr, offset, deltaSz);
+			final long dataOffset, final long objectOffset, final int deltaSz,
+			final ObjectId base) {
+		super(curs, pr, dataOffset, objectOffset, deltaSz);
 		deltaBase = base;
 	}
 
@@ -57,5 +58,15 @@ class DeltaRefPackedObjectLoader extends DeltaPackedObjectLoader {
 		if (or == null)
 			throw new MissingObjectException(deltaBase, "delta base");
 		return or;
+	}
+
+	@Override
+	public int getRawType() throws IOException {
+		return Constants.OBJ_REF_DELTA;
+	}
+
+	@Override
+	public ObjectId getDeltaBase() throws IOException {
+		return deltaBase;
 	}
 }

@@ -47,8 +47,9 @@ class WholePackedObjectLoader extends PackedObjectLoader {
 	private static final int OBJ_COMMIT = Constants.OBJ_COMMIT;
 
 	WholePackedObjectLoader(final WindowCursor curs, final PackFile pr,
-			final long offset, final int type, final int size) {
-		super(curs, pr, offset);
+			final long dataOffset, final long objectOffset, final int type,
+			final int size) {
+		super(curs, pr, dataOffset, objectOffset);
 		objectType = type;
 		objectSize = size;
 	}
@@ -75,5 +76,20 @@ class WholePackedObjectLoader extends PackedObjectLoader {
 			coe.initCause(dfe);
 			throw coe;
 		}
+	}
+
+	@Override
+	public int getRawType() {
+		return objectType;
+	}
+
+	@Override
+	public long getRawSize() {
+		return objectSize;
+	}
+
+	@Override
+	public ObjectId getDeltaBase() {
+		return null;
 	}
 }
