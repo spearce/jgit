@@ -41,6 +41,7 @@ import java.io.File;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.PackIndex.MutableEntry;
 
 public abstract class PackIndexTest extends RepositoryTestCase {
@@ -68,6 +69,15 @@ public abstract class PackIndexTest extends RepositoryTestCase {
 	 * @return file with index
 	 */
 	public abstract File getFileForPackdf2982f28();
+
+	/**
+	 * Verify CRC32 support.
+	 *
+	 * @throws MissingObjectException
+	 * @throws UnsupportedOperationException
+	 */
+	public abstract void testCRC32() throws MissingObjectException,
+			UnsupportedOperationException;
 
 	/**
 	 * Test contracts of Iterator methods and this implementation remove()

@@ -39,6 +39,8 @@ package org.spearce.jgit.lib;
 
 import java.io.File;
 
+import org.spearce.jgit.errors.MissingObjectException;
+
 public class PackIndexV1Test extends PackIndexTest {
 	@Override
 	public File getFileForPack34be9032() {
@@ -50,5 +52,22 @@ public class PackIndexV1Test extends PackIndexTest {
 	public File getFileForPackdf2982f28() {
 		return new File(new File("tst"),
 				"pack-df2982f284bbabb6bdb59ee3fcc6eb0983e20371.idx");
+	}
+
+	/**
+	 * Verify CRC32 - V1 should not index anything.
+	 *
+	 * @throws MissingObjectException
+	 */
+	@Override
+	public void testCRC32() throws MissingObjectException {
+		assertFalse(smallIdx.hasCRC32Support());
+		try {
+			smallIdx.findCRC32(ObjectId
+					.fromString("4b825dc642cb6eb9a060e54bf8d69288fbee4904"));
+			fail("index V1 shouldn't support CRC");
+		} catch (UnsupportedOperationException x) {
+			// expected
+		}
 	}
 }
