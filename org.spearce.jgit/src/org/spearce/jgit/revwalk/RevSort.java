@@ -37,7 +37,7 @@
 
 package org.spearce.jgit.revwalk;
 
-/** Sorting strategies supported by {@link RevWalk}. */
+/** Sorting strategies supported by {@link RevWalk} and {@link ObjectWalk}. */
 public enum RevSort {
 	/**
 	 * No specific sorting is requested.
@@ -83,6 +83,9 @@ public enum RevSort {
 
 	/**
 	 * Include {@link RevFlag#UNINTERESTING} boundary commits after all others.
+	 * In {@link ObjectWalk}, objects associated with such commits (trees,
+	 * blobs), and all other objects marked explicitly as UNINTERESTING are also
+	 * included.
 	 * <p>
 	 * A boundary commit is a UNINTERESTING parent of an interesting commit that
 	 * was previously output.
