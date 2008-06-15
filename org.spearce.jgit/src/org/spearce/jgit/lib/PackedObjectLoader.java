@@ -41,8 +41,7 @@ package org.spearce.jgit.lib;
 import java.io.IOException;
 
 /**
- * Base class for a set of object loader classes for packed
- * objects.
+ * Base class for a set of object loader classes for packed objects.
  */
 abstract class PackedObjectLoader extends ObjectLoader {
 	protected final PackFile pack;
