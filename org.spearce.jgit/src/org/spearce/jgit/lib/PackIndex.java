@@ -44,6 +44,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
 
+import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.util.NB;
 
 /**
@@ -206,6 +207,28 @@ public abstract class PackIndex implements Iterable<PackIndex.MutableEntry> {
 	 *         associated pack.
 	 */
 	abstract long findOffset(AnyObjectId objId);
+
+	/**
+	 * Retrieve stored CRC32 checksum of the requested object raw-data
+	 * (including header).
+	 *
+	 * @param objId
+	 *            id of object to look for
+	 * @return CRC32 checksum of specified object (at 32 less significant bits)
+	 * @throws MissingObjectException
+	 *             when requested ObjectId was not found in this index
+	 * @throws UnsupportedOperationException
+	 *             when this index doesn't support CRC32 checksum
+	 */
+	abstract long findCRC32(AnyObjectId objId) throws MissingObjectException,
+			UnsupportedOperationException;
+
+	/**
+	 * Check whether this index supports (has) CRC32 checksums for objects.
+	 *
+	 * @return true if CRC32 is stored, false otherwise
+	 */
+	abstract boolean hasCRC32Support();
 
 	/**
 	 * Represent mutable entry of pack index consisting of object id and offset

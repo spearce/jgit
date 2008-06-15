@@ -37,13 +37,13 @@
 
 package org.spearce.jgit.lib;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.util.NB;
 
 /** Support for the pack index v2 format. */
@@ -66,6 +66,9 @@ class PackIndexV2 extends PackIndex {
 	/** 256 arrays of the 32 bit offset data, matching {@link #names}. */
 	private byte[][] offset32;
 
+	/** 256 arrays of the CRC-32 of objects, matching {@link #names}. */
+	private byte[][] crc32;
+
 	/** 64 bit offset table. */
 	private byte[] offset64;
 
@@ -79,6 +82,7 @@ class PackIndexV2 extends PackIndex {
 
 		names = new int[FANOUT][];
 		offset32 = new byte[FANOUT][];
+		crc32 = new byte[FANOUT][];
 
 		// Object name table. The size we can permit per fan-out bucket
 		// is limited to Java's 2 GB per byte array limitation. That is
@@ -94,6 +98,7 @@ class PackIndexV2 extends PackIndex {
 			if (bucketCnt == 0) {
 				names[k] = NO_INTS;
 				offset32[k] = NO_BYTES;
+				crc32[k] = NO_BYTES;
 				continue;
 			}
 
@@ -110,11 +115,12 @@ class PackIndexV2 extends PackIndex {
 
 			names[k] = bin;
 			offset32[k] = new byte[(int) (bucketCnt * 4)];
+			crc32[k] = new byte[(int) (bucketCnt * 4)];
 		}
 
-		// CRC32 table. Currently unused.
-		//
-		skipFully(fd, objectCnt * 4);
+		// CRC32 table.
+		for (int k = 0; k < FANOUT; k++)
+			NB.readFully(fd, crc32[k], 0, crc32[k].length);
 
 		// 32 bit offset table. Any entries with the most significant bit
 		// set require a 64 bit offset entry in another table.
@@ -135,16 +141,6 @@ class PackIndexV2 extends PackIndex {
 			NB.readFully(fd, offset64, 0, offset64.length);
 		} else {
 			offset64 = NO_BYTES;
-		}
-	}
-
-	private static void skipFully(final InputStream fd, long toSkip)
-			throws IOException {
-		while (toSkip > 0) {
-			final long r = fd.skip(toSkip);
-			if (r <= 0)
-				throw new EOFException("Cannot skip index section.");
-			toSkip -= r;
 		}
 	}
 
@@ -191,6 +187,20 @@ class PackIndexV2 extends PackIndex {
 		if ((p & IS_O64) != 0)
 			return NB.decodeUInt64(offset64, (8 * (int) (p & ~IS_O64)));
 		return p;
+	}
+
+	@Override
+	long findCRC32(AnyObjectId objId) throws MissingObjectException {
+		final int levelOne = objId.getFirstByte();
+		final int levelTwo = binarySearchLevelTwo(objId, levelOne);
+		if (levelTwo == -1)
+			throw new MissingObjectException(objId.copy(), "unknown");
+		return NB.decodeUInt32(crc32[levelOne], levelTwo << 2);
+	}
+
+	@Override
+	boolean hasCRC32Support() {
+		return true;
 	}
 
 	public Iterator<MutableEntry> iterator() {

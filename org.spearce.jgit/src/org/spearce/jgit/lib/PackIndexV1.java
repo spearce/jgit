@@ -143,6 +143,16 @@ class PackIndexV1 extends PackIndex {
 		return -1;
 	}
 
+	@Override
+	long findCRC32(AnyObjectId objId) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	boolean hasCRC32Support() {
+		return false;
+	}
+
 	public Iterator<MutableEntry> iterator() {
 		return new IndexV1Iterator();
 	}
