@@ -44,9 +44,8 @@ import java.io.IOException;
 class DeltaOfsPackedObjectLoader extends DeltaPackedObjectLoader {
 	private final long deltaBase;
 
-	DeltaOfsPackedObjectLoader(final WindowCursor curs,
-			final PackFile pr, final long offset,
-			final int deltaSz, final long base) {
+	DeltaOfsPackedObjectLoader(final WindowCursor curs, final PackFile pr,
+			final long offset, final int deltaSz, final long base) {
 		super(curs, pr, offset, deltaSz);
 		deltaBase = base;
 	}
