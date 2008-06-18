@@ -273,8 +273,7 @@ public class GitResourceDecorator extends LabelProvider implements
 							}
 
 						} else {
-							if (rsrc.getType() == IResource.FILE
-									&& Team.isIgnored((IFile) rsrc)) {
+							if (Team.isIgnoredHint(rsrc)) {
 								decoration.addSuffix("(ignored)");
 							} else {
 								decoration.addPrefix(">");
