@@ -46,6 +46,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -248,5 +249,10 @@ class DefaultSshSessionFactory extends SshSessionFactory {
 			}
 			return null; // cancel
 		}
+	}
+
+	@Override
+	public OutputStream getErrorStream() {
+		return System.err;
 	}
 }

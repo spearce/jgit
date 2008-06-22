@@ -8,6 +8,8 @@
  *******************************************************************************/
 package org.spearce.egit.ui;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -44,4 +46,31 @@ class EclipseSshSessionFactory extends SshSessionFactory {
 			}
 		});
 	}
+
+	@Override
+	public OutputStream getErrorStream() {
+		return new OutputStream() {
+
+			StringBuilder all = new StringBuilder();
+			StringBuilder sb = new StringBuilder();
+
+			public String toString() {
+				return all.toString();
+			}
+
+			@Override
+			public void write(int b) throws IOException {
+				if (b == '\r')
+					return;
+				sb.append((char) b);
+				if (b == '\n') {
+					String s = sb.toString();
+					all.append(s);
+					sb = new StringBuilder();
+					Activator.logError(s, new Throwable());
+				}
+			}
+		};
+	}
+
 }

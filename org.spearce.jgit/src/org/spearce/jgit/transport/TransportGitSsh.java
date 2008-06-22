@@ -39,6 +39,7 @@
 package org.spearce.jgit.transport;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 
@@ -77,6 +78,7 @@ class TransportGitSsh extends PackTransport {
 	}
 
 	final SshSessionFactory sch;
+	OutputStream errStream;
 
 	TransportGitSsh(final Repository local, final URIish uri) {
 		super(local, uri);
@@ -179,7 +181,8 @@ class TransportGitSsh extends PackTransport {
 			cmd.append(' ');
 			sqAlways(cmd, path);
 			channel.setCommand(cmd.toString());
-			channel.setErrStream(System.err);
+			errStream = SshSessionFactory.getInstance().getErrorStream();
+			channel.setErrStream(errStream, true);
 			channel.connect();
 			return channel;
 		} catch (JSchException je) {
@@ -198,7 +201,12 @@ class TransportGitSsh extends PackTransport {
 			try {
 				session = openSession();
 				channel = exec(session, getOptionUploadPack());
-				init(channel.getInputStream(), channel.getOutputStream());
+
+				if (channel.isConnected())
+					init(channel.getInputStream(), channel.getOutputStream());
+				else
+					throw new TransportException(errStream.toString());
+
 			} catch (TransportException err) {
 				close();
 				throw err;
