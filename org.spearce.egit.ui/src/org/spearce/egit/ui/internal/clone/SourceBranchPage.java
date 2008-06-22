@@ -20,6 +20,7 @@ import java.util.List;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
@@ -269,12 +270,17 @@ class SourceBranchPage extends WizardPage {
 			});
 		} catch (InvocationTargetException e) {
 			Throwable why = e.getCause();
-			ErrorDialog.openError(getShell(),
-					UIText.SourceBranchPage_transportError,
-					UIText.SourceBranchPage_cannotListBranches, new Status(
-							IStatus.ERROR, Activator.getPluginId(), 0, why
-									.getMessage(), why.getCause()));
-			transportError(why.getMessage());
+			if ((why instanceof OperationCanceledException)) {
+				transportError(UIText.SourceBranchPage_remoteListingCancelled);
+				return;
+			} else {
+				ErrorDialog.openError(getShell(),
+						UIText.SourceBranchPage_transportError,
+						UIText.SourceBranchPage_cannotListBranches, new Status(
+								IStatus.ERROR, Activator.getPluginId(), 0, why
+										.getMessage(), why.getCause()));
+				transportError(why.getMessage());
+			}
 			return;
 		} catch (InterruptedException e) {
 			transportError(UIText.SourceBranchPage_interrupted);

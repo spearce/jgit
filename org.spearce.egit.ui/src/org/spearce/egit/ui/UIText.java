@@ -122,6 +122,9 @@ public class UIText extends NLS {
 	public static String SourceBranchPage_cannotListBranches;
 
 	/** */
+	public static String SourceBranchPage_remoteListingCancelled;
+
+	/** */
 	public static String CloneDestinationPage_title;
 
 	/** */
