@@ -75,8 +75,10 @@ class SourceBranchPage extends WizardPage {
 		setImageDescriptor(UIIcons.WIZBAN_IMPORT_REPO);
 		sourcePage.addURIishChangeListener(new URIishChangeListener() {
 			public void uriishChanged(final URIish newURI) {
-				if (newURI == null || !newURI.equals(validated))
+				if (newURI == null || !newURI.equals(validated)) {
+					validated = null;
 					setPageComplete(false);
+				}
 			}
 		});
 		branchChangeListeners = new ArrayList<BranchChangeListener>(3);
