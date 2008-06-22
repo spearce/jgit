@@ -88,6 +88,24 @@ class TransportGitSsh extends PackTransport {
 		return new SshFetchConnection();
 	}
 
+	private static void sqMinimal(final StringBuilder cmd, final String val) {
+		if (val.matches("^[a-zA-Z0-9._/-]*$")) {
+			// If the string matches only generally safe characters
+			// that the shell is not going to evaluate specially we
+			// should leave the string unquoted. Not all systems
+			// actually run a shell and over-quoting confuses them
+			// when it comes to the command name.
+			//
+			cmd.append(val);
+		} else {
+			sq(cmd, val);
+		}
+	}
+
+	private static void sqAlways(final StringBuilder cmd, final String val) {
+		sq(cmd, val);
+	}
+
 	private static void sq(final StringBuilder cmd, final String val) {
 		int i = 0;
 
@@ -157,9 +175,9 @@ class TransportGitSsh extends PackTransport {
 				path = (uri.getPath().substring(1));
 
 			final StringBuilder cmd = new StringBuilder();
-			sq(cmd, exe);
+			sqMinimal(cmd, exe);
 			cmd.append(' ');
-			sq(cmd, path);
+			sqAlways(cmd, path);
 			channel.setCommand(cmd.toString());
 			channel.setErrStream(System.err);
 			channel.connect();
