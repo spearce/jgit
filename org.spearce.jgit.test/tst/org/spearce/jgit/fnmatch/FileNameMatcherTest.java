@@ -723,4 +723,35 @@ public class FileNameMatcherTest extends TestCase {
 		assertEquals(true, childMatcher.isMatch());
 		assertEquals(false, childMatcher.canAppendMatch());
 	}
+
+	public void testCopyConstructor() throws Exception {
+		final String pattern = "helloworld";
+		final FileNameMatcher matcher = new FileNameMatcher(pattern, null);
+		matcher.append("hello");
+		final FileNameMatcher copy = new FileNameMatcher(matcher);
+		assertEquals(false, matcher.isMatch());
+		assertEquals(true, matcher.canAppendMatch());
+		assertEquals(false, copy.isMatch());
+		assertEquals(true, copy.canAppendMatch());
+		matcher.append("world");
+		assertEquals(true, matcher.isMatch());
+		assertEquals(false, matcher.canAppendMatch());
+		assertEquals(false, copy.isMatch());
+		assertEquals(true, copy.canAppendMatch());
+		copy.append("world");
+		assertEquals(true, matcher.isMatch());
+		assertEquals(false, matcher.canAppendMatch());
+		assertEquals(true, copy.isMatch());
+		assertEquals(false, copy.canAppendMatch());
+		copy.reset();
+		assertEquals(true, matcher.isMatch());
+		assertEquals(false, matcher.canAppendMatch());
+		assertEquals(false, copy.isMatch());
+		assertEquals(true, copy.canAppendMatch());
+		copy.append("helloworld");
+		assertEquals(true, matcher.isMatch());
+		assertEquals(false, matcher.canAppendMatch());
+		assertEquals(true, copy.isMatch());
+		assertEquals(false, copy.canAppendMatch());
+	}
 }

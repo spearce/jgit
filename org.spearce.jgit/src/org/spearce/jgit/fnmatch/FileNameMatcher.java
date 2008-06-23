@@ -99,10 +99,23 @@ public class FileNameMatcher {
 	 *            must be a list which will never be modified.
 	 */
 	private FileNameMatcher(final List<Head> headsStartValue) {
+		this(headsStartValue, headsStartValue);
+	}
+
+	/**
+	 *
+	 * @param headsStartValue
+	 *            must be a list which will never be modified.
+	 * @param heads
+	 *            a list which will be cloned and then used as current head
+	 *            list.
+	 */
+	private FileNameMatcher(final List<Head> headsStartValue,
+			final List<Head> heads) {
 		this.headsStartValue = headsStartValue;
-		this.heads = new ArrayList<Head>(headsStartValue.size());
-		this.heads.addAll(this.headsStartValue);
-		this.listForLocalUseage = new ArrayList<Head>(headsStartValue.size());
+		this.heads = new ArrayList<Head>(heads.size());
+		this.heads.addAll(heads);
+		this.listForLocalUseage = new ArrayList<Head>(heads.size());
 	}
 
 	/**
@@ -118,6 +131,17 @@ public class FileNameMatcher {
 			final Character invalidWildgetCharacter)
 			throws InvalidPatternException {
 		this(createHeadsStartValues(patternString, invalidWildgetCharacter));
+	}
+
+	/**
+	 * A Copy Constructor which creates a new {@link FileNameMatcher} with the
+	 * same state and reset point like <code>other</code>.
+	 *
+	 * @param other
+	 *            another {@link FileNameMatcher} instance.
+	 */
+	public FileNameMatcher(FileNameMatcher other) {
+		this(other.headsStartValue, other.heads);
 	}
 
 	private static List<Head> createHeadsStartValues(
