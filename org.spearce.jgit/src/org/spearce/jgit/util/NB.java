@@ -172,6 +172,43 @@ public final class NB {
 		intbuf[offset] = (byte) v;
 	}
 
+	/**
+	 * Write a 64 bit integer as a sequence of 8 bytes (network byte order).
+	 *
+	 * @param intbuf
+	 *            buffer to write the 48bytes of data into.
+	 * @param offset
+	 *            position within the buffer to begin writing to. This position
+	 *            and the next 7 bytes after it (for a total of 8 bytes) will be
+	 *            replaced.
+	 * @param v
+	 *            the value to write.
+	 */
+	public static void encodeInt64(final byte[] intbuf, final int offset, long v) {
+		intbuf[offset + 7] = (byte) v;
+		v >>>= 8;
+
+		intbuf[offset + 6] = (byte) v;
+		v >>>= 8;
+
+		intbuf[offset + 5] = (byte) v;
+		v >>>= 8;
+
+		intbuf[offset + 4] = (byte) v;
+		v >>>= 8;
+
+		intbuf[offset + 3] = (byte) v;
+		v >>>= 8;
+
+		intbuf[offset + 2] = (byte) v;
+		v >>>= 8;
+
+		intbuf[offset + 1] = (byte) v;
+		v >>>= 8;
+
+		intbuf[offset] = (byte) v;
+	}
+
 	private NB() {
 		// Don't create instances of a static only utility.
 	}
