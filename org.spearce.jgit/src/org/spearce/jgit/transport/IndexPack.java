@@ -38,7 +38,6 @@
 
 package org.spearce.jgit.transport;
 
-import java.io.BufferedOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -49,6 +48,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -61,6 +61,7 @@ import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdMap;
 import org.spearce.jgit.lib.ObjectLoader;
+import org.spearce.jgit.lib.PackIndexWriter;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.util.NB;
@@ -441,34 +442,14 @@ public class IndexPack {
 
 	private void writeIdx() throws IOException {
 		Arrays.sort(entries, 0, entryCount);
-		final int[] fanout = new int[256];
-		for (int i = 0; i < entryCount; i++)
-			fanout[entries[i].getFirstByte() & 0xff]++;
-		for (int i = 1; i < 256; i++)
-			fanout[i] += fanout[i - 1];
+		List<PackedObjectInfo> list = Arrays.asList(entries);
+		if (entryCount < entries.length)
+			list = list.subList(0, entryCount);
 
-		final BufferedOutputStream os = new BufferedOutputStream(
-				new FileOutputStream(dstIdx), BUFFER_SIZE);
+		final FileOutputStream os = new FileOutputStream(dstIdx);
 		try {
-			final byte[] rawoe = new byte[4 + Constants.OBJECT_ID_LENGTH];
-			final MessageDigest d = Constants.newMessageDigest();
-			for (int i = 0; i < 256; i++) {
-				NB.encodeInt32(rawoe, 0, fanout[i]);
-				os.write(rawoe, 0, 4);
-				d.update(rawoe, 0, 4);
-			}
-			for (int i = 0; i < entryCount; i++) {
-				final PackedObjectInfo oe = entries[i];
-				if (oe.getOffset() >>> 1 > Integer.MAX_VALUE)
-					throw new IOException("Pack too large for index version 1");
-				NB.encodeInt32(rawoe, 0, (int) oe.getOffset());
-				oe.copyRawTo(rawoe, 4);
-				os.write(rawoe);
-				d.update(rawoe);
-			}
-			os.write(packcsum);
-			d.update(packcsum);
-			os.write(d.digest());
+			PackIndexWriter.createOldestPossible(os, list)
+					.write(list, packcsum);
 		} finally {
 			os.close();
 		}
