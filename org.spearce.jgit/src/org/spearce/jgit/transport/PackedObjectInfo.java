@@ -41,7 +41,14 @@ package org.spearce.jgit.transport;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.ObjectId;
 
-class PackedObjectInfo extends ObjectId {
+/**
+ * Description of an object stored in a pack file, including offset.
+ * <p>
+ * When objects are stored in packs Git needs the ObjectId and the offset
+ * (starting position of the object data) to perform random-access reads of
+ * objects from the pack. This extension of ObjectId includes the offset.
+ */
+public class PackedObjectInfo extends ObjectId {
 	private long offset;
 
 	PackedObjectInfo(final long headerOffset, final AnyObjectId id) {
@@ -50,10 +57,30 @@ class PackedObjectInfo extends ObjectId {
 	}
 
 	/**
-	 * @return offset in pack when object has been already written, or -1 if it
+	 * Create a new structure to remember information about an object.
+	 *
+	 * @param id
+	 *            the identity of the object the new instance tracks.
+	 */
+	public PackedObjectInfo(final AnyObjectId id) {
+		super(id);
+	}
+
+	/**
+	 * @return offset in pack when object has been already written, or 0 if it
 	 *         has not been written yet
 	 */
-	long getOffset() {
+	public long getOffset() {
 		return offset;
+	}
+
+	/**
+	 * Set the offset in pack when object has been written to.
+	 *
+	 * @param offset
+	 *            offset where written object starts
+	 */
+	public void setOffset(final long offset) {
+		this.offset = offset;
 	}
 }
