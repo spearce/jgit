@@ -281,8 +281,9 @@ public class IndexPack {
 	}
 
 	private void resolveDeltas(final ObjectEntry oe) throws IOException {
-		if (baseById.containsKey(oe) || baseByPos.containsKey(new Long(oe.pos)))
-			resolveDeltas(oe.pos, Constants.OBJ_BAD, null, oe);
+		if (baseById.containsKey(oe)
+				|| baseByPos.containsKey(new Long(oe.getOffset())))
+			resolveDeltas(oe.getOffset(), Constants.OBJ_BAD, null, oe);
 	}
 
 	private void resolveDeltas(final long pos, int type, byte[] data,
@@ -381,7 +382,7 @@ public class IndexPack {
 			writeWhole(def, typeCode, data);
 			end = packOut.getFilePointer();
 
-			resolveChildDeltas(oe.pos, typeCode, data, oe);
+			resolveChildDeltas(oe.getOffset(), typeCode, data, oe);
 			if (progress.isCancelled())
 				throw new IOException("Download cancelled during indexing");
 		}
@@ -458,9 +459,9 @@ public class IndexPack {
 			}
 			for (int i = 0; i < entryCount; i++) {
 				final ObjectEntry oe = entries[i];
-				if (oe.pos >>> 1 > Integer.MAX_VALUE)
+				if (oe.getOffset() >>> 1 > Integer.MAX_VALUE)
 					throw new IOException("Pack too large for index version 1");
-				NB.encodeInt32(rawoe, 0, (int) oe.pos);
+				NB.encodeInt32(rawoe, 0, (int) oe.getOffset());
 				oe.copyRawTo(rawoe, 4);
 				os.write(rawoe);
 				d.update(rawoe);

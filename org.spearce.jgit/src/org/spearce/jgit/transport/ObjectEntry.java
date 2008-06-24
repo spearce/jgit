@@ -42,10 +42,18 @@ import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.ObjectId;
 
 class ObjectEntry extends ObjectId {
-	final long pos;
+	private long offset;
 
 	ObjectEntry(final long headerOffset, final AnyObjectId id) {
 		super(id);
-		pos = headerOffset;
+		offset = headerOffset;
+	}
+
+	/**
+	 * @return offset in pack when object has been already written, or -1 if it
+	 *         has not been written yet
+	 */
+	long getOffset() {
+		return offset;
 	}
 }
