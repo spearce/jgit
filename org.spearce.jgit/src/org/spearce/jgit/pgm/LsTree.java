@@ -65,6 +65,7 @@ class LsTree extends TextBuiltin {
 		else if (argi + 1 < args.length)
 			throw die("too many arguments");
 
+		walk.reset(); // drop the first empty tree, which we do not need here
 		final String n = args[argi];
 		if (is_WorkDir(n))
 			walk.addTree(new FileTreeIterator(new File(n)));
