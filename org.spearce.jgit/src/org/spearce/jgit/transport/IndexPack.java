@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.zip.CRC32;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -135,6 +136,8 @@ public class IndexPack {
 	private int deltaCount;
 
 	private int entryCount;
+
+	private final CRC32 crc = new CRC32();
 
 	private ObjectIdMap<ArrayList<UnresolvedDelta>> baseById;
 
@@ -282,13 +285,15 @@ public class IndexPack {
 	}
 
 	private void resolveDeltas(final PackedObjectInfo oe) throws IOException {
+		final int oldCRC = oe.getCRC();
 		if (baseById.containsKey(oe)
 				|| baseByPos.containsKey(new Long(oe.getOffset())))
-			resolveDeltas(oe.getOffset(), Constants.OBJ_BAD, null, oe);
+			resolveDeltas(oe.getOffset(), oldCRC, Constants.OBJ_BAD, null, oe);
 	}
 
-	private void resolveDeltas(final long pos, int type, byte[] data,
-			PackedObjectInfo oe) throws IOException {
+	private void resolveDeltas(final long pos, final int oldCRC, int type,
+			byte[] data, PackedObjectInfo oe) throws IOException {
+		crc.reset();
 		position(pos);
 		int c = readFromFile();
 		final int typeCode = (c >> 4) & 7;
@@ -309,14 +314,14 @@ public class IndexPack {
 			data = inflateFromFile((int) sz);
 			break;
 		case Constants.OBJ_OFS_DELTA: {
-			c = readFromInput() & 0xff;
+			c = readFromFile() & 0xff;
 			while ((c & 128) != 0)
-				c = readFromInput() & 0xff;
+				c = readFromFile() & 0xff;
 			data = BinaryDelta.apply(data, inflateFromFile((int) sz));
 			break;
 		}
 		case Constants.OBJ_REF_DELTA: {
-			fillFromInput(20);
+			crc.update(buf, fillFromFile(20), 20);
 			use(20);
 			data = BinaryDelta.apply(data, inflateFromFile((int) sz));
 			break;
@@ -325,6 +330,9 @@ public class IndexPack {
 			throw new IOException("Unknown object type " + typeCode + ".");
 		}
 
+		final int crc32 = (int) crc.getValue();
+		if (oldCRC != crc32)
+			throw new IOException("Corruption detected re-reading at " + pos);
 		if (oe == null) {
 			objectDigest.update(Constants.encodedTypeString(type));
 			objectDigest.update((byte) ' ');
@@ -332,7 +340,8 @@ public class IndexPack {
 			objectDigest.update((byte) 0);
 			objectDigest.update(data);
 			tempObjectId.fromRaw(objectDigest.digest(), 0);
-			oe = new PackedObjectInfo(pos, tempObjectId);
+
+			oe = new PackedObjectInfo(pos, crc32, tempObjectId);
 			entries[entryCount++] = oe;
 		}
 
@@ -349,20 +358,24 @@ public class IndexPack {
 				final UnresolvedDelta ad = a.get(ai);
 				final UnresolvedDelta bd = b.get(bi);
 				if (ad.position < bd.position) {
-					resolveDeltas(ad.position, type, data, null);
+					resolveDeltas(ad.position, ad.crc, type, data, null);
 					ai++;
 				} else {
-					resolveDeltas(bd.position, type, data, null);
+					resolveDeltas(bd.position, bd.crc, type, data, null);
 					bi++;
 				}
 			}
 		}
 		if (a != null)
-			while (ai < a.size())
-				resolveDeltas(a.get(ai++).position, type, data, null);
+			while (ai < a.size()) {
+				final UnresolvedDelta ad = a.get(ai++);
+				resolveDeltas(ad.position, ad.crc, type, data, null);
+			}
 		if (b != null)
-			while (bi < b.size())
-				resolveDeltas(b.get(bi++).position, type, data, null);
+			while (bi < b.size()) {
+				final UnresolvedDelta bd = b.get(bi++);
+				resolveDeltas(bd.position, bd.crc, type, data, null);
+			}
 	}
 
 	private void fixThinPack(final ProgressMonitor progress) throws IOException {
@@ -377,10 +390,11 @@ public class IndexPack {
 			final int typeCode = ldr.getType();
 			final PackedObjectInfo oe;
 
-			oe = new PackedObjectInfo(end, baseId);
-			entries[entryCount++] = oe;
+			crc.reset();
 			packOut.seek(end);
 			writeWhole(def, typeCode, data);
+			oe = new PackedObjectInfo(end, (int) crc.getValue(), baseId);
+			entries[entryCount++] = oe;
 			end = packOut.getFilePointer();
 
 			resolveChildDeltas(oe.getOffset(), typeCode, data, oe);
@@ -403,12 +417,16 @@ public class IndexPack {
 			buf[hdrlen++] = (byte) (sz & 0x7f);
 			sz >>>= 7;
 		}
+		crc.update(buf, 0, hdrlen);
 		packOut.write(buf, 0, hdrlen);
 		def.reset();
 		def.setInput(data);
 		def.finish();
-		while (!def.finished())
-			packOut.write(buf, 0, def.deflate(buf));
+		while (!def.finished()) {
+			final int datlen = def.deflate(buf);
+			crc.update(buf, 0, datlen);
+			packOut.write(buf, 0, datlen);
+		}
 	}
 
 	private void fixHeaderFooter() throws IOException {
@@ -493,6 +511,7 @@ public class IndexPack {
 	private void indexOneObject() throws IOException {
 		final long pos = position();
 
+		crc.reset();
 		int c = readFromInput();
 		final int typeCode = (c >> 4) & 7;
 		long sz = c & 15;
@@ -511,11 +530,11 @@ public class IndexPack {
 			whole(typeCode, pos, sz);
 			break;
 		case Constants.OBJ_OFS_DELTA: {
-			c = readFromInput() & 0xff;
+			c = readFromInput();
 			long ofs = c & 127;
 			while ((c & 128) != 0) {
 				ofs += 1;
-				c = readFromInput() & 0xff;
+				c = readFromInput();
 				ofs <<= 7;
 				ofs += (c & 127);
 			}
@@ -525,25 +544,24 @@ public class IndexPack {
 				r = new ArrayList<UnresolvedDelta>(8);
 				baseByPos.put(base, r);
 			}
-			r.add(new UnresolvedDelta(pos));
-			deltaCount++;
 			inflateFromInput(false);
+			r.add(new UnresolvedDelta(pos, (int) crc.getValue()));
+			deltaCount++;
 			break;
 		}
 		case Constants.OBJ_REF_DELTA: {
 			c = fillFromInput(20);
-			final byte[] ref = new byte[20];
-			System.arraycopy(buf, c, ref, 0, 20);
+			crc.update(buf, c, 20);
+			final ObjectId base = ObjectId.fromRaw(buf, c);
 			use(20);
-			final ObjectId base = ObjectId.fromRaw(ref);
 			ArrayList<UnresolvedDelta> r = baseById.get(base);
 			if (r == null) {
 				r = new ArrayList<UnresolvedDelta>(8);
 				baseById.put(base, r);
 			}
-			r.add(new UnresolvedDelta(pos));
-			deltaCount++;
 			inflateFromInput(false);
+			r.add(new UnresolvedDelta(pos, (int) crc.getValue()));
+			deltaCount++;
 			break;
 		}
 		default:
@@ -559,7 +577,9 @@ public class IndexPack {
 		objectDigest.update((byte) 0);
 		inflateFromInput(true);
 		tempObjectId.fromRaw(objectDigest.digest(), 0);
-		entries[entryCount++] = new PackedObjectInfo(pos, tempObjectId);
+
+		final int crc32 = (int) crc.getValue();
+		entries[entryCount++] = new PackedObjectInfo(pos, crc32, tempObjectId);
 	}
 
 	// Current position of {@link #bOffset} within the entire file.
@@ -579,15 +599,19 @@ public class IndexPack {
 		if (bAvail == 0)
 			fillFromInput(1);
 		bAvail--;
-		return buf[bOffset++] & 0xff;
+		final int b = buf[bOffset++] & 0xff;
+		crc.update(b);
+		return b;
 	}
 
 	// Consume exactly one byte from the buffer and return it.
 	private int readFromFile() throws IOException {
 		if (bAvail == 0)
-			fillFromFile();
+			fillFromFile(1);
 		bAvail--;
-		return buf[bOffset++] & 0xff;
+		final int b = buf[bOffset++] & 0xff;
+		crc.update(b);
+		return b;
 	}
 
 	// Consume cnt bytes from the buffer.
@@ -615,13 +639,21 @@ public class IndexPack {
 	}
 
 	// Ensure at least need bytes are available in in {@link #buf}.
-	private int fillFromFile() throws IOException {
-		if (bAvail == 0) {
-			final int next = packOut.read(buf, 0, buf.length);
+	private int fillFromFile(final int need) throws IOException {
+		if (bAvail < need) {
+			int next = bOffset + bAvail;
+			int free = buf.length - next;
+			if (free + bAvail < need) {
+				if (bAvail > 0)
+					System.arraycopy(buf, bOffset, buf, 0, bAvail);
+				bOffset = 0;
+				next = bAvail;
+				free = buf.length - next;
+			}
+			next = packOut.read(buf, next, free);
 			if (next <= 0)
 				throw new EOFException("Packfile is truncated.");
-			bAvail = next;
-			bOffset = 0;
+			bAvail += next;
 		}
 		return bOffset;
 	}
@@ -642,11 +674,15 @@ public class IndexPack {
 		try {
 			final byte[] dst = objectData;
 			int n = 0;
+			int p = -1;
 			while (!inf.finished()) {
 				if (inf.needsInput()) {
-					final int p = fillFromInput(1);
+					if (p >= 0) {
+						crc.update(buf, p, bAvail);
+						use(bAvail);
+					}
+					p = fillFromInput(1);
 					inf.setInput(buf, p, bAvail);
-					use(bAvail);
 				}
 
 				int free = dst.length - n;
@@ -661,7 +697,11 @@ public class IndexPack {
 			}
 			if (digest)
 				objectDigest.update(dst, 0, n);
-			use(-inf.getRemaining());
+			n = bAvail - inf.getRemaining();
+			if (n > 0) {
+				crc.update(buf, p, n);
+				use(n);
+			}
 		} catch (DataFormatException dfe) {
 			throw corrupt(dfe);
 		} finally {
@@ -674,15 +714,23 @@ public class IndexPack {
 		try {
 			final byte[] dst = new byte[sz];
 			int n = 0;
+			int p = -1;
 			while (!inf.finished()) {
 				if (inf.needsInput()) {
-					final int p = fillFromFile();
+					if (p >= 0) {
+						crc.update(buf, p, bAvail);
+						use(bAvail);
+					}
+					p = fillFromFile(1);
 					inf.setInput(buf, p, bAvail);
-					use(bAvail);
 				}
 				n += inf.inflate(dst, n, sz - n);
 			}
-			use(-inf.getRemaining());
+			n = bAvail - inf.getRemaining();
+			if (n > 0) {
+				crc.update(buf, p, n);
+				use(n);
+			}
 			return dst;
 		} catch (DataFormatException dfe) {
 			throw corrupt(dfe);
@@ -699,8 +747,11 @@ public class IndexPack {
 	private static class UnresolvedDelta {
 		final long position;
 
-		UnresolvedDelta(final long headerOffset) {
+		final int crc;
+
+		UnresolvedDelta(final long headerOffset, final int crc32) {
 			position = headerOffset;
+			crc = crc32;
 		}
 	}
 

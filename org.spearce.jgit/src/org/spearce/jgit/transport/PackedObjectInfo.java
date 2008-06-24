@@ -51,9 +51,13 @@ import org.spearce.jgit.lib.ObjectId;
 public class PackedObjectInfo extends ObjectId {
 	private long offset;
 
-	PackedObjectInfo(final long headerOffset, final AnyObjectId id) {
+	private int crc;
+
+	PackedObjectInfo(final long headerOffset, final int packedCRC,
+			final AnyObjectId id) {
 		super(id);
 		offset = headerOffset;
+		crc = packedCRC;
 	}
 
 	/**
@@ -82,5 +86,24 @@ public class PackedObjectInfo extends ObjectId {
 	 */
 	public void setOffset(final long offset) {
 		this.offset = offset;
+	}
+
+	/**
+	 * @return the 32 bit CRC checksum for the packed data.
+	 */
+	public int getCRC() {
+		return crc;
+	}
+
+	/**
+	 * Record the 32 bit CRC checksum for the packed data.
+	 *
+	 * @param crc
+	 *            checksum of all packed data (including object type code,
+	 *            inflated length and delta base reference) as computed by
+	 *            {@link java.util.zip.CRC32}.
+	 */
+	public void setCRC(final int crc) {
+		this.crc = crc;
 	}
 }
