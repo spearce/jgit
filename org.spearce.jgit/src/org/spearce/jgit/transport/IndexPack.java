@@ -54,7 +54,6 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 import org.spearce.jgit.errors.CorruptObjectException;
-import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.BinaryDelta;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.InflaterCache;
@@ -713,15 +712,6 @@ public class IndexPack {
 	private static CorruptObjectException corrupt(final DataFormatException dfe) {
 		return new CorruptObjectException("Packfile corruption detected: "
 				+ dfe.getMessage());
-	}
-
-	private static class ObjectEntry extends ObjectId {
-		final long pos;
-
-		ObjectEntry(final long headerOffset, final AnyObjectId id) {
-			super(id);
-			pos = headerOffset;
-		}
 	}
 
 	private static class UnresolvedDelta {
