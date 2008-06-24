@@ -102,7 +102,9 @@ public class IndexPack {
 		final File base;
 
 		base = new File(objdir, n.substring(0, n.length() - suffix.length()));
-		return new IndexPack(db, is, base);
+		final IndexPack ip = new IndexPack(db, is, base);
+		ip.setIndexVersion(db.getConfig().getCore().getPackIndexVersion());
+		return ip;
 	}
 
 	private final Repository repo;

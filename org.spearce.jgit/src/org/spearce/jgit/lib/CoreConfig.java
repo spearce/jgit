@@ -48,8 +48,11 @@ public class CoreConfig {
 
 	private final int compression;
 
+	private final int packIndexVersion;
+
 	CoreConfig(final RepositoryConfig rc) {
 		compression = rc.getInt("core", "compression", DEFAULT_COMPRESSION);
+		packIndexVersion = rc.getInt("pack", "indexversion", 0);
 	}
 
 	/**
@@ -58,5 +61,13 @@ public class CoreConfig {
 	 */
 	public int getCompression() {
 		return compression;
+	}
+
+	/**
+	 * @return the preferred pack index file format; 0 for oldest possible.
+	 * @see org.spearce.jgit.transport.IndexPack
+	 */
+	public int getPackIndexVersion() {
+		return packIndexVersion;
 	}
 }
