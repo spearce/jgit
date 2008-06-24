@@ -122,6 +122,8 @@ public abstract class PackIndexWriter {
 		switch (version) {
 		case 1:
 			return new PackIndexWriterV1(dst);
+		case 2:
+			return new PackIndexWriterV2(dst);
 		default:
 			throw new IllegalArgumentException(
 					"Unsupported pack index version " + version);
@@ -201,6 +203,25 @@ public abstract class PackIndexWriter {
 	 *             index format cannot store the object data supplied.
 	 */
 	protected abstract void writeImpl() throws IOException;
+
+	/**
+	 * Output the version 2 (and later) TOC header, with version number.
+	 * <p>
+	 * Post version 1 all index files start with a TOC header that makes the
+	 * file an invalid version 1 file, and then includes the version number.
+	 * This header is necessary to recognize a version 1 from a version 2
+	 * formatted index.
+	 *
+	 * @param version
+	 *            version number of this index format being written.
+	 * @throws IOException
+	 *             an error occurred while writing to the output stream.
+	 */
+	protected void writeTOC(final int version) throws IOException {
+		out.write(TOC);
+		NB.encodeInt32(tmp, 0, version);
+		out.write(tmp, 0, 4);
+	}
 
 	/**
 	 * Output the standard 256 entry first-level fan-out table.

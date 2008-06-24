@@ -35,44 +35,67 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.spearce.jgit.pgm;
+package org.spearce.jgit.lib;
 
-import java.io.BufferedInputStream;
-import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 
-import org.spearce.jgit.lib.TextProgressMonitor;
+import org.spearce.jgit.transport.PackedObjectInfo;
+import org.spearce.jgit.util.NB;
 
-class IndexPack extends TextBuiltin {
+/**
+ * Creates the version 2 pack table of contents files.
+ *
+ * @see PackIndexWriter
+ * @see PackIndexV2
+ */
+class PackIndexWriterV2 extends PackIndexWriter {
+	PackIndexWriterV2(final OutputStream dst) {
+		super(dst);
+	}
+
 	@Override
-	void execute(final String[] args) throws Exception {
-		boolean fixThin = false;
-		int argi = 0;
-		int version = 0;
-		for (; argi < args.length; argi++) {
-			final String a = args[argi];
-			if ("--fix-thin".equals(a))
-				fixThin = true;
-			else if (a.startsWith("--index-version="))
-				version = Integer.parseInt(a.substring(a.indexOf('=') + 1));
-			else if ("--".equals(a)) {
-				argi++;
-				break;
-			} else
-				break;
+	protected void writeImpl() throws IOException {
+		writeTOC(2);
+		writeFanOutTable();
+		writeObjectNames();
+		writeCRCs();
+		writeOffset32();
+		writeOffset64();
+		writeChecksumFooter();
+	}
+
+	private void writeObjectNames() throws IOException {
+		for (final PackedObjectInfo oe : entries)
+			oe.copyRawTo(out);
+	}
+
+	private void writeCRCs() throws IOException {
+		for (final PackedObjectInfo oe : entries) {
+			NB.encodeInt32(tmp, 0, oe.getCRC());
+			out.write(tmp, 0, 4);
 		}
+	}
 
-		if (argi == args.length)
-			throw die("usage: index-pack base");
-		else if (argi + 1 < args.length)
-			throw die("too many arguments");
+	private void writeOffset32() throws IOException {
+		int o64 = 0;
+		for (final PackedObjectInfo oe : entries) {
+			final long o = oe.getOffset();
+			if (o < Integer.MAX_VALUE)
+				NB.encodeInt32(tmp, 0, (int) o);
+			else
+				NB.encodeInt32(tmp, 0, (1 << 31) | o64++);
+			out.write(tmp, 0, 4);
+		}
+	}
 
-		final File base = new File(args[argi]);
-		final BufferedInputStream in;
-		final org.spearce.jgit.transport.IndexPack ip;
-		in = new BufferedInputStream(System.in);
-		ip = new org.spearce.jgit.transport.IndexPack(db, in, base);
-		ip.setFixThin(fixThin);
-		ip.setIndexVersion(version);
-		ip.index(new TextProgressMonitor());
+	private void writeOffset64() throws IOException {
+		for (final PackedObjectInfo oe : entries) {
+			final long o = oe.getOffset();
+			if (o > Integer.MAX_VALUE) {
+				NB.encodeInt64(tmp, 0, o);
+				out.write(tmp, 0, 8);
+			}
+		}
 	}
 }

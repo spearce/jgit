@@ -125,6 +125,8 @@ public class IndexPack {
 
 	private boolean fixThin;
 
+	private int outputVersion;
+
 	private final File dstPack;
 
 	private final File dstIdx;
@@ -182,6 +184,18 @@ public class IndexPack {
 			dstPack = null;
 			dstIdx = null;
 		}
+	}
+
+	/**
+	 * Set the pack index file format version this instance will create.
+	 *
+	 * @param version
+	 *            the version to write. The special version 0 designates the
+	 *            oldest (most compatible) format available for the objects.
+	 * @see PackIndexWriter
+	 */
+	public void setIndexVersion(final int version) {
+		outputVersion = version;
 	}
 
 	/**
@@ -466,8 +480,12 @@ public class IndexPack {
 
 		final FileOutputStream os = new FileOutputStream(dstIdx);
 		try {
-			PackIndexWriter.createOldestPossible(os, list)
-					.write(list, packcsum);
+			final PackIndexWriter iw;
+			if (outputVersion <= 0)
+				iw = PackIndexWriter.createOldestPossible(os, list);
+			else
+				iw = PackIndexWriter.createVersion(os, outputVersion);
+			iw.write(list, packcsum);
 		} finally {
 			os.close();
 		}
