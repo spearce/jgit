@@ -129,7 +129,7 @@ public class IndexPack {
 
 	private long objectCount;
 
-	private ObjectEntry[] entries;
+	private PackedObjectInfo[] entries;
 
 	private int deltaCount;
 
@@ -208,7 +208,7 @@ public class IndexPack {
 			try {
 				readPackHeader();
 
-				entries = new ObjectEntry[(int) objectCount];
+				entries = new PackedObjectInfo[(int) objectCount];
 				baseById = new ObjectIdMap<ArrayList<UnresolvedDelta>>();
 				baseByPos = new HashMap<Long, ArrayList<UnresolvedDelta>>();
 
@@ -280,14 +280,14 @@ public class IndexPack {
 		progress.endTask();
 	}
 
-	private void resolveDeltas(final ObjectEntry oe) throws IOException {
+	private void resolveDeltas(final PackedObjectInfo oe) throws IOException {
 		if (baseById.containsKey(oe)
 				|| baseByPos.containsKey(new Long(oe.getOffset())))
 			resolveDeltas(oe.getOffset(), Constants.OBJ_BAD, null, oe);
 	}
 
 	private void resolveDeltas(final long pos, int type, byte[] data,
-			ObjectEntry oe) throws IOException {
+			PackedObjectInfo oe) throws IOException {
 		position(pos);
 		int c = readFromFile();
 		final int typeCode = (c >> 4) & 7;
@@ -331,7 +331,7 @@ public class IndexPack {
 			objectDigest.update((byte) 0);
 			objectDigest.update(data);
 			tempObjectId.fromRaw(objectDigest.digest(), 0);
-			oe = new ObjectEntry(pos, tempObjectId);
+			oe = new PackedObjectInfo(pos, tempObjectId);
 			entries[entryCount++] = oe;
 		}
 
@@ -339,7 +339,7 @@ public class IndexPack {
 	}
 
 	private void resolveChildDeltas(final long pos, int type, byte[] data,
-			ObjectEntry oe) throws IOException {
+			PackedObjectInfo oe) throws IOException {
 		final ArrayList<UnresolvedDelta> a = baseById.remove(oe);
 		final ArrayList<UnresolvedDelta> b = baseByPos.remove(new Long(pos));
 		int ai = 0, bi = 0;
@@ -374,9 +374,9 @@ public class IndexPack {
 			final ObjectLoader ldr = repo.openObject(baseId);
 			final byte[] data = ldr.getBytes();
 			final int typeCode = ldr.getType();
-			final ObjectEntry oe;
+			final PackedObjectInfo oe;
 
-			oe = new ObjectEntry(end, baseId);
+			oe = new PackedObjectInfo(end, baseId);
 			entries[entryCount++] = oe;
 			packOut.seek(end);
 			writeWhole(def, typeCode, data);
@@ -432,9 +432,9 @@ public class IndexPack {
 	}
 
 	private void growEntries() {
-		final ObjectEntry[] ne;
+		final PackedObjectInfo[] ne;
 
-		ne = new ObjectEntry[(int) objectCount + baseById.size()];
+		ne = new PackedObjectInfo[(int) objectCount + baseById.size()];
 		System.arraycopy(entries, 0, ne, 0, entryCount);
 		entries = ne;
 	}
@@ -458,7 +458,7 @@ public class IndexPack {
 				d.update(rawoe, 0, 4);
 			}
 			for (int i = 0; i < entryCount; i++) {
-				final ObjectEntry oe = entries[i];
+				final PackedObjectInfo oe = entries[i];
 				if (oe.getOffset() >>> 1 > Integer.MAX_VALUE)
 					throw new IOException("Pack too large for index version 1");
 				NB.encodeInt32(rawoe, 0, (int) oe.getOffset());
@@ -578,7 +578,7 @@ public class IndexPack {
 		objectDigest.update((byte) 0);
 		inflateFromInput(true);
 		tempObjectId.fromRaw(objectDigest.digest(), 0);
-		entries[entryCount++] = new ObjectEntry(pos, tempObjectId);
+		entries[entryCount++] = new PackedObjectInfo(pos, tempObjectId);
 	}
 
 	// Current position of {@link #bOffset} within the entire file.
@@ -739,7 +739,7 @@ public class IndexPack {
 		final MessageDigest d = Constants.newMessageDigest();
 		final byte[] oeBytes = new byte[Constants.OBJECT_ID_LENGTH];
 		for (int i = 0; i < entryCount; i++) {
-			final ObjectEntry oe = entries[i];
+			final PackedObjectInfo oe = entries[i];
 			oe.copyRawTo(oeBytes, 0);
 			d.update(oeBytes);
 		}

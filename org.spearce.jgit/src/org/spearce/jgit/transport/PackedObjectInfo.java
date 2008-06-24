@@ -41,10 +41,10 @@ package org.spearce.jgit.transport;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.ObjectId;
 
-class ObjectEntry extends ObjectId {
+class PackedObjectInfo extends ObjectId {
 	private long offset;
 
-	ObjectEntry(final long headerOffset, final AnyObjectId id) {
+	PackedObjectInfo(final long headerOffset, final AnyObjectId id) {
 		super(id);
 		offset = headerOffset;
 	}
