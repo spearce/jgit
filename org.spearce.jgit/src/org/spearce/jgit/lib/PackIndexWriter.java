@@ -55,6 +55,9 @@ import org.spearce.jgit.util.NB;
  * to the byte offset within the pack where the object's data can be read.
  */
 public abstract class PackIndexWriter {
+	/** Magic constant indicating post-version 1 format. */
+	protected static final byte[] TOC = { -1, 't', 'O', 'c' };
+
 	/**
 	 * Create a new writer for the oldest (most widely understood) format.
 	 * <p>

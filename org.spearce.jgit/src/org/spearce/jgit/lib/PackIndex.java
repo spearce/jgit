@@ -104,7 +104,11 @@ public abstract class PackIndex implements Iterable<PackIndex.MutableEntry> {
 	}
 
 	private static boolean isTOC(final byte[] h) {
-		return h[0] == -1 && h[1] == 't' && h[2] == 'O' && h[3] == 'c';
+		final byte[] toc = PackIndexWriter.TOC;
+		for (int i = 0; i < toc.length; i++)
+			if (h[i] != toc[i])
+				return false;
+		return true;
 	}
 
 	/**
