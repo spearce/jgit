@@ -150,6 +150,7 @@ abstract class PackFetchConnection extends FetchConnection {
 		local = packTransport.local;
 		uri = packTransport.uri;
 		includeTags = packTransport.getTagOpt() != TagOpt.NO_TAGS;
+		thinPack = packTransport.isFetchThin();
 
 		walk = new RevWalk(local);
 		reachableCommits = new RevCommitList<RevCommit>();
@@ -363,7 +364,8 @@ abstract class PackFetchConnection extends FetchConnection {
 			includeTags = wantCapability(line, OPTION_INCLUDE_TAG);
 		wantCapability(line, OPTION_OFS_DELTA);
 		multiAck = wantCapability(line, OPTION_MULTI_ACK);
-		thinPack = wantCapability(line, OPTION_THIN_PACK);
+		if (thinPack)
+			thinPack = wantCapability(line, OPTION_THIN_PACK);
 		if (wantCapability(line, OPTION_SIDE_BAND_64K))
 			sideband = true;
 		else if (wantCapability(line, OPTION_SIDE_BAND))

@@ -142,6 +142,16 @@ public abstract class Transport {
 		throw new NotSupportedException("URI not supported: " + remote);
 	}
 
+	/**
+	 * Default setting for {@link #fetchThin} option.
+	 */
+	public static final boolean DEFAULT_FETCH_THIN = true;
+
+	/**
+	 * Default setting for {@link #pushThin} option.
+	 */
+	public static final boolean DEFAULT_PUSH_THIN = false;
+
 	/** The repository this transport fetches into, or pushes out of. */
 	protected final Repository local;
 
@@ -164,6 +174,12 @@ public abstract class Transport {
 	 * likely do not care about any tags it publishes.
 	 */
 	private TagOpt tagopt = TagOpt.NO_TAGS;
+
+	/** Should fetch request thin-pack if remote repository can produce it. */
+	private boolean fetchThin = DEFAULT_FETCH_THIN;
+
+	/** Should push produce thin-pack when sending objects to remote repository. */
+	private boolean pushThin = DEFAULT_PUSH_THIN;
 
 	/**
 	 * Create a new transport instance.
@@ -231,6 +247,53 @@ public abstract class Transport {
 	 */
 	public void setTagOpt(final TagOpt option) {
 		tagopt = option != null ? option : TagOpt.AUTO_FOLLOW;
+	}
+
+	/**
+	 * Default setting is: {@link #DEFAULT_FETCH_THIN}
+	 *
+	 * @return true if fetch should request thin-pack when possible; false
+	 *         otherwise
+	 * @see PackTransport
+	 */
+	public boolean isFetchThin() {
+		return fetchThin;
+	}
+
+	/**
+	 * Set the thin-pack preference for fetch operation. Default setting is:
+	 * {@link #DEFAULT_FETCH_THIN}
+	 *
+	 * @param fetchThin
+	 *            true when fetch should request thin-pack when possible; false
+	 *            when it shouldn't
+	 * @see PackTransport
+	 */
+	public void setFetchThin(final boolean fetchThin) {
+		this.fetchThin = fetchThin;
+	}
+
+	/**
+	 * Default setting is: {@value #DEFAULT_PUSH_THIN}
+	 *
+	 * @return true if push should produce thin-pack in pack transports
+	 * @see PackTransport
+	 */
+	public boolean isPushThin() {
+		return pushThin;
+	}
+
+	/**
+	 * Set thin-pack preference for push operation. Default setting is:
+	 * {@value #DEFAULT_PUSH_THIN}
+	 *
+	 * @param pushThin
+	 *            true when push should produce thin-pack in pack transports;
+	 *            false when it shouldn't
+	 * @see PackTransport
+	 */
+	public void setPushThin(final boolean pushThin) {
+		this.pushThin = pushThin;
 	}
 
 	/**
