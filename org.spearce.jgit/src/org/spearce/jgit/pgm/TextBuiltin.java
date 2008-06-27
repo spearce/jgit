@@ -43,10 +43,17 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
 
 abstract class TextBuiltin {
+	protected static final String REFS_HEADS = Constants.HEADS_PREFIX + "/";
+
+	protected static final String REFS_REMOTES = Constants.REMOTES_PREFIX + "/";
+
+	protected static final String REFS_TAGS = Constants.TAGS_PREFIX + "/";
+
 	protected PrintWriter out;
 
 	protected Repository db;
@@ -71,5 +78,19 @@ abstract class TextBuiltin {
 
 	protected static Die die(final String why) {
 		return new Die(why);
+	}
+
+	protected static String abbreviateObject(final ObjectId id) {
+		return id.toString().substring(0, 7);
+	}
+
+	protected String abbreviateRef(String dst, boolean abbreviateRemote) {
+		if (dst.startsWith(REFS_HEADS))
+			dst = dst.substring(REFS_HEADS.length());
+		else if (dst.startsWith(REFS_TAGS))
+			dst = dst.substring(REFS_TAGS.length());
+		else if (abbreviateRemote && dst.startsWith(REFS_REMOTES))
+			dst = dst.substring(REFS_REMOTES.length());
+		return dst;
 	}
 }
