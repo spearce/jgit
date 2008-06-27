@@ -100,6 +100,10 @@ class FetchProcess {
 			result.setAdvertisedRefs(conn.getRefsMap());
 			final Set<Ref> matched = new HashSet<Ref>();
 			for (final RefSpec spec : toFetch) {
+				if (spec.getSource() == null)
+					throw new TransportException(
+							"Source ref not specified for refspec: " + spec);
+
 				if (spec.isWildcard())
 					expandWildcard(spec, matched);
 				else

@@ -363,14 +363,15 @@ public abstract class Transport {
 	 * @param toFetch
 	 *            specification of refs to fetch locally. May be null or the
 	 *            empty collection to use the specifications from the
-	 *            RemoteConfig.
+	 *            RemoteConfig. Source for each RefSpec can't be null.
 	 * @return information describing the tracking refs updated.
 	 * @throws NotSupportedException
 	 *             this transport implementation does not support fetching
 	 *             objects.
 	 * @throws TransportException
 	 *             the remote connection could not be established or object
-	 *             copying (if necessary) failed.
+	 *             copying (if necessary) failed or update specification was
+	 *             incorrect.
 	 */
 	public FetchResult fetch(final ProgressMonitor monitor,
 			Collection<RefSpec> toFetch) throws NotSupportedException,
