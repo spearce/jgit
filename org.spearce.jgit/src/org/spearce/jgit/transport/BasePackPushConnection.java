@@ -110,7 +110,7 @@ class BasePackPushConnection extends BasePackConnection implements
 		} catch (TransportException e) {
 			throw e;
 		} catch (Exception e) {
-			throw new TransportException(uri + ": " + e.getMessage(), e);
+			throw new TransportException(uri, e.getMessage(), e);
 		} finally {
 			close();
 		}
@@ -146,7 +146,7 @@ class BasePackPushConnection extends BasePackConnection implements
 		}
 
 		if (monitor.isCancelled())
-			throw new TransportException(uri + ": push cancelled");
+			throw new TransportException(uri, "push cancelled");
 		pckOut.end();
 	}
 
@@ -179,13 +179,13 @@ class BasePackPushConnection extends BasePackConnection implements
 			throws IOException {
 		final String unpackLine = pckIn.readString();
 		if (!unpackLine.startsWith("unpack "))
-			throw new PackProtocolException(uri + ": unexpected report line: "
+			throw new PackProtocolException(uri, "unexpected report line: "
 					+ unpackLine);
 		final String unpackStatus = unpackLine.substring("unpack ".length());
 		if (!unpackStatus.equals("ok"))
-			throw new TransportException(uri
-					+ ": error occurred during unpacking on the remote end: "
-					+ unpackStatus);
+			throw new TransportException(uri,
+					"error occurred during unpacking on the remote end: "
+							+ unpackStatus);
 
 		String refLine;
 		while ((refLine = pckIn.readString()).length() > 0) {

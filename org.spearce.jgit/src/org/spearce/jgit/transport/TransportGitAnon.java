@@ -82,12 +82,11 @@ class TransportGitAnon extends PackTransport {
 		try {
 			return new Socket(InetAddress.getByName(uri.getHost()), port);
 		} catch (IOException c) {
-			final String us = uri.toString();
 			if (c instanceof UnknownHostException)
-				throw new TransportException(us + ": Unknown host");
+				throw new TransportException(uri, "unknown host");
 			if (c instanceof ConnectException)
-				throw new TransportException(us + ": " + c.getMessage());
-			throw new TransportException(us + ": " + c.getMessage(), c);
+				throw new TransportException(uri, c.getMessage());
+			throw new TransportException(uri, c.getMessage(), c);
 		}
 	}
 
@@ -116,8 +115,8 @@ class TransportGitAnon extends PackTransport {
 				service("git-upload-pack", pckOut);
 			} catch (IOException err) {
 				close();
-				throw new TransportException(uri.toString()
-						+ ": remote hung up unexpectedly", err);
+				throw new TransportException(uri,
+						"remote hung up unexpectedly", err);
 			}
 			readAdvertisedRefs();
 		}
@@ -149,8 +148,8 @@ class TransportGitAnon extends PackTransport {
 				service("git-receive-pack", pckOut);
 			} catch (IOException err) {
 				close();
-				throw new TransportException(uri.toString()
-						+ ": remote hung up unexpectedly", err);
+				throw new TransportException(uri,
+						"remote hung up unexpectedly", err);
 			}
 			readAdvertisedRefs();
 		}

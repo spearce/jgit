@@ -111,13 +111,12 @@ class TransportSftp extends WalkTransport {
 				session.connect();
 			return session;
 		} catch (JSchException je) {
-			final String us = uri.toString();
 			final Throwable c = je.getCause();
 			if (c instanceof UnknownHostException)
-				throw new TransportException(us + ": Unknown host");
+				throw new TransportException(uri, "unknown host");
 			if (c instanceof ConnectException)
-				throw new TransportException(us + ": " + c.getMessage());
-			throw new TransportException(us + ": " + je.getMessage(), je);
+				throw new TransportException(uri, c.getMessage());
+			throw new TransportException(uri, je.getMessage(), je);
 		}
 	}
 
@@ -127,8 +126,7 @@ class TransportSftp extends WalkTransport {
 			channel.connect();
 			return (ChannelSftp) channel;
 		} catch (JSchException je) {
-			throw new TransportException(uri.toString() + ": "
-					+ je.getMessage(), je);
+			throw new TransportException(uri, je.getMessage(), je);
 		}
 	}
 
@@ -259,7 +257,7 @@ class TransportSftp extends WalkTransport {
 			} catch (FileNotFoundException notPacked) {
 				// Perhaps it wasn't worthwhile, or is just an older repository.
 			} catch (IOException e) {
-				throw new TransportException(uri + ": error in packed-refs", e);
+				throw new TransportException(uri, "error in packed-refs", e);
 			}
 			readRef(avail, "../HEAD", "HEAD");
 			readLooseRefs(avail, "../refs", "refs/");

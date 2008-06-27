@@ -99,8 +99,7 @@ class TransportLocal extends PackTransport {
 			new StreamRewritingThread(proc.getErrorStream()).start();
 			return proc;
 		} catch (IOException err) {
-			throw new TransportException(uri.toString() + ": "
-					+ err.getMessage(), err);
+			throw new TransportException(uri, err.getMessage(), err);
 		}
 	}
 

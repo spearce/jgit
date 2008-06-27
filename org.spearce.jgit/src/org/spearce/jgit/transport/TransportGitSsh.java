@@ -162,13 +162,12 @@ class TransportGitSsh extends PackTransport {
 				session.connect();
 			return session;
 		} catch (JSchException je) {
-			final String us = uri.toString();
 			final Throwable c = je.getCause();
 			if (c instanceof UnknownHostException)
-				throw new TransportException(us + ": Unknown host");
+				throw new TransportException(uri, "unknown host");
 			if (c instanceof ConnectException)
-				throw new TransportException(us + ": " + c.getMessage());
-			throw new TransportException(us + ": " + je.getMessage(), je);
+				throw new TransportException(uri, c.getMessage());
+			throw new TransportException(uri, je.getMessage(), je);
 		}
 	}
 
@@ -189,8 +188,7 @@ class TransportGitSsh extends PackTransport {
 			channel.connect();
 			return channel;
 		} catch (JSchException je) {
-			throw new TransportException(uri.toString() + ": "
-					+ je.getMessage(), je);
+			throw new TransportException(uri, je.getMessage(), je);
 		}
 	}
 
@@ -210,8 +208,8 @@ class TransportGitSsh extends PackTransport {
 				throw err;
 			} catch (IOException err) {
 				close();
-				throw new TransportException(uri.toString()
-						+ ": remote hung up unexpectedly", err);
+				throw new TransportException(uri,
+						"remote hung up unexpectedly", err);
 			}
 			readAdvertisedRefs();
 		}
@@ -255,8 +253,8 @@ class TransportGitSsh extends PackTransport {
 				throw err;
 			} catch (IOException err) {
 				close();
-				throw new TransportException(uri.toString()
-						+ ": remote hung up unexpectedly", err);
+				throw new TransportException(uri,
+						"remote hung up unexpectedly", err);
 			}
 			readAdvertisedRefs();
 		}

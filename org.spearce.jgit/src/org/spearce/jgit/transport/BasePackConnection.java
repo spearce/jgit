@@ -125,7 +125,7 @@ abstract class BasePackConnection extends BaseConnection {
 				line = pckIn.readString();
 			} catch (EOFException eof) {
 				if (avail.isEmpty())
-					throw new TransportException(uri + " not found.");
+					throw new TransportException(uri, "not found.");
 				throw eof;
 			}
 
@@ -155,7 +155,7 @@ abstract class BasePackConnection extends BaseConnection {
 				name = name.substring(0, name.length() - 3);
 				final Ref prior = avail.get(name);
 				if (prior == null)
-					throw new PackProtocolException(uri + ": advertisement of "
+					throw new PackProtocolException(uri, "advertisement of "
 							+ name + "^{} came before " + name);
 
 				if (prior.getPeeledObjectId() != null)
@@ -185,7 +185,7 @@ abstract class BasePackConnection extends BaseConnection {
 	}
 
 	private PackProtocolException duplicateAdvertisement(final String name) {
-		return new PackProtocolException(uri + ": duplicate advertisements of "
+		return new PackProtocolException(uri, "duplicate advertisements of "
 				+ name);
 	}
 

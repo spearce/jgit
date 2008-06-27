@@ -178,9 +178,9 @@ class PushProcess {
 			} catch (MissingObjectException x) {
 				fastForward = false;
 			} catch (Exception x) {
-				throw new TransportException(transport.getURI()
-						+ ": reading objects from local repository failed: "
-						+ x.getMessage(), x);
+				throw new TransportException(transport.getURI(),
+						"reading objects from local repository failed: "
+								+ x.getMessage(), x);
 			}
 			rru.setFastForward(fastForward);
 			if (!fastForward && !rru.isForceUpdate())
