@@ -55,9 +55,16 @@ public class TrackingRefUpdate {
 
 	TrackingRefUpdate(final Repository db, final RefSpec spec,
 			final AnyObjectId nv, final String msg) throws IOException {
-		remoteName = spec.getSource();
-		update = db.updateRef(spec.getDestination());
-		update.setForceUpdate(spec.isForceUpdate());
+		this(db, spec.getDestination(), spec.getSource(), spec.isForceUpdate(),
+				nv, msg);
+	}
+
+	TrackingRefUpdate(final Repository db, final String localName,
+			final String remoteName, final boolean forceUpdate,
+			final AnyObjectId nv, final String msg) throws IOException {
+		this.remoteName = remoteName;
+		update = db.updateRef(localName);
+		update.setForceUpdate(forceUpdate);
 		update.setNewObjectId(nv);
 		update.setRefLogMessage(msg, true);
 	}
