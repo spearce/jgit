@@ -524,7 +524,7 @@ public class Repository {
 	 * </ul>
 	 *
 	 * @param revstr A git object references expression
-	 * @return an ObjectId
+	 * @return an ObjectId or null if revstr can't be resolved to any ObjectId
 	 * @throws IOException on serious errors
 	 */
 	public ObjectId resolve(final String revstr) throws IOException {
