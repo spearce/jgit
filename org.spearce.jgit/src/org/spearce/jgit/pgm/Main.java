@@ -85,12 +85,12 @@ public class Main {
 
 	private static void execute(final String[] argv) throws Exception {
 		int argi = 0;
-		String gitdir = ".git";
 
+		File gitdir = null;
 		for (; argi < argv.length; argi++) {
 			final String arg = argv[argi];
 			if (arg.startsWith("--git-dir="))
-				gitdir = arg.substring("--git-dir=".length());
+				gitdir = new File(arg.substring("--git-dir=".length()));
 			else if (arg.equals("--show-stack-trace"))
 				showStackTrace = true;
 			else if (arg.startsWith("--"))
@@ -101,14 +101,32 @@ public class Main {
 
 		if (argi == argv.length)
 			usage();
+		if (gitdir == null)
+			gitdir = findGitDir();
+		if (gitdir == null || !gitdir.isDirectory()) {
+			System.err.println("error: can't find git directory");
+			System.exit(1);
+		}
+
 		final TextBuiltin cmd = createCommand(argv[argi++]);
-		cmd.db = new Repository(new File(gitdir));
+		cmd.db = new Repository(gitdir);
 		try {
 			cmd.execute(subarray(argv, argi));
 		} finally {
 			if (cmd.out != null)
 				cmd.out.flush();
 		}
+	}
+
+	private static File findGitDir() {
+		File current = new File(".").getAbsoluteFile();
+		while (current != null) {
+			final File gitDir = new File(current, ".git");
+			if (gitDir.isDirectory())
+				return gitDir;
+			current = current.getParentFile();
+		}
+		return null;
 	}
 
 	private static String[] subarray(final String[] argv, final int i) {
