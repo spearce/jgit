@@ -40,11 +40,42 @@ package org.spearce.jgit.errors;
 
 import java.io.IOException;
 
+import org.spearce.jgit.transport.URIish;
+
 /**
  * Indicates a protocol error has occurred while fetching/pushing objects.
  */
 public class TransportException extends IOException {
 	private static final long serialVersionUID = 1L;
+
+	/**
+	 * Constructs an TransportException with the specified detail message
+	 * prefixed with provided URI.
+	 *
+	 * @param uri
+	 *            URI used for transport
+	 * @param s
+	 *            message
+	 */
+	public TransportException(final URIish uri, final String s) {
+		super(uri + ": " + s);
+	}
+
+	/**
+	 * Constructs an TransportException with the specified detail message
+	 * prefixed with provided URI.
+	 *
+	 * @param uri
+	 *            URI used for transport
+	 * @param s
+	 *            message
+	 * @param cause
+	 *            root cause exception
+	 */
+	public TransportException(final URIish uri, final String s,
+			final Throwable cause) {
+		this(uri + ": " + s, cause);
+	}
 
 	/**
 	 * Constructs an TransportException with the specified detail message.

@@ -38,12 +38,42 @@
 
 package org.spearce.jgit.errors;
 
+import org.spearce.jgit.transport.URIish;
 
 /**
  * Indicates a protocol error has occurred while fetching/pushing objects.
  */
 public class PackProtocolException extends TransportException {
 	private static final long serialVersionUID = 1L;
+
+	/**
+	 * Constructs an PackProtocolException with the specified detail message
+	 * prefixed with provided URI.
+	 *
+	 * @param uri
+	 *            URI used for transport
+	 * @param s
+	 *            message
+	 */
+	public PackProtocolException(final URIish uri, final String s) {
+		super(uri + ": " + s);
+	}
+
+	/**
+	 * Constructs an PackProtocolException with the specified detail message
+	 * prefixed with provided URI.
+	 *
+	 * @param uri
+	 *            URI used for transport
+	 * @param s
+	 *            message
+	 * @param cause
+	 *            root cause exception
+	 */
+	public PackProtocolException(final URIish uri, final String s,
+			final Throwable cause) {
+		this(uri + ": " + s, cause);
+	}
 
 	/**
 	 * Constructs an PackProtocolException with the specified detail message.
