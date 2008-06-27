@@ -2,6 +2,7 @@
  * Copyright (C) 2007, Dave Watson <dwatson@mimvista.com>
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
  *
  * All rights reserved.
  *
@@ -43,6 +44,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.util.FS;
@@ -83,48 +85,33 @@ class TransportLocal extends PackTransport {
 		return new LocalFetchConnection();
 	}
 
+	@Override
+	public PushConnection openPush() throws NotSupportedException,
+			TransportException {
+		return new LocalPushConnection();
+	}
+
+	protected Process startProcessWithErrStream(final String cmd)
+			throws TransportException {
+		try {
+			final Process proc = Runtime.getRuntime().exec(
+					new String[] { cmd, "." }, null, remoteGitDir);
+			new StreamRewritingThread(proc.getErrorStream()).start();
+			return proc;
+		} catch (IOException err) {
+			throw new TransportException(uri.toString() + ": "
+					+ err.getMessage(), err);
+		}
+	}
+
 	class LocalFetchConnection extends BasePackFetchConnection {
 		private Process uploadPack;
 
 		LocalFetchConnection() throws TransportException {
 			super(TransportLocal.this);
-			try {
-				uploadPack = Runtime.getRuntime().exec(
-						new String[] { getOptionUploadPack(), "." }, null,
-						remoteGitDir);
-			} catch (IOException err) {
-				throw new TransportException(uri.toString() + ": "
-						+ err.getMessage(), err);
-			}
-			startErrorThread();
+			uploadPack = startProcessWithErrStream(getOptionReceivePack());
 			init(uploadPack.getInputStream(), uploadPack.getOutputStream());
 			readAdvertisedRefs();
-		}
-
-		private void startErrorThread() {
-			final InputStream errorStream = uploadPack.getErrorStream();
-			new Thread("JGit " + getOptionUploadPack() + " Errors") {
-				public void run() {
-					final byte[] tmp = new byte[512];
-					try {
-						for (;;) {
-							final int n = errorStream.read(tmp);
-							if (n < 0)
-								break;
-							System.err.write(tmp, 0, n);
-							System.err.flush();
-						}
-					} catch (IOException err) {
-						// Ignore errors reading errors.
-					} finally {
-						try {
-							errorStream.close();
-						} catch (IOException err2) {
-							// Ignore errors closing the pipe.
-						}
-					}
-				}
-			}.start();
 		}
 
 		@Override
@@ -138,6 +125,62 @@ class TransportLocal extends PackTransport {
 					// Stop waiting and return anyway.
 				} finally {
 					uploadPack = null;
+				}
+			}
+		}
+	}
+
+	class LocalPushConnection extends BasePackPushConnection {
+		private Process receivePack;
+
+		LocalPushConnection() throws TransportException {
+			super(TransportLocal.this);
+			receivePack = startProcessWithErrStream(getOptionReceivePack());
+			init(receivePack.getInputStream(), receivePack.getOutputStream());
+			readAdvertisedRefs();
+		}
+
+		@Override
+		public void close() {
+			super.close();
+
+			if (receivePack != null) {
+				try {
+					receivePack.waitFor();
+				} catch (InterruptedException ie) {
+					// Stop waiting and return anyway.
+				} finally {
+					receivePack = null;
+				}
+			}
+		}
+	}
+
+	class StreamRewritingThread extends Thread {
+		private final InputStream in;
+
+		StreamRewritingThread(final InputStream in) {
+			super("JGit " + getOptionUploadPack() + " Errors");
+			this.in = in;
+		}
+
+		public void run() {
+			final byte[] tmp = new byte[512];
+			try {
+				for (;;) {
+					final int n = in.read(tmp);
+					if (n < 0)
+						break;
+					System.err.write(tmp, 0, n);
+					System.err.flush();
+				}
+			} catch (IOException err) {
+				// Ignore errors reading errors.
+			} finally {
+				try {
+					in.close();
+				} catch (IOException err2) {
+					// Ignore errors closing the pipe.
 				}
 			}
 		}

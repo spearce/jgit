@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
  *
  * All rights reserved.
  *
@@ -42,12 +43,16 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.NullProgressMonitor;
 import org.spearce.jgit.lib.ProgressMonitor;
+import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
 
 /**
@@ -105,6 +110,8 @@ public abstract class Transport {
 		tn.setOptionUploadPack(cfg.getUploadPack());
 		tn.fetch = cfg.getFetchRefSpecs();
 		tn.tagopt = cfg.getTagOpt();
+		tn.setOptionReceivePack(cfg.getReceivePack());
+		tn.push = cfg.getPushRefSpecs();
 		return tn;
 	}
 
@@ -152,6 +159,20 @@ public abstract class Transport {
 	 */
 	public static final boolean DEFAULT_PUSH_THIN = false;
 
+	/**
+	 * Specification for fetch or push operations, to fetch or push all tags.
+	 * Acts as --tags.
+	 */
+	public static final RefSpec REFSPEC_TAGS = new RefSpec(
+			"refs/tags/*:refs/tags/*");
+
+	/**
+	 * Specification for push operation, to push all refs under refs/heads. Acts
+	 * as --all.
+	 */
+	public static final RefSpec REFSPEC_PUSH_ALL = new RefSpec(
+			"refs/heads/*:refs/heads/*");
+
 	/** The repository this transport fetches into, or pushes out of. */
 	protected final Repository local;
 
@@ -162,7 +183,7 @@ public abstract class Transport {
 	private String optionUploadPack = RemoteConfig.DEFAULT_UPLOAD_PACK;
 
 	/** Specifications to apply during fetch. */
-	private List<RefSpec> fetch = Collections.<RefSpec> emptyList();
+	private List<RefSpec> fetch = Collections.emptyList();
 
 	/**
 	 * How {@link #fetch(ProgressMonitor, Collection)} should handle tags.
@@ -177,6 +198,12 @@ public abstract class Transport {
 
 	/** Should fetch request thin-pack if remote repository can produce it. */
 	private boolean fetchThin = DEFAULT_FETCH_THIN;
+
+	/** Name of the receive pack program, if it must be executed. */
+	private String optionReceivePack = RemoteConfig.DEFAULT_RECEIVE_PACK;
+
+	/** Specifications to apply during push. */
+	private List<RefSpec> push = Collections.emptyList();
 
 	/** Should push produce thin-pack when sending objects to remote repository. */
 	private boolean pushThin = DEFAULT_PUSH_THIN;
@@ -274,6 +301,31 @@ public abstract class Transport {
 	}
 
 	/**
+	 * Default setting is: {@value RemoteConfig#DEFAULT_RECEIVE_PACK}
+	 *
+	 * @return remote executable providing receive-pack service for pack
+	 *         transports.
+	 * @see PackTransport
+	 */
+	public String getOptionReceivePack() {
+		return optionReceivePack;
+	}
+
+	/**
+	 * Set remote executable providing receive-pack service for pack transports.
+	 * Default setting is: {@value RemoteConfig#DEFAULT_RECEIVE_PACK}
+	 *
+	 * @param optionReceivePack
+	 *            remote executable, if null or empty default one is set;
+	 */
+	public void setOptionReceivePack(String optionReceivePack) {
+		if (optionReceivePack != null && optionReceivePack.length() > 0)
+			this.optionReceivePack = optionReceivePack;
+		else
+			this.optionReceivePack = RemoteConfig.DEFAULT_RECEIVE_PACK;
+	}
+
+	/**
 	 * Default setting is: {@value #DEFAULT_PUSH_THIN}
 	 *
 	 * @return true if push should produce thin-pack in pack transports
@@ -356,6 +408,98 @@ public abstract class Transport {
 	}
 
 	/**
+	 * Push objects and refs from the local repository to the remote one.
+	 * <p>
+	 * This is a utility function providing standard push behavior. It updates
+	 * remote refs and send there necessary objects according to remote ref
+	 * update specification. After successful remote ref update, associated
+	 * locally stored tracking branch is updated if set up accordingly. Detailed
+	 * operation result is provided after execution.
+	 * <p>
+	 * For setting up remote ref update specification from ref spec, see helper
+	 * method {@link #findRemoteRefUpdatesFor(Collection)}, predefined refspecs ({@link #REFSPEC_TAGS},
+	 * {@link #REFSPEC_PUSH_ALL}) or consider using directly
+	 * {@link RemoteRefUpdate} for more possibilities.
+	 *
+	 * @see RemoteRefUpdate
+	 *
+	 * @param monitor
+	 *            progress monitor to inform the user about our processing
+	 *            activity. Must not be null. Use {@link NullProgressMonitor} if
+	 *            progress updates are not interesting or necessary.
+	 * @param toPush
+	 *            specification of refs to push. May be null or the empty
+	 *            collection to use the specifications from the RemoteConfig
+	 *            converted by {@link #findRemoteRefUpdatesFor(Collection)}. No
+	 *            more than 1 RemoteRefUpdate with the same remoteName is
+	 *            allowed.
+	 * @return information about results of remote refs updates, tracking refs
+	 *         updates and refs advertised by remote repository.
+	 * @throws NotSupportedException
+	 *             this transport implementation does not support pusing
+	 *             objects.
+	 * @throws TransportException
+	 *             the remote connection could not be established or object
+	 *             copying (if necessary) failed at I/O or protocol level or
+	 *             update specification was incorrect.
+	 */
+	public PushResult push(final ProgressMonitor monitor,
+			Collection<RemoteRefUpdate> toPush) throws NotSupportedException,
+			TransportException {
+		if (toPush == null || toPush.isEmpty()) {
+			// If the caller did not ask for anything use the defaults.
+			toPush = findRemoteRefUpdatesFor(push);
+			if (toPush.isEmpty())
+				throw new TransportException("Nothing to push.");
+		}
+		final PushProcess pushProcess = new PushProcess(this, toPush);
+		return pushProcess.execute(monitor);
+	}
+
+	/**
+	 * Convert push remote refs update specification from {@link RefSpec} form
+	 * to {@link RemoteRefUpdate}. Conversion expands wildcards by matching
+	 * source part to local refs. expectedOldObjectId in RemoteRefUpdate is
+	 * always set as null. Tracking branch is configured if RefSpec destination
+	 * matches source of any fetch ref spec for this transport remote
+	 * configuration.
+	 *
+	 * @param specs
+	 *            collection of RefSpec to convert.
+	 * @return collection of set up {@link RemoteRefUpdate}.
+	 * @throws TransportException
+	 *             when problem occurred during conversion or specification set
+	 *             up: most probably, missing objects or refs.
+	 */
+	public Collection<RemoteRefUpdate> findRemoteRefUpdatesFor(
+			final Collection<RefSpec> specs) throws TransportException {
+		final List<RemoteRefUpdate> result = new LinkedList<RemoteRefUpdate>();
+		final Collection<RefSpec> procRefs = expandPushWildcardsFor(specs);
+
+		for (final RefSpec spec : procRefs) {
+			try {
+				final String srcRef = spec.getSource();
+				// null destination (no-colon in ref-spec) is a special case
+				final String remoteName = (spec.getDestination() == null ? spec
+						.getSource() : spec.getDestination());
+				final boolean forceUpdate = spec.isForceUpdate();
+				final String localName = findTrackingRefName(remoteName);
+
+				final RemoteRefUpdate rru = new RemoteRefUpdate(local, srcRef,
+						remoteName, forceUpdate, localName, null);
+				result.add(rru);
+			} catch (TransportException x) {
+				throw x;
+			} catch (Exception x) {
+				throw new TransportException(
+						"Problem with resolving push ref spec \"" + spec
+								+ "\" locally: " + x.getMessage(), x);
+			}
+		}
+		return result;
+	}
+
+	/**
 	 * Begins a new connection for fetching from the remote repository.
 	 * 
 	 * @return a fresh connection to fetch from the remote repository.
@@ -373,9 +517,41 @@ public abstract class Transport {
 	 * @return a fresh connection to push into the remote repository.
 	 * @throws NotSupportedException
 	 *             the implementation does not support pushing.
+	 * @throws TransportException
+	 *             the remote connection could not be established
 	 */
-	public final PushConnection openPush() throws NotSupportedException
-	/* TransportException */{
-		throw new NotSupportedException("No push support.");
+	public abstract PushConnection openPush() throws NotSupportedException,
+			TransportException;
+
+	private Collection<RefSpec> expandPushWildcardsFor(
+			final Collection<RefSpec> specs) {
+		final Map<String, Ref> localRefs = local.getAllRefs();
+		final Collection<RefSpec> procRefs = new HashSet<RefSpec>();
+
+		for (final RefSpec spec : specs) {
+			if (spec.isWildcard()) {
+				for (final Ref localRef : localRefs.values()) {
+					if (spec.matchSource(localRef))
+						procRefs.add(spec.expandFromSource(localRef));
+				}
+			} else {
+				procRefs.add(spec);
+			}
+		}
+		return procRefs;
+	}
+
+	private String findTrackingRefName(final String remoteName) {
+		// try to find matching tracking refs
+		for (final RefSpec fetchSpec : fetch) {
+			if (fetchSpec.matchSource(remoteName)) {
+				if (fetchSpec.isWildcard())
+					return fetchSpec.expandFromSource(remoteName)
+							.getDestination();
+				else
+					return fetchSpec.getDestination();
+			}
+		}
+		return null;
 	}
 }

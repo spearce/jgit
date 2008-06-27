@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
  *
  * All rights reserved.
  *
@@ -86,6 +87,11 @@ class TransportGitSsh extends PackTransport {
 	@Override
 	public FetchConnection openFetch() throws TransportException {
 		return new SshFetchConnection();
+	}
+
+	@Override
+	public PushConnection openPush() throws TransportException {
+		return new SshPushConnection();
 	}
 
 	private static void sqMinimal(final StringBuilder cmd, final String val) {
@@ -198,6 +204,51 @@ class TransportGitSsh extends PackTransport {
 			try {
 				session = openSession();
 				channel = exec(session, getOptionUploadPack());
+				init(channel.getInputStream(), channel.getOutputStream());
+			} catch (TransportException err) {
+				close();
+				throw err;
+			} catch (IOException err) {
+				close();
+				throw new TransportException(uri.toString()
+						+ ": remote hung up unexpectedly", err);
+			}
+			readAdvertisedRefs();
+		}
+
+		@Override
+		public void close() {
+			super.close();
+
+			if (channel != null) {
+				try {
+					if (channel.isConnected())
+						channel.disconnect();
+				} finally {
+					channel = null;
+				}
+			}
+
+			if (session != null) {
+				try {
+					sch.releaseSession(session);
+				} finally {
+					session = null;
+				}
+			}
+		}
+	}
+
+	class SshPushConnection extends BasePackPushConnection {
+		private Session session;
+
+		private ChannelExec channel;
+
+		SshPushConnection() throws TransportException {
+			super(TransportGitSsh.this);
+			try {
+				session = openSession();
+				channel = exec(session, getOptionReceivePack());
 				init(channel.getInputStream(), channel.getOutputStream());
 			} catch (TransportException err) {
 				close();

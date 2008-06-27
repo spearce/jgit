@@ -37,6 +37,7 @@
 
 package org.spearce.jgit.transport;
 
+import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.lib.Repository;
 
 /**
@@ -54,5 +55,11 @@ import org.spearce.jgit.lib.Repository;
 abstract class WalkTransport extends Transport {
 	WalkTransport(final Repository local, final URIish u) {
 		super(local, u);
+	}
+
+	@Override
+	public PushConnection openPush() throws NotSupportedException {
+		throw new NotSupportedException(
+				"Push is not supported by object walking transports");
 	}
 }

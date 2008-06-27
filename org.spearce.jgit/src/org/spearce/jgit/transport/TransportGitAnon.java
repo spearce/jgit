@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
  *
  * All rights reserved.
  *
@@ -71,6 +72,11 @@ class TransportGitAnon extends PackTransport {
 		return new TcpFetchConnection();
 	}
 
+	@Override
+	public PushConnection openPush() throws TransportException {
+		return new TcpPushConnection();
+	}
+
 	Socket openConnection() throws TransportException {
 		final int port = uri.getPort() > 0 ? uri.getPort() : GIT_PORT;
 		try {
@@ -108,6 +114,39 @@ class TransportGitAnon extends PackTransport {
 			try {
 				init(sock.getInputStream(), sock.getOutputStream());
 				service("git-upload-pack", pckOut);
+			} catch (IOException err) {
+				close();
+				throw new TransportException(uri.toString()
+						+ ": remote hung up unexpectedly", err);
+			}
+			readAdvertisedRefs();
+		}
+
+		@Override
+		public void close() {
+			super.close();
+
+			if (sock != null) {
+				try {
+					sock.close();
+				} catch (IOException err) {
+					// Ignore errors during close.
+				} finally {
+					sock = null;
+				}
+			}
+		}
+	}
+
+	class TcpPushConnection extends BasePackPushConnection {
+		private Socket sock;
+
+		TcpPushConnection() throws TransportException {
+			super(TransportGitAnon.this);
+			sock = openConnection();
+			try {
+				init(sock.getInputStream(), sock.getOutputStream());
+				service("git-receive-pack", pckOut);
 			} catch (IOException err) {
 				close();
 				throw new TransportException(uri.toString()

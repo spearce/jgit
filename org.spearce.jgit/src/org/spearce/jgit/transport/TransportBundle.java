@@ -95,6 +95,12 @@ class TransportBundle extends PackTransport {
 		return new BundleFetchConnection();
 	}
 
+	@Override
+	public PushConnection openPush() throws NotSupportedException {
+		throw new NotSupportedException(
+				"Push is not supported for bundle transport");
+	}
+
 	class BundleFetchConnection extends BaseFetchConnection {
 		FileInputStream in;
 
