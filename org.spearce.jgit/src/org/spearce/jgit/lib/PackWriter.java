@@ -77,7 +77,7 @@ import org.spearce.jgit.util.NB;
  * Typical usage consists of creating instance intended for some pack,
  * configuring options through accessors methods and finally call
  * {@link #writePack(Iterator)} or
- * {@link #writePack(Collection, Collection, boolean)} with objects
+ * {@link #writePack(Collection, Collection, boolean, boolean)} with objects
  * specification, to generate a pack stream.
  * </p>
  * <p>
@@ -98,7 +98,7 @@ public class PackWriter {
 	 * Title of {@link ProgressMonitor} task used during counting objects to
 	 * pack.
 	 *
-	 * @see #writePack(Collection, Collection, boolean)
+	 * @see #writePack(Collection, Collection, boolean, boolean)
 	 */
 	public static final String COUNTING_OBJECTS_PROGRESS = "Counting objects to pack";
 
@@ -107,7 +107,7 @@ public class PackWriter {
 	 * reuse or delta reuse.
 	 *
 	 * @see #writePack(Iterator)
-	 * @see #writePack(Collection, Collection, boolean)
+	 * @see #writePack(Collection, Collection, boolean, boolean)
 	 */
 	public static final String SEARCHING_REUSE_PROGRESS = "Searching for delta and object reuse";
 
@@ -116,7 +116,7 @@ public class PackWriter {
 	 * (objects)
 	 *
 	 * @see #writePack(Iterator)
-	 * @see #writePack(Collection, Collection, boolean)
+	 * @see #writePack(Collection, Collection, boolean, boolean)
 	 */
 	public static final String WRITING_OBJECTS_PROGRESS = "Writing objects";
 
@@ -193,7 +193,7 @@ public class PackWriter {
 	 * Create writer for specified repository, that will write a pack to
 	 * provided output stream. Objects for packing are specified in
 	 * {@link #writePack(Iterator)} or
-	 * {@link #writePack(Collection, Collection, boolean)}.
+	 * {@link #writePack(Collection, Collection, boolean, boolean)}.
 	 *
 	 * @param repo
 	 *            repository where objects are stored.
@@ -203,7 +203,7 @@ public class PackWriter {
 	 * @param monitor
 	 *            operations progress monitor, used within
 	 *            {@link #writePack(Iterator)} or
-	 *            {@link #writePack(Collection, Collection, boolean)}.
+	 *            {@link #writePack(Collection, Collection, boolean, boolean)}.
 	 */
 	public PackWriter(final Repository repo, final OutputStream out,
 			final ProgressMonitor monitor) {
@@ -233,7 +233,8 @@ public class PackWriter {
 	 * writer will search for delta representation of object in repository and
 	 * use it if possible. Normally, only deltas with base to another object
 	 * existing in set of objects to pack will be used. Exception is however
-	 * thin-pack (see {@link #writePack(Collection, Collection, boolean)} and
+	 * thin-pack (see
+	 * {@link #writePack(Collection, Collection, boolean, boolean)} and
 	 * {@link #writePack(Iterator)}) where base object must exist on other side
 	 * machine.
 	 * <p>
@@ -442,15 +443,21 @@ public class PackWriter {
 	 *            belonging to party repository (uninteresting/boundary) as
 	 *            determined by set; this kind of pack is used only for
 	 *            transport; true - to produce thin pack, false - otherwise.
+	 * @param ignoreMissingUninteresting
+	 *            true if writer should ignore non existing uninteresting
+	 *            objects during construction set of objects to pack; false
+	 *            otherwise - non existing uninteresting objects may cause
+	 *            {@link MissingObjectException}
 	 * @throws IOException
 	 *             when some I/O problem occur during reading objects for pack
 	 *             or writing pack stream.
 	 */
 	public void writePack(final Collection<ObjectId> interestingObjects,
-			final Collection<ObjectId> uninterestingObjects, boolean thin)
+			final Collection<ObjectId> uninterestingObjects,
+			final boolean thin, final boolean ignoreMissingUninteresting)
 			throws IOException {
 		ObjectWalk walker = setUpWalker(interestingObjects,
-				uninterestingObjects, thin);
+				uninterestingObjects, thin, ignoreMissingUninteresting);
 		findObjectsToPack(walker);
 		writePackInternal();
 	}
@@ -682,7 +689,8 @@ public class PackWriter {
 
 	private ObjectWalk setUpWalker(
 			final Collection<ObjectId> interestingObjects,
-			final Collection<ObjectId> uninterestingObjects, boolean thin)
+			final Collection<ObjectId> uninterestingObjects,
+			final boolean thin, final boolean ignoreMissingUninteresting)
 			throws MissingObjectException, IOException,
 			IncorrectObjectTypeException {
 		final ObjectWalk walker = new ObjectWalk(db);
@@ -696,7 +704,14 @@ public class PackWriter {
 			walker.markStart(o);
 		}
 		for (ObjectId id : uninterestingObjects) {
-			RevObject o = walker.parseAny(id);
+			final RevObject o;
+			try {
+				o = walker.parseAny(id);
+			} catch (MissingObjectException x) {
+				if (ignoreMissingUninteresting)
+					continue;
+				throw x;
+			}
 			walker.markUninteresting(o);
 		}
 		return walker;
