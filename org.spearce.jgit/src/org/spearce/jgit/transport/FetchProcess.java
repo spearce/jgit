@@ -139,7 +139,7 @@ class FetchProcess {
 				if (!askFor.isEmpty() && (!includedTags || !askForIsComplete())) {
 					reopenConnection();
 					if (!askFor.isEmpty())
-						conn.doFetch(monitor, askFor.values());
+						conn.fetch(monitor, askFor.values());
 				}
 			}
 		} finally {
