@@ -37,20 +37,50 @@
 
 package org.spearce.jgit.transport;
 
-import org.spearce.jgit.lib.Repository;
+import java.util.Collection;
+
+import org.spearce.jgit.errors.TransportException;
+import org.spearce.jgit.lib.ProgressMonitor;
+import org.spearce.jgit.lib.Ref;
 
 /**
- * Canonical implementation of an object transport using Git pack transfers.
+ * Base helper class for fetch connection implementations. Provides some common
+ * typical structures and methods used during fetch connection.
  * <p>
- * Implementations of PackTransport setup connections and move objects back and
- * forth by creating pack files on the source side and indexing them on the
- * receiving side.
- * 
- * @see BasePackFetchConnection
- * @see BasePackPushConnection
+ * Implementors of fetch over pack-based protocols should consider using
+ * {@link BasePackFetchConnection} instead.
+ * </p>
  */
-abstract class PackTransport extends Transport {
-	PackTransport(final Repository local, final URIish u) {
-		super(local, u);
+abstract class BaseFetchConnection extends BaseConnection implements
+		FetchConnection {
+	public final void fetch(final ProgressMonitor monitor,
+			final Collection<Ref> want) throws TransportException {
+		markStartedOperation();
+		doFetch(monitor, want);
 	}
+
+	/**
+	 * Default implementation of {@link FetchConnection#didFetchIncludeTags()} -
+	 * returning false.
+	 */
+	public boolean didFetchIncludeTags() {
+		return false;
+	}
+
+	/**
+	 * Implementation of {@link #fetch(ProgressMonitor, Collection)} without
+	 * checking for multiple fetch.
+	 *
+	 * @param monitor
+	 *            as in {@link #fetch(ProgressMonitor, Collection)}
+	 * @param want
+	 *            as in {@link #fetch(ProgressMonitor, Collection)}
+	 * @throws TransportException
+	 *             as in {@link #fetch(ProgressMonitor, Collection)}, but
+	 *             implementation doesn't have to care about multiple
+	 *             {@link #fetch(ProgressMonitor, Collection)} calls, as it is
+	 *             checked in this class.
+	 */
+	protected abstract void doFetch(final ProgressMonitor monitor,
+			final Collection<Ref> want) throws TransportException;
 }

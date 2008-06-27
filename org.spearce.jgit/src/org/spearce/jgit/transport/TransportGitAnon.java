@@ -99,7 +99,7 @@ class TransportGitAnon extends PackTransport {
 		pckOut.flush();
 	}
 
-	class TcpFetchConnection extends PackFetchConnection {
+	class TcpFetchConnection extends BasePackFetchConnection {
 		private Socket sock;
 
 		TcpFetchConnection() throws TransportException {

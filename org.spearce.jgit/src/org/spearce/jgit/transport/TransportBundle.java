@@ -95,7 +95,7 @@ class TransportBundle extends PackTransport {
 		return new BundleFetchConnection();
 	}
 
-	class BundleFetchConnection extends FetchConnection {
+	class BundleFetchConnection extends BaseFetchConnection {
 		FileInputStream in;
 
 		RewindBufferedInputStream bin;

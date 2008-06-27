@@ -97,7 +97,7 @@ class FetchProcess {
 
 		conn = transport.openFetch();
 		try {
-			result.setAdvertisedRefs(conn.getCachedRefs());
+			result.setAdvertisedRefs(conn.getRefsMap());
 			final Set<Ref> matched = new HashSet<Ref>();
 			for (final RefSpec spec : toFetch) {
 				if (spec.isWildcard())

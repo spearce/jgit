@@ -83,7 +83,7 @@ class TransportLocal extends PackTransport {
 		return new LocalFetchConnection();
 	}
 
-	class LocalFetchConnection extends PackFetchConnection {
+	class LocalFetchConnection extends BasePackFetchConnection {
 		private Process uploadPack;
 
 		LocalFetchConnection() throws TransportException {

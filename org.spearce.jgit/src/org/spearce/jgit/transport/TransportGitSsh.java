@@ -188,7 +188,7 @@ class TransportGitSsh extends PackTransport {
 		}
 	}
 
-	class SshFetchConnection extends PackFetchConnection {
+	class SshFetchConnection extends BasePackFetchConnection {
 		private Session session;
 
 		private ChannelExec channel;
