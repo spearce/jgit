@@ -109,6 +109,9 @@ class Fetch extends TextBuiltin {
 		if (r == RefUpdate.Result.LOCK_FAILURE)
 			return "[lock fail]";
 
+		if (r == RefUpdate.Result.IO_FAILURE)
+			return "[i/o error]";
+
 		if (r == RefUpdate.Result.NEW) {
 			if (u.getRemoteName().startsWith(REFS_HEADS))
 				return "[new branch]";
@@ -142,6 +145,8 @@ class Fetch extends TextBuiltin {
 
 	private static char shortTypeOf(final RefUpdate.Result r) {
 		if (r == RefUpdate.Result.LOCK_FAILURE)
+			return '!';
+		if (r == RefUpdate.Result.IO_FAILURE)
 			return '!';
 		if (r == RefUpdate.Result.NEW)
 			return '*';

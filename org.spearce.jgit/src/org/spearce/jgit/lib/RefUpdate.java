@@ -105,7 +105,18 @@ public class RefUpdate {
 		 * update to take place, so ref still contains the old value. No
 		 * previous history was lost.
 		 */
-		REJECTED
+		REJECTED,
+
+		/**
+		 * The ref was probably not updated because of I/O error.
+		 * <p>
+		 * Unexpected I/O error occurred when writing new ref. Such error may
+		 * result in uncertain state, but most probably ref was not updated.
+		 * <p>
+		 * This kind of error doesn't include {@link #LOCK_FAILURE}, which is a
+		 * different case.
+		 */
+		IO_FAILURE
 	}
 
 	/** Repository the ref is stored in. */
@@ -256,7 +267,12 @@ public class RefUpdate {
 	 */
 	public Result forceUpdate() throws IOException {
 		requireCanDoUpdate();
-		return result = forceUpdateImpl();
+		try {
+			return result = forceUpdateImpl();
+		} catch (IOException x) {
+			result = Result.IO_FAILURE;
+			throw x;
+		}
 	}
 
 	private Result forceUpdateImpl() throws IOException {
@@ -310,7 +326,12 @@ public class RefUpdate {
 	 */
 	public Result update(final RevWalk walk) throws IOException {
 		requireCanDoUpdate();
-		return result = updateImpl(walk);
+		try {
+			return result = updateImpl(walk);
+		} catch (IOException x) {
+			result = Result.IO_FAILURE;
+			throw x;
+		}
 	}
 
 	private Result updateImpl(final RevWalk walk) throws IOException {
