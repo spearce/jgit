@@ -48,6 +48,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 
 import org.spearce.jgit.errors.TransportException;
@@ -96,7 +97,7 @@ class TransportSftp extends WalkTransport {
 	public FetchConnection openFetch() throws TransportException {
 		final SftpObjectDB c = new SftpObjectDB(uri.getPath());
 		final WalkFetchConnection r = new WalkFetchConnection(this, c);
-		c.readAdvertisedRefs(r);
+		r.available(c.readAdvertisedRefs());
 		return r;
 	}
 
@@ -245,8 +246,7 @@ class TransportSftp extends WalkTransport {
 			}
 		}
 
-		void readAdvertisedRefs(final WalkFetchConnection connection)
-				throws TransportException {
+		Map<String, Ref> readAdvertisedRefs() throws TransportException {
 			final TreeMap<String, Ref> avail = new TreeMap<String, Ref>();
 			try {
 				final BufferedReader br = openReader("../packed-refs");
@@ -262,7 +262,7 @@ class TransportSftp extends WalkTransport {
 			}
 			readRef(avail, "../HEAD", "HEAD");
 			readLooseRefs(avail, "../refs", "refs/");
-			connection.available(avail);
+			return avail;
 		}
 
 		private void readPackedRefs(final TreeMap<String, Ref> avail,

@@ -50,6 +50,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 import java.util.TreeMap;
 
 import org.spearce.jgit.errors.NotSupportedException;
@@ -102,7 +103,7 @@ class TransportHttp extends WalkTransport {
 	public FetchConnection openFetch() throws TransportException {
 		final HttpObjectDB c = new HttpObjectDB(objectsUrl);
 		final WalkFetchConnection r = new WalkFetchConnection(this, c);
-		c.readAdvertisedRefs(r);
+		r.available(c.readAdvertisedRefs());
 		return r;
 	}
 
@@ -188,12 +189,11 @@ class TransportHttp extends WalkTransport {
 			}
 		}
 
-		void readAdvertisedRefs(final WalkFetchConnection c)
-				throws TransportException {
+		Map<String, Ref> readAdvertisedRefs() throws TransportException {
 			try {
 				final BufferedReader br = openReader(INFO_REFS);
 				try {
-					readAdvertisedImpl(br, c);
+					return readAdvertisedImpl(br);
 				} finally {
 					br.close();
 				}
@@ -208,9 +208,8 @@ class TransportHttp extends WalkTransport {
 			}
 		}
 
-		private void readAdvertisedImpl(final BufferedReader br,
-				final WalkFetchConnection connection) throws IOException,
-				PackProtocolException {
+		private Map<String, Ref> readAdvertisedImpl(final BufferedReader br)
+				throws IOException, PackProtocolException {
 			final TreeMap<String, Ref> avail = new TreeMap<String, Ref>();
 			for (;;) {
 				String line = br.readLine();
@@ -244,7 +243,7 @@ class TransportHttp extends WalkTransport {
 						throw duplicateAdvertisement(name);
 				}
 			}
-			connection.available(avail);
+			return avail;
 		}
 
 		private PackProtocolException outOfOrderAdvertisement(final String n) {
