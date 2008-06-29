@@ -235,9 +235,11 @@ class TransportHttp extends WalkTransport {
 					if (prior.getPeeledObjectId() != null)
 						throw duplicateAdvertisement(name + "^{}");
 
-					avail.put(name, new Ref(name, prior.getObjectId(), id));
+					avail.put(name, new Ref(Ref.Storage.NETWORK, name, prior
+							.getObjectId(), id));
 				} else {
-					final Ref prior = avail.put(name, new Ref(name, id));
+					final Ref prior = avail.put(name, new Ref(
+							Ref.Storage.NETWORK, name, id));
 					if (prior != null)
 						throw duplicateAdvertisement(name);
 				}

@@ -45,6 +45,74 @@ package org.spearce.jgit.lib;
  * commit, annotated tag, ...).
  */
 public class Ref {
+	/** Location where a {@link Ref} is stored. */
+	public static enum Storage {
+		/**
+		 * The ref does not exist yet, updating it may create it.
+		 * <p>
+		 * Creation is likely to choose {@link #LOOSE} storage.
+		 */
+		NEW(true, false),
+
+		/**
+		 * The ref is stored in a file by itself.
+		 * <p>
+		 * Updating this ref affects only this ref.
+		 */
+		LOOSE(true, false),
+
+		/**
+		 * The ref is stored in the <code>packed-refs</code> file, with
+		 * others.
+		 * <p>
+		 * Updating this ref requires rewriting the file, with perhaps many
+		 * other refs being included at the same time.
+		 */
+		PACKED(false, true),
+
+		/**
+		 * The ref is both {@link #LOOSE} and {@link #PACKED}.
+		 * <p>
+		 * Updating this ref requires only updating the loose file, but deletion
+		 * requires updating both the loose file and the packed refs file.
+		 */
+		LOOSE_PACKED(true, true),
+
+		/**
+		 * The ref came from a network advertisement and storage is unknown.
+		 * <p>
+		 * This ref cannot be updated without Git-aware support on the remote
+		 * side, as Git-aware code consolidate the remote refs and reported them
+		 * to this process.
+		 */
+		NETWORK(false, false);
+
+		private final boolean loose;
+
+		private final boolean packed;
+
+		private Storage(final boolean l, final boolean p) {
+			loose = l;
+			packed = p;
+		}
+
+		/**
+		 * @return true if this storage has a loose file.
+		 */
+		public boolean isLoose() {
+			return loose;
+		}
+
+		/**
+		 * @return true if this storage is inside the packed file.
+		 */
+		public boolean isPacked() {
+			return packed;
+		}
+	}
+
+	private final Storage storage;
+
 	private final String name;
 
 	private ObjectId objectId;
@@ -54,13 +122,16 @@ public class Ref {
 	/**
 	 * Create a new ref pairing.
 	 * 
+	 * @param st
+	 *            method used to store this ref.
 	 * @param refName
 	 *            name of this ref.
 	 * @param id
 	 *            current value of the ref. May be null to indicate a ref that
 	 *            does not exist yet.
 	 */
-	public Ref(final String refName, final ObjectId id) {
+	public Ref(final Storage st, final String refName, final ObjectId id) {
+		storage = st;
 		name = refName;
 		objectId = id;
 	}
@@ -68,6 +139,8 @@ public class Ref {
 	/**
 	 * Create a new ref pairing.
 	 * 
+	 * @param st
+	 *            method used to store this ref.
 	 * @param refName
 	 *            name of this ref.
 	 * @param id
@@ -77,7 +150,9 @@ public class Ref {
 	 *            peeled value of the ref's tag. May be null if this is not a
 	 *            tag or the peeled value is not known.
 	 */
-	public Ref(final String refName, final ObjectId id, final ObjectId peel) {
+	public Ref(final Storage st, final String refName, final ObjectId id,
+			final ObjectId peel) {
+		storage = st;
 		name = refName;
 		objectId = id;
 		peeledObjectId = peel;
@@ -110,6 +185,18 @@ public class Ref {
 	 */
 	public ObjectId getPeeledObjectId() {
 		return peeledObjectId;
+	}
+
+	/**
+	 * How was this ref obtained?
+	 * <p>
+	 * The current storage model of a Ref may influence how the ref must be
+	 * updated or deleted from the repository.
+	 *
+	 * @return type of ref.
+	 */
+	public Storage getStorage() {
+		return storage;
 	}
 
 	public String toString() {

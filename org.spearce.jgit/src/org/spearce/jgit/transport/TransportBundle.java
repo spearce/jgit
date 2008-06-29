@@ -165,7 +165,8 @@ class TransportBundle extends PackTransport {
 
 				final String name = line.substring(41, line.length());
 				final ObjectId id = ObjectId.fromString(line.substring(0, 40));
-				final Ref prior = avail.put(name, new Ref(name, id));
+				final Ref prior = avail.put(name, new Ref(Ref.Storage.NETWORK,
+						name, id));
 				if (prior != null)
 					throw duplicateAdvertisement(name);
 			}

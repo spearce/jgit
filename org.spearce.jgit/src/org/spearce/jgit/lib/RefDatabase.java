@@ -126,12 +126,12 @@ class RefDatabase {
 	RefUpdate newUpdate(final String name) throws IOException {
 		Ref r = readRefBasic(name, 0);
 		if (r == null)
-			r = new Ref(name, null);
+			r = new Ref(Ref.Storage.NEW, name, null);
 		return new RefUpdate(this, r, fileForRef(r.getName()));
 	}
 
 	void stored(final String name, final ObjectId id, final long time) {
-		looseRefs.put(name, new CachedRef(name, id, time));
+		looseRefs.put(name, new CachedRef(Ref.Storage.LOOSE, name, id, time));
 	}
 
 	/**
@@ -256,7 +256,8 @@ class RefDatabase {
 					return;
 				}
 
-				ref = new CachedRef(refName, id, ent.lastModified());
+				ref = new CachedRef(Ref.Storage.LOOSE, refName, id, ent
+						.lastModified());
 				looseRefs.put(ref.getName(), ref);
 				avail.put(ref.getName(), ref);
 			} finally {
@@ -307,7 +308,7 @@ class RefDatabase {
 		}
 
 		if (line == null || line.length() == 0)
-			return new Ref(name, null);
+			return new Ref(Ref.Storage.LOOSE, name, null);
 
 		if (line.startsWith("ref: ")) {
 			if (depth >= 5) {
@@ -317,7 +318,7 @@ class RefDatabase {
 
 			final String target = line.substring("ref: ".length());
 			final Ref r = readRefBasic(target, depth + 1);
-			return r != null ? r : new Ref(target, null);
+			return r != null ? r : new Ref(Ref.Storage.LOOSE, target, null);
 		}
 
 		final ObjectId id;
@@ -327,7 +328,7 @@ class RefDatabase {
 			throw new IOException("Not a ref: " + name + ": " + line);
 		}
 
-		ref = new CachedRef(name, id, mtime);
+		ref = new CachedRef(Ref.Storage.LOOSE, name, id, mtime);
 		looseRefs.put(name, ref);
 		return ref;
 	}
@@ -359,7 +360,8 @@ class RefDatabase {
 							throw new IOException("Peeled line before ref.");
 
 						final ObjectId id = ObjectId.fromString(p.substring(1));
-						last = new Ref(last.getName(), last.getObjectId(), id);
+						last = new Ref(Ref.Storage.PACKED, last.getName(), last
+								.getObjectId(), id);
 						newPackedRefs.put(last.getName(), last);
 						continue;
 					}
@@ -367,7 +369,7 @@ class RefDatabase {
 					final int sp = p.indexOf(' ');
 					final ObjectId id = ObjectId.fromString(p.substring(0, sp));
 					final String name = new String(p.substring(sp + 1));
-					last = new Ref(name, id);
+					last = new Ref(Ref.Storage.PACKED, name, id);
 					newPackedRefs.put(last.getName(), last);
 				}
 			} finally {
@@ -406,8 +408,9 @@ class RefDatabase {
 	private static class CachedRef extends Ref {
 		final long lastModified;
 
-		CachedRef(final String refName, final ObjectId id, final long mtime) {
-			super(refName, id);
+		CachedRef(final Storage st, final String refName, final ObjectId id,
+				final long mtime) {
+			super(st, refName, id);
 			lastModified = mtime;
 		}
 	}

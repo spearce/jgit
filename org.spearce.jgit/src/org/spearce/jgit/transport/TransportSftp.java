@@ -54,6 +54,7 @@ import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.Ref.Storage;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
@@ -277,7 +278,8 @@ class TransportSftp extends WalkTransport {
 					if (last == null)
 						throw new TransportException("Peeled line before ref.");
 					final ObjectId id = ObjectId.fromString(line + 1);
-					last = new Ref(last.getName(), last.getObjectId(), id);
+					last = new Ref(Ref.Storage.PACKED, last.getName(), last
+							.getObjectId(), id);
 					avail.put(last.getName(), last);
 					continue;
 				}
@@ -287,7 +289,7 @@ class TransportSftp extends WalkTransport {
 					throw new TransportException("Unrecognized ref: " + line);
 				final ObjectId id = ObjectId.fromString(line.substring(0, sp));
 				final String name = line.substring(sp + 1);
-				last = new Ref(name, id);
+				last = new Ref(Ref.Storage.PACKED, name, id);
 				avail.put(last.getName(), last);
 			}
 		}
@@ -342,19 +344,27 @@ class TransportSftp extends WalkTransport {
 				if (r == null)
 					r = avail.get(p);
 				if (r != null) {
-					r = new Ref(name, r.getObjectId(), r.getPeeledObjectId());
+					r = new Ref(loose(r), name, r.getObjectId(), r
+							.getPeeledObjectId());
 					avail.put(name, r);
 				}
 				return r;
 			}
 
 			if (ObjectId.isId(line)) {
-				final Ref r = new Ref(name, ObjectId.fromString(line));
+				final Ref r = new Ref(loose(avail.get(name)), name, ObjectId
+						.fromString(line));
 				avail.put(r.getName(), r);
 				return r;
 			}
 
 			throw new TransportException("Bad ref: " + name + ": " + line);
+		}
+
+		private Storage loose(final Ref r) {
+			if (r != null && r.getStorage() == Storage.PACKED)
+				return Storage.LOOSE_PACKED;
+			return Storage.LOOSE;
 		}
 
 		@Override
