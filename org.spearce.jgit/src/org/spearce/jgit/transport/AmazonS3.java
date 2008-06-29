@@ -37,6 +37,7 @@
 
 package org.spearce.jgit.transport;
 
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -53,6 +54,7 @@ import java.security.DigestOutputStream;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -93,6 +95,11 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * <p>
  * Authentication is always performed using the user's AWSAccessKeyId and their
  * private AWSSecretAccessKey.
+ * <p>
+ * Optional client-side encryption may be enabled if requested. The format is
+ * compatible with <a href="http://jets3t.s3.amazonaws.com/index.html">jets3t</a>,
+ * a popular Java based Amazon S3 client library. Enabling encryption can hide
+ * sensitive data from the operators of the S3 service.
  */
 public class AmazonS3 {
 	private static final Set<String> SIGNED_HEADERS;
@@ -102,6 +109,8 @@ public class AmazonS3 {
 	private static final String DOMAIN = "s3.amazonaws.com";
 
 	private static final String X_AMZ_ACL = "x-amz-acl";
+
+	private static final String X_AMZ_META = "x-amz-meta-";
 
 	static {
 		SIGNED_HEADERS = new HashSet<String>();
@@ -161,6 +170,9 @@ public class AmazonS3 {
 	/** Maximum number of times to try an operation. */
 	private final int maxAttempts;
 
+	/** Encryption algorithm, may be a null instance that provides pass-through. */
+	private final WalkEncryption encryption;
+
 	/**
 	 * Create a new S3 client for the supplied user information.
 	 * <p>
@@ -179,6 +191,10 @@ public class AmazonS3 {
 	 *
 	 * # Number of times to retry after internal error from S3.
 	 * httpclient.retry-max: 3
+	 *
+	 * # End-to-end encryption (hides content from S3 owners)
+	 * password: &lt;encryption pass-phrase&gt;
+	 * crypto.algorithm: PBEWithMD5AndDES
 	 * </pre>
 	 *
 	 * @param props
@@ -207,6 +223,22 @@ public class AmazonS3 {
 		else
 			throw new IllegalArgumentException("Invalid acl: " + pacl);
 
+		try {
+			final String cPas = props.getProperty("password");
+			if (cPas != null) {
+				String cAlg = props.getProperty("crypto.algorithm");
+				if (cAlg == null)
+					cAlg = "PBEWithMD5AndDES";
+				encryption = new WalkEncryption.ObjectEncryptionV2(cAlg, cPas);
+			} else {
+				encryption = WalkEncryption.NONE;
+			}
+		} catch (InvalidKeySpecException e) {
+			throw new IllegalArgumentException("Invalid encryption", e);
+		} catch (NoSuchAlgorithmException e) {
+			throw new IllegalArgumentException("Invalid encryption", e);
+		}
+
 		maxAttempts = Integer.parseInt(props.getProperty(
 				"httpclient.retry-max", "3"));
 		proxySelector = ProxySelector.getDefault();
@@ -232,6 +264,7 @@ public class AmazonS3 {
 			authorize(c);
 			switch (HttpSupport.response(c)) {
 			case HttpURLConnection.HTTP_OK:
+				encryption.validate(c, X_AMZ_META);
 				return c;
 			case HttpURLConnection.HTTP_NOT_FOUND:
 				throw new FileNotFoundException(key);
@@ -242,6 +275,19 @@ public class AmazonS3 {
 			}
 		}
 		throw maxAttempts("Reading", key);
+	}
+
+	/**
+	 * Decrypt an input stream from {@link #get(String, String)}.
+	 *
+	 * @param u
+	 *            connection previously created by {@link #get(String, String)}}.
+	 * @return stream to read plain text from.
+	 * @throws IOException
+	 *             decryption could not be configured.
+	 */
+	public InputStream decrypt(final URLConnection u) throws IOException {
+		return encryption.decrypt(u.getInputStream());
 	}
 
 	/**
@@ -326,6 +372,16 @@ public class AmazonS3 {
 	 */
 	public void put(final String bucket, final String key, final byte[] data)
 			throws IOException {
+		if (encryption != WalkEncryption.NONE) {
+			// We have to copy to produce the cipher text anyway so use
+			// the large object code path as it supports that behavior.
+			//
+			final OutputStream os = beginPut(bucket, key);
+			os.write(data);
+			os.close();
+			return;
+		}
+
 		final String md5str = Base64.encodeBytes(newMD5().digest(data));
 		final String lenstr = String.valueOf(data.length);
 		for (int curAttempt = 0; curAttempt < maxAttempts; curAttempt++) {
@@ -375,8 +431,11 @@ public class AmazonS3 {
 	 * @param key
 	 *            key of the object within its bucket.
 	 * @return a stream which accepts the new data, and transmits once closed.
+	 * @throws IOException
+	 *             if encryption was enabled it could not be configured.
 	 */
-	public OutputStream beginPut(final String bucket, final String key) {
+	public OutputStream beginPut(final String bucket, final String key)
+			throws IOException {
 		final MessageDigest md5 = newMD5();
 		final TemporaryBuffer buffer = new TemporaryBuffer() {
 			@Override
@@ -389,7 +448,7 @@ public class AmazonS3 {
 				}
 			}
 		};
-		return new DigestOutputStream(buffer, md5);
+		return encryption.encrypt(new DigestOutputStream(buffer, md5));
 	}
 
 	private void putImpl(final String bucket, final String key,
@@ -402,6 +461,7 @@ public class AmazonS3 {
 			c.setRequestProperty("Content-Length", lenstr);
 			c.setRequestProperty("Content-MD5", md5str);
 			c.setRequestProperty(X_AMZ_ACL, acl);
+			encryption.request(c, X_AMZ_META);
 			authorize(c);
 			c.setDoOutput(true);
 			c.setFixedLengthStreamingMode((int) len);
@@ -426,8 +486,22 @@ public class AmazonS3 {
 
 	private IOException error(final String action, final String key,
 			final HttpURLConnection c) throws IOException {
-		return new IOException(action + " of '" + key + "' failed: "
-				+ HttpSupport.response(c) + " " + c.getResponseMessage());
+		final IOException err = new IOException(action + " of '" + key
+				+ "' failed: " + HttpSupport.response(c) + " "
+				+ c.getResponseMessage());
+		final ByteArrayOutputStream b = new ByteArrayOutputStream();
+		byte[] buf = new byte[2048];
+		for (;;) {
+			final int n = c.getErrorStream().read(buf);
+			if (n < 0)
+				break;
+			if (n > 0)
+				b.write(buf, 0, n);
+		}
+		buf = b.toByteArray();
+		if (buf.length > 0)
+			err.initCause(new IOException("\n" + new String(buf)));
+		return err;
 	}
 
 	private IOException maxAttempts(final String action, final String key) {
