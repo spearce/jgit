@@ -140,6 +140,9 @@ public abstract class Transport {
 		else if (TransportGitAnon.canHandle(remote))
 			return new TransportGitAnon(local, remote);
 
+		else if (TransportAmazonS3.canHandle(remote))
+			return new TransportAmazonS3(local, remote);
+
 		else if (TransportBundle.canHandle(remote))
 			return new TransportBundle(local, remote);
 
