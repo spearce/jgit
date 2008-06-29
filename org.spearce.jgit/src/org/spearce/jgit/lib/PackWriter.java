@@ -56,6 +56,7 @@ import org.spearce.jgit.revwalk.ObjectWalk;
 import org.spearce.jgit.revwalk.RevFlag;
 import org.spearce.jgit.revwalk.RevObject;
 import org.spearce.jgit.revwalk.RevSort;
+import org.spearce.jgit.transport.PackedObjectInfo;
 import org.spearce.jgit.util.CountingOutputStream;
 import org.spearce.jgit.util.NB;
 
@@ -617,7 +618,7 @@ public class PackWriter {
 
 		assert !otp.isWritten();
 
-		otp.markWritten(countingOut.getCount());
+		otp.setOffset(countingOut.getCount());
 		if (otp.isDeltaRepresentation())
 			writeDeltaObject(otp);
 		else
@@ -762,12 +763,10 @@ public class PackWriter {
 	 * pack-file and object status.
 	 *
 	 */
-	static class ObjectToPack extends ObjectId {
+	static class ObjectToPack extends PackedObjectInfo {
 		private ObjectId deltaBase;
 
 		private PackedObjectLoader reuseLoader;
-
-		private long offset = -1;
 
 		private int deltaDepth;
 
@@ -838,26 +837,7 @@ public class PackWriter {
 		 * @return true if object is already written; false otherwise.
 		 */
 		boolean isWritten() {
-			return offset != -1;
-		}
-
-		/**
-		 * @return offset in pack when object has been already written, or -1 if
-		 *         it has not been written yet
-		 */
-		long getOffset() {
-			return offset;
-		}
-
-		/**
-		 * Mark object as written. This information is used to achieve
-		 * delta-base precedence in a pack file.
-		 *
-		 * @param offset
-		 *            offset where written object starts
-		 */
-		void markWritten(long offset) {
-			this.offset = offset;
+			return getOffset() != 0;
 		}
 
 		PackedObjectLoader getReuseLoader() {
