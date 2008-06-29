@@ -58,7 +58,7 @@ public class TransportException extends IOException {
 	 *            message
 	 */
 	public TransportException(final URIish uri, final String s) {
-		super(uri + ": " + s);
+		super(uri.setPass(null) + ": " + s);
 	}
 
 	/**
@@ -74,7 +74,7 @@ public class TransportException extends IOException {
 	 */
 	public TransportException(final URIish uri, final String s,
 			final Throwable cause) {
-		this(uri + ": " + s, cause);
+		this(uri.setPass(null) + ": " + s, cause);
 	}
 
 	/**
