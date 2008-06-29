@@ -86,7 +86,7 @@ public abstract class PackIndexWriter {
 	 */
 	@SuppressWarnings("fallthrough")
 	public static PackIndexWriter createOldestPossible(final OutputStream dst,
-			final List<PackedObjectInfo> objs) {
+			final List<? extends PackedObjectInfo> objs) {
 		int version = 1;
 		LOOP: for (final PackedObjectInfo oe : objs) {
 			switch (version) {
@@ -137,7 +137,7 @@ public abstract class PackIndexWriter {
 	protected final byte[] tmp;
 
 	/** The entries this writer must pack. */
-	protected List<PackedObjectInfo> entries;
+	protected List<? extends PackedObjectInfo> entries;
 
 	/** SHA-1 checksum for the entire pack data. */
 	protected byte[] packChecksum;
@@ -172,7 +172,7 @@ public abstract class PackIndexWriter {
 	 *             an error occurred while writing to the output stream, or this
 	 *             index format cannot store the object data supplied.
 	 */
-	public void write(final List<PackedObjectInfo> toStore,
+	public void write(final List<? extends PackedObjectInfo> toStore,
 			final byte[] packDataChecksum) throws IOException {
 		entries = toStore;
 		packChecksum = packDataChecksum;
