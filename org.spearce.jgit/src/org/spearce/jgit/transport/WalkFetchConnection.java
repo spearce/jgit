@@ -201,6 +201,8 @@ class WalkFetchConnection extends BaseFetchConnection {
 
 	@Override
 	public void close() {
+		for (final RemotePack p : unfetchedPacks)
+			p.tmpIdx.delete();
 		for (final WalkRemoteObjectDatabase r : remotes)
 			r.close();
 	}
