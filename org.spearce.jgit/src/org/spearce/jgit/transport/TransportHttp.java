@@ -41,13 +41,11 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.ConnectException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.ProxySelector;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -59,6 +57,7 @@ import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.util.HttpSupport;
 
 /**
  * Transport over the non-Git aware HTTP and FTP protocol.
@@ -105,10 +104,6 @@ class TransportHttp extends WalkTransport {
 		final WalkFetchConnection r = new WalkFetchConnection(this, c);
 		r.available(c.readAdvertisedRefs());
 		return r;
-	}
-
-	Proxy proxyFor(final URL u) throws URISyntaxException {
-		return proxySelector.select(u.toURI()).get(0);
 	}
 
 	class HttpObjectDB extends WalkRemoteObjectDatabase {
@@ -172,23 +167,22 @@ class TransportHttp extends WalkTransport {
 		@Override
 		FileStream open(final String path) throws IOException {
 			final URL base = objectsUrl;
-			try {
-				final URL u = new URL(base, path);
-				final URLConnection c = u.openConnection(proxyFor(u));
+			final URL u = new URL(base, path);
+			final Proxy proxy = HttpSupport.proxyFor(proxySelector, u);
+			final HttpURLConnection c;
+
+			c = (HttpURLConnection) u.openConnection(proxy);
+			switch (HttpSupport.response(c)) {
+			case HttpURLConnection.HTTP_OK:
 				final InputStream in = c.getInputStream();
 				final int len = c.getContentLength();
 				return new FileStream(in, len);
-			} catch (ConnectException ce) {
-				// The standard J2SE error message is not very useful.
-				//
-				if ("Connection timed out: connect".equals(ce.getMessage()))
-					throw new ConnectException("Connection timed out: " + base);
-				throw new ConnectException(ce.getMessage() + " " + base);
-			} catch (URISyntaxException e) {
-				final ConnectException err;
-				err = new ConnectException("Cannot determine proxy for " + base);
-				err.initCause(e);
-				throw err;
+			case HttpURLConnection.HTTP_NOT_FOUND:
+				throw new FileNotFoundException(u.toString());
+			default:
+				throw new IOException(u.toString() + ": "
+						+ HttpSupport.response(c) + " "
+						+ c.getResponseMessage());
 			}
 		}
 
