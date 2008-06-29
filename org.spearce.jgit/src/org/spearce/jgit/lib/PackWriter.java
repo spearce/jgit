@@ -192,6 +192,8 @@ public class PackWriter {
 
 	private int maxDeltaDepth = DEFAULT_MAX_DELTA_DEPTH;
 
+	private int outputVersion;
+
 	private boolean thin;
 
 	/**
@@ -348,6 +350,18 @@ public class PackWriter {
 	}
 
 	/**
+	 * Set the pack index file format version this instance will create.
+	 *
+	 * @param version
+	 *            the version to write. The special version 0 designates the
+	 *            oldest (most compatible) format available for the objects.
+	 * @see PackIndexWriter
+	 */
+	public void setIndexVersion(final int version) {
+		outputVersion = version;
+	}
+
+	/**
 	 * Returns objects number in a pack file that was created by this writer.
 	 *
 	 * @return number of objects in pack.
@@ -480,6 +494,30 @@ public class PackWriter {
 			md.update(buf, 0, Constants.OBJECT_ID_LENGTH);
 		}
 		return ObjectId.fromRaw(md.digest());
+	}
+
+	/**
+	 * Create an index file to match the pack file just written.
+	 * <p>
+	 * This method can only be invoked after {@link #writePack(Iterator)} or
+	 * {@link #writePack(Collection, Collection, boolean, boolean)} has been
+	 * invoked and completed successfully. Writing a corresponding index is an
+	 * optional feature that not all pack users may require.
+	 *
+	 * @param indexStream
+	 *            output for the index data. Caller is responsible for closing
+	 *            this stream.
+	 * @throws IOException
+	 *             the index data could not be written to the supplied stream.
+	 */
+	public void writeIndex(final OutputStream indexStream) throws IOException {
+		final List<ObjectToPack> list = sortByName();
+		final PackIndexWriter iw;
+		if (outputVersion <= 0)
+			iw = PackIndexWriter.createOldestPossible(indexStream, list);
+		else
+			iw = PackIndexWriter.createVersion(indexStream, outputVersion);
+		iw.write(list, packcsum);
 	}
 
 	private List<ObjectToPack> sortByName() {
