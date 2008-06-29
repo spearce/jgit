@@ -40,6 +40,7 @@ package org.spearce.jgit.transport;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -78,6 +79,9 @@ import com.jcraft.jsch.SftpException;
  * listing files through SFTP we can avoid needing to have current
  * <code>objects/info/packs</code> or <code>info/refs</code> files on the
  * remote repository and access the data directly, much as Git itself would.
+ * <p>
+ * Concurrent pushing over this transport is not supported. Multiple concurrent
+ * push operations may cause confusion in the repository state.
  * 
  * @see WalkFetchConnection
  */
@@ -97,6 +101,14 @@ class TransportSftp extends WalkTransport {
 	public FetchConnection openFetch() throws TransportException {
 		final SftpObjectDB c = new SftpObjectDB(uri.getPath());
 		final WalkFetchConnection r = new WalkFetchConnection(this, c);
+		r.available(c.readAdvertisedRefs());
+		return r;
+	}
+
+	@Override
+	public PushConnection openPush() throws TransportException {
+		final SftpObjectDB c = new SftpObjectDB(uri.getPath());
+		final WalkPushConnection r = new WalkPushConnection(this, c);
 		r.available(c.readAdvertisedRefs());
 		return r;
 	}
@@ -246,10 +258,105 @@ class TransportSftp extends WalkTransport {
 			}
 		}
 
+		@Override
+		void deleteFile(final String path) throws IOException {
+			try {
+				ftp.rm(path);
+			} catch (SftpException je) {
+				if (je.id == ChannelSftp.SSH_FX_NO_SUCH_FILE)
+					return;
+				throw new TransportException("Can't delete " + objectsPath
+						+ "/" + path + ": " + je.getMessage(), je);
+			}
+
+			// Prune any now empty directories.
+			//
+			String dir = path;
+			int s = dir.lastIndexOf('/');
+			while (s > 0) {
+				try {
+					dir = dir.substring(0, s);
+					ftp.rmdir(dir);
+					s = dir.lastIndexOf('/');
+				} catch (SftpException je) {
+					// If we cannot delete it, leave it alone. It may have
+					// entries still in it, or maybe we lack write access on
+					// the parent. Either way it isn't a fatal error.
+					//
+					break;
+				}
+			}
+		}
+
+		@Override
+		OutputStream writeFile(final String path) throws IOException {
+			try {
+				return ftp.put(path);
+			} catch (SftpException je) {
+				if (je.id == ChannelSftp.SSH_FX_NO_SUCH_FILE) {
+					mkdir_p(path);
+					try {
+						return ftp.put(path);
+					} catch (SftpException je2) {
+						je = je2;
+					}
+				}
+
+				throw new TransportException("Can't write " + objectsPath + "/"
+						+ path + ": " + je.getMessage(), je);
+			}
+		}
+
+		@Override
+		void writeFile(final String path, final byte[] data) throws IOException {
+			final String lock = path + ".lock";
+			try {
+				super.writeFile(lock, data);
+				try {
+					ftp.rename(lock, path);
+				} catch (SftpException je) {
+					throw new TransportException("Can't write " + objectsPath
+							+ "/" + path + ": " + je.getMessage(), je);
+				}
+			} catch (IOException err) {
+				try {
+					ftp.rm(lock);
+				} catch (SftpException e) {
+					// Ignore deletion failure, we are already
+					// failing anyway.
+				}
+				throw err;
+			}
+		}
+
+		private void mkdir_p(String path) throws IOException {
+			final int s = path.lastIndexOf('/');
+			if (s <= 0)
+				return;
+
+			path = path.substring(0, s);
+			try {
+				ftp.mkdir(path);
+			} catch (SftpException je) {
+				if (je.id == ChannelSftp.SSH_FX_NO_SUCH_FILE) {
+					mkdir_p(path);
+					try {
+						ftp.mkdir(path);
+						return;
+					} catch (SftpException je2) {
+						je = je2;
+					}
+				}
+
+				throw new TransportException("Can't mkdir " + objectsPath + "/"
+						+ path + ": " + je.getMessage(), je);
+			}
+		}
+
 		Map<String, Ref> readAdvertisedRefs() throws TransportException {
 			final TreeMap<String, Ref> avail = new TreeMap<String, Ref>();
 			try {
-				final BufferedReader br = openReader("../packed-refs");
+				final BufferedReader br = openReader(PACKED_REFS);
 				try {
 					readPackedRefs(avail, br);
 				} finally {

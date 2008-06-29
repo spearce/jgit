@@ -112,8 +112,6 @@ class TransportHttp extends WalkTransport {
 	}
 
 	class HttpObjectDB extends WalkRemoteObjectDatabase {
-		private static final String INFO_REFS = "../info/refs";
-
 		private final URL objectsUrl;
 
 		HttpObjectDB(final URL b) {

@@ -43,10 +43,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.util.NB;
 
 /**
@@ -67,6 +71,10 @@ abstract class WalkRemoteObjectDatabase {
 	static final String INFO_ALTERNATES = "info/alternates";
 
 	static final String INFO_HTTP_ALTERNATES = "info/http-alternates";
+
+	static final String INFO_REFS = "../info/refs";
+
+	static final String PACKED_REFS = "../packed-refs";
 
 	/**
 	 * Obtain the list of available packs (if any).
@@ -161,6 +169,241 @@ abstract class WalkRemoteObjectDatabase {
 	 * any open file handles used to read the "remote" repository.
 	 */
 	abstract void close();
+
+	/**
+	 * Delete a file from the object database.
+	 * <p>
+	 * Path may start with <code>../</code> to request deletion of a file that
+	 * resides in the repository itself.
+	 * <p>
+	 * When possible empty directories must be removed, up to but not including
+	 * the current object database directory itself.
+	 * <p>
+	 * This method does not support deletion of directories.
+	 *
+	 * @param path
+	 *            name of the item to be removed, relative to the current object
+	 *            database.
+	 * @throws IOException
+	 *             deletion is not supported, or deletion failed.
+	 */
+	void deleteFile(final String path) throws IOException {
+		throw new IOException("Deleting '" + path + "' not supported.");
+	}
+
+	/**
+	 * Open a remote file for writing.
+	 * <p>
+	 * Path may start with <code>../</code> to request writing of a file that
+	 * resides in the repository itself.
+	 * <p>
+	 * The requested path may or may not exist. If the path already exists as a
+	 * file the file should be truncated and completely replaced.
+	 * <p>
+	 * This method creates any missing parent directories, if necessary.
+	 *
+	 * @param path
+	 *            name of the file to write, relative to the current object
+	 *            database.
+	 * @return stream to write into this file. Caller must close the stream to
+	 *         complete the write request. The stream is not buffered and each
+	 *         write may cause a network request/response so callers should
+	 *         buffer to smooth out small writes.
+	 * @throws IOException
+	 *             writing is not supported, or attempting to write the file
+	 *             failed, possibly due to permissions or remote disk full, etc.
+	 */
+	OutputStream writeFile(final String path) throws IOException {
+		throw new IOException("Writing of '" + path + "' not supported.");
+	}
+
+	/**
+	 * Atomically write a remote file.
+	 * <p>
+	 * This method attempts to perform as atomic of an update as it can,
+	 * reducing (or eliminating) the time that clients might be able to see
+	 * partial file content. This method is not suitable for very large
+	 * transfers as the complete content must be passed as an argument.
+	 * <p>
+	 * Path may start with <code>../</code> to request writing of a file that
+	 * resides in the repository itself.
+	 * <p>
+	 * The requested path may or may not exist. If the path already exists as a
+	 * file the file should be truncated and completely replaced.
+	 * <p>
+	 * This method creates any missing parent directories, if necessary.
+	 *
+	 * @param path
+	 *            name of the file to write, relative to the current object
+	 *            database.
+	 * @param data
+	 *            complete new content of the file.
+	 * @throws IOException
+	 *             writing is not supported, or attempting to write the file
+	 *             failed, possibly due to permissions or remote disk full, etc.
+	 */
+	void writeFile(final String path, final byte[] data) throws IOException {
+		final OutputStream os = writeFile(path);
+		try {
+			os.write(data);
+		} finally {
+			os.close();
+		}
+	}
+
+	/**
+	 * Delete a loose ref from the remote repository.
+	 *
+	 * @param name
+	 *            name of the ref within the ref space, for example
+	 *            <code>refs/heads/pu</code>.
+	 * @throws IOException
+	 *             deletion is not supported, or deletion failed.
+	 */
+	void deleteRef(final String name) throws IOException {
+		deleteFile("../" + name);
+	}
+
+	/**
+	 * Overwrite (or create) a loose ref in the remote repository.
+	 * <p>
+	 * This method creates any missing parent directories, if necessary.
+	 *
+	 * @param name
+	 *            name of the ref within the ref space, for example
+	 *            <code>refs/heads/pu</code>.
+	 * @param value
+	 *            new value to store in this ref. Must not be null.
+	 * @throws IOException
+	 *             writing is not supported, or attempting to write the file
+	 *             failed, possibly due to permissions or remote disk full, etc.
+	 */
+	void writeRef(final String name, final ObjectId value) throws IOException {
+		final ByteArrayOutputStream b;
+
+		b = new ByteArrayOutputStream(Constants.OBJECT_ID_LENGTH * 2 + 1);
+		value.copyTo(b);
+		b.write('\n');
+
+		writeFile("../" + name, b.toByteArray());
+	}
+
+	/**
+	 * Rebuild the {@link #INFO_PACKS} for dumb transport clients.
+	 * <p>
+	 * This method rebuilds the contents of the {@link #INFO_PACKS} file to
+	 * match the passed list of pack names.
+	 *
+	 * @param packNames
+	 *            names of available pack files, in the order they should appear
+	 *            in the file. Valid pack name strings are of the form
+	 *            <code>pack-035760ab452d6eebd123add421f253ce7682355a.pack</code>.
+	 * @throws IOException
+	 *             writing is not supported, or attempting to write the file
+	 *             failed, possibly due to permissions or remote disk full, etc.
+	 */
+	void writeInfoPacks(final Collection<String> packNames) throws IOException {
+		final StringBuilder w = new StringBuilder();
+		for (final String n : packNames) {
+			w.append("P ");
+			w.append(n);
+			w.append('\n');
+		}
+		writeFile(INFO_PACKS, Constants.encodeASCII(w.toString()));
+	}
+
+	/**
+	 * Rebuild the {@link #INFO_REFS} for dumb transport clients.
+	 * <p>
+	 * This method rebuilds the contents of the {@link #INFO_REFS} file to match
+	 * the passed list of references.
+	 *
+	 * @param refs
+	 *            the complete set of references the remote side now has. This
+	 *            should have been computed by applying updates to the
+	 *            advertised refs already discovered.
+	 * @throws IOException
+	 *             writing is not supported, or attempting to write the file
+	 *             failed, possibly due to permissions or remote disk full, etc.
+	 */
+	void writeInfoRefs(final Collection<Ref> refs) throws IOException {
+		final StringWriter w = new StringWriter();
+		final char[] tmp = new char[Constants.OBJECT_ID_LENGTH * 2];
+		for (final Ref r : refs) {
+			if (Constants.HEAD.equals(r.getName())) {
+				// Historically HEAD has never been published through
+				// the INFO_REFS file. This is a mistake, but its the
+				// way things are.
+				//
+				continue;
+			}
+
+			r.getObjectId().copyTo(tmp, w);
+			w.write('\t');
+			w.write(r.getName());
+			w.write('\n');
+
+			if (r.getPeeledObjectId() != null) {
+				r.getPeeledObjectId().copyTo(tmp, w);
+				w.write('\t');
+				w.write(r.getName());
+				w.write("^{}\n");
+			}
+		}
+		writeFile(INFO_REFS, Constants.encodeASCII(w.toString()));
+	}
+
+	/**
+	 * Rebuild the {@link #PACKED_REFS} file.
+	 * <p>
+	 * This method rebuilds the contents of the {@link #PACKED_REFS} file to
+	 * match the passed list of references, including only those refs that have
+	 * a storage type of {@link Ref.Storage#PACKED}.
+	 *
+	 * @param refs
+	 *            the complete set of references the remote side now has. This
+	 *            should have been computed by applying updates to the
+	 *            advertised refs already discovered.
+	 * @throws IOException
+	 *             writing is not supported, or attempting to write the file
+	 *             failed, possibly due to permissions or remote disk full, etc.
+	 */
+	void writePackedRefs(final Collection<Ref> refs) throws IOException {
+		boolean peeled = false;
+
+		for (final Ref r : refs) {
+			if (r.getStorage() != Ref.Storage.PACKED)
+				continue;
+			if (r.getPeeledObjectId() != null)
+				peeled = true;
+		}
+
+		final StringWriter w = new StringWriter();
+		if (peeled) {
+			w.write("# pack-refs with:");
+			if (peeled)
+				w.write(" peeled");
+			w.write('\n');
+		}
+
+		final char[] tmp = new char[Constants.OBJECT_ID_LENGTH * 2];
+		for (final Ref r : refs) {
+			if (r.getStorage() != Ref.Storage.PACKED)
+				continue;
+
+			r.getObjectId().copyTo(tmp, w);
+			w.write(' ');
+			w.write(r.getName());
+			w.write('\n');
+
+			if (r.getPeeledObjectId() != null) {
+				w.write('^');
+				r.getPeeledObjectId().copyTo(tmp, w);
+				w.write('\n');
+			}
+		}
+		writeFile(PACKED_REFS, Constants.encodeASCII(w.toString()));
+	}
 
 	/**
 	 * Open a buffered reader around a file.
