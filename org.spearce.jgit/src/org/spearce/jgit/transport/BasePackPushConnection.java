@@ -161,7 +161,7 @@ class BasePackPushConnection extends BasePackConnection implements
 
 	private void writePack(final Map<String, RemoteRefUpdate> refUpdates,
 			final ProgressMonitor monitor) throws IOException {
-		final PackWriter writer = new PackWriter(local, out, monitor);
+		final PackWriter writer = new PackWriter(local, monitor);
 		final ArrayList<ObjectId> remoteObjects = new ArrayList<ObjectId>(
 				getRefs().size());
 		final ArrayList<ObjectId> newObjects = new ArrayList<ObjectId>(
@@ -172,7 +172,8 @@ class BasePackPushConnection extends BasePackConnection implements
 		for (final RemoteRefUpdate r : refUpdates.values())
 			newObjects.add(r.getNewObjectId());
 
-		writer.writePack(newObjects, remoteObjects, thinPack, true);
+		writer.preparePack(newObjects, remoteObjects, thinPack, true);
+		writer.writePack(out);
 	}
 
 	private void readStatusReport(final Map<String, RemoteRefUpdate> refUpdates)

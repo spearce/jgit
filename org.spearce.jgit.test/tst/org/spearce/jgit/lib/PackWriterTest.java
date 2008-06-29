@@ -87,7 +87,7 @@ public class PackWriterTest extends RepositoryTestCase {
 		packBase = new File(trash, "tmp_pack");
 		packFile = new File(trash, "tmp_pack.pack");
 		indexFile = new File(trash, "tmp_pack.idx");
-		writer = new PackWriter(db, cos, new TextProgressMonitor());
+		writer = new PackWriter(db, new TextProgressMonitor());
 	}
 
 	/**
@@ -438,14 +438,16 @@ public class PackWriterTest extends RepositoryTestCase {
 			final Collection<ObjectId> uninterestings, final boolean thin,
 			final boolean ignoreMissingUninteresting)
 			throws MissingObjectException, IOException {
-		writer.writePack(interestings, uninterestings, thin,
+		writer.preparePack(interestings, uninterestings, thin,
 				ignoreMissingUninteresting);
+		writer.writePack(cos);
 		verifyOpenPack(thin);
 	}
 
 	private void createVerifyOpenPack(final Iterator<RevObject> objectSource)
 			throws MissingObjectException, IOException {
-		writer.writePack(objectSource);
+		writer.preparePack(objectSource);
+		writer.writePack(cos);
 		verifyOpenPack(false);
 	}
 
