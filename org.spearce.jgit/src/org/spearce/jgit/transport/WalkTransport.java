@@ -59,7 +59,7 @@ abstract class WalkTransport extends Transport {
 
 	@Override
 	public PushConnection openPush() throws NotSupportedException {
-		throw new NotSupportedException(
-				"Push is not supported by object walking transports");
+		final String s = getURI().getScheme();
+		throw new NotSupportedException("Push not supported over " + s + ".");
 	}
 }
