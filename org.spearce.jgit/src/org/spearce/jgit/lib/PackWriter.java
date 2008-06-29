@@ -182,6 +182,8 @@ public class PackWriter {
 
 	private List<ObjectToPack> sortedByName;
 
+	private byte packcsum[];
+
 	private boolean reuseDeltas = DEFAULT_REUSE_DELTAS;
 
 	private boolean reuseObjects = DEFAULT_REUSE_OBJECTS;
@@ -690,8 +692,8 @@ public class PackWriter {
 
 	private void writeChecksum() throws IOException {
 		out.on(false);
-		final byte checksum[] = out.getMessageDigest().digest();
-		out.write(checksum);
+		packcsum = out.getMessageDigest().digest();
+		out.write(packcsum);
 	}
 
 	private ObjectWalk setUpWalker(
