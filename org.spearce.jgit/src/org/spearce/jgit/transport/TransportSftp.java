@@ -193,6 +193,11 @@ class TransportSftp extends WalkTransport {
 		}
 
 		@Override
+		URIish getURI() {
+			return uri.setPath(objectsPath);
+		}
+
+		@Override
 		Collection<WalkRemoteObjectDatabase> getAlternates() throws IOException {
 			try {
 				return readAlternates(INFO_ALTERNATES);
@@ -355,50 +360,10 @@ class TransportSftp extends WalkTransport {
 
 		Map<String, Ref> readAdvertisedRefs() throws TransportException {
 			final TreeMap<String, Ref> avail = new TreeMap<String, Ref>();
-			try {
-				final BufferedReader br = openReader(PACKED_REFS);
-				try {
-					readPackedRefs(avail, br);
-				} finally {
-					br.close();
-				}
-			} catch (FileNotFoundException notPacked) {
-				// Perhaps it wasn't worthwhile, or is just an older repository.
-			} catch (IOException e) {
-				throw new TransportException(uri, "error in packed-refs", e);
-			}
+			readPackedRefs(avail);
 			readRef(avail, "../HEAD", "HEAD");
 			readLooseRefs(avail, "../refs", "refs/");
 			return avail;
-		}
-
-		private void readPackedRefs(final TreeMap<String, Ref> avail,
-				final BufferedReader br) throws IOException {
-			Ref last = null;
-			for (;;) {
-				String line = br.readLine();
-				if (line == null)
-					break;
-				if (line.charAt(0) == '#')
-					continue;
-				if (line.charAt(0) == '^') {
-					if (last == null)
-						throw new TransportException("Peeled line before ref.");
-					final ObjectId id = ObjectId.fromString(line + 1);
-					last = new Ref(Ref.Storage.PACKED, last.getName(), last
-							.getObjectId(), id);
-					avail.put(last.getName(), last);
-					continue;
-				}
-
-				final int sp = line.indexOf(' ');
-				if (sp < 0)
-					throw new TransportException("Unrecognized ref: " + line);
-				final ObjectId id = ObjectId.fromString(line.substring(0, sp));
-				final String name = line.substring(sp + 1);
-				last = new Ref(Ref.Storage.PACKED, name, id);
-				avail.put(last.getName(), last);
-			}
 		}
 
 		private void readLooseRefs(final TreeMap<String, Ref> avail,

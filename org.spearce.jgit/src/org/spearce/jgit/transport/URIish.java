@@ -39,6 +39,7 @@
 package org.spearce.jgit.transport;
 
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -98,6 +99,27 @@ public class URIish {
 			} else
 				throw new URISyntaxException(s, "Cannot parse Git URI-ish");
 		}
+	}
+
+	/**
+	 * Construct a URIish from a standard URL.
+	 *
+	 * @param u
+	 *            the source URL to convert from.
+	 */
+	public URIish(final URL u) {
+		scheme = u.getProtocol();
+		path = u.getPath();
+
+		final String ui = u.getUserInfo();
+		if (ui != null) {
+			final int d = ui.indexOf(':');
+			user = d < 0 ? ui : ui.substring(0, d);
+			pass = d < 0 ? null : ui.substring(d + 1);
+		}
+
+		port = u.getPort();
+		host = u.getHost();
 	}
 
 	/** Create an empty, non-configured URI. */

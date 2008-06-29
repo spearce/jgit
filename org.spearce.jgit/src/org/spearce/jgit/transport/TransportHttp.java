@@ -119,6 +119,11 @@ class TransportHttp extends WalkTransport {
 		}
 
 		@Override
+		URIish getURI() {
+			return new URIish(objectsUrl);
+		}
+
+		@Override
 		Collection<WalkRemoteObjectDatabase> getAlternates() throws IOException {
 			try {
 				return readAlternates(INFO_HTTP_ALTERNATES);

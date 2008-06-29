@@ -47,7 +47,9 @@ import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
+import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Ref;
@@ -75,6 +77,8 @@ abstract class WalkRemoteObjectDatabase {
 	static final String INFO_REFS = "../info/refs";
 
 	static final String PACKED_REFS = "../packed-refs";
+
+	abstract URIish getURI();
 
 	/**
 	 * Obtain the list of available packs (if any).
@@ -466,6 +470,60 @@ abstract class WalkRemoteObjectDatabase {
 			return alts;
 		} finally {
 			br.close();
+		}
+	}
+
+	/**
+	 * Read a standard Git packed-refs file to discover known references.
+	 *
+	 * @param avail
+	 *            return collection of references. Any existing entries will be
+	 *            replaced if they are found in the packed-refs file.
+	 * @throws TransportException
+	 *             an error occurred reading from the packed refs file.
+	 */
+	protected void readPackedRefs(final Map<String, Ref> avail)
+			throws TransportException {
+		try {
+			final BufferedReader br = openReader(PACKED_REFS);
+			try {
+				readPackedRefsImpl(avail, br);
+			} finally {
+				br.close();
+			}
+		} catch (FileNotFoundException notPacked) {
+			// Perhaps it wasn't worthwhile, or is just an older repository.
+		} catch (IOException e) {
+			throw new TransportException(getURI(), "error in packed-refs", e);
+		}
+	}
+
+	private void readPackedRefsImpl(final Map<String, Ref> avail,
+			final BufferedReader br) throws IOException {
+		Ref last = null;
+		for (;;) {
+			String line = br.readLine();
+			if (line == null)
+				break;
+			if (line.charAt(0) == '#')
+				continue;
+			if (line.charAt(0) == '^') {
+				if (last == null)
+					throw new TransportException("Peeled line before ref.");
+				final ObjectId id = ObjectId.fromString(line + 1);
+				last = new Ref(Ref.Storage.PACKED, last.getName(), last
+						.getObjectId(), id);
+				avail.put(last.getName(), last);
+				continue;
+			}
+
+			final int sp = line.indexOf(' ');
+			if (sp < 0)
+				throw new TransportException("Unrecognized ref: " + line);
+			final ObjectId id = ObjectId.fromString(line.substring(0, sp));
+			final String name = line.substring(sp + 1);
+			last = new Ref(Ref.Storage.PACKED, name, id);
+			avail.put(last.getName(), last);
 		}
 	}
 
