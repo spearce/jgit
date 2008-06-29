@@ -180,6 +180,8 @@ public class PackWriter {
 
 	private final WindowCursor windowCursor = new WindowCursor();
 
+	private List<ObjectToPack> sortedByName;
+
 	private boolean reuseDeltas = DEFAULT_REUSE_DELTAS;
 
 	private boolean reuseObjects = DEFAULT_REUSE_OBJECTS;
@@ -470,20 +472,24 @@ public class PackWriter {
 	 * @return ObjectId representing SHA-1 name of a pack that was created.
 	 */
 	public ObjectId computeName() {
-		final ArrayList<ObjectToPack> sorted = new ArrayList<ObjectToPack>(
-				objectsMap.size());
-		for (List<ObjectToPack> list : objectsLists) {
-			for (ObjectToPack otp : list)
-				sorted.add(otp);
-		}
-
 		final MessageDigest md = Constants.newMessageDigest();
-		Collections.sort(sorted);
-		for (ObjectToPack otp : sorted) {
+		for (ObjectToPack otp : sortByName()) {
 			otp.copyRawTo(buf, 0);
 			md.update(buf, 0, Constants.OBJECT_ID_LENGTH);
 		}
 		return ObjectId.fromRaw(md.digest());
+	}
+
+	private List<ObjectToPack> sortByName() {
+		if (sortedByName == null) {
+			sortedByName = new ArrayList<ObjectToPack>(objectsMap.size());
+			for (List<ObjectToPack> list : objectsLists) {
+				for (ObjectToPack otp : list)
+					sortedByName.add(otp);
+			}
+			Collections.sort(sortedByName);
+		}
+		return sortedByName;
 	}
 
 	private void writePackInternal() throws IOException {
