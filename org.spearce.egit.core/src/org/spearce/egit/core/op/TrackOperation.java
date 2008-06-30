@@ -90,13 +90,20 @@ public class TrackOperation implements IWorkspaceRunnable {
 							public boolean visit(IResource resource) throws CoreException {
 								try {
 									String repoPath = rm.getRepoRelativePath(resource);
+									// We use add to reset the assume valid bit, so we check the bit
+									// first. If a resource within a ignored folder is marked
+									// we ignore it here, i.e. there is no way to unmark it expect
+									// by explicitly selecting and invoking track on it.
 									if (resource.getType() == IResource.FILE) {
 										Entry entry = index.getEntry(repoPath);
-										if (!Team.isIgnored((IFile)resource) || entry != null && entry.isAssumedValid()) {
+										if (!Team.isIgnoredHint(resource) || entry != null && entry.isAssumedValid()) {
 											entry = index.add(rm.getWorkDir(), new File(rm.getWorkDir(), repoPath));
 											entry.setAssumeValid(false);
 										}
 									}
+									if (Team.isIgnoredHint(resource))
+										return false;
+
 								} catch (IOException e) {
 									e.printStackTrace();
 									throw Activator.error(CoreText.AddOperation_failed, e);
