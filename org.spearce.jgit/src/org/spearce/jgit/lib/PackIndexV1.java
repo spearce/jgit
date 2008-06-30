@@ -40,6 +40,7 @@ package org.spearce.jgit.lib;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -48,6 +49,8 @@ import org.spearce.jgit.util.NB;
 
 class PackIndexV1 extends PackIndex {
 	private static final int IDX_HDR_LEN = 256 * 4;
+
+	private final long[] idxHeader;
 
 	private byte[][] idxdata;
 
@@ -59,7 +62,7 @@ class PackIndexV1 extends PackIndex {
 		System.arraycopy(hdr, 0, fanoutTable, 0, hdr.length);
 		NB.readFully(fd, fanoutTable, hdr.length, IDX_HDR_LEN - hdr.length);
 
-		final long[] idxHeader = new long[256]; // really unsigned 32-bit...
+		idxHeader = new long[256]; // really unsigned 32-bit...
 		for (int k = 0; k < idxHeader.length; k++)
 			idxHeader[k] = NB.decodeUInt32(fanoutTable, k * 4);
 		idxdata = new byte[idxHeader.length][];
@@ -80,6 +83,39 @@ class PackIndexV1 extends PackIndex {
 
 	long getObjectCount() {
 		return objectCnt;
+	}
+
+	@Override
+	long getOffset64Count() {
+		long n64 = 0;
+		for (final MutableEntry e : this) {
+			if (e.getOffset() >= Integer.MAX_VALUE)
+				n64++;
+		}
+		return n64;
+	}
+
+	@Override
+	ObjectId getObjectId(final long nthPosition) {
+		int levelOne = Arrays.binarySearch(idxHeader, nthPosition + 1);
+		long base;
+		if (levelOne >= 0) {
+			// If we hit the bucket exactly the item is in the bucket, or
+			// any bucket before it which has the same object count.
+			//
+			base = idxHeader[levelOne];
+			while (levelOne > 0 && base == idxHeader[levelOne - 1])
+				levelOne--;
+		} else {
+			// The item is in the bucket we would insert it into.
+			//
+			levelOne = -(levelOne + 1);
+		}
+
+		base = levelOne > 0 ? idxHeader[levelOne - 1] : 0;
+		final int p = (int) (nthPosition - base);
+		final int dataIdx = ((4 + Constants.OBJECT_ID_LENGTH) * p) + 4;
+		return ObjectId.fromRaw(idxdata[levelOne], dataIdx);
 	}
 
 	long findOffset(final AnyObjectId objId) {
@@ -105,6 +141,16 @@ class PackIndexV1 extends PackIndex {
 				low = mid + 1;
 		} while (low < high);
 		return -1;
+	}
+
+	@Override
+	long findCRC32(AnyObjectId objId) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	boolean hasCRC32Support() {
+		return false;
 	}
 
 	public Iterator<MutableEntry> iterator() {

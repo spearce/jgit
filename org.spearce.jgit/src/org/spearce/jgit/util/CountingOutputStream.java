@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2007, Robin Rosenberg <robin.rosenberg@dewire.com>
- * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
  *
  * All rights reserved.
  *
@@ -36,37 +35,55 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.spearce.jgit.lib;
+package org.spearce.jgit.util;
 
+import java.io.FilterOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
-import org.spearce.jgit.errors.MissingObjectException;
+/**
+ * Counting output stream decoration. Counts bytes written to stream.
+ */
+public class CountingOutputStream extends FilterOutputStream {
 
-/** Reads a deltified object which uses an {@link ObjectId} to find its base. */
-class DeltaRefPackedObjectLoader extends DeltaPackedObjectLoader {
-	private final ObjectId deltaBase;
+	private int count;
 
-	DeltaRefPackedObjectLoader(final WindowCursor curs, final PackFile pr,
-			final long dataOffset, final long objectOffset, final int deltaSz,
-			final ObjectId base) {
-		super(curs, pr, dataOffset, objectOffset, deltaSz);
-		deltaBase = base;
-	}
-
-	protected PackedObjectLoader getBaseLoader() throws IOException {
-		final PackedObjectLoader or = pack.get(deltaBase);
-		if (or == null)
-			throw new MissingObjectException(deltaBase, "delta base");
-		return or;
-	}
-
-	@Override
-	public int getRawType() throws IOException {
-		return Constants.OBJ_REF_DELTA;
+	/**
+	 * Create counting stream being decorated to provided real output stream.
+	 *
+	 * @param out
+	 *            output stream where data should be written
+	 */
+	public CountingOutputStream(OutputStream out) {
+		super(out);
 	}
 
 	@Override
-	public ObjectId getDeltaBase() throws IOException {
-		return deltaBase;
+	public void write(int b) throws IOException {
+		out.write(b);
+		count++;
+	}
+
+	@Override
+	public void write(byte[] b, int off, int len) throws IOException {
+		out.write(b, off, len);
+		count += len;
+	}
+
+	/**
+	 * Return number of already written bytes.
+	 *
+	 * @return number of written bytes since last reset (object is reset upon
+	 *         creation)
+	 */
+	public int getCount() {
+		return count;
+	}
+
+	/**
+	 * Reset counter to zero value.
+	 */
+	public void reset() {
+		count = 0;
 	}
 }

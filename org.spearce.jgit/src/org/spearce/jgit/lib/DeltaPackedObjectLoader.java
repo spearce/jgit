@@ -50,8 +50,8 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 	private final int deltaSize;
 
 	DeltaPackedObjectLoader(final WindowCursor curs, final PackFile pr,
-			final long offset, final int deltaSz) {
-		super(curs, pr, offset);
+			final long dataOffset, final long objectOffset, final int deltaSz) {
+		super(curs, pr, dataOffset, objectOffset);
 		objectType = -1;
 		deltaSize = deltaSz;
 	}
@@ -96,6 +96,11 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 			coe.initCause(dfe);
 			throw coe;
 		}
+	}
+
+	@Override
+	public long getRawSize() {
+		return deltaSize;
 	}
 
 	/**

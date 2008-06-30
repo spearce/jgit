@@ -49,8 +49,7 @@ import org.spearce.jgit.util.MutableInteger;
 import org.spearce.jgit.util.RawParseUtils;
 
 /**
- * Loose object loader. This class loads an object not
- * stored in a pack.
+ * Loose object loader. This class loads an object not stored in a pack.
  */
 public class UnpackedObjectLoader extends ObjectLoader {
 	private final int objectType;
@@ -61,8 +60,11 @@ public class UnpackedObjectLoader extends ObjectLoader {
 
 	/**
 	 * Construct an ObjectLoader for the specified SHA-1
-	 * @param db repository
-	 * @param id SHA-1
+	 *
+	 * @param db
+	 *            repository
+	 * @param id
+	 *            SHA-1
 	 * @throws IOException
 	 */
 	public UnpackedObjectLoader(final Repository db, final ObjectId id)
@@ -94,11 +96,13 @@ public class UnpackedObjectLoader extends ObjectLoader {
 	 *             The compressed data supplied does not match the format for a
 	 *             valid loose object.
 	 */
-	public UnpackedObjectLoader(final byte[] compressed) throws CorruptObjectException {
+	public UnpackedObjectLoader(final byte[] compressed)
+			throws CorruptObjectException {
 		this(compressed, null);
 	}
 
-	private UnpackedObjectLoader(final byte[] compressed, final ObjectId id) throws CorruptObjectException {
+	private UnpackedObjectLoader(final byte[] compressed, final ObjectId id)
+			throws CorruptObjectException {
 		setId(id);
 
 		// Try to determine if this is a legacy format loose object or
@@ -203,5 +207,15 @@ public class UnpackedObjectLoader extends ObjectLoader {
 	@Override
 	public byte[] getCachedBytes() throws IOException {
 		return bytes;
+	}
+
+	@Override
+	public int getRawType() {
+		return objectType;
+	}
+
+	@Override
+	public long getRawSize() {
+		return objectSize;
 	}
 }

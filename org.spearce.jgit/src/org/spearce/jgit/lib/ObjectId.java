@@ -168,6 +168,32 @@ public class ObjectId extends AnyObjectId {
 	}
 
 	/**
+	 * Convert an ObjectId from raw binary representation.
+	 *
+	 * @param is
+	 *            the raw integers buffer to read from. At least 5 integers must
+	 *            be available within this int array.
+	 * @return the converted object id.
+	 */
+	public static final ObjectId fromRaw(final int[] is) {
+		return fromRaw(is, 0);
+	}
+
+	/**
+	 * Convert an ObjectId from raw binary representation.
+	 *
+	 * @param is
+	 *            the raw integers buffer to read from. At least 5 integers
+	 *            after p must be available within this int array.
+	 * @param p
+	 *            position to read the first integer of data from.
+	 * @return the converted object id.
+	 */
+	public static final ObjectId fromRaw(final int[] is, final int p) {
+		return new ObjectId(is[p], is[p + 1], is[p + 2], is[p + 3], is[p + 4]);
+	}
+
+	/**
 	 * Convert an ObjectId from hex characters (US-ASCII).
 	 * 
 	 * @param buf

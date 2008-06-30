@@ -48,6 +48,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
@@ -288,6 +289,47 @@ public class Repository {
 			return new UnpackedObjectLoader(this, id.toObjectId());
 		} catch (FileNotFoundException fnfe) {
 			return null;
+		}
+	}
+
+	/**
+	 * Open object in all packs containing specified object.
+	 *
+	 * @param objectId
+	 *            id of object to search for
+	 * @param curs
+	 *            temporary working space associated with the calling thread.
+	 * @return collection of loaders for this object, from all packs containing
+	 *         this object
+	 * @throws IOException
+	 */
+	public Collection<PackedObjectLoader> openObjectInAllPacks(
+			final AnyObjectId objectId, final WindowCursor curs)
+			throws IOException {
+		Collection<PackedObjectLoader> result = new LinkedList<PackedObjectLoader>();
+		openObjectInAllPacks(objectId, result, curs);
+		return result;
+	}
+
+	/**
+	 * Open object in all packs containing specified object.
+	 *
+	 * @param objectId
+	 *            id of object to search for
+	 * @param resultLoaders
+	 *            result collection of loaders for this object, filled with
+	 *            loaders from all packs containing specified object
+	 * @param curs
+	 *            temporary working space associated with the calling thread.
+	 * @throws IOException
+	 */
+	void openObjectInAllPacks(final AnyObjectId objectId,
+			final Collection<PackedObjectLoader> resultLoaders,
+			final WindowCursor curs) throws IOException {
+		for (PackFile pack : packs) {
+			final PackedObjectLoader loader = pack.get(curs, objectId);
+			if (loader != null)
+				resultLoaders.add(loader);
 		}
 	}
 

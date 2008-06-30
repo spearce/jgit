@@ -38,7 +38,6 @@
 package org.spearce.jgit.revwalk;
 
 import java.io.IOException;
-import java.util.EnumSet;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
@@ -91,8 +90,7 @@ class StartGenerator extends Generator {
 			return mbg.next();
 		}
 
-		final EnumSet<RevSort> sort = w.getRevSort();
-		boolean boundary = sort.contains(RevSort.BOUNDARY);
+		boolean boundary = walker.hasRevSort(RevSort.BOUNDARY);
 
 		if (!boundary && walker instanceof ObjectWalk) {
 			// The object walker requires boundary support to color
@@ -110,9 +108,10 @@ class StartGenerator extends Generator {
 		}
 
 		int pendingOutputType = 0;
-		if (sort.contains(RevSort.START_ORDER) && !(q instanceof FIFORevQueue))
+		if (walker.hasRevSort(RevSort.START_ORDER)
+				&& !(q instanceof FIFORevQueue))
 			q = new FIFORevQueue(q);
-		if (sort.contains(RevSort.COMMIT_TIME_DESC)
+		if (walker.hasRevSort(RevSort.COMMIT_TIME_DESC)
 				&& !(q instanceof DateRevQueue))
 			q = new DateRevQueue(q);
 		if (tf != TreeFilter.ALL) {
@@ -141,9 +140,10 @@ class StartGenerator extends Generator {
 			g = new RewriteGenerator(g);
 		}
 
-		if (sort.contains(RevSort.TOPO) && (g.outputType() & SORT_TOPO) == 0)
+		if (walker.hasRevSort(RevSort.TOPO)
+				&& (g.outputType() & SORT_TOPO) == 0)
 			g = new TopoSortGenerator(g);
-		if (sort.contains(RevSort.REVERSE))
+		if (walker.hasRevSort(RevSort.REVERSE))
 			g = new LIFORevQueue(q);
 		if (boundary)
 			g = new BoundaryGenerator(w, g);

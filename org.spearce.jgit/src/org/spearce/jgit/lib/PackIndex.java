@@ -44,6 +44,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
 
+import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.util.NB;
 
 /**
@@ -140,6 +141,63 @@ public abstract class PackIndex implements Iterable<PackIndex.MutableEntry> {
 	abstract long getObjectCount();
 
 	/**
+	 * Obtain the total number of objects needing 64 bit offsets.
+	 *
+	 * @return number of objects in this index using a 64 bit offset; that is an
+	 *         object positioned after the 2 GB position within the file.
+	 */
+	abstract long getOffset64Count();
+
+	/**
+	 * Get ObjectId for the n-th object entry returned by {@link #iterator()}.
+	 * <p>
+	 * This method is a constant-time replacement for the following loop:
+	 *
+	 * <pre>
+	 * Iterator&lt;MutableEntry&gt; eItr = index.iterator();
+	 * int curPosition = 0;
+	 * while (eItr.hasNext() &amp;&amp; curPosition++ &lt; nthPosition)
+	 * 	eItr.next();
+	 * ObjectId result = eItr.next().toObjectId();
+	 * </pre>
+	 *
+	 * @param nthPosition
+	 *            position within the traversal of {@link #iterator()} that the
+	 *            caller needs the object for. The first returned
+	 *            {@link MutableEntry} is 0, the second is 1, etc.
+	 * @return the ObjectId for the corresponding entry.
+	 */
+	abstract ObjectId getObjectId(long nthPosition);
+
+	/**
+	 * Get ObjectId for the n-th object entry returned by {@link #iterator()}.
+	 * <p>
+	 * This method is a constant-time replacement for the following loop:
+	 *
+	 * <pre>
+	 * Iterator&lt;MutableEntry&gt; eItr = index.iterator();
+	 * int curPosition = 0;
+	 * while (eItr.hasNext() &amp;&amp; curPosition++ &lt; nthPosition)
+	 * 	eItr.next();
+	 * ObjectId result = eItr.next().toObjectId();
+	 * </pre>
+	 *
+	 * @param nthPosition
+	 *            unsigned 32 bit position within the traversal of
+	 *            {@link #iterator()} that the caller needs the object for. The
+	 *            first returned {@link MutableEntry} is 0, the second is 1,
+	 *            etc. Positions past 2**31-1 are negative, but still valid.
+	 * @return the ObjectId for the corresponding entry.
+	 */
+	final ObjectId getObjectId(final int nthPosition) {
+		if (nthPosition >= 0)
+			return getObjectId((long) nthPosition);
+		final int u31 = nthPosition >>> 1;
+		final int one = nthPosition & 1;
+		return getObjectId(((long) u31) << 1 | one);
+	}
+
+	/**
 	 * Locate the file offset position for the requested object.
 	 * 
 	 * @param objId
@@ -149,6 +207,28 @@ public abstract class PackIndex implements Iterable<PackIndex.MutableEntry> {
 	 *         associated pack.
 	 */
 	abstract long findOffset(AnyObjectId objId);
+
+	/**
+	 * Retrieve stored CRC32 checksum of the requested object raw-data
+	 * (including header).
+	 *
+	 * @param objId
+	 *            id of object to look for
+	 * @return CRC32 checksum of specified object (at 32 less significant bits)
+	 * @throws MissingObjectException
+	 *             when requested ObjectId was not found in this index
+	 * @throws UnsupportedOperationException
+	 *             when this index doesn't support CRC32 checksum
+	 */
+	abstract long findCRC32(AnyObjectId objId) throws MissingObjectException,
+			UnsupportedOperationException;
+
+	/**
+	 * Check whether this index supports (has) CRC32 checksums for objects.
+	 *
+	 * @return true if CRC32 is stored, false otherwise
+	 */
+	abstract boolean hasCRC32Support();
 
 	/**
 	 * Represent mutable entry of pack index consisting of object id and offset

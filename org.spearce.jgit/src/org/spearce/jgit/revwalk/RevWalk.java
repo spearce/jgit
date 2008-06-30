@@ -389,6 +389,17 @@ public class RevWalk implements Iterable<RevCommit> {
 	}
 
 	/**
+	 * Check whether the provided sorting strategy is enabled.
+	 *
+	 * @param sort
+	 *            a sorting strategy to look for.
+	 * @return true if this strategy is enabled, false otherwise
+	 */
+	public boolean hasRevSort(RevSort sort) {
+		return sorting.contains(sort);
+	}
+
+	/**
 	 * Select a single sorting strategy for the returned commits.
 	 * <p>
 	 * Disables all sorting strategies, then enables only the single strategy

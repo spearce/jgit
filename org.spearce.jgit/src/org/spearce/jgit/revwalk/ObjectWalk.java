@@ -66,11 +66,9 @@ import org.spearce.jgit.treewalk.TreeWalk;
  * commits that are returned first.
  */
 public class ObjectWalk extends RevWalk {
-	private static final int SEEN_OR_UNINTERESTING = SEEN | UNINTERESTING;
-
 	private final TreeWalk treeWalk;
 
-	private BlockObjQueue objects;
+	private BlockObjQueue pendingObjects;
 
 	private RevTree currentTree;
 
@@ -87,7 +85,7 @@ public class ObjectWalk extends RevWalk {
 	public ObjectWalk(final Repository repo) {
 		super(repo);
 		treeWalk = new TreeWalk(repo);
-		objects = new BlockObjQueue();
+		pendingObjects = new BlockObjQueue();
 	}
 
 	/**
@@ -177,6 +175,8 @@ public class ObjectWalk extends RevWalk {
 			IncorrectObjectTypeException, IOException {
 		while (o instanceof RevTag) {
 			o.flags |= UNINTERESTING;
+			if (hasRevSort(RevSort.BOUNDARY))
+				addObject(o);
 			o = ((RevTag) o).getObject();
 			parse(o);
 		}
@@ -187,6 +187,10 @@ public class ObjectWalk extends RevWalk {
 			markTreeUninteresting((RevTree) o);
 		else
 			o.flags |= UNINTERESTING;
+
+		if (o.getType() != Constants.OBJ_COMMIT && hasRevSort(RevSort.BOUNDARY)) {
+			addObject(o);
+		}
 	}
 
 	@Override
@@ -198,11 +202,13 @@ public class ObjectWalk extends RevWalk {
 				return null;
 			if ((r.flags & UNINTERESTING) != 0) {
 				markTreeUninteresting(r.getTree());
-				if (getRevSort().contains(RevSort.BOUNDARY))
+				if (hasRevSort(RevSort.BOUNDARY)) {
+					pendingObjects.add(r.getTree());
 					return r;
+				}
 				continue;
 			}
-			objects.add(r.getTree());
+			pendingObjects.add(r.getTree());
 			return r;
 		}
 	}
@@ -237,17 +243,23 @@ public class ObjectWalk extends RevWalk {
 			switch (sType) {
 			case Constants.OBJ_BLOB: {
 				final RevObject o = lookupAny(treeWalk.getObjectId(0), sType);
-				if ((o.flags & SEEN_OR_UNINTERESTING) != 0)
+				if ((o.flags & SEEN) != 0)
 					continue;
 				o.flags |= SEEN;
+				if ((o.flags & UNINTERESTING) != 0
+						&& !hasRevSort(RevSort.BOUNDARY))
+					continue;
 				fromTreeWalk = true;
 				return o;
 			}
 			case Constants.OBJ_TREE: {
 				final RevObject o = lookupAny(treeWalk.getObjectId(0), sType);
-				if ((o.flags & SEEN_OR_UNINTERESTING) != 0)
+				if ((o.flags & SEEN) != 0)
 					continue;
 				o.flags |= SEEN;
+				if ((o.flags & UNINTERESTING) != 0
+						&& !hasRevSort(RevSort.BOUNDARY))
+					continue;
 				enterSubtree = true;
 				fromTreeWalk = true;
 				return o;
@@ -262,12 +274,14 @@ public class ObjectWalk extends RevWalk {
 		}
 
 		for (;;) {
-			final RevObject o = objects.next();
+			final RevObject o = pendingObjects.next();
 			if (o == null)
 				return null;
-			if ((o.flags & SEEN_OR_UNINTERESTING) != 0)
+			if ((o.flags & SEEN) != 0)
 				continue;
 			o.flags |= SEEN;
+			if ((o.flags & UNINTERESTING) != 0 && !hasRevSort(RevSort.BOUNDARY))
+				continue;
 			if (o instanceof RevTree) {
 				currentTree = (RevTree) o;
 				treeWalk.reset(new ObjectId[] { currentTree });
@@ -334,7 +348,7 @@ public class ObjectWalk extends RevWalk {
 	@Override
 	public void dispose() {
 		super.dispose();
-		objects = new BlockObjQueue();
+		pendingObjects = new BlockObjQueue();
 		enterSubtree = false;
 		currentTree = null;
 	}
@@ -342,14 +356,14 @@ public class ObjectWalk extends RevWalk {
 	@Override
 	protected void reset(final int retainFlags) {
 		super.reset(retainFlags);
-		objects = new BlockObjQueue();
+		pendingObjects = new BlockObjQueue();
 		enterSubtree = false;
 	}
 
 	private void addObject(final RevObject o) {
 		if ((o.flags & SEEN) == 0) {
 			o.flags |= SEEN;
-			objects.add(o);
+			pendingObjects.add(o);
 		}
 	}
 
