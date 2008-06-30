@@ -97,9 +97,13 @@ class FetchProcess {
 
 		conn = transport.openFetch();
 		try {
-			result.setAdvertisedRefs(conn.getCachedRefs());
+			result.setAdvertisedRefs(conn.getRefsMap());
 			final Set<Ref> matched = new HashSet<Ref>();
 			for (final RefSpec spec : toFetch) {
+				if (spec.getSource() == null)
+					throw new TransportException(
+							"Source ref not specified for refspec: " + spec);
+
 				if (spec.isWildcard())
 					expandWildcard(spec, matched);
 				else
@@ -139,7 +143,7 @@ class FetchProcess {
 				if (!askFor.isEmpty() && (!includedTags || !askForIsComplete())) {
 					reopenConnection();
 					if (!askFor.isEmpty())
-						conn.doFetch(monitor, askFor.values());
+						conn.fetch(monitor, askFor.values());
 				}
 			}
 		} finally {

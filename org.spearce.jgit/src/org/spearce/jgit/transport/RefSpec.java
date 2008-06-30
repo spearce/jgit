@@ -281,6 +281,17 @@ public class RefSpec {
 	}
 
 	/**
+	 * Does this specification's source description match the ref name?
+	 *
+	 * @param r
+	 *            ref name that should be tested.
+	 * @return true if the names match; false otherwise.
+	 */
+	public boolean matchSource(final String r) {
+		return match(r, getSource());
+	}
+
+	/**
 	 * Does this specification's source description match the ref?
 	 * 
 	 * @param r
@@ -288,7 +299,18 @@ public class RefSpec {
 	 * @return true if the names match; false otherwise.
 	 */
 	public boolean matchSource(final Ref r) {
-		return match(r, getSource());
+		return match(r.getName(), getSource());
+	}
+
+	/**
+	 * Does this specification's destination description match the ref name?
+	 *
+	 * @param r
+	 *            ref name that should be tested.
+	 * @return true if the names match; false otherwise.
+	 */
+	public boolean matchDestination(final String r) {
+		return match(r, getDestination());
 	}
 
 	/**
@@ -299,7 +321,21 @@ public class RefSpec {
 	 * @return true if the names match; false otherwise.
 	 */
 	public boolean matchDestination(final Ref r) {
-		return match(r, getDestination());
+		return match(r.getName(), getDestination());
+	}
+
+	/**
+	 * Expand this specification to exactly match a ref name.
+	 * <p>
+	 * Callers must first verify the passed ref name matches this specification,
+	 * otherwise expansion results may be unpredictable.
+	 *
+	 * @param r
+	 *            a ref name that matched our source specification.
+	 * @return a new specification that is not a wildcard.
+	 */
+	public RefSpec expandFromSource(final String r) {
+		return isWildcard() ? new RefSpec(this, r) : this;
 	}
 
 	/**
@@ -316,12 +352,12 @@ public class RefSpec {
 		return isWildcard() ? new RefSpec(this, r.getName()) : this;
 	}
 
-	private boolean match(final Ref r, final String s) {
+	private boolean match(final String refName, final String s) {
 		if (s == null)
 			return false;
 		if (isWildcard())
-			return r.getName().startsWith(s.substring(0, s.length() - 1));
-		return r.getName().equals(s);
+			return refName.startsWith(s.substring(0, s.length() - 1));
+		return refName.equals(s);
 	}
 
 	public int hashCode() {

@@ -49,15 +49,22 @@ import org.spearce.jgit.revwalk.RevWalk;
 
 /** Update of a locally stored tracking branch. */
 public class TrackingRefUpdate {
-	private final RefSpec spec;
+	private final String remoteName;
 
 	private final RefUpdate update;
 
-	TrackingRefUpdate(final Repository db, final RefSpec s,
+	TrackingRefUpdate(final Repository db, final RefSpec spec,
 			final AnyObjectId nv, final String msg) throws IOException {
-		spec = s;
-		update = db.updateRef(s.getDestination());
-		update.setForceUpdate(spec.isForceUpdate());
+		this(db, spec.getDestination(), spec.getSource(), spec.isForceUpdate(),
+				nv, msg);
+	}
+
+	TrackingRefUpdate(final Repository db, final String localName,
+			final String remoteName, final boolean forceUpdate,
+			final AnyObjectId nv, final String msg) throws IOException {
+		this.remoteName = remoteName;
+		update = db.updateRef(localName);
+		update.setForceUpdate(forceUpdate);
 		update.setNewObjectId(nv);
 		update.setRefLogMessage(msg, true);
 	}
@@ -70,7 +77,7 @@ public class TrackingRefUpdate {
 	 * @return the name used within the remote repository.
 	 */
 	public String getRemoteName() {
-		return spec.getSource();
+		return remoteName;
 	}
 
 	/**

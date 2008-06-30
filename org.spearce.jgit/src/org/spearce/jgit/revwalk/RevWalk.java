@@ -347,7 +347,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		final TreeFilter oldTF = treeFilter;
 		try {
 			finishDelayedFreeFlags();
-			reset(~freeFlags & ~RESERVED_FLAGS);
+			reset(~freeFlags & APP_FLAGS);
 			filter = RevFilter.MERGE_BASE;
 			treeFilter = TreeFilter.ALL;
 			markStart(tip);

@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
  *
  * All rights reserved.
  *
@@ -71,17 +72,21 @@ class TransportGitAnon extends PackTransport {
 		return new TcpFetchConnection();
 	}
 
+	@Override
+	public PushConnection openPush() throws TransportException {
+		return new TcpPushConnection();
+	}
+
 	Socket openConnection() throws TransportException {
 		final int port = uri.getPort() > 0 ? uri.getPort() : GIT_PORT;
 		try {
 			return new Socket(InetAddress.getByName(uri.getHost()), port);
 		} catch (IOException c) {
-			final String us = uri.toString();
 			if (c instanceof UnknownHostException)
-				throw new TransportException(us + ": Unknown host");
+				throw new TransportException(uri, "unknown host");
 			if (c instanceof ConnectException)
-				throw new TransportException(us + ": " + c.getMessage());
-			throw new TransportException(us + ": " + c.getMessage(), c);
+				throw new TransportException(uri, c.getMessage());
+			throw new TransportException(uri, c.getMessage(), c);
 		}
 	}
 
@@ -99,7 +104,7 @@ class TransportGitAnon extends PackTransport {
 		pckOut.flush();
 	}
 
-	class TcpFetchConnection extends PackFetchConnection {
+	class TcpFetchConnection extends BasePackFetchConnection {
 		private Socket sock;
 
 		TcpFetchConnection() throws TransportException {
@@ -110,8 +115,41 @@ class TransportGitAnon extends PackTransport {
 				service("git-upload-pack", pckOut);
 			} catch (IOException err) {
 				close();
-				throw new TransportException(uri.toString()
-						+ ": remote hung up unexpectedly", err);
+				throw new TransportException(uri,
+						"remote hung up unexpectedly", err);
+			}
+			readAdvertisedRefs();
+		}
+
+		@Override
+		public void close() {
+			super.close();
+
+			if (sock != null) {
+				try {
+					sock.close();
+				} catch (IOException err) {
+					// Ignore errors during close.
+				} finally {
+					sock = null;
+				}
+			}
+		}
+	}
+
+	class TcpPushConnection extends BasePackPushConnection {
+		private Socket sock;
+
+		TcpPushConnection() throws TransportException {
+			super(TransportGitAnon.this);
+			sock = openConnection();
+			try {
+				init(sock.getInputStream(), sock.getOutputStream());
+				service("git-receive-pack", pckOut);
+			} catch (IOException err) {
+				close();
+				throw new TransportException(uri,
+						"remote hung up unexpectedly", err);
 			}
 			readAdvertisedRefs();
 		}

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
  *
  * All rights reserved.
  *
@@ -37,29 +37,48 @@
 
 package org.spearce.jgit.transport;
 
-import org.spearce.jgit.errors.NotSupportedException;
-import org.spearce.jgit.lib.Repository;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
 /**
- * Canonical implementation of an object transport walking transport.
- * <p>
- * Implementations of WalkTransport transfer individual objects one at a a time
- * from the loose objects directory, or entire packs if the source side does not
- * have the object as a loose object.
- * <p>
- * WalkTransports are not as efficient as {@link PackTransport} instances, but
- * can be useful in situations where a pack transport is not acceptable.
- * 
- * @see WalkFetchConnection
+ * Result of push operation to the remote repository. Holding information of
+ * {@link OperationResult} and remote refs updates status.
+ *
+ * @see Transport#push(org.spearce.jgit.lib.ProgressMonitor, Collection)
  */
-abstract class WalkTransport extends Transport {
-	WalkTransport(final Repository local, final URIish u) {
-		super(local, u);
+public class PushResult extends OperationResult {
+	private Map<String, RemoteRefUpdate> remoteUpdates = Collections.emptyMap();
+
+	/**
+	 * Get status of remote refs updates. Together with
+	 * {@link #getAdvertisedRefs()} it provides full description/status of each
+	 * ref update.
+	 * <p>
+	 * Returned collection is not sorted in any order.
+	 * </p>
+	 *
+	 * @return collection of remote refs updates
+	 */
+	public Collection<RemoteRefUpdate> getRemoteUpdates() {
+		return Collections.unmodifiableCollection(remoteUpdates.values());
 	}
 
-	@Override
-	public PushConnection openPush() throws NotSupportedException {
-		throw new NotSupportedException(
-				"Push is not supported by object walking transports");
+	/**
+	 * Get status of specific remote ref update by remote ref name. Together
+	 * with {@link #getAdvertisedRef(String)} it provide full description/status
+	 * of this ref update.
+	 *
+	 * @param refName
+	 *            remote ref name
+	 * @return status of remote ref update
+	 */
+	public RemoteRefUpdate getRemoteUpdate(final String refName) {
+		return remoteUpdates.get(refName);
+	}
+
+	protected void setRemoteUpdates(
+			final Map<String, RemoteRefUpdate> remoteUpdates) {
+		this.remoteUpdates = remoteUpdates;
 	}
 }

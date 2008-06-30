@@ -38,26 +38,15 @@
 
 package org.spearce.jgit.transport;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Set;
 
-import org.spearce.jgit.errors.PackProtocolException;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.MutableObjectId;
-import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
-import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevCommitList;
 import org.spearce.jgit.revwalk.RevFlag;
@@ -78,8 +67,14 @@ import org.spearce.jgit.revwalk.filter.RevFilter;
  * This connection requires only a bi-directional pipe or socket, and thus is
  * easily wrapped up into a local process pipe, anonymous TCP socket, or a
  * command executed through an SSH tunnel.
+ * <p>
+ * Concrete implementations should just call
+ * {@link #init(java.io.InputStream, java.io.OutputStream)} and
+ * {@link #readAdvertisedRefs()} methods in constructor or before any use. They
+ * should also handle resources releasing in {@link #close()} method if needed.
  */
-abstract class PackFetchConnection extends FetchConnection {
+abstract class BasePackFetchConnection extends BasePackConnection implements
+		FetchConnection {
 	/**
 	 * Maximum number of 'have' lines to send before giving up.
 	 * <p>
@@ -103,27 +98,6 @@ abstract class PackFetchConnection extends FetchConnection {
 
 	static final String OPTION_SHALLOW = "shallow";
 
-	/** The repository this transport fetches into, or pushes out of. */
-	protected final Repository local;
-
-	/** Remote repository location. */
-	protected final URIish uri;
-
-	/** Capability tokens advertised by the remote side. */
-	protected final Set<String> remoteCapablities = new HashSet<String>();
-
-	/** Buffered input stream reading from the remote. */
-	protected InputStream in;
-
-	/** Buffered output stream sending to the remote. */
-	protected OutputStream out;
-
-	/** Packet line decoder around {@link #in}. */
-	protected PacketLineIn pckIn;
-
-	/** Packet line encoder around {@link #out}. */
-	protected PacketLineOut pckOut;
-
 	private final RevWalk walk;
 
 	/** All commits that are immediately reachable by a local ref. */
@@ -146,10 +120,10 @@ abstract class PackFetchConnection extends FetchConnection {
 
 	private boolean includeTags;
 
-	PackFetchConnection(final PackTransport packTransport) {
-		local = packTransport.local;
-		uri = packTransport.uri;
+	BasePackFetchConnection(final PackTransport packTransport) {
+		super(packTransport);
 		includeTags = packTransport.getTagOpt() != TagOpt.NO_TAGS;
+		thinPack = packTransport.isFetchThin();
 
 		walk = new RevWalk(local);
 		reachableCommits = new RevCommitList<RevCommit>();
@@ -162,91 +136,16 @@ abstract class PackFetchConnection extends FetchConnection {
 		walk.carry(ADVERTISED);
 	}
 
-	protected void init(final InputStream myIn, final OutputStream myOut) {
-		in = myIn instanceof BufferedInputStream ? myIn
-				: new BufferedInputStream(myIn);
-		out = myOut instanceof BufferedOutputStream ? myOut
-				: new BufferedOutputStream(myOut);
-
-		pckIn = new PacketLineIn(in);
-		pckOut = new PacketLineOut(out);
+	public final void fetch(final ProgressMonitor monitor,
+			final Collection<Ref> want) throws TransportException {
+		markStartedOperation();
+		doFetch(monitor, want);
 	}
 
-	@Override
 	public boolean didFetchIncludeTags() {
-		return includeTags;
+		return false;
 	}
 
-	protected void readAdvertisedRefs() throws TransportException {
-		try {
-			readAdvertisedRefsImpl();
-		} catch (TransportException err) {
-			close();
-			throw err;
-		} catch (IOException err) {
-			close();
-			throw new TransportException(err.getMessage(), err);
-		} catch (RuntimeException err) {
-			close();
-			throw new TransportException(err.getMessage(), err);
-		}
-	}
-
-	private void readAdvertisedRefsImpl() throws IOException {
-		final LinkedHashMap<String, Ref> avail = new LinkedHashMap<String, Ref>();
-		for (;;) {
-			String line;
-
-			try {
-				line = pckIn.readString();
-			} catch (EOFException eof) {
-				if (avail.isEmpty())
-					throw new TransportException(uri + " not found.");
-				throw eof;
-			}
-
-			if (avail.isEmpty()) {
-				// The first line (if any) may contain "hidden"
-				// capability values after a NUL byte.
-				//
-				final int nul = line.indexOf('\0');
-				if (nul >= 0) {
-					for (String c : line.substring(nul + 1).split(" "))
-						remoteCapablities.add(c);
-					line = line.substring(0, nul);
-				}
-			}
-
-			if (line.length() == 0)
-				break;
-
-			String name = line.substring(41, line.length());
-			final ObjectId id = ObjectId.fromString(line.substring(0, 40));
-			if (name.endsWith("^{}")) {
-				name = name.substring(0, name.length() - 3);
-				final Ref prior = avail.get(name);
-				if (prior == null)
-					throw new PackProtocolException("advertisement of " + name
-							+ "^{} came before " + name);
-
-				if (prior.getPeeledObjectId() != null)
-					throw duplicateAdvertisement(name + "^{}");
-
-				avail.put(name, new Ref(name, prior.getObjectId(), id));
-			} else {
-				final Ref prior = avail.put(name, new Ref(name, id));
-				if (prior != null)
-					throw duplicateAdvertisement(name);
-			}
-		}
-		available(avail);
-	}
-
-	private PackProtocolException duplicateAdvertisement(final String name) {
-		return new PackProtocolException("duplicate advertisements of " + name);
-	}
-
-	@Override
 	protected void doFetch(final ProgressMonitor monitor,
 			final Collection<Ref> want) throws TransportException {
 		try {
@@ -363,21 +262,13 @@ abstract class PackFetchConnection extends FetchConnection {
 			includeTags = wantCapability(line, OPTION_INCLUDE_TAG);
 		wantCapability(line, OPTION_OFS_DELTA);
 		multiAck = wantCapability(line, OPTION_MULTI_ACK);
-		thinPack = wantCapability(line, OPTION_THIN_PACK);
+		if (thinPack)
+			thinPack = wantCapability(line, OPTION_THIN_PACK);
 		if (wantCapability(line, OPTION_SIDE_BAND_64K))
 			sideband = true;
 		else if (wantCapability(line, OPTION_SIDE_BAND))
 			sideband = true;
 		return line.toString();
-	}
-
-	private boolean wantCapability(final StringBuilder b, final String option) {
-		if (!remoteCapablities.contains(option))
-			return false;
-		if (b.length() > 0)
-			b.append(' ');
-		b.append(option);
-		return true;
 	}
 
 	private void negotiate(final ProgressMonitor monitor) throws IOException,
@@ -564,32 +455,6 @@ abstract class PackFetchConnection extends FetchConnection {
 		ip.setFixThin(thinPack);
 		ip.index(monitor);
 		ip.renameAndOpenPack();
-	}
-
-	@Override
-	public void close() {
-		if (out != null) {
-			try {
-				pckOut.end();
-				out.close();
-			} catch (IOException err) {
-				// Ignore any close errors.
-			} finally {
-				out = null;
-				pckOut = null;
-			}
-		}
-
-		if (in != null) {
-			try {
-				in.close();
-			} catch (IOException err) {
-				// Ignore any close errors.
-			} finally {
-				in = null;
-				pckIn = null;
-			}
-		}
 	}
 
 	private static class CancelledException extends Exception {

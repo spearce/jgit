@@ -95,7 +95,7 @@ import org.spearce.jgit.treewalk.TreeWalk;
  * 
  * @see WalkRemoteObjectDatabase
  */
-class WalkFetchConnection extends FetchConnection {
+class WalkFetchConnection extends BaseFetchConnection {
 	/** The repository this transport fetches into, or pushes out of. */
 	private final Repository local;
 

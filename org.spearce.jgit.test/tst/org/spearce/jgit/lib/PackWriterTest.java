@@ -120,7 +120,7 @@ public class PackWriterTest extends RepositoryTestCase {
 	 * @throws IOException
 	 */
 	public void testWriteEmptyPack1() throws IOException {
-		createVerifyOpenPack(EMPTY_LIST_OBJECT, EMPTY_LIST_OBJECT, false);
+		createVerifyOpenPack(EMPTY_LIST_OBJECT, EMPTY_LIST_OBJECT, false, false);
 
 		assertEquals(0, writer.getObjectsNumber());
 		assertEquals(0, pack.getObjectCount());
@@ -139,6 +139,37 @@ public class PackWriterTest extends RepositoryTestCase {
 
 		assertEquals(0, writer.getObjectsNumber());
 		assertEquals(0, pack.getObjectCount());
+	}
+
+	/**
+	 * Try to pass non-existing object as uninteresting, with non-ignoring
+	 * setting.
+	 *
+	 * @throws IOException
+	 */
+	public void testNotIgnoreNonExistingObjects() throws IOException {
+		final ObjectId nonExisting = ObjectId
+				.fromString("0000000000000000000000000000000000000001");
+		try {
+			createVerifyOpenPack(EMPTY_LIST_OBJECT, Collections.nCopies(1,
+					nonExisting), false, false);
+			fail("Should have thrown MissingObjectException");
+		} catch (MissingObjectException x) {
+			// expected
+		}
+	}
+
+	/**
+	 * Try to pass non-existing object as uninteresting, with ignoring setting.
+	 *
+	 * @throws IOException
+	 */
+	public void testIgnoreNonExistingObjects() throws IOException {
+		final ObjectId nonExisting = ObjectId
+				.fromString("0000000000000000000000000000000000000001");
+		createVerifyOpenPack(EMPTY_LIST_OBJECT, Collections.nCopies(1,
+				nonExisting), false, true);
+		// shouldn't throw anything
 	}
 
 	/**
@@ -326,7 +357,7 @@ public class PackWriterTest extends RepositoryTestCase {
 		final LinkedList<ObjectId> interestings = new LinkedList<ObjectId>();
 		interestings.add(ObjectId
 				.fromString("82c6b885ff600be425b4ea96dee75dca255b69e7"));
-		createVerifyOpenPack(interestings, EMPTY_LIST_OBJECT, false);
+		createVerifyOpenPack(interestings, EMPTY_LIST_OBJECT, false, false);
 
 		final ObjectId expectedOrder[] = new ObjectId[] {
 				ObjectId.fromString("82c6b885ff600be425b4ea96dee75dca255b69e7"),
@@ -352,7 +383,7 @@ public class PackWriterTest extends RepositoryTestCase {
 		final LinkedList<ObjectId> uninterestings = new LinkedList<ObjectId>();
 		uninterestings.add(ObjectId
 				.fromString("540a36d136cf413e4b064c2b0e0a4db60f77feab"));
-		createVerifyOpenPack(interestings, uninterestings, false);
+		createVerifyOpenPack(interestings, uninterestings, false, false);
 
 		final ObjectId expectedOrder[] = new ObjectId[] {
 				ObjectId.fromString("82c6b885ff600be425b4ea96dee75dca255b69e7"),
@@ -380,7 +411,7 @@ public class PackWriterTest extends RepositoryTestCase {
 		final LinkedList<ObjectId> uninterestings = new LinkedList<ObjectId>();
 		uninterestings.add(ObjectId
 				.fromString("c59759f143fb1fe21c197981df75a7ee00290799"));
-		createVerifyOpenPack(interestings, uninterestings, thin);
+		createVerifyOpenPack(interestings, uninterestings, thin, false);
 
 		final ObjectId writtenObjects[] = new ObjectId[] {
 				ObjectId.fromString("82c6b885ff600be425b4ea96dee75dca255b69e7"),
@@ -404,9 +435,11 @@ public class PackWriterTest extends RepositoryTestCase {
 	}
 
 	private void createVerifyOpenPack(final Collection<ObjectId> interestings,
-			final Collection<ObjectId> uninterestings, final boolean thin)
+			final Collection<ObjectId> uninterestings, final boolean thin,
+			final boolean ignoreMissingUninteresting)
 			throws MissingObjectException, IOException {
-		writer.writePack(interestings, uninterestings, thin);
+		writer.writePack(interestings, uninterestings, thin,
+				ignoreMissingUninteresting);
 		verifyOpenPack(thin);
 	}
 

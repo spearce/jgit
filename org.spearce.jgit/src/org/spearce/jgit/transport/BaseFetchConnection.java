@@ -37,29 +37,50 @@
 
 package org.spearce.jgit.transport;
 
-import org.spearce.jgit.errors.NotSupportedException;
-import org.spearce.jgit.lib.Repository;
+import java.util.Collection;
+
+import org.spearce.jgit.errors.TransportException;
+import org.spearce.jgit.lib.ProgressMonitor;
+import org.spearce.jgit.lib.Ref;
 
 /**
- * Canonical implementation of an object transport walking transport.
+ * Base helper class for fetch connection implementations. Provides some common
+ * typical structures and methods used during fetch connection.
  * <p>
- * Implementations of WalkTransport transfer individual objects one at a a time
- * from the loose objects directory, or entire packs if the source side does not
- * have the object as a loose object.
- * <p>
- * WalkTransports are not as efficient as {@link PackTransport} instances, but
- * can be useful in situations where a pack transport is not acceptable.
- * 
- * @see WalkFetchConnection
+ * Implementors of fetch over pack-based protocols should consider using
+ * {@link BasePackFetchConnection} instead.
+ * </p>
  */
-abstract class WalkTransport extends Transport {
-	WalkTransport(final Repository local, final URIish u) {
-		super(local, u);
+abstract class BaseFetchConnection extends BaseConnection implements
+		FetchConnection {
+	public final void fetch(final ProgressMonitor monitor,
+			final Collection<Ref> want) throws TransportException {
+		markStartedOperation();
+		doFetch(monitor, want);
 	}
 
-	@Override
-	public PushConnection openPush() throws NotSupportedException {
-		throw new NotSupportedException(
-				"Push is not supported by object walking transports");
+	/**
+	 * Default implementation of {@link FetchConnection#didFetchIncludeTags()} -
+	 * returning false.
+	 */
+	public boolean didFetchIncludeTags() {
+		return false;
 	}
+
+	/**
+	 * Implementation of {@link #fetch(ProgressMonitor, Collection)} without
+	 * checking for multiple fetch.
+	 *
+	 * @param monitor
+	 *            as in {@link #fetch(ProgressMonitor, Collection)}
+	 * @param want
+	 *            as in {@link #fetch(ProgressMonitor, Collection)}
+	 * @throws TransportException
+	 *             as in {@link #fetch(ProgressMonitor, Collection)}, but
+	 *             implementation doesn't have to care about multiple
+	 *             {@link #fetch(ProgressMonitor, Collection)} calls, as it is
+	 *             checked in this class.
+	 */
+	protected abstract void doFetch(final ProgressMonitor monitor,
+			final Collection<Ref> want) throws TransportException;
 }

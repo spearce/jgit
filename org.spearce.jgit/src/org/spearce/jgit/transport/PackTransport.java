@@ -46,7 +46,8 @@ import org.spearce.jgit.lib.Repository;
  * forth by creating pack files on the source side and indexing them on the
  * receiving side.
  * 
- * @see PackFetchConnection
+ * @see BasePackFetchConnection
+ * @see BasePackPushConnection
  */
 abstract class PackTransport extends Transport {
 	PackTransport(final Repository local, final URIish u) {
