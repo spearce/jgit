@@ -47,10 +47,13 @@ class IndexPack extends TextBuiltin {
 	void execute(final String[] args) throws Exception {
 		boolean fixThin = false;
 		int argi = 0;
+		int version = 0;
 		for (; argi < args.length; argi++) {
 			final String a = args[argi];
 			if ("--fix-thin".equals(a))
 				fixThin = true;
+			else if (a.startsWith("--index-version="))
+				version = Integer.parseInt(a.substring(a.indexOf('=') + 1));
 			else if ("--".equals(a)) {
 				argi++;
 				break;
@@ -69,6 +72,7 @@ class IndexPack extends TextBuiltin {
 		in = new BufferedInputStream(System.in);
 		ip = new org.spearce.jgit.transport.IndexPack(db, in, base);
 		ip.setFixThin(fixThin);
+		ip.setIndexVersion(version);
 		ip.index(new TextProgressMonitor());
 	}
 }

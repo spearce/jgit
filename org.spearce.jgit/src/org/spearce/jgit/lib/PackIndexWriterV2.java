@@ -1,5 +1,4 @@
 /*
- * Copyright (C) 2007, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
  * All rights reserved.
@@ -38,36 +37,65 @@
 
 package org.spearce.jgit.lib;
 
-import java.util.zip.Deflater;
+import java.io.IOException;
+import java.io.OutputStream;
+
+import org.spearce.jgit.transport.PackedObjectInfo;
+import org.spearce.jgit.util.NB;
 
 /**
- * This class keeps git repository core parameters.
+ * Creates the version 2 pack table of contents files.
+ *
+ * @see PackIndexWriter
+ * @see PackIndexV2
  */
-public class CoreConfig {
-	private static final int DEFAULT_COMPRESSION = Deflater.DEFAULT_COMPRESSION;
-
-	private final int compression;
-
-	private final int packIndexVersion;
-
-	CoreConfig(final RepositoryConfig rc) {
-		compression = rc.getInt("core", "compression", DEFAULT_COMPRESSION);
-		packIndexVersion = rc.getInt("pack", "indexversion", 0);
+class PackIndexWriterV2 extends PackIndexWriter {
+	PackIndexWriterV2(final OutputStream dst) {
+		super(dst);
 	}
 
-	/**
-	 * @see ObjectWriter
-	 * @return The compression level to use when storing loose objects
-	 */
-	public int getCompression() {
-		return compression;
+	@Override
+	protected void writeImpl() throws IOException {
+		writeTOC(2);
+		writeFanOutTable();
+		writeObjectNames();
+		writeCRCs();
+		writeOffset32();
+		writeOffset64();
+		writeChecksumFooter();
 	}
 
-	/**
-	 * @return the preferred pack index file format; 0 for oldest possible.
-	 * @see org.spearce.jgit.transport.IndexPack
-	 */
-	public int getPackIndexVersion() {
-		return packIndexVersion;
+	private void writeObjectNames() throws IOException {
+		for (final PackedObjectInfo oe : entries)
+			oe.copyRawTo(out);
+	}
+
+	private void writeCRCs() throws IOException {
+		for (final PackedObjectInfo oe : entries) {
+			NB.encodeInt32(tmp, 0, oe.getCRC());
+			out.write(tmp, 0, 4);
+		}
+	}
+
+	private void writeOffset32() throws IOException {
+		int o64 = 0;
+		for (final PackedObjectInfo oe : entries) {
+			final long o = oe.getOffset();
+			if (o < Integer.MAX_VALUE)
+				NB.encodeInt32(tmp, 0, (int) o);
+			else
+				NB.encodeInt32(tmp, 0, (1 << 31) | o64++);
+			out.write(tmp, 0, 4);
+		}
+	}
+
+	private void writeOffset64() throws IOException {
+		for (final PackedObjectInfo oe : entries) {
+			final long o = oe.getOffset();
+			if (o > Integer.MAX_VALUE) {
+				NB.encodeInt64(tmp, 0, o);
+				out.write(tmp, 0, 8);
+			}
+		}
 	}
 }

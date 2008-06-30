@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007, Robin Rosenberg <robin.rosenberg@dewire.com>
+ * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
  * All rights reserved.
@@ -38,36 +38,41 @@
 
 package org.spearce.jgit.lib;
 
-import java.util.zip.Deflater;
+import java.io.IOException;
+import java.io.OutputStream;
+
+import org.spearce.jgit.transport.PackedObjectInfo;
+import org.spearce.jgit.util.NB;
 
 /**
- * This class keeps git repository core parameters.
+ * Creates the version 1 (old style) pack table of contents files.
+ *
+ * @see PackIndexWriter
+ * @see PackIndexV1
  */
-public class CoreConfig {
-	private static final int DEFAULT_COMPRESSION = Deflater.DEFAULT_COMPRESSION;
-
-	private final int compression;
-
-	private final int packIndexVersion;
-
-	CoreConfig(final RepositoryConfig rc) {
-		compression = rc.getInt("core", "compression", DEFAULT_COMPRESSION);
-		packIndexVersion = rc.getInt("pack", "indexversion", 0);
+class PackIndexWriterV1 extends PackIndexWriter {
+	static boolean canStore(final PackedObjectInfo oe) {
+		// We are limited to 4 GB per pack as offset is 32 bit unsigned int.
+		//
+		return oe.getOffset() >>> 1 < Integer.MAX_VALUE;
 	}
 
-	/**
-	 * @see ObjectWriter
-	 * @return The compression level to use when storing loose objects
-	 */
-	public int getCompression() {
-		return compression;
+	PackIndexWriterV1(final OutputStream dst) {
+		super(dst);
 	}
 
-	/**
-	 * @return the preferred pack index file format; 0 for oldest possible.
-	 * @see org.spearce.jgit.transport.IndexPack
-	 */
-	public int getPackIndexVersion() {
-		return packIndexVersion;
+	@Override
+	protected void writeImpl() throws IOException {
+		writeFanOutTable();
+
+		for (final PackedObjectInfo oe : entries) {
+			if (!canStore(oe))
+				throw new IOException("Pack too large for index version 1");
+			NB.encodeInt32(tmp, 0, (int) oe.getOffset());
+			oe.copyRawTo(tmp, 4);
+			out.write(tmp);
+		}
+
+		writeChecksumFooter();
 	}
 }
