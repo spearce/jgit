@@ -129,6 +129,13 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 		//
 		final List<RemoteRefUpdate> updates = new ArrayList<RemoteRefUpdate>();
 		for (final RemoteRefUpdate u : refUpdates.values()) {
+			final String n = u.getRemoteName();
+			if (!n.startsWith("refs/") || !Repository.isValidRefName(n)) {
+				u.setStatus(Status.REJECTED_OTHER_REASON);
+				u.setMessage("funny refname");
+				continue;
+			}
+
 			if (AnyObjectId.equals(ObjectId.zeroId(), u.getNewObjectId()))
 				deleteCommand(u);
 			else
