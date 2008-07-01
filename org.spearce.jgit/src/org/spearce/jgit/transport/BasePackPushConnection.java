@@ -169,8 +169,10 @@ class BasePackPushConnection extends BasePackConnection implements
 
 		for (final Ref r : getRefs())
 			remoteObjects.add(r.getObjectId());
-		for (final RemoteRefUpdate r : refUpdates.values())
-			newObjects.add(r.getNewObjectId());
+		for (final RemoteRefUpdate r : refUpdates.values()) {
+			if (!ObjectId.zeroId().equals(r.getNewObjectId()))
+				newObjects.add(r.getNewObjectId());
+		}
 
 		writer.preparePack(newObjects, remoteObjects, thinPack, true);
 		writer.writePack(out);
