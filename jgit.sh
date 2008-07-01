@@ -1,10 +1,17 @@
 #!/bin/sh
 
-jgit_home=`dirname $0`
-cp="$jgit_home/org.spearce.jgit/bin"
-cp="$cp:$jgit_home/org.spearce.jgit/lib/jsch-0.1.37.jar"
-unset jgit_home
-java_args=
+if [ "@@use_self@@" = "1" ]
+then
+	this_script=`which "$0" 2>/dev/null`
+	[ $? -gt 0 -a -f "$0" ] && this_script="$0"
+	cp=$this_script
+else
+	jgit_home=`dirname $0`
+	cp="$jgit_home/org.spearce.jgit/bin"
+	cp="$cp:$jgit_home/org.spearce.jgit/lib/jsch-0.1.37.jar"
+	unset jgit_home
+	java_args=
+fi
 
 # Cleanup paths for Cygwin.
 #
@@ -35,3 +42,4 @@ then
 fi
 
 exec "$java" $java_args org.spearce.jgit.pgm.Main "$@"
+exit 1
