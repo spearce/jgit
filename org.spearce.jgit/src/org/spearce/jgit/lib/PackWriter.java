@@ -102,7 +102,7 @@ public class PackWriter {
 	 *
 	 * @see #preparePack(Collection, Collection, boolean, boolean)
 	 */
-	public static final String COUNTING_OBJECTS_PROGRESS = "Counting objects to pack";
+	public static final String COUNTING_OBJECTS_PROGRESS = "Counting objects";
 
 	/**
 	 * Title of {@link ProgressMonitor} task used during searching for objects
@@ -110,7 +110,7 @@ public class PackWriter {
 	 *
 	 * @see #writePack(OutputStream)
 	 */
-	public static final String SEARCHING_REUSE_PROGRESS = "Searching for delta and object reuse";
+	public static final String SEARCHING_REUSE_PROGRESS = "Compressing objects";
 
 	/**
 	 * Title of {@link ProgressMonitor} task used during writing out pack
