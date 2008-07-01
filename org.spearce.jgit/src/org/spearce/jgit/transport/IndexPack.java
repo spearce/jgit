@@ -55,6 +55,7 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 import org.spearce.jgit.errors.CorruptObjectException;
+import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.BinaryDelta;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.InflaterCache;
@@ -399,9 +400,10 @@ public class IndexPack {
 
 		final Deflater def = new Deflater(Deflater.DEFAULT_COMPRESSION, false);
 		long end = packOut.length() - 20;
-		while (!baseById.isEmpty()) {
-			final ObjectId baseId = baseById.keySet().iterator().next();
+		for (final ObjectId baseId : new ArrayList<ObjectId>(baseById.keySet())) {
 			final ObjectLoader ldr = repo.openObject(baseId);
+			if (ldr == null)
+				continue;
 			final byte[] data = ldr.getBytes();
 			final int typeCode = ldr.getType();
 			final PackedObjectInfo oe;
@@ -418,6 +420,11 @@ public class IndexPack {
 				throw new IOException("Download cancelled during indexing");
 		}
 		def.end();
+
+		if (!baseById.isEmpty()) {
+			final ObjectId need = baseById.keySet().iterator().next();
+			throw new MissingObjectException(need, "delta base");
+		}
 
 		fixHeaderFooter();
 	}
