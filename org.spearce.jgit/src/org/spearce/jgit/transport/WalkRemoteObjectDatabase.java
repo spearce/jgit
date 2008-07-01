@@ -269,6 +269,19 @@ abstract class WalkRemoteObjectDatabase {
 	}
 
 	/**
+	 * Delete a reflog from the remote repository.
+	 *
+	 * @param name
+	 *            name of the ref within the ref space, for example
+	 *            <code>refs/heads/pu</code>.
+	 * @throws IOException
+	 *             deletion is not supported, or deletion failed.
+	 */
+	void deleteRefLog(final String name) throws IOException {
+		deleteFile("../logs/" + name);
+	}
+
+	/**
 	 * Overwrite (or create) a loose ref in the remote repository.
 	 * <p>
 	 * This method creates any missing parent directories, if necessary.

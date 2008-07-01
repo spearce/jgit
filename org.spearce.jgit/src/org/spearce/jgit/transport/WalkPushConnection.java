@@ -280,6 +280,13 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 				u.setMessage(e.getMessage());
 			}
 		}
+
+		try {
+			dest.deleteRefLog(u.getRemoteName());
+		} catch (IOException e) {
+			u.setStatus(Status.REJECTED_OTHER_REASON);
+			u.setMessage(e.getMessage());
+		}
 	}
 
 	private void updateCommand(final RemoteRefUpdate u) {
