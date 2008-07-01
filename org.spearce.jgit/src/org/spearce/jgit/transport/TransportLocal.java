@@ -96,7 +96,7 @@ class TransportLocal extends PackTransport {
 		try {
 			final Process proc = Runtime.getRuntime().exec(
 					new String[] { cmd, "." }, null, remoteGitDir);
-			new StreamRewritingThread(proc.getErrorStream()).start();
+			new StreamRewritingThread(cmd, proc.getErrorStream()).start();
 			return proc;
 		} catch (IOException err) {
 			throw new TransportException(uri, err.getMessage(), err);
@@ -158,8 +158,8 @@ class TransportLocal extends PackTransport {
 	class StreamRewritingThread extends Thread {
 		private final InputStream in;
 
-		StreamRewritingThread(final InputStream in) {
-			super("JGit " + getOptionUploadPack() + " Errors");
+		StreamRewritingThread(final String cmd, final InputStream in) {
+			super("JGit " + cmd + " Errors");
 			this.in = in;
 		}
 
