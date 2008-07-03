@@ -59,13 +59,15 @@ import org.spearce.jgit.util.FS;
  * process.
  */
 class TransportLocal extends PackTransport {
+	private static final String PWD = ".";
+
 	static boolean canHandle(final URIish uri) {
 		if (uri.getHost() != null || uri.getPort() > 0 || uri.getUser() != null
 				|| uri.getPass() != null || uri.getPath() == null)
 			return false;
 
 		if ("file".equals(uri.getScheme()) || uri.getScheme() == null)
-			return FS.resolve(new File("."), uri.getPath()).isDirectory();
+			return FS.resolve(new File(PWD), uri.getPath()).isDirectory();
 		return false;
 	}
 
@@ -74,7 +76,7 @@ class TransportLocal extends PackTransport {
 	TransportLocal(final Repository local, final URIish uri) {
 		super(local, uri);
 
-		File d = FS.resolve(new File("."), uri.getPath()).getAbsoluteFile();
+		File d = FS.resolve(new File(PWD), uri.getPath()).getAbsoluteFile();
 		if (new File(d, ".git").isDirectory())
 			d = new File(d, ".git");
 		remoteGitDir = d;
@@ -94,8 +96,23 @@ class TransportLocal extends PackTransport {
 	protected Process startProcessWithErrStream(final String cmd)
 			throws TransportException {
 		try {
-			final Process proc = Runtime.getRuntime().exec(
-					new String[] { cmd, "." }, null, remoteGitDir);
+			final String[] args;
+			final Process proc;
+
+			if (cmd.startsWith("git-")) {
+				args = new String[] { "git", cmd.substring(4), PWD };
+			} else {
+				final int gitspace = cmd.indexOf("git ");
+				if (gitspace >= 0) {
+					final String git = cmd.substring(0, gitspace + 3);
+					final String subcmd = cmd.substring(gitspace + 4);
+					args = new String[] { git, subcmd, PWD };
+				} else {
+					args = new String[] { cmd, PWD };
+				}
+			}
+
+			proc = Runtime.getRuntime().exec(args, null, remoteGitDir);
 			new StreamRewritingThread(cmd, proc.getErrorStream()).start();
 			return proc;
 		} catch (IOException err) {
