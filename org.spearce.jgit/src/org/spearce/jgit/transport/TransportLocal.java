@@ -125,7 +125,7 @@ class TransportLocal extends PackTransport {
 
 		LocalFetchConnection() throws TransportException {
 			super(TransportLocal.this);
-			uploadPack = startProcessWithErrStream(getOptionReceivePack());
+			uploadPack = startProcessWithErrStream(getOptionUploadPack());
 			init(uploadPack.getInputStream(), uploadPack.getOutputStream());
 			readAdvertisedRefs();
 		}
