@@ -27,7 +27,6 @@ import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.Repository;
 
 class GitMoveDeleteHook implements IMoveDeleteHook {
-	private static final boolean NOT_ALLOWED = true;
 	private static final boolean I_AM_DONE = true;
 
 	private static final boolean FINISH_FOR_ME = false;
@@ -54,7 +53,7 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 			e.printStackTrace();
 			tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(), 0,
 					CoreText.MoveDeleteHook_operationError, e));
-			return NOT_ALLOWED;
+			return I_AM_DONE;
 		}
 	}
 
@@ -97,7 +96,7 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 				}
 				tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(),
 						0, "Destination not in a git versioned project", null));
-				return NOT_ALLOWED;
+				return FINISH_FOR_ME;
 			}
 			GitIndex index2 = map2.getRepository().getIndex();
 			tree.standardMoveFile(source, destination, updateFlags, monitor);
@@ -114,7 +113,7 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 			e.printStackTrace();
 			tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(), 0,
 					CoreText.MoveDeleteHook_operationError, e));
-			return NOT_ALLOWED;
+			return I_AM_DONE;
 
 		}
 	}
@@ -124,25 +123,20 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 			final IProgressMonitor monitor) {
 		// TODO: Implement this. Should be relatively easy, but consider that
 		// Eclipse thinks folders are real thinsgs, while Git does not care.
-		return NOT_ALLOWED;
+		return FINISH_FOR_ME;
 	}
 
 	public boolean moveProject(final IResourceTree tree, final IProject source,
 			final IProjectDescription description, final int updateFlags,
 			final IProgressMonitor monitor) {
-		// Never allow moving a project as it can complicate updating our
-		// project data with the new repository mappings. To move a project
-		// disconnect the GIT team provider, move the project, then reconnect
-		// the GIT team provider.
-		// We should be able to do this without too much effort when the
+		// TODO: We should be able to do this without too much effort when the
 		// projects belong to the same Git repository.
-		//
-		return NOT_ALLOWED;
+		return FINISH_FOR_ME;
 	}
 
 	private boolean cannotModifyRepository(final IResourceTree tree) {
 		tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(), 0,
 				CoreText.MoveDeleteHook_cannotModifyFolder, null));
-		return NOT_ALLOWED;
+		return I_AM_DONE;
 	}
 }
