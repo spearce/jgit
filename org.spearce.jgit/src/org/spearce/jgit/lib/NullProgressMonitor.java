@@ -42,6 +42,9 @@ package org.spearce.jgit.lib;
  * A NullProgressMonitor does not report progress anywhere.
  */
 public class NullProgressMonitor implements ProgressMonitor {
+	/** Immutable instance of a null progress monitor. */
+	public static final NullProgressMonitor INSTANCE = new NullProgressMonitor();
+
 	public void start(int totalTasks) {
 		// Do not report.
 	}

@@ -200,7 +200,7 @@ public class TemporaryBuffer extends OutputStream {
 	public void writeTo(final OutputStream os, ProgressMonitor pm)
 			throws IOException {
 		if (pm == null)
-			pm = new NullProgressMonitor();
+			pm = NullProgressMonitor.INSTANCE;
 		if (blocks != null) {
 			// Everything is in core so we can stream directly to the output.
 			//
