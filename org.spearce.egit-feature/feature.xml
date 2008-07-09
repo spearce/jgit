@@ -6,11 +6,15 @@
       provider-name="spearce.org"
       plugin="org.spearce.egit">
 
+   <description url="http://www.jgit.org">
+      An Eclipse Git Plugin in pure Java.
+   </description>
+
    <copyright>
       This plugin is Copyright it&apos;s authors and contributors. The code
 is available under the BSD license for core Git repository access
 (JGit) and the EPL for Eclipse specific portions plus a BSD style
-license for the SSH protocol (org.spearce.jgit/ganymed-ssh2-xxx).
+license for the SSH protocol (org.spearce.jgit/lib/JSch.LICENSE.txt).
 See the license agreement for details.
    </copyright>
 
@@ -287,6 +291,10 @@ Agreement more than one year after the cause of action arose.
 Each party waives its rights to a jury trial in any resulting
 litigation.
    </license>
+
+   <url>
+      <update label="Eclipse Update Site (experimental)" url="http://www.jgit.org/update-site"/>
+   </url>
 
    <requires>
       <import plugin="org.eclipse.core.runtime" version="3.2" match="greaterOrEqual"/>
