@@ -48,6 +48,7 @@ import java.util.TreeMap;
 
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.AnyObjectId;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.PackWriter;
 import org.spearce.jgit.lib.ProgressMonitor;
@@ -150,6 +151,12 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 			sendpack(updates, monitor);
 		for (final RemoteRefUpdate u : updates)
 			updateCommand(u);
+
+		// Is this a new repository? If so we should create additional
+		// metadata files so it is properly initialized during the push.
+		//
+		if (!updates.isEmpty() && isNewRepository())
+			createNewRepository(updates);
 
 		if (!packedRefUpdates.isEmpty()) {
 			try {
@@ -306,5 +313,52 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 			u.setStatus(Status.REJECTED_OTHER_REASON);
 			u.setMessage(e.getMessage());
 		}
+	}
+
+	private boolean isNewRepository() {
+		return getRefsMap().isEmpty() && packNames != null
+				&& packNames.isEmpty();
+	}
+
+	private void createNewRepository(final List<RemoteRefUpdate> updates)
+			throws TransportException {
+		try {
+			final String ref = "ref: " + pickHEAD(updates) + "\n";
+			final byte[] bytes = ref.getBytes(Constants.CHARACTER_ENCODING);
+			dest.writeFile("../HEAD", bytes);
+		} catch (IOException e) {
+			throw new TransportException(uri, "cannot create HEAD", e);
+		}
+
+		try {
+			final String config = "[core]\n"
+					+ "\trepositoryformatversion = 0\n";
+			final byte[] bytes = config.getBytes(Constants.CHARACTER_ENCODING);
+			dest.writeFile("../config", bytes);
+		} catch (IOException e) {
+			throw new TransportException(uri, "cannot create config", e);
+		}
+	}
+
+	private static String pickHEAD(final List<RemoteRefUpdate> updates) {
+		// Try to use master if the user is pushing that, it is the
+		// default branch and is likely what they want to remain as
+		// the default on the new remote.
+		//
+		for (final RemoteRefUpdate u : updates) {
+			final String n = u.getRemoteName();
+			if (n.equals(Constants.HEADS_PREFIX + "/" + Constants.MASTER))
+				return n;
+		}
+
+		// Pick any branch, under the assumption the user pushed only
+		// one to the remote side.
+		//
+		for (final RemoteRefUpdate u : updates) {
+			final String n = u.getRemoteName();
+			if (n.startsWith(Constants.HEADS_PREFIX + "/"))
+				return n;
+		}
+		return updates.get(0).getRemoteName();
 	}
 }
