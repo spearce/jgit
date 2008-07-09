@@ -66,6 +66,15 @@ import org.spearce.jgit.treewalk.TreeWalk;
  * commits that are returned first.
  */
 public class ObjectWalk extends RevWalk {
+	/**
+	 * Indicates a non-RevCommit is in {@link #pendingObjects}.
+	 * <p>
+	 * We can safely reuse {@link RevWalk#REWRITE} here for the same value as it
+	 * is only set on RevCommit and {@link #pendingObjects} never has RevCommit
+	 * instances inserted into it.
+	 */
+	private static final int IN_PENDING = RevWalk.REWRITE;
+
 	private final TreeWalk treeWalk;
 
 	private BlockObjQueue pendingObjects;
@@ -361,8 +370,8 @@ public class ObjectWalk extends RevWalk {
 	}
 
 	private void addObject(final RevObject o) {
-		if ((o.flags & SEEN) == 0) {
-			o.flags |= SEEN;
+		if ((o.flags & IN_PENDING) == 0) {
+			o.flags |= IN_PENDING;
 			pendingObjects.add(o);
 		}
 	}
