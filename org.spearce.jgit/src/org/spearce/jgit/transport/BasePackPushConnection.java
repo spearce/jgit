@@ -148,6 +148,7 @@ class BasePackPushConnection extends BasePackConnection implements
 		if (monitor.isCancelled())
 			throw new TransportException(uri, "push cancelled");
 		pckOut.end();
+		outNeedsEnd = false;
 	}
 
 	private String enableCapabilties() {

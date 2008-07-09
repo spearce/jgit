@@ -253,6 +253,7 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 			pckOut.writeString(line.toString());
 		}
 		pckOut.end();
+		outNeedsEnd = false;
 		return !first;
 	}
 

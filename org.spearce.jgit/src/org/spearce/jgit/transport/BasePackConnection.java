@@ -83,6 +83,9 @@ abstract class BasePackConnection extends BaseConnection {
 	/** Packet line encoder around {@link #out}. */
 	protected PacketLineOut pckOut;
 
+	/** Send {@link PacketLineOut#end()} before closing {@link #out}? */
+	protected boolean outNeedsEnd;
+
 	/** Capability tokens advertised by the remote side. */
 	private final Set<String> remoteCapablities = new HashSet<String>();
 
@@ -99,6 +102,7 @@ abstract class BasePackConnection extends BaseConnection {
 
 		pckIn = new PacketLineIn(in);
 		pckOut = new PacketLineOut(out);
+		outNeedsEnd = true;
 	}
 
 	protected void readAdvertisedRefs() throws TransportException {
@@ -195,7 +199,8 @@ abstract class BasePackConnection extends BaseConnection {
 	public void close() {
 		if (out != null) {
 			try {
-				pckOut.end();
+				if (outNeedsEnd)
+					pckOut.end();
 				out.close();
 			} catch (IOException err) {
 				// Ignore any close errors.
