@@ -47,6 +47,8 @@ class Tag extends TextBuiltin {
 		String message = null;
 		String ref = "HEAD";
 		boolean force = false;
+               if (args.length == 0)
+                       usage();
 		for (int i = 0; i < args.length; ++i) {
 			if (args[i].equals("-f")) {
 				force = true;
@@ -97,6 +99,6 @@ class Tag extends TextBuiltin {
 	}
 
 	private void usage() {
-		throw die("Usage: -m message tag [head]");
+               throw die("Usage: [-m message] [-f] tag [head]");
 	}
 }
