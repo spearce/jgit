@@ -228,7 +228,7 @@ class TransportGitSsh extends PackTransport {
 				if (channel.isConnected())
 					init(channel.getInputStream(), channel.getOutputStream());
 				else
-					throw new TransportException(errStream.toString());
+					throw new TransportException(uri, errStream.toString());
 
 			} catch (TransportException err) {
 				close();
@@ -263,7 +263,12 @@ class TransportGitSsh extends PackTransport {
 			super(TransportGitSsh.this);
 			try {
 				channel = exec(getOptionReceivePack());
-				init(channel.getInputStream(), channel.getOutputStream());
+
+				if (channel.isConnected())
+					init(channel.getInputStream(), channel.getOutputStream());
+				else
+					throw new TransportException(uri, errStream.toString());
+
 			} catch (TransportException err) {
 				close();
 				throw err;
