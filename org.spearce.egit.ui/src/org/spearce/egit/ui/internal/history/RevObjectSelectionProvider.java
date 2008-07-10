@@ -14,6 +14,7 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.spearce.jgit.lib.Repository;
 
 /**
  * A selection provider for Git revision objects
@@ -23,6 +24,8 @@ public class RevObjectSelectionProvider implements ISelectionProvider {
 	private List<ISelectionChangedListener> listeners = new ArrayList<ISelectionChangedListener>();
 
 	private ISelection selection;
+
+	private Repository repository;
 
 	public void addSelectionChangedListener(ISelectionChangedListener listener) {
 		listeners.add(listener);
@@ -45,4 +48,20 @@ public class RevObjectSelectionProvider implements ISelectionProvider {
 		}
 	}
 
+	/**
+	 * Sets the active repository. This one is called by the view when the view
+	 * is updated with new data.
+	 *
+	 * @param repository
+	 */
+	public void setActiveRepository(Repository repository) {
+		this.repository = repository;
+	}
+
+	/**
+	 * @return currently active repository
+	 */
+	public Repository getActiveRepository() {
+		return repository;
+	}
 }

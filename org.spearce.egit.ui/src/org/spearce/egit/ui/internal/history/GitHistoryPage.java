@@ -503,6 +503,8 @@ public class GitHistoryPage extends HistoryPage {
 
 	@Override
 	public boolean inputSet() {
+		if (revObjectSelectionProvider != null)
+			revObjectSelectionProvider.setActiveRepository(null);
 		cancelRefreshJob();
 
 		if (graph == null)
@@ -589,9 +591,11 @@ public class GitHistoryPage extends HistoryPage {
 		list.source(currentWalk);
 
 		final GenerateHistoryJob rj = new GenerateHistoryJob(this, list);
+		final Repository fdb = db;
 		rj.addJobChangeListener(new JobChangeAdapter() {
 			@Override
 			public void done(final IJobChangeEvent event) {
+				revObjectSelectionProvider.setActiveRepository(fdb);
 				final Control graphctl = graph.getControl();
 				if (job != rj || graphctl.isDisposed())
 					return;
