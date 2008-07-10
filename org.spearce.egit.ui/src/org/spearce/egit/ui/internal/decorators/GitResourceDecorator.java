@@ -10,6 +10,8 @@
 package org.spearce.egit.ui.internal.decorators;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
@@ -38,7 +40,11 @@ import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.GitIndex;
+import org.spearce.jgit.lib.IndexChangedEvent;
+import org.spearce.jgit.lib.RefsChangedEvent;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.RepositoryChangedEvent;
+import org.spearce.jgit.lib.RepositoryListener;
 import org.spearce.jgit.lib.RepositoryState;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
@@ -61,13 +67,33 @@ public class GitResourceDecorator extends LabelProvider implements
 
 	private static final RCL myrcl = new RCL();
 
-	static class RCL implements RepositoryChangeListener, Runnable {
+	static class RCL implements RepositoryChangeListener, RepositoryListener, Runnable {
 		private boolean requested;
 
 		public synchronized void run() {
 			requested = false;
 			PlatformUI.getWorkbench().getDecoratorManager().update(
 					GitResourceDecorator.class.getName());
+		}
+
+		public void refsChanged(RefsChangedEvent e) {
+			repositoryChanged(e);
+		}
+
+		public void indexChanged(IndexChangedEvent e) {
+			repositoryChanged(e);
+		}
+
+		private void repositoryChanged(RepositoryChangedEvent e) {
+			Set<RepositoryMapping> ms = new HashSet<RepositoryMapping>();
+			for (IProject p : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
+				RepositoryMapping mapping = RepositoryMapping.getMapping(p);
+				if (mapping != null && mapping.getRepository() == e.getRepository())
+					ms.add(mapping);
+			}
+			for (RepositoryMapping m : ms) {
+				repositoryChanged(m);
+			}
 		}
 
 		public void repositoryChanged(final RepositoryMapping which) {
@@ -139,6 +165,7 @@ public class GitResourceDecorator extends LabelProvider implements
 	static ResCL myrescl = new ResCL();
 
 	static {
+		Repository.addAnyRepositoryChangedListener(myrcl);
 		GitProjectData.addRepositoryChangeListener(myrcl);
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(myrescl,
 				IResourceChangeEvent.POST_CHANGE);
