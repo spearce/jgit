@@ -11,6 +11,8 @@ package org.spearce.egit.ui.internal.decorators;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.eclipse.core.resources.IContainer;
@@ -25,14 +27,19 @@ import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.QualifiedName;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.ISchedulingRule;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.viewers.IDecoration;
 import org.eclipse.jface.viewers.ILightweightLabelDecorator;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.LabelProviderChangedEvent;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.team.core.Team;
-import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.IDecoratorManager;
 import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryChangeListener;
 import org.spearce.egit.core.project.RepositoryMapping;
@@ -65,16 +72,23 @@ import org.spearce.jgit.lib.GitIndex.Entry;
 public class GitResourceDecorator extends LabelProvider implements
 		ILightweightLabelDecorator {
 
-	private static final RCL myrcl = new RCL();
+	static final String decoratorId = "org.spearce.egit.ui.internal.decorators.GitResourceDecorator";
+	static class ResCL extends Job implements IResourceChangeListener, RepositoryChangeListener, RepositoryListener {
 
-	static class RCL implements RepositoryChangeListener, RepositoryListener, Runnable {
-		private boolean requested;
-
-		public synchronized void run() {
-			requested = false;
-			PlatformUI.getWorkbench().getDecoratorManager().update(
-					GitResourceDecorator.class.getName());
+		ResCL() {
+			super("Git resource decorator trigger");
 		}
+
+		GitResourceDecorator getActiveDecorator() {
+			IDecoratorManager decoratorManager = Activator.getDefault()
+					.getWorkbench().getDecoratorManager();
+			if (decoratorManager.getEnabled(decoratorId))
+				return (GitResourceDecorator) decoratorManager
+						.getLightweightLabelDecorator(decoratorId);
+			return null;
+		}
+
+		private Set<IResource> resources = new LinkedHashSet<IResource>();
 
 		public void refsChanged(RefsChangedEvent e) {
 			repositoryChanged(e);
@@ -97,76 +111,87 @@ public class GitResourceDecorator extends LabelProvider implements
 		}
 
 		public void repositoryChanged(final RepositoryMapping which) {
+			synchronized (resources) {
+				resources.add(which.getContainer());
+			}
+			schedule();
+		}
+
+		@Override
+		protected IStatus run(IProgressMonitor arg0) {
 			try {
-				which.getContainer().accept(new IResourceVisitor() {
-					public boolean visit(IResource resource) throws CoreException {
-						if (resource instanceof IContainer)
-							clearDecorationState(resource);
-						return true;
+				if (resources.size() > 0) {
+					IResource m;
+					synchronized(resources) {
+						Iterator<IResource> i = resources.iterator();
+						m = i.next();
+						i.remove();
+						if (resources.size() > 0)
+							schedule();
 					}
-				});
-			} catch (CoreException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+					ISchedulingRule markerRule = m.getWorkspace().getRuleFactory().markerRule(m);
+					getJobManager().beginRule(markerRule, arg0);
+					try {
+						m.accept(new IResourceVisitor() {
+							public boolean visit(IResource resource) throws CoreException {
+								getActiveDecorator().clearDecorationState(resource);
+								return true;
+							}
+						});
+					} finally {
+						getJobManager().endRule(markerRule);
+					}
+				}
+				return Status.OK_STATUS;
+			} catch (Exception e) {
+				return new Status(IStatus.ERROR, Activator.getPluginId(), "Failed to trigger resource decoration", e);
 			}
-			start();
 		}
 
-		synchronized void start() {
-			if (requested)
-				return;
-			final Display d = PlatformUI.getWorkbench().getDisplay();
-			if (d.getThread() == Thread.currentThread())
-				run();
-			else {
-				requested = true;
-				d.asyncExec(this);
-			}
-		}
-	}
-
-	static class ResCL implements IResourceChangeListener {
 		public void resourceChanged(IResourceChangeEvent event) {
 			if (event.getType() != IResourceChangeEvent.POST_CHANGE) {
 				return;
 			}
 			try {
 				event.getDelta().accept(new IResourceDeltaVisitor() {
-
 					public boolean visit(IResourceDelta delta)
 							throws CoreException {
 						for (IResource r = delta.getResource(); r.getType() != IResource.ROOT; r = r
 								.getParent()) {
-							try {
-								clearDecorationState(r);
-							} catch (CoreException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
+							synchronized (resources) {
+								resources.add(r);
 							}
 						}
 						return true;
 					}
-
 				});
-			} catch (CoreException e2) {
-				// TODO Auto-generated catch block
-				e2.printStackTrace();
-				return;
+			} catch (Exception e) {
+				Activator.logError("Problem during decorations. Stopped", e);
 			}
-			myrcl.start();
+			schedule();
 		}
-	}
 
-	static void clearDecorationState(IResource r) throws CoreException {
+		void force() {
+			for (IProject p : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
+				synchronized (resources) {
+					resources.add(p);
+				}
+			}
+			schedule();
+		}
+	} // End ResCL
+
+	void clearDecorationState(IResource r) throws CoreException {
 		if (r.isAccessible())
 			r.setSessionProperty(GITFOLDERDIRTYSTATEPROPERTY, null);
+		fireLabelProviderChanged(new LabelProviderChangedEvent(this, r));
 	}
 
 	static ResCL myrescl = new ResCL();
 
 	static {
-		Repository.addAnyRepositoryChangedListener(myrcl);
-		GitProjectData.addRepositoryChangeListener(myrcl);
+		Repository.addAnyRepositoryChangedListener(myrescl);
+		GitProjectData.addRepositoryChangeListener(myrescl);
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(myrescl,
 				IResourceChangeEvent.POST_CHANGE);
 	}
@@ -179,7 +204,7 @@ public class GitResourceDecorator extends LabelProvider implements
 	 * </p>
 	 */
 	public static void refresh() {
-		myrcl.start();
+		myrescl.force();
 	}
 
 	private static IResource toIResource(final Object e) {
@@ -368,36 +393,33 @@ public class GitResourceDecorator extends LabelProvider implements
 
 		try {
 			Integer dirty = (Integer) rsrc.getSessionProperty(GITFOLDERDIRTYSTATEPROPERTY);
+			Runnable runnable = new Runnable() {
+				public void run() {
+					// Async could be called after a
+					// project is closed or a
+					// resource is deleted
+					if (!rsrc.isAccessible())
+						return;
+					fireLabelProviderChanged(new LabelProviderChangedEvent(
+							GitResourceDecorator.this, rsrc));
+				}
+			};
 			if (dirty == null) {
 				rsrc.setSessionProperty(GITFOLDERDIRTYSTATEPROPERTY, new Integer(flag));
 				orState(rsrc.getParent(), flag);
-				Display.getDefault().asyncExec(new Runnable() {
-					public void run() {
-						// Async could be called after a
-						// project is closed or a
-						// resource is deleted
-						if (!rsrc.isAccessible())
-							return;
-						fireLabelProviderChanged(new LabelProviderChangedEvent(
-								GitResourceDecorator.this, rsrc));
-					}
-				});
+//				if (Thread.currentThread() == Display.getDefault().getThread())
+//					runnable.run();
+//				else
+					Display.getDefault().asyncExec(runnable);
 			} else {
 				if ((dirty.intValue() | flag) != dirty.intValue()) {
 					dirty = new Integer(dirty.intValue() | flag);
 					rsrc.setSessionProperty(GITFOLDERDIRTYSTATEPROPERTY, dirty);
 					orState(rsrc.getParent(), dirty.intValue());
-					Display.getDefault().asyncExec(new Runnable() {
-						public void run() {
-							// Async could be called after a
-							// project is closed or a
-							// resource is deleted
-							if (!rsrc.isAccessible())
-								return;
-							fireLabelProviderChanged(new LabelProviderChangedEvent(
-									GitResourceDecorator.this, rsrc));
-						}
-					});
+//					if (Thread.currentThread() == Display.getDefault().getThread())
+//						runnable.run();
+//					else
+						Display.getDefault().asyncExec(runnable);
 				}
 			}
 		} catch (CoreException e) {
