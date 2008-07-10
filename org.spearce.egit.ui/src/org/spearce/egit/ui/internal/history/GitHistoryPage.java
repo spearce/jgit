@@ -234,11 +234,16 @@ public class GitHistoryPage extends HistoryPage implements RepositoryListener {
 		attachContextMenu(commentViewer.getControl());
 		attachContextMenu(fileViewer.getControl());
 		layout();
+
+		Repository.addAnyRepositoryChangedListener(this);
 	}
 
 	private Runnable refschangedRunnable;
 
 	public void refsChanged(final RefsChangedEvent e) {
+		if (e.getRepository() != db)
+			return;
+
 		if (getControl().isDisposed())
 			return;
 
@@ -480,6 +485,7 @@ public class GitHistoryPage extends HistoryPage implements RepositoryListener {
 	}
 
 	public void dispose() {
+		Repository.removeAnyRepositoryChangedListener(this);
 		cancelRefreshJob();
 		if (popupMgr != null) {
 			for (final IContributionItem i : popupMgr.getItems()) {
@@ -539,9 +545,6 @@ public class GitHistoryPage extends HistoryPage implements RepositoryListener {
 			revObjectSelectionProvider.setActiveRepository(null);
 		cancelRefreshJob();
 
-		if (db != null)
-			db.removeRepositoryChangedListener(this);
-
 		if (graph == null)
 			return false;
 
@@ -569,8 +572,6 @@ public class GitHistoryPage extends HistoryPage implements RepositoryListener {
 
 		if (db == null)
 			return false;
-
-		db.addRepositoryChangedListener(this);
 
 		final AnyObjectId headId;
 		try {
