@@ -1100,4 +1100,14 @@ public class Repository {
 			l.indexChanged(event);
 		}
 	}
+
+	/**
+	 * Force a scan for changed refs.
+	 *
+	 * @throws IOException
+	 */
+	public void scanForRepoChanges() throws IOException {
+		getAllRefs(); // This will look for changes to refs
+		getIndex(); // This will detect changes in the index
+	}
 }

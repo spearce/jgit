@@ -10,18 +10,27 @@ package org.spearce.egit.ui;
 
 import java.net.Authenticator;
 import java.net.ProxySelector;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.eclipse.core.net.proxy.IProxyService;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.ISchedulingRule;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jsch.core.IJSchService;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.themes.ITheme;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.spearce.egit.core.project.RepositoryMapping;
+import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.transport.SshSessionFactory;
 
 /**
@@ -127,6 +136,7 @@ public class Activator extends AbstractUIPlugin {
 	}
 
 	private boolean traceVerbose;
+	private RCS rcs;
 
 	/**
 	 * Constructor for the egit ui plugin singleton
@@ -140,6 +150,66 @@ public class Activator extends AbstractUIPlugin {
 		traceVerbose = isOptionSet("/trace/verbose");
 		setupSSH(context);
 		setupProxy(context);
+		setupRepoChangeScanner();
+	}
+
+	static class RCS extends Job {
+		RCS() {
+			super("Repository Change Scanner");
+		}
+
+		// FIXME, need to be more intelligent about this to avoid too much work
+		private static final long REPO_SCAN_INTERVAL = 10000L;
+
+		@Override
+		protected IStatus run(IProgressMonitor monitor) {
+			try {
+				// A repository can contain many projects, only scan once
+				// (a project could in theory be distributed among many
+				// repositories. We discard that as being ugly and stupid for
+				// the moment.
+				IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+				monitor.beginTask("Scanning Git repositories for changes", projects.length);
+				Set<Repository> scanned = new HashSet<Repository>();
+				for (IProject p : projects) {
+					RepositoryMapping mapping = RepositoryMapping.getMapping(p);
+					if (mapping != null) {
+						Repository r = mapping.getRepository();
+						if (!scanned.contains(r)) {
+							if (monitor.isCanceled())
+								break;
+							trace("Scanning " + r + " for changes");
+							scanned.add(r);
+							ISchedulingRule rule = p.getWorkspace().getRuleFactory().modifyRule(p);
+							getJobManager().beginRule(rule, monitor);
+							try {
+								r.scanForRepoChanges();
+							} finally {
+								getJobManager().endRule(rule);
+							}
+						}
+					}
+					monitor.worked(1);
+				}
+				monitor.done();
+				trace("Rescheduling " + getName() + " job");
+				schedule(REPO_SCAN_INTERVAL);
+			} catch (Exception e) {
+				trace("Stopped rescheduling " + getName() + "job");
+				return new Status(
+						IStatus.ERROR,
+						getPluginId(),
+						0,
+						"An error occurred while scanning for changes. Scanning aborted",
+						e);
+			}
+			return Status.OK_STATUS;
+		}
+	}
+
+	private void setupRepoChangeScanner() {
+		rcs = new RCS();
+		rcs.schedule(RCS.REPO_SCAN_INTERVAL);
 	}
 
 	private void setupSSH(final BundleContext context) {
@@ -165,6 +235,11 @@ public class Activator extends AbstractUIPlugin {
 	}
 
 	public void stop(final BundleContext context) throws Exception {
+		trace("Trying to cancel " + rcs.getName() + " job");
+		if (!rcs.cancel()) {
+			rcs.join();
+		}
+		trace("rcs.getName() " + rcs.getName() + " cancelled ok");
 		super.stop(context);
 		plugin = null;
 	}
