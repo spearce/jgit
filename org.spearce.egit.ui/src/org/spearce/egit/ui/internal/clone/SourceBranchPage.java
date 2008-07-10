@@ -241,6 +241,7 @@ class SourceBranchPage extends WizardPage {
 							adv = fn.getRefs();
 						} finally {
 							fn.close();
+							tn.close();
 						}
 
 						final Ref idHEAD = fn.getRef(Constants.HEAD);

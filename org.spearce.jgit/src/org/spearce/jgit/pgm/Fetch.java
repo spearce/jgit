@@ -63,12 +63,17 @@ class Fetch extends TextBuiltin {
 			args = new String[] { "origin" };
 
 		final Transport tn = Transport.open(db, args[argi++]);
-		final List<RefSpec> toget = new ArrayList<RefSpec>();
-		for (; argi < args.length; argi++)
-			toget.add(new RefSpec(args[argi]));
-		final FetchResult r = tn.fetch(new TextProgressMonitor(), toget);
-		if (r.getTrackingRefUpdates().isEmpty())
-			return;
+		final FetchResult r;
+		try {
+			final List<RefSpec> toget = new ArrayList<RefSpec>();
+			for (; argi < args.length; argi++)
+				toget.add(new RefSpec(args[argi]));
+			r = tn.fetch(new TextProgressMonitor(), toget);
+			if (r.getTrackingRefUpdates().isEmpty())
+				return;
+		} finally {
+			tn.close();
+		}
 
 		out.print("From ");
 		out.print(tn.getURI());

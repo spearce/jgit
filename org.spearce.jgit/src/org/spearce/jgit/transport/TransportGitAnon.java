@@ -77,6 +77,11 @@ class TransportGitAnon extends PackTransport {
 		return new TcpPushConnection();
 	}
 
+	@Override
+	public void close() {
+		// Resources must be established per-connection.
+	}
+
 	Socket openConnection() throws TransportException {
 		final int port = uri.getPort() > 0 ? uri.getPort() : GIT_PORT;
 		try {

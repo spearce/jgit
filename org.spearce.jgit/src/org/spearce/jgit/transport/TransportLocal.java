@@ -93,6 +93,11 @@ class TransportLocal extends PackTransport {
 		return new LocalPushConnection();
 	}
 
+	@Override
+	public void close() {
+		// Resources must be established per-connection.
+	}
+
 	protected Process startProcessWithErrStream(final String cmd)
 			throws TransportException {
 		try {

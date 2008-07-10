@@ -106,6 +106,11 @@ class TransportHttp extends WalkTransport {
 		return r;
 	}
 
+	@Override
+	public void close() {
+		// No explicit connections are maintained.
+	}
+
 	class HttpObjectDB extends WalkRemoteObjectDatabase {
 		private final URL objectsUrl;
 

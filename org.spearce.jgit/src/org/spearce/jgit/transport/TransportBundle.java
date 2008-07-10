@@ -101,6 +101,11 @@ class TransportBundle extends PackTransport {
 				"Push is not supported for bundle transport");
 	}
 
+	@Override
+	public void close() {
+		// Resources must be established per-connection.
+	}
+
 	class BundleFetchConnection extends BaseFetchConnection {
 		FileInputStream in;
 

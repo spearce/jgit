@@ -379,6 +379,11 @@ public class PushProcessTest extends RepositoryTestCase {
 				TransportException {
 			return new MockPushConnection();
 		}
+
+		@Override
+		public void close() {
+			// nothing here
+		}
 	}
 
 	private class MockPushConnection extends BaseConnection implements

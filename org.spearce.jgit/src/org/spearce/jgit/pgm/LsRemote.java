@@ -70,6 +70,7 @@ class LsRemote extends TextBuiltin {
 			}
 		} finally {
 			c.close();
+			tn.close();
 		}
 	}
 

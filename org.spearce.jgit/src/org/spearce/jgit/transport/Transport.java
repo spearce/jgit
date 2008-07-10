@@ -527,6 +527,16 @@ public abstract class Transport {
 	public abstract PushConnection openPush() throws NotSupportedException,
 			TransportException;
 
+	/**
+	 * Close any resources used by this transport.
+	 * <p>
+	 * If the remote repository is contacted by a network socket this method
+	 * must close that network socket, disconnecting the two peers. If the
+	 * remote repository is actually local (same system) this method must close
+	 * any open file handles used to read the "remote" repository.
+	 */
+	public abstract void close();
+
 	private Collection<RefSpec> expandPushWildcardsFor(
 			final Collection<RefSpec> specs) {
 		final Map<String, Ref> localRefs = local.getAllRefs();

@@ -56,6 +56,16 @@ public class TransportTest extends RepositoryTestCase {
 		final RepositoryConfig config = db.getConfig();
 		remoteConfig = new RemoteConfig(config, "test");
 		remoteConfig.addURI(new URIish("http://everyones.loves.git/u/2"));
+		transport = null;
+	}
+
+	@Override
+	protected void tearDown() throws Exception {
+		if (transport != null) {
+			transport.close();
+			transport = null;
+		}
+		super.tearDown();
 	}
 
 	/**

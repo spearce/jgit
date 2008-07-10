@@ -78,7 +78,10 @@ class TransportGitSsh extends PackTransport {
 		return false;
 	}
 
-	final SshSessionFactory sch;
+	private final SshSessionFactory sch;
+
+	private Session sock;
+
 	OutputStream errStream;
 
 	TransportGitSsh(final Repository local, final URIish uri) {
@@ -94,6 +97,17 @@ class TransportGitSsh extends PackTransport {
 	@Override
 	public PushConnection openPush() throws TransportException {
 		return new SshPushConnection();
+	}
+
+	@Override
+	public void close() {
+		if (sock != null) {
+			try {
+				sch.releaseSession(sock);
+			} finally {
+				sock = null;
+			}
+		}
 	}
 
 	private static void sqMinimal(final StringBuilder cmd, final String val) {
@@ -152,17 +166,18 @@ class TransportGitSsh extends PackTransport {
 		cmd.append('\'');
 	}
 
-	Session openSession() throws TransportException {
+	private void initSession() throws TransportException {
+		if (sock != null)
+			return;
+
 		final String user = uri.getUser();
 		final String pass = uri.getPass();
 		final String host = uri.getHost();
 		final int port = uri.getPort();
 		try {
-			final Session session;
-			session = sch.getSession(user, pass, host, port);
-			if (!session.isConnected())
-				session.connect();
-			return session;
+			sock = sch.getSession(user, pass, host, port);
+			if (!sock.isConnected())
+				sock.connect();
 		} catch (JSchException je) {
 			final Throwable c = je.getCause();
 			if (c instanceof UnknownHostException)
@@ -173,8 +188,9 @@ class TransportGitSsh extends PackTransport {
 		}
 	}
 
-	ChannelExec exec(final Session sock, final String exe)
-			throws TransportException {
+	ChannelExec exec(final String exe) throws TransportException {
+		initSession();
+
 		try {
 			final ChannelExec channel = (ChannelExec) sock.openChannel("exec");
 			String path = uri.getPath();
@@ -202,15 +218,12 @@ class TransportGitSsh extends PackTransport {
 	}
 
 	class SshFetchConnection extends BasePackFetchConnection {
-		private Session session;
-
 		private ChannelExec channel;
 
 		SshFetchConnection() throws TransportException {
 			super(TransportGitSsh.this);
 			try {
-				session = openSession();
-				channel = exec(session, getOptionUploadPack());
+				channel = exec(getOptionUploadPack());
 
 				if (channel.isConnected())
 					init(channel.getInputStream(), channel.getOutputStream());
@@ -240,27 +253,16 @@ class TransportGitSsh extends PackTransport {
 					channel = null;
 				}
 			}
-
-			if (session != null) {
-				try {
-					sch.releaseSession(session);
-				} finally {
-					session = null;
-				}
-			}
 		}
 	}
 
 	class SshPushConnection extends BasePackPushConnection {
-		private Session session;
-
 		private ChannelExec channel;
 
 		SshPushConnection() throws TransportException {
 			super(TransportGitSsh.this);
 			try {
-				session = openSession();
-				channel = exec(session, getOptionReceivePack());
+				channel = exec(getOptionReceivePack());
 				init(channel.getInputStream(), channel.getOutputStream());
 			} catch (TransportException err) {
 				close();
@@ -283,14 +285,6 @@ class TransportGitSsh extends PackTransport {
 						channel.disconnect();
 				} finally {
 					channel = null;
-				}
-			}
-
-			if (session != null) {
-				try {
-					sch.releaseSession(session);
-				} finally {
-					session = null;
 				}
 			}
 		}

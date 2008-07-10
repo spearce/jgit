@@ -159,6 +159,11 @@ class TransportAmazonS3 extends WalkTransport {
 		return r;
 	}
 
+	@Override
+	public void close() {
+		// No explicit connections are maintained.
+	}
+
 	class DatabaseS3 extends WalkRemoteObjectDatabase {
 		private final String bucketName;
 

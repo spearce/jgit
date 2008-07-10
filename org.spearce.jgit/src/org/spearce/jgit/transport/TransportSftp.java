@@ -91,7 +91,9 @@ class TransportSftp extends WalkTransport {
 		return uri.isRemote() && "sftp".equals(uri.getScheme());
 	}
 
-	final SshSessionFactory sch;
+	private final SshSessionFactory sch;
+
+	private Session sock;
 
 	TransportSftp(final Repository local, final URIish uri) {
 		super(local, uri);
@@ -114,17 +116,29 @@ class TransportSftp extends WalkTransport {
 		return r;
 	}
 
-	Session openSession() throws TransportException {
+	@Override
+	public void close() {
+		if (sock != null) {
+			try {
+				sch.releaseSession(sock);
+			} finally {
+				sock = null;
+			}
+		}
+	}
+
+	private void initSession() throws TransportException {
+		if (sock != null)
+			return;
+
 		final String user = uri.getUser();
 		final String pass = uri.getPass();
 		final String host = uri.getHost();
 		final int port = uri.getPort();
 		try {
-			final Session session;
-			session = sch.getSession(user, pass, host, port);
-			if (!session.isConnected())
-				session.connect();
-			return session;
+			sock = sch.getSession(user, pass, host, port);
+			if (!sock.isConnected())
+				sock.connect();
 		} catch (JSchException je) {
 			final Throwable c = je.getCause();
 			if (c instanceof UnknownHostException)
@@ -135,7 +149,9 @@ class TransportSftp extends WalkTransport {
 		}
 	}
 
-	ChannelSftp open(final Session sock) throws TransportException {
+	ChannelSftp newSftp() throws TransportException {
+		initSession();
+
 		try {
 			final Channel channel = sock.openChannel("sftp");
 			channel.connect();
@@ -148,10 +164,6 @@ class TransportSftp extends WalkTransport {
 	class SftpObjectDB extends WalkRemoteObjectDatabase {
 		private final String objectsPath;
 
-		private final boolean sessionOwner;
-
-		private Session session;
-
 		private ChannelSftp ftp;
 
 		SftpObjectDB(String path) throws TransportException {
@@ -160,9 +172,7 @@ class TransportSftp extends WalkTransport {
 			if (path.startsWith("~/"))
 				path = path.substring(2);
 			try {
-				session = openSession();
-				sessionOwner = true;
-				ftp = TransportSftp.this.open(session);
+				ftp = newSftp();
 				ftp.cd(path);
 				ftp.cd("objects");
 				objectsPath = ftp.pwd();
@@ -177,10 +187,8 @@ class TransportSftp extends WalkTransport {
 
 		SftpObjectDB(final SftpObjectDB parent, final String p)
 				throws TransportException {
-			sessionOwner = false;
-			session = parent.session;
 			try {
-				ftp = TransportSftp.this.open(session);
+				ftp = newSftp();
 				ftp.cd(parent.objectsPath);
 				ftp.cd(p);
 				objectsPath = ftp.pwd();
@@ -450,14 +458,6 @@ class TransportSftp extends WalkTransport {
 						ftp.disconnect();
 				} finally {
 					ftp = null;
-				}
-			}
-
-			if (sessionOwner && session != null) {
-				try {
-					sch.releaseSession(session);
-				} finally {
-					session = null;
 				}
 			}
 		}

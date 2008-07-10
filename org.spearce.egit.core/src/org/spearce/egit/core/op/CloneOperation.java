@@ -85,8 +85,14 @@ public class CloneOperation implements IRunnableWithProgress {
 
 	private void doFetch(final IProgressMonitor monitor)
 			throws NotSupportedException, TransportException {
-		fetchResult = Transport.open(local, remote).fetch(
-				new EclipseGitProgressTransformer(monitor), null);
+		final Transport tn = Transport.open(local, remote);
+		try {
+			final EclipseGitProgressTransformer pm;
+			pm = new EclipseGitProgressTransformer(monitor);
+			fetchResult = tn.fetch(pm, null);
+		} finally {
+			tn.close();
+		}
 	}
 
 	private void doCheckout(final IProgressMonitor monitor) throws IOException {
