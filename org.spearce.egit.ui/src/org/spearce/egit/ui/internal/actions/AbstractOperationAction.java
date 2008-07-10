@@ -32,11 +32,20 @@ import org.spearce.egit.ui.UIText;
  * Common functionality for EGit operations.
  */
 public abstract class AbstractOperationAction implements IObjectActionDelegate {
-	private IWorkbenchPart wp;
+	/**
+	 * The active workbench part
+	 */
+	protected IWorkbenchPart wp;
 
 	private IWorkspaceRunnable op;
 
 	public void selectionChanged(final IAction act, final ISelection sel) {
+		// work performed in setActivePart
+	}
+
+	public void setActivePart(final IAction act, final IWorkbenchPart part) {
+		wp = part;
+		ISelection sel = part.getSite().getPage().getSelection();
 		final List selection;
 		if (sel instanceof IStructuredSelection && !sel.isEmpty()) {
 			selection = ((IStructuredSelection) sel).toList();
@@ -45,10 +54,6 @@ public abstract class AbstractOperationAction implements IObjectActionDelegate {
 		}
 		op = createOperation(act, selection);
 		act.setEnabled(op != null && wp != null);
-	}
-
-	public void setActivePart(final IAction act, final IWorkbenchPart part) {
-		wp = part;
 	}
 
 	/**
