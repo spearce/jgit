@@ -137,7 +137,9 @@ public class GitResourceDecorator extends LabelProvider implements
 								getActiveDecorator().clearDecorationState(resource);
 								return true;
 							}
-						});
+						},
+						IResource.DEPTH_INFINITE,
+						true);
 					} finally {
 						getJobManager().endRule(markerRule);
 					}
@@ -164,7 +166,9 @@ public class GitResourceDecorator extends LabelProvider implements
 						}
 						return true;
 					}
-				});
+				},
+				true
+				);
 			} catch (Exception e) {
 				Activator.logError("Problem during decorations. Stopped", e);
 			}
