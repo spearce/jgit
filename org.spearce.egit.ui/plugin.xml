@@ -97,29 +97,34 @@
                menubarPath="team.main/group1"
                tooltip="%CommitAction_tooltip"/>
 	  </objectContribution>
-      <objectContribution
-            id="org.spearce.egit.ui.revobjectContributions"
-            adaptable="true"
-            objectClass="org.spearce.jgit.revwalk.RevObject">
+	  <objectContribution
+         id="org.spearce.egit.ui.resetto"
+         objectClass="org.spearce.jgit.revwalk.RevCommit">
          <action
-               class="org.spearce.egit.ui.internal.actions.BranchAction"
-               id="org.spearce.egit.ui.action1"
-               label="Kolla"
-               enablesFor="*"
-               menubarPath="additions">
+               class="org.spearce.egit.ui.internal.actions.SoftResetToRevisionAction"
+               id="org.spearce.egit.ui.softresettorevision"
+               label="Soft Reset"
+               menubarPath="additions"
+               enablesFor="1"
+               tooltip="Resets HEAD but not working directory nor index">
          </action>
-      </objectContribution>
-      <viewerContribution
-            id="org.spearce.egit.ui.viewerContribution1"
-            targetID="org.spearce.egit.ui.historyPageContributions">
          <action
-               class="org.spearce.egit.ui.internal.actions.ResetAction"
-               id="org.spearce.egit.ui.action1"
-               label="Titta"
-               enablesFor="*"
-               menubarPath="additions">
+               class="org.spearce.egit.ui.internal.actions.MixedResetToRevisionAction"
+               id="org.spearce.egit.ui.mixedresettorevision"
+               label="Mixed Reset"
+               menubarPath="additions"
+               enablesFor="1"
+               tooltip="Resets HEAD and index, but not working directory">
          </action>
-      </viewerContribution>
+         <action
+               class="org.spearce.egit.ui.internal.actions.HardResetToRevisionAction"
+               id="org.spearce.egit.ui.hardresettorevision"
+               label="Hard Reset"
+               menubarPath="additions"
+               enablesFor="1"
+               tooltip="Resets HEAD and index, and working directory (changed in tracked files will be lost)">
+         </action>
+	  </objectContribution>
    </extension>
 
    <extension
