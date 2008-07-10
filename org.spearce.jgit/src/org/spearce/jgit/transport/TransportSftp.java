@@ -54,6 +54,7 @@ import java.util.TreeMap;
 
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Ref.Storage;
@@ -294,7 +295,9 @@ class TransportSftp extends WalkTransport {
 		}
 
 		@Override
-		OutputStream writeFile(final String path) throws IOException {
+		OutputStream writeFile(final String path,
+				final ProgressMonitor monitor, final String monitorTask)
+				throws IOException {
 			try {
 				return ftp.put(path);
 			} catch (SftpException je) {

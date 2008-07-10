@@ -230,14 +230,15 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 			// Write the pack file, then the index, as readers look the
 			// other direction (index, then pack file).
 			//
-			OutputStream os = dest.writeFile(pathPack);
+			final String wt = "Put " + base.substring(0, 12);
+			OutputStream os = dest.writeFile(pathPack, monitor, wt + "..pack");
 			try {
 				pw.writePack(os);
 			} finally {
 				os.close();
 			}
 
-			os = dest.writeFile(pathIdx);
+			os = dest.writeFile(pathIdx, monitor, wt + "..idx");
 			try {
 				pw.writeIndex(os);
 			} finally {

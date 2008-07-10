@@ -54,6 +54,7 @@ import java.util.TreeMap;
 import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Ref.Storage;
@@ -236,8 +237,10 @@ class TransportAmazonS3 extends WalkTransport {
 		}
 
 		@Override
-		OutputStream writeFile(final String path) throws IOException {
-			return s3.beginPut(bucket, resolveKey(path));
+		OutputStream writeFile(final String path,
+				final ProgressMonitor monitor, final String monitorTask)
+				throws IOException {
+			return s3.beginPut(bucket, resolveKey(path), monitor, monitorTask);
 		}
 
 		@Override

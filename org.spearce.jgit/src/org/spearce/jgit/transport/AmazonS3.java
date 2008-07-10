@@ -75,6 +75,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.spearce.jgit.awtui.AwtAuthenticator;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.NullProgressMonitor;
+import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.util.Base64;
 import org.spearce.jgit.util.HttpSupport;
 import org.spearce.jgit.util.TemporaryBuffer;
@@ -376,7 +378,7 @@ public class AmazonS3 {
 			// We have to copy to produce the cipher text anyway so use
 			// the large object code path as it supports that behavior.
 			//
-			final OutputStream os = beginPut(bucket, key);
+			final OutputStream os = beginPut(bucket, key, null, null);
 			os.write(data);
 			os.close();
 			return;
@@ -430,11 +432,17 @@ public class AmazonS3 {
 	 *            name of the bucket storing the object.
 	 * @param key
 	 *            key of the object within its bucket.
+	 * @param monitor
+	 *            (optional) progress monitor to post upload completion to
+	 *            during the stream's close method.
+	 * @param monitorTask
+	 *            (optional) task name to display during the close method.
 	 * @return a stream which accepts the new data, and transmits once closed.
 	 * @throws IOException
 	 *             if encryption was enabled it could not be configured.
 	 */
-	public OutputStream beginPut(final String bucket, final String key)
+	public OutputStream beginPut(final String bucket, final String key,
+			final ProgressMonitor monitor, final String monitorTask)
 			throws IOException {
 		final MessageDigest md5 = newMD5();
 		final TemporaryBuffer buffer = new TemporaryBuffer() {
@@ -442,7 +450,8 @@ public class AmazonS3 {
 			public void close() throws IOException {
 				super.close();
 				try {
-					putImpl(bucket, key, md5.digest(), this);
+					putImpl(bucket, key, md5.digest(), this, monitor,
+							monitorTask);
 				} finally {
 					destroy();
 				}
@@ -452,7 +461,13 @@ public class AmazonS3 {
 	}
 
 	private void putImpl(final String bucket, final String key,
-			final byte[] csum, final TemporaryBuffer buf) throws IOException {
+			final byte[] csum, final TemporaryBuffer buf,
+			ProgressMonitor monitor, String monitorTask) throws IOException {
+		if (monitor == null)
+			monitor = NullProgressMonitor.INSTANCE;
+		if (monitorTask == null)
+			monitorTask = "Uploading " + key;
+
 		final String md5str = Base64.encodeBytes(csum);
 		final long len = buf.length();
 		final String lenstr = String.valueOf(len);
@@ -465,10 +480,12 @@ public class AmazonS3 {
 			authorize(c);
 			c.setDoOutput(true);
 			c.setFixedLengthStreamingMode((int) len);
+			monitor.beginTask(monitorTask, (int) (len / 1024));
 			final OutputStream os = c.getOutputStream();
 			try {
-				buf.writeTo(os, null);
+				buf.writeTo(os, monitor);
 			} finally {
+				monitor.endTask();
 				os.close();
 			}
 
@@ -641,7 +658,7 @@ public class AmazonS3 {
 		} else if ("rm".equals(op) || "delete".equals(op)) {
 			s3.delete(bucket, key);
 		} else if ("put".equals(op)) {
-			final OutputStream os = s3.beginPut(bucket, key);
+			final OutputStream os = s3.beginPut(bucket, key, null, null);
 			final byte[] tmp = new byte[2048];
 			int n;
 			while ((n = System.in.read(tmp)) > 0)

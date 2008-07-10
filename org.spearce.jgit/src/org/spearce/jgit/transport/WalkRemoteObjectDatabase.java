@@ -52,6 +52,7 @@ import java.util.Map;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.util.NB;
 
@@ -213,11 +214,17 @@ abstract class WalkRemoteObjectDatabase {
 	 *         complete the write request. The stream is not buffered and each
 	 *         write may cause a network request/response so callers should
 	 *         buffer to smooth out small writes.
+	 * @param monitor
+	 *            (optional) progress monitor to post write completion to during
+	 *            the stream's close method.
+	 * @param monitorTask
+	 *            (optional) task name to display during the close method.
 	 * @throws IOException
 	 *             writing is not supported, or attempting to write the file
 	 *             failed, possibly due to permissions or remote disk full, etc.
 	 */
-	OutputStream writeFile(final String path) throws IOException {
+	OutputStream writeFile(final String path, final ProgressMonitor monitor,
+			final String monitorTask) throws IOException {
 		throw new IOException("Writing of '" + path + "' not supported.");
 	}
 
@@ -247,7 +254,7 @@ abstract class WalkRemoteObjectDatabase {
 	 *             failed, possibly due to permissions or remote disk full, etc.
 	 */
 	void writeFile(final String path, final byte[] data) throws IOException {
-		final OutputStream os = writeFile(path);
+		final OutputStream os = writeFile(path, null, null);
 		try {
 			os.write(data);
 		} finally {
