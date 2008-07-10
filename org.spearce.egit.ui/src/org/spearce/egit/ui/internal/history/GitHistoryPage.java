@@ -168,6 +168,9 @@ public class GitHistoryPage extends HistoryPage implements RepositoryListener {
 	/** Last HEAD */
 	private AnyObjectId currentHeadId;
 
+	/** We need to remember the current repository */
+	private Repository db;
+
 	/**
 	 * Highlight flag that can be applied to commits to make them stand out.
 	 * <p>
@@ -536,6 +539,9 @@ public class GitHistoryPage extends HistoryPage implements RepositoryListener {
 			revObjectSelectionProvider.setActiveRepository(null);
 		cancelRefreshJob();
 
+		if (db != null)
+			db.removeRepositoryChangedListener(this);
+
 		if (graph == null)
 			return false;
 
@@ -543,7 +549,8 @@ public class GitHistoryPage extends HistoryPage implements RepositoryListener {
 		if (in == null || in.length == 0)
 			return false;
 
-		Repository db = null;
+		db = null;
+
 		final ArrayList<String> paths = new ArrayList<String>(in.length);
 		for (final IResource r : in) {
 			final RepositoryMapping map = RepositoryMapping.getMapping(r);
@@ -562,6 +569,8 @@ public class GitHistoryPage extends HistoryPage implements RepositoryListener {
 
 		if (db == null)
 			return false;
+
+		db.addRepositoryChangedListener(this);
 
 		final AnyObjectId headId;
 		try {

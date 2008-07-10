@@ -95,6 +95,7 @@ public class Repository {
 	private GitIndex index;
 
 	private List<RepositoryListener> listeners = new Vector<RepositoryListener>(); // thread safe
+	static private List<RepositoryListener> allListeners = new Vector<RepositoryListener>(); // thread safe
 
 	/**
 	 * Construct a representation of a Git repository.
@@ -1051,12 +1052,36 @@ public class Repository {
 		listeners.remove(l);
 	}
 
+	/**
+	 * Register a global {@link RepositoryListener} which will be notified
+	 * when a ref changes in any repository are detected.
+	 *
+	 * @param l
+	 */
+	public static void addAnyRepositoryChangedListener(final RepositoryListener l) {
+		allListeners.add(l);
+	}
+
+	/**
+	 * Remove a globally registered {@link RepositoryListener}
+	 * @param l
+	 */
+	public static void removeAnyRepositoryChangedListener(final RepositoryListener l) {
+		allListeners.remove(l);
+	}
+
 	void fireRefsMaybeChanged() {
 		if (refs.lastRefModification != refs.lastNotifiedRefModification) {
 			refs.lastNotifiedRefModification = refs.lastRefModification;
 			final RefsChangedEvent event = new RefsChangedEvent(this);
-			for (final RepositoryListener l :
-				listeners.toArray(new RepositoryListener[listeners.size()])) {
+			List<RepositoryListener> all;
+			synchronized (listeners) {
+				all = new ArrayList<RepositoryListener>(listeners);
+			}
+			synchronized (allListeners) {
+				all.addAll(allListeners);
+			}
+			for (final RepositoryListener l : all) {
 				l.refsChanged(event);
 			}
 		}
@@ -1064,8 +1089,14 @@ public class Repository {
 
 	void fireIndexChanged() {
 		final IndexChangedEvent event = new IndexChangedEvent(this);
-		for (final RepositoryListener l :
-			listeners.toArray(new RepositoryListener[listeners.size()])) {
+		List<RepositoryListener> all;
+		synchronized (listeners) {
+			all = new ArrayList<RepositoryListener>(listeners);
+		}
+		synchronized (allListeners) {
+			all.addAll(allListeners);
+		}
+		for (final RepositoryListener l : all) {
 			l.indexChanged(event);
 		}
 	}
