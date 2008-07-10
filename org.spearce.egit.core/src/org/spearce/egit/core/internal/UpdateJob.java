@@ -21,6 +21,7 @@ import org.eclipse.core.resources.IResourceProxy;
 import org.eclipse.core.resources.IResourceProxyVisitor;
 import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -65,6 +66,7 @@ public class UpdateJob extends Job {
 				final int[] count=new int[1];
 				long t0=System.currentTimeMillis();
 				for (Object obj : rsrcList) {
+					obj = ((IAdaptable)obj).getAdapter(IResource.class);
 					if (obj instanceof IContainer) {
 						((IContainer)obj).accept(new IResourceProxyVisitor() {
 							public boolean visit(IResourceProxy rp) throws CoreException {

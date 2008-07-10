@@ -18,6 +18,7 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.spearce.egit.core.Activator;
@@ -51,9 +52,8 @@ public class AssumeUnchangedOperation implements IWorkspaceRunnable {
 		final IdentityHashMap<RepositoryMapping, Boolean> tomerge = new IdentityHashMap<RepositoryMapping, Boolean>();
 		m.beginTask(CoreText.AssumeUnchangedOperation_adding, rsrcList.size() * 200);
 		try {
-			final Iterator i = rsrcList.iterator();
-			while (i.hasNext()) {
-				final Object obj = i.next();
+			for (Object obj : rsrcList) {
+				obj = ((IAdaptable)obj).getAdapter(IResource.class);
 				if (obj instanceof IResource) {
 					final IResource toAssumeValid = (IResource)obj;
 					final RepositoryMapping rm = RepositoryMapping.getMapping(toAssumeValid);

@@ -8,13 +8,13 @@
 package org.spearce.egit.core.op;
 
 import java.util.Collection;
-import java.util.Iterator;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
@@ -51,9 +51,8 @@ public class DisconnectProviderOperation implements IWorkspaceRunnable {
 		m.beginTask(CoreText.DisconnectProviderOperation_disconnecting,
 				projectList.size() * 200);
 		try {
-			final Iterator i = projectList.iterator();
-			while (i.hasNext()) {
-				final Object obj = i.next();
+			for (Object obj : projectList) {
+				obj = ((IAdaptable)obj).getAdapter(IResource.class);
 				if (obj instanceof IProject) {
 					final IProject p = (IProject) obj;
 
