@@ -181,6 +181,11 @@ public class GitHistoryPage extends HistoryPage {
 	 */
 	private List<String> pathFilters;
 
+	/**
+	 * The selection provider tracks the selected revisions for the context menu
+	 */
+	private RevObjectSelectionProvider revObjectSelectionProvider;
+
 	@Override
 	public void createControl(final Composite parent) {
 		GridData gd;
@@ -211,6 +216,7 @@ public class GitHistoryPage extends HistoryPage {
 		layoutSashForm(graphDetailSplit, SPLIT_GRAPH);
 		layoutSashForm(revInfoSplit, SPLIT_INFO);
 
+		revObjectSelectionProvider = new RevObjectSelectionProvider();
 		popupMgr = new MenuManager(null, POPUP_ID);
 		attachCommitSelectionChanged();
 		createLocalToolbarActions();
@@ -221,7 +227,6 @@ public class GitHistoryPage extends HistoryPage {
 		attachContextMenu(graph.getControl());
 		attachContextMenu(commentViewer.getControl());
 		attachContextMenu(fileViewer.getControl());
-
 		layout();
 	}
 
@@ -229,7 +234,8 @@ public class GitHistoryPage extends HistoryPage {
 		popupMgr.add(new Separator());
 		popupMgr.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 		getSite().registerContextMenu(POPUP_ID, popupMgr,
-				getSite().getSelectionProvider());
+				revObjectSelectionProvider);
+		getSite().setSelectionProvider(revObjectSelectionProvider);
 	}
 
 	private void attachContextMenu(final Control c) {
@@ -299,6 +305,7 @@ public class GitHistoryPage extends HistoryPage {
 				c = (PlotCommit<?>) sel.getFirstElement();
 				commentViewer.setInput(c);
 				fileViewer.setInput(c);
+				revObjectSelectionProvider.setSelection(s);
 			}
 		});
 		commentViewer
