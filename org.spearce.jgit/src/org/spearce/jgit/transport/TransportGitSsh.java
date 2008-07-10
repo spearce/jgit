@@ -44,6 +44,7 @@ import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 
+import org.spearce.jgit.errors.NoRemoteRepositoryException;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Repository;
 
@@ -217,6 +218,25 @@ class TransportGitSsh extends PackTransport {
 		}
 	}
 
+	NoRemoteRepositoryException cleanNotFound(NoRemoteRepositoryException nf) {
+		String why = errStream.toString();
+		if (why == null || why.length() == 0)
+			return nf;
+
+		String path = uri.getPath();
+		if (uri.getScheme() != null && uri.getPath().startsWith("/~"))
+			path = uri.getPath().substring(1);
+
+		final StringBuilder pfx = new StringBuilder();
+		pfx.append("fatal: ");
+		sqAlways(pfx, path);
+		pfx.append(": ");
+		if (why.startsWith(pfx.toString()))
+			why = why.substring(pfx.length());
+
+		return new NoRemoteRepositoryException(uri, why);
+	}
+
 	class SshFetchConnection extends BasePackFetchConnection {
 		private ChannelExec channel;
 
@@ -238,7 +258,12 @@ class TransportGitSsh extends PackTransport {
 				throw new TransportException(uri,
 						"remote hung up unexpectedly", err);
 			}
-			readAdvertisedRefs();
+
+			try {
+				readAdvertisedRefs();
+			} catch (NoRemoteRepositoryException notFound) {
+				throw cleanNotFound(notFound);
+			}
 		}
 
 		@Override
@@ -277,7 +302,12 @@ class TransportGitSsh extends PackTransport {
 				throw new TransportException(uri,
 						"remote hung up unexpectedly", err);
 			}
-			readAdvertisedRefs();
+
+			try {
+				readAdvertisedRefs();
+			} catch (NoRemoteRepositoryException notFound) {
+				throw cleanNotFound(notFound);
+			}
 		}
 
 		@Override

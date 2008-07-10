@@ -55,7 +55,10 @@ class EclipseSshSessionFactory extends SshSessionFactory {
 			StringBuilder sb = new StringBuilder();
 
 			public String toString() {
-				return all.toString();
+				String r = all.toString();
+				while (r.endsWith("\n"))
+					r = r.substring(0, r.length() - 1);
+				return r;
 			}
 
 			@Override

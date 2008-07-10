@@ -49,6 +49,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
+import org.spearce.jgit.errors.NoRemoteRepositoryException;
 import org.spearce.jgit.errors.PackProtocolException;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.ObjectId;
@@ -129,7 +130,7 @@ abstract class BasePackConnection extends BaseConnection {
 				line = pckIn.readString();
 			} catch (EOFException eof) {
 				if (avail.isEmpty())
-					throw new TransportException(uri, "not found.");
+					throw new NoRemoteRepositoryException(uri, "not found.");
 				throw eof;
 			}
 
