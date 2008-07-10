@@ -71,7 +71,8 @@ class RefDatabase {
 
 	private final File refsDir;
 
-	private Map<String, CachedRef> looseRefs;
+	private Map<String, Ref> looseRefs;
+	private Map<String, Long> looseRefsMTime;
 
 	private final File packedRefsFile;
 
@@ -96,7 +97,8 @@ class RefDatabase {
 	}
 
 	void clearCache() {
-		looseRefs = new HashMap<String, CachedRef>();
+		looseRefs = new HashMap<String, Ref>();
+		looseRefsMTime = new HashMap<String, Long>();
 		packedRefs = new HashMap<String, Ref>();
 		packedRefsLastModified = 0;
 		packedRefsLength = 0;
@@ -137,7 +139,8 @@ class RefDatabase {
 	}
 
 	void stored(final String name, final ObjectId id, final long time) {
-		looseRefs.put(name, new CachedRef(Ref.Storage.LOOSE, name, id, time));
+		looseRefs.put(name, new Ref(Ref.Storage.LOOSE, name, id));
+		looseRefsMTime.put(name, time);
 		setModified();
 		db.fireRefsMaybeChanged();
 	}
@@ -205,7 +208,11 @@ class RefDatabase {
 		final HashMap<String, Ref> avail = new HashMap<String, Ref>();
 		readPackedRefs(avail);
 		readLooseRefs(avail, REFS_SLASH, refsDir);
-		readOneLooseRef(avail, Constants.HEAD, new File(gitDir, Constants.HEAD));
+		try {
+			avail.put(Constants.HEAD, readRefBasic(Constants.HEAD, 0));
+		} catch (IOException e) {
+			// ignore here
+		}
 		db.fireRefsMaybeChanged();
 		return avail;
 	}
@@ -233,13 +240,15 @@ class RefDatabase {
 			final String refName, final File ent) {
 		// Unchanged and cached? Don't read it again.
 		//
-		CachedRef ref = looseRefs.get(refName);
+		Ref ref = looseRefs.get(refName);
 		if (ref != null) {
-			if (ref.lastModified == ent.lastModified()) {
+			Long cachedlastModified = looseRefsMTime.get(refName);
+			if (cachedlastModified != null && cachedlastModified == ent.lastModified()) {
 				avail.put(ref.getName(), ref);
 				return;
 			}
 			looseRefs.remove(refName);
+			looseRefsMTime.remove(refName);
 		}
 
 		// Recurse into the directory.
@@ -271,9 +280,9 @@ class RefDatabase {
 					return;
 				}
 
-				ref = new CachedRef(Ref.Storage.LOOSE, refName, id, ent
-						.lastModified());
+				ref = new Ref(Ref.Storage.LOOSE, refName, id);
 				looseRefs.put(ref.getName(), ref);
+				looseRefsMTime.put(ref.getName(), ent.lastModified());
 				avail.put(ref.getName(), ref);
 			} finally {
 				in.close();
@@ -299,13 +308,15 @@ class RefDatabase {
 		// Prefer loose ref to packed ref as the loose
 		// file can be more up-to-date than a packed one.
 		//
-		CachedRef ref = looseRefs.get(name);
+		Ref ref = looseRefs.get(name);
 		final File loose = fileForRef(name);
 		final long mtime = loose.lastModified();
 		if (ref != null) {
-			if (ref.lastModified == mtime)
+			Long cachedlastModified = looseRefsMTime.get(name);
+			if (cachedlastModified != null && cachedlastModified == mtime)
 				return ref;
 			looseRefs.remove(name);
+			looseRefsMTime.remove(name);
 		}
 
 		if (mtime == 0) {
@@ -333,6 +344,10 @@ class RefDatabase {
 
 			final String target = line.substring("ref: ".length());
 			final Ref r = readRefBasic(target, depth + 1);
+			Long cachedMtime = looseRefsMTime.get(name);
+			if (cachedMtime != null && cachedMtime != mtime)
+				setModified();
+			looseRefsMTime.put(name, mtime);
 			return r != null ? r : new Ref(Ref.Storage.LOOSE, target, null);
 		}
 
@@ -345,8 +360,9 @@ class RefDatabase {
 			throw new IOException("Not a ref: " + name + ": " + line);
 		}
 
-		ref = new CachedRef(Ref.Storage.LOOSE, name, id, mtime);
+		ref = new Ref(Ref.Storage.LOOSE, name, id);
 		looseRefs.put(name, ref);
+		looseRefsMTime.put(name, mtime);
 		return ref;
 	}
 
@@ -421,16 +437,6 @@ class RefDatabase {
 			throws UnsupportedEncodingException, FileNotFoundException {
 		return new BufferedReader(new InputStreamReader(new FileInputStream(
 				fileLocation), CHAR_ENC));
-	}
-
-	private static class CachedRef extends Ref {
-		final long lastModified;
-
-		CachedRef(final Storage st, final String refName, final ObjectId id,
-				final long mtime) {
-			super(st, refName, id);
-			lastModified = mtime;
-		}
 	}
 
 }
