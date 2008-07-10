@@ -146,7 +146,9 @@ public class GitResourceDecorator extends LabelProvider implements
 				}
 				return Status.OK_STATUS;
 			} catch (Exception e) {
-				return new Status(IStatus.ERROR, Activator.getPluginId(), "Failed to trigger resource decoration", e);
+				// We must be silent here or the UI will panic with lots of error messages
+				Activator.logError("Failed to trigger resource re-decoration", e);
+				return Status.OK_STATUS;
 			}
 		}
 
