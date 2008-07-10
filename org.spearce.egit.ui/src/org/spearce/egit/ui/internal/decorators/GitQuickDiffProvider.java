@@ -9,6 +9,8 @@
 package org.spearce.egit.ui.internal.decorators;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
@@ -21,6 +23,7 @@ import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.texteditor.quickdiff.IQuickDiffReferenceProvider;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
+import org.spearce.jgit.lib.Repository;
 
 /**
  * This class provides input for the Eclipse Quick Diff feature.
@@ -33,8 +36,19 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 
 	private IResource resource;
 
+	static Map<Repository,String> baseline = new WeakHashMap<Repository,String>();
+	static Map<GitDocument,Repository> doc2repo = new WeakHashMap<GitDocument, Repository>();
+
+	/**
+	 * Create the GitQuickDiffProvider instance
+	 */
+	public GitQuickDiffProvider() {
+		// Empty
+	}
+
 	public void dispose() {
 		Activator.trace("(GitQuickDiffProvider) dispose");
+		doc2repo.remove(document);
 		if (document != null)
 			document.dispose();
 	}
@@ -51,8 +65,6 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 		if (provider != null) {
 			try {
 				document = GitDocument.create(resource);
-			} catch (CoreException e) {
-				Activator.error(UIText.QuickDiff_failedLoading, e);
 			} catch (IOException e) {
 				Activator.error(UIText.QuickDiff_failedLoading, e);
 			}
@@ -74,4 +86,21 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 	public void setId(String id) {
 		this.id = id;
 	}
+
+	/**
+	 * Set a new baseline for quickdiff
+	 *
+	 * @param repository
+	 * @param baseline any commit reference, ref, symref or sha-1
+	 * @throws IOException
+	 */
+	public static void setBaselineReference(final Repository repository, final String baseline) throws IOException {
+		GitQuickDiffProvider.baseline.put(repository, baseline);
+		for (Map.Entry<GitDocument, Repository> i : doc2repo.entrySet()) {
+			if (i.getValue() == repository) {
+				i.getKey().populate();
+			}
+		}
+	}
+
 }

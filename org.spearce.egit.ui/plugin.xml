@@ -124,6 +124,20 @@
                enablesFor="1"
                tooltip="Resets HEAD and index, and working directory (changed in tracked files will be lost)">
          </action>
+	 <action
+	       class="org.spearce.egit.ui.internal.actions.SetQuickdiffBaselineAction"
+	       enablesFor="1"
+	       id="org.spearce.egit.ui.setquickdiffbaseline"
+	       label="Set as quickdiff baseline"
+	       menubarPath="additions">
+	 </action>
+	 <action
+	       class="org.spearce.egit.ui.internal.actions.ResetQuickdiffBaselineAction"
+	       enablesFor="*"
+	       id="org.spearce.egit.ui.resetquickdiffbaseline"
+	       label="Reset quickdiff baseline to HEAD"
+	       menubarPath="additions">
+	 </action>
 	  </objectContribution>
    </extension>
 

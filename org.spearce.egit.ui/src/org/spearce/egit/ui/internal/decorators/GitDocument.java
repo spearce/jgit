@@ -7,33 +7,26 @@
  *******************************************************************************/
 package org.spearce.egit.ui.internal.decorators;
 
-import java.io.BufferedReader;
-import java.io.CharArrayWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IStorage;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.team.core.RepositoryProvider;
-import org.eclipse.team.core.history.IFileHistory;
-import org.eclipse.team.core.history.IFileHistoryProvider;
-import org.eclipse.team.core.history.IFileRevision;
 import org.spearce.egit.core.GitProvider;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.Activator;
 import org.spearce.jgit.lib.IndexChangedEvent;
+import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.RefsChangedEvent;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.RepositoryListener;
+import org.spearce.jgit.lib.TreeEntry;
 
 class GitDocument extends Document implements RepositoryListener {
 	private final IResource resource;
 
-	static GitDocument create(IResource resource) throws IOException, CoreException {
+	static GitDocument create(final IResource resource) throws IOException {
 		GitDocument ret = null;
 		if (RepositoryProvider.getProvider(resource.getProject()) instanceof GitProvider) {
 			ret = new GitDocument(resource);
@@ -44,36 +37,24 @@ class GitDocument extends Document implements RepositoryListener {
 
 	private GitDocument(IResource resource) {
 		this.resource = resource;
+		GitQuickDiffProvider.doc2repo.put(this, getRepository());
 	}
 
-	void populate() throws IOException, CoreException {
+	void populate() throws IOException {
 		set("");
-		IProject project = resource.getProject();
-		RepositoryProvider provider = RepositoryProvider.getProvider(project);
-		getRepository().addRepositoryChangedListener(this);
-		IFileHistoryProvider fileHistoryProvider = provider
-				.getFileHistoryProvider();
-		IFileHistory fileHistoryFor = fileHistoryProvider.getFileHistoryFor(
-				resource, IFileHistoryProvider.SINGLE_REVISION, null);
-		IFileRevision[] revisions = fileHistoryFor.getFileRevisions();
-		if (revisions != null && revisions.length > 0) {
-			IFileRevision revision = revisions[0];
-			Activator.trace("(GitQuickDiffProvider) compareTo: "
-					+ revision.getContentIdentifier());
-			IStorage storage = revision.getStorage(null);
-			InputStream contents = storage.getContents();
-			BufferedReader in = new BufferedReader(new InputStreamReader(
-					contents));
-			final int DEFAULT_FILE_SIZE = 15 * 1024;
-
-			CharArrayWriter caw = new CharArrayWriter(DEFAULT_FILE_SIZE);
-			char[] readBuffer = new char[2048];
-			int n = in.read(readBuffer);
-			while (n > 0) {
-				caw.write(readBuffer, 0, n);
-				n = in.read(readBuffer);
-			}
-			String s = caw.toString();
+		final IProject project = resource.getProject();
+		final String gitPath = RepositoryMapping.getMapping(project).getRepoRelativePath(resource);
+		final Repository repository = getRepository();
+		repository.addRepositoryChangedListener(this);
+		String baseline = GitQuickDiffProvider.baseline.get(repository);
+		if (baseline == null)
+			baseline = "HEAD";
+		TreeEntry blobEnry = repository.mapTree(baseline).findBlobMember(gitPath);
+		if (blobEnry != null) {
+			Activator.trace("(GitQuickDiffProvider) compareTo: " + baseline);
+			ObjectLoader loader = repository.openBlob(blobEnry.getId());
+			byte[] bytes = loader.getBytes();
+			String s = new String(bytes); // FIXME Platform default charset. should be Eclipse default
 			set(s);
 			Activator.trace("(GitQuickDiffProvider) has reference doc, size=" + s.length() + " bytes");
 		} else {
@@ -89,8 +70,6 @@ class GitDocument extends Document implements RepositoryListener {
 		try {
 			populate();
 		} catch (IOException e1) {
-			Activator.logError("Failed to refresh quickdiff", e1);
-		} catch (CoreException e1) {
 			Activator.logError("Failed to refresh quickdiff", e1);
 		}
 	}
