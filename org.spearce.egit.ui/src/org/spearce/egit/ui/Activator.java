@@ -205,6 +205,11 @@ public class Activator extends AbstractUIPlugin {
 		}
 
 		public void indexChanged(IndexChangedEvent e) {
+			// Check the workspace setting "refresh automatically" setting first
+			if (!ResourcesPlugin.getPlugin().getPluginPreferences().getBoolean(
+					ResourcesPlugin.PREF_AUTO_REFRESH))
+				return;
+
 			IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
 			Set<IProject> toRefresh= new HashSet<IProject>();
 			for (IProject p : projects) {
