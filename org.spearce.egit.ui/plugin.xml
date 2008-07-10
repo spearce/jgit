@@ -97,6 +97,29 @@
                menubarPath="team.main/group1"
                tooltip="%CommitAction_tooltip"/>
 	  </objectContribution>
+      <objectContribution
+            id="org.spearce.egit.ui.revobjectContributions"
+            adaptable="true"
+            objectClass="org.spearce.jgit.revwalk.RevObject">
+         <action
+               class="org.spearce.egit.ui.internal.actions.BranchAction"
+               id="org.spearce.egit.ui.action1"
+               label="Kolla"
+               enablesFor="*"
+               menubarPath="additions">
+         </action>
+      </objectContribution>
+      <viewerContribution
+            id="org.spearce.egit.ui.viewerContribution1"
+            targetID="org.spearce.egit.ui.historyPageContributions">
+         <action
+               class="org.spearce.egit.ui.internal.actions.ResetAction"
+               id="org.spearce.egit.ui.action1"
+               label="Titta"
+               enablesFor="*"
+               menubarPath="additions">
+         </action>
+      </viewerContribution>
    </extension>
 
    <extension

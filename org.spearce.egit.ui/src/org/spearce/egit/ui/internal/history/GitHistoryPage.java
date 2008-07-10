@@ -235,7 +235,8 @@ public class GitHistoryPage extends HistoryPage {
 		popupMgr.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 		getSite().registerContextMenu(POPUP_ID, popupMgr,
 				revObjectSelectionProvider);
-		getSite().setSelectionProvider(revObjectSelectionProvider);
+		getHistoryPageSite().getPart().getSite().setSelectionProvider(
+				revObjectSelectionProvider);
 	}
 
 	private void attachContextMenu(final Control c) {
