@@ -43,7 +43,10 @@ class GitDocument extends Document implements RepositoryListener {
 	void populate() throws IOException {
 		set("");
 		final IProject project = resource.getProject();
-		final String gitPath = RepositoryMapping.getMapping(project).getRepoRelativePath(resource);
+		RepositoryMapping mapping = RepositoryMapping.getMapping(project);
+		if (mapping == null)
+			return;
+		final String gitPath = mapping.getRepoRelativePath(resource);
 		final Repository repository = getRepository();
 		repository.addRepositoryChangedListener(this);
 		String baseline = GitQuickDiffProvider.baseline.get(repository);
@@ -63,7 +66,9 @@ class GitDocument extends Document implements RepositoryListener {
 	}
 
 	void dispose() {
-		getRepository().removeRepositoryChangedListener(this);
+		Repository repository = getRepository();
+		if (repository != null)
+			repository.removeRepositoryChangedListener(this);
 	}
 
 	public void refsChanged(final RefsChangedEvent e) {
@@ -81,6 +86,8 @@ class GitDocument extends Document implements RepositoryListener {
 	private Repository getRepository() {
 		IProject project = resource.getProject();
 		RepositoryMapping mapping = RepositoryMapping.getMapping(project);
-		return mapping.getRepository();
+		if (mapping != null)
+			return mapping.getRepository();
+		return null;
 	}
 }
