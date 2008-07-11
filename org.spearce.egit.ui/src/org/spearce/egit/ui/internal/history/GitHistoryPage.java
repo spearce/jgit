@@ -61,7 +61,10 @@ import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIPreferences;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.AnyObjectId;
+import org.spearce.jgit.lib.IndexChangedEvent;
+import org.spearce.jgit.lib.RefsChangedEvent;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.RepositoryListener;
 import org.spearce.jgit.revplot.PlotCommit;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevFlag;
@@ -73,7 +76,7 @@ import org.spearce.jgit.treewalk.filter.PathFilterGroup;
 import org.spearce.jgit.treewalk.filter.TreeFilter;
 
 /** Graphical commit history viewer. */
-public class GitHistoryPage extends HistoryPage {
+public class GitHistoryPage extends HistoryPage implements RepositoryListener {
 	private static final String PREF_COMMENT_WRAP = UIPreferences.RESOURCEHISTORY_SHOW_COMMENT_WRAP;
 
 	private static final String PREF_COMMENT_FILL = UIPreferences.RESOURCEHISTORY_SHOW_COMMENT_FILL;
@@ -228,6 +231,32 @@ public class GitHistoryPage extends HistoryPage {
 		attachContextMenu(commentViewer.getControl());
 		attachContextMenu(fileViewer.getControl());
 		layout();
+	}
+
+	private Runnable refschangedRunnable;
+
+	public void refsChanged(final RefsChangedEvent e) {
+		if (getControl().isDisposed())
+			return;
+
+		synchronized (this) {
+			if (refschangedRunnable == null) {
+				refschangedRunnable = new Runnable() {
+					public void run() {
+						if (!getControl().isDisposed()) {
+							Activator.trace("Executing async repository changed event");
+							refschangedRunnable = null;
+							inputSet();
+						}
+					}
+				};
+				getControl().getDisplay().asyncExec(refschangedRunnable);
+			}
+		}
+	}
+
+	public void indexChanged(final IndexChangedEvent e) {
+		// We do not use index information here now
 	}
 
 	private void finishContextMenu() {

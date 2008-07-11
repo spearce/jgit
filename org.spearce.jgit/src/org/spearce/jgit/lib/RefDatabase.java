@@ -81,6 +81,12 @@ class RefDatabase {
 
 	private long packedRefsLength;
 
+	long lastRefModification;
+
+	long lastNotifiedRefModification;
+
+	static int refModificationCounter;
+
 	RefDatabase(final Repository r) {
 		db = r;
 		gitDir = db.getDirectory();
@@ -132,6 +138,8 @@ class RefDatabase {
 
 	void stored(final String name, final ObjectId id, final long time) {
 		looseRefs.put(name, new CachedRef(Ref.Storage.LOOSE, name, id, time));
+		setModified();
+		db.fireRefsMaybeChanged();
 	}
 
 	/**
@@ -155,6 +163,12 @@ class RefDatabase {
 		}
 		if (!lck.commit())
 			throw new ObjectWritingException("Unable to write " + name);
+		setModified();
+		db.fireRefsMaybeChanged();
+	}
+
+	void setModified() {
+		lastRefModification = refModificationCounter++;
 	}
 
 	Ref readRef(final String partialName) throws IOException {
@@ -192,6 +206,7 @@ class RefDatabase {
 		readPackedRefs(avail);
 		readLooseRefs(avail, REFS_SLASH, refsDir);
 		readOneLooseRef(avail, Constants.HEAD, new File(gitDir, Constants.HEAD));
+		db.fireRefsMaybeChanged();
 		return avail;
 	}
 
@@ -321,6 +336,8 @@ class RefDatabase {
 			return r != null ? r : new Ref(Ref.Storage.LOOSE, target, null);
 		}
 
+		setModified();
+
 		final ObjectId id;
 		try {
 			id = ObjectId.fromString(line);
@@ -378,6 +395,7 @@ class RefDatabase {
 			packedRefsLastModified = currTime;
 			packedRefsLength = currLen;
 			packedRefs = newPackedRefs;
+			setModified();
 		} catch (FileNotFoundException noPackedRefs) {
 			// Ignore it and leave the new map empty.
 			//
@@ -414,4 +432,5 @@ class RefDatabase {
 			lastModified = mtime;
 		}
 	}
+
 }

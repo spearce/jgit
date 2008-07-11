@@ -146,6 +146,7 @@ public class GitIndex {
 	public void rereadIfNecessary() throws IOException {
 		if (cacheFile.exists() && cacheFile.lastModified() != lastCacheTime) {
 			read();
+			db.fireIndexChanged();
 		}
 	}
 
@@ -269,6 +270,8 @@ public class GitIndex {
 						"Could not rename temporary index file to index");
 			changed = false;
 			statDirty = false;
+			lastCacheTime = cacheFile.lastModified();
+			db.fireIndexChanged();
 		} finally {
 			if (!lock.delete())
 				throw new IOException(

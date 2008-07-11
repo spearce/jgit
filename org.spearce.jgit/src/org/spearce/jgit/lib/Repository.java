@@ -49,7 +49,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.RevisionSyntaxException;
@@ -91,6 +93,8 @@ public class Repository {
 	private PackFile[] packs;
 
 	private GitIndex index;
+
+	private List<RepositoryListener> listeners = new Vector<RepositoryListener>(); // thread safe
 
 	/**
 	 * Construct a representation of a Git repository.
@@ -1027,5 +1031,42 @@ public class Repository {
 	 */
 	public File getWorkDir() {
 		return getDirectory().getParentFile();
+	}
+
+	/**
+	 * Register a {@link RepositoryListener} which will be notified
+	 * when ref changes are detected.
+	 *
+	 * @param l
+	 */
+	public void addRepositoryChangedListener(final RepositoryListener l) {
+		listeners.add(l);
+	}
+
+	/**
+	 * Remove a registered {@link RepositoryListener}
+	 * @param l
+	 */
+	public void removeRepositoryChangedListener(final RepositoryListener l) {
+		listeners.remove(l);
+	}
+
+	void fireRefsMaybeChanged() {
+		if (refs.lastRefModification != refs.lastNotifiedRefModification) {
+			refs.lastNotifiedRefModification = refs.lastRefModification;
+			final RefsChangedEvent event = new RefsChangedEvent(this);
+			for (final RepositoryListener l :
+				listeners.toArray(new RepositoryListener[listeners.size()])) {
+				l.refsChanged(event);
+			}
+		}
+	}
+
+	void fireIndexChanged() {
+		final IndexChangedEvent event = new IndexChangedEvent(this);
+		for (final RepositoryListener l :
+			listeners.toArray(new RepositoryListener[listeners.size()])) {
+			l.indexChanged(event);
+		}
 	}
 }
