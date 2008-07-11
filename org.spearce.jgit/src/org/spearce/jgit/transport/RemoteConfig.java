@@ -150,7 +150,7 @@ public class RemoteConfig {
 
 		vlst.clear();
 		for (final URIish u : getURIs())
-			vlst.add(u.toString());
+			vlst.add(u.toPrivateString());
 		rc.setStringList(SECTION, getName(), KEY_URL, vlst);
 
 		vlst.clear();

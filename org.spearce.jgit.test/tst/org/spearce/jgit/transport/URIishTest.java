@@ -214,7 +214,8 @@ public class URIishTest extends TestCase {
 		assertEquals("user", u.getUser());
 		assertEquals("pass", u.getPass());
 		assertEquals(33, u.getPort());
-		assertEquals(str, u.toString());
+		assertEquals(str, u.toPrivateString());
+		assertEquals(u.setPass(null).toPrivateString(), u.toString());
 		assertEquals(u, new URIish(str));
 	}
 }

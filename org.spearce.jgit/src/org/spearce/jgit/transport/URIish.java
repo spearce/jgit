@@ -307,7 +307,20 @@ public class URIish {
 		return a.equals(b);
 	}
 
+	/**
+	 * Obtain the string form of the URI, with the password included.
+	 *
+	 * @return the URI, including its password field, if any.
+	 */
+	public String toPrivateString() {
+		return format(true);
+	}
+
 	public String toString() {
+		return format(false);
+	}
+
+	private String format(final boolean includePassword) {
 		final StringBuilder r = new StringBuilder();
 		if (getScheme() != null) {
 			r.append(getScheme());
@@ -316,7 +329,7 @@ public class URIish {
 
 		if (getUser() != null) {
 			r.append(getUser());
-			if (getPass() != null) {
+			if (includePassword && getPass() != null) {
 				r.append(':');
 				r.append(getPass());
 			}
