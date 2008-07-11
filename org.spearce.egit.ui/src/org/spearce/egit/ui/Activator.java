@@ -11,16 +11,20 @@ package org.spearce.egit.ui;
 import java.net.Authenticator;
 import java.net.ProxySelector;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.eclipse.core.net.proxy.IProxyService;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.jobs.ISchedulingRule;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jsch.core.IJSchService;
@@ -30,7 +34,10 @@ import org.eclipse.ui.themes.ITheme;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.spearce.egit.core.project.RepositoryMapping;
+import org.spearce.jgit.lib.IndexChangedEvent;
+import org.spearce.jgit.lib.RefsChangedEvent;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.RepositoryListener;
 import org.spearce.jgit.transport.SshSessionFactory;
 
 /**
@@ -137,6 +144,7 @@ public class Activator extends AbstractUIPlugin {
 
 	private boolean traceVerbose;
 	private RCS rcs;
+	private RIRefresh refreshJob;
 
 	/**
 	 * Constructor for the egit ui plugin singleton
@@ -151,6 +159,71 @@ public class Activator extends AbstractUIPlugin {
 		setupSSH(context);
 		setupProxy(context);
 		setupRepoChangeScanner();
+		setupRepoIndexRefresh();
+	}
+
+	private void setupRepoIndexRefresh() {
+		refreshJob = new RIRefresh();
+		Repository.addAnyRepositoryChangedListener(refreshJob);
+	}
+
+	static class RIRefresh extends Job implements RepositoryListener {
+
+		RIRefresh() {
+			super("Git index refresh Job");
+		}
+
+		private Set<IProject> projectsToScan = new LinkedHashSet<IProject>();
+
+		@Override
+		protected IStatus run(IProgressMonitor monitor) {
+			IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+			monitor.beginTask("Refreshing git managed projects", projects.length);
+
+			while (projectsToScan.size() > 0) {
+				IProject p;
+				synchronized (projectsToScan) {
+					if (projectsToScan.size() == 0)
+						break;
+					Iterator<IProject> i = projectsToScan.iterator();
+					p = i.next();
+					i.remove();
+				}
+				ISchedulingRule rule = p.getWorkspace().getRuleFactory().refreshRule(p);
+				try {
+					getJobManager().beginRule(rule, monitor);
+					p.refreshLocal(IResource.DEPTH_INFINITE, new SubProgressMonitor(monitor, 1));
+				} catch (CoreException e) {
+					logError("Failed to refresh projects from index changes", e);
+					return new Status(IStatus.ERROR, getPluginId(), e.getMessage());
+				} finally {
+					getJobManager().endRule(rule);
+				}
+			}
+			monitor.done();
+			return Status.OK_STATUS;
+		}
+
+		public void indexChanged(IndexChangedEvent e) {
+			IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+			Set<IProject> toRefresh= new HashSet<IProject>();
+			for (IProject p : projects) {
+				RepositoryMapping mapping = RepositoryMapping.getMapping(p);
+				if (mapping != null && mapping.getRepository() == e.getRepository()) {
+					toRefresh.add(p);
+				}
+			}
+			synchronized (projectsToScan) {
+				projectsToScan.addAll(toRefresh);
+			}
+			if (projectsToScan.size() > 0)
+				schedule();
+		}
+
+		public void refsChanged(RefsChangedEvent e) {
+			// Do not react here
+		}
+
 	}
 
 	static class RCS extends Job {
@@ -236,10 +309,14 @@ public class Activator extends AbstractUIPlugin {
 
 	public void stop(final BundleContext context) throws Exception {
 		trace("Trying to cancel " + rcs.getName() + " job");
-		if (!rcs.cancel()) {
-			rcs.join();
-		}
-		trace("rcs.getName() " + rcs.getName() + " cancelled ok");
+		rcs.cancel();
+		trace("Trying to cancel " + refreshJob.getName() + " job");
+		refreshJob.cancel();
+
+		rcs.join();
+		refreshJob.join();
+
+		trace("Jobs terminated");
 		super.stop(context);
 		plugin = null;
 	}
