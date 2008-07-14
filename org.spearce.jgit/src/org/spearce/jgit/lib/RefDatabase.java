@@ -82,11 +82,11 @@ class RefDatabase {
 
 	private long packedRefsLength;
 
-	long lastRefModification;
+	int lastRefModification;
 
-	long lastNotifiedRefModification;
+	int lastNotifiedRefModification;
 
-	static int refModificationCounter;
+	private int refModificationCounter;
 
 	RefDatabase(final Repository r) {
 		db = r;
