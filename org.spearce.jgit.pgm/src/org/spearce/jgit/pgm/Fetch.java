@@ -37,9 +37,9 @@
 
 package org.spearce.jgit.pgm;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import org.kohsuke.args4j.Argument;
 import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.TextProgressMonitor;
 import org.spearce.jgit.transport.FetchResult;
@@ -48,26 +48,17 @@ import org.spearce.jgit.transport.TrackingRefUpdate;
 import org.spearce.jgit.transport.Transport;
 
 class Fetch extends TextBuiltin {
-	@Override
-	public void execute(String[] args) throws Exception {
-		int argi = 0;
-		for (; argi < args.length; argi++) {
-			final String a = args[argi];
-			if ("--".equals(a)) {
-				argi++;
-				break;
-			} else
-				break;
-		}
-		if (args.length == 0)
-			args = new String[] { "origin" };
+	@Argument(index = 0, metaVar = "uri-ish")
+	private String remote = "origin";
 
-		final Transport tn = Transport.open(db, args[argi++]);
+	@Argument(index = 1, metaVar = "refspec")
+	private List<RefSpec> toget;
+
+	@Override
+	protected void run() throws Exception {
+		final Transport tn = Transport.open(db, remote);
 		final FetchResult r;
 		try {
-			final List<RefSpec> toget = new ArrayList<RefSpec>();
-			for (; argi < args.length; argi++)
-				toget.add(new RefSpec(args[argi]));
 			r = tn.fetch(new TextProgressMonitor(), toget);
 			if (r.getTrackingRefUpdates().isEmpty())
 				return;
