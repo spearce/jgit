@@ -37,40 +37,26 @@
 
 package org.spearce.jgit.pgm;
 
-import java.io.File;
-
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.Option;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
-import org.spearce.jgit.treewalk.FileTreeIterator;
+import org.spearce.jgit.treewalk.AbstractTreeIterator;
 import org.spearce.jgit.treewalk.TreeWalk;
 
 class LsTree extends TextBuiltin {
+	@Option(name = "--recursive", usage = "recurse into subtrees", aliases = { "-r" })
+	private boolean recursive;
+
+	@Argument(index = 0, required = true, metaVar = "tree-ish")
+	private AbstractTreeIterator tree;
+
 	@Override
-	public void execute(final String[] args) throws Exception {
+	protected void run() throws Exception {
 		final TreeWalk walk = new TreeWalk(db);
-		int argi = 0;
-		for (; argi < args.length; argi++) {
-			final String a = args[argi];
-			if ("--".equals(a)) {
-				argi++;
-				break;
-			} else if ("-r".equals(a))
-				walk.setRecursive(true);
-			else
-				break;
-		}
-
-		if (argi == args.length)
-			throw die("usage: [-r] treename");
-		else if (argi + 1 < args.length)
-			throw die("too many arguments");
-
 		walk.reset(); // drop the first empty tree, which we do not need here
-		final String n = args[argi];
-		if (is_WorkDir(n))
-			walk.addTree(new FileTreeIterator(new File(n)));
-		else
-			walk.addTree(resolve(n));
+		walk.setRecursive(recursive);
+		walk.addTree(tree);
 
 		while (walk.next()) {
 			final FileMode mode = walk.getFileMode(0);
@@ -87,9 +73,5 @@ class LsTree extends TextBuiltin {
 			out.print(walk.getPathString());
 			out.println();
 		}
-	}
-
-	private boolean is_WorkDir(final String name) {
-		return new File(name).isDirectory();
 	}
 }
