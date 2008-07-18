@@ -9,6 +9,8 @@ else
 	jgit_home=`dirname $0`
 	cp="$jgit_home/org.spearce.jgit/bin"
 	cp="$cp:$jgit_home/org.spearce.jgit/lib/jsch-0.1.37.jar"
+	cp="$cp:$jgit_home/org.spearce.jgit.pgm/bin"
+	cp="$cp:$jgit_home/org.spearce.jgit.pgm/lib/args4j-2.0.9.jar"
 	unset jgit_home
 	java_args=
 fi
