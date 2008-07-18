@@ -37,27 +37,34 @@
 
 package org.spearce.jgit.pgm;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.Option;
 import org.spearce.jgit.revwalk.RevCommit;
-import org.spearce.jgit.revwalk.RevWalk;
 import org.spearce.jgit.revwalk.filter.RevFilter;
 
 class MergeBase extends TextBuiltin {
-	@Override
-	public void execute(final String[] args) throws Exception {
-		final RevWalk walk = new RevWalk(db);
-		int max = 1;
-		for (final String a : args) {
-			if ("--".equals(a))
-				break;
-			else if ("--all".equals(a))
-				max = Integer.MAX_VALUE;
-			else
-				walk.markStart(walk.parseCommit(resolve(a)));
-		}
+	@Option(name = "--all", usage = "display all possible merge bases")
+	private boolean all;
 
-		walk.setRevFilter(RevFilter.MERGE_BASE);
+	@Argument(index = 0, metaVar = "commit-ish", required = true)
+	void commit_0(final RevCommit c) {
+		commits.add(c);
+	}
+
+	@Argument(index = 1, metaVar = "commit-ish", required = true)
+	private final List<RevCommit> commits = new ArrayList<RevCommit>();
+
+	@Override
+	protected void run() throws Exception {
+		for (final RevCommit c : commits)
+			argWalk.markStart(c);
+		argWalk.setRevFilter(RevFilter.MERGE_BASE);
+		int max = all ? Integer.MAX_VALUE : 1;
 		while (max-- > 0) {
-			final RevCommit b = walk.next();
+			final RevCommit b = argWalk.next();
 			if (b == null)
 				break;
 			out.println(b.getId());
