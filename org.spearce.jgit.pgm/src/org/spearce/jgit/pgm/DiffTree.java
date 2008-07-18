@@ -40,49 +40,38 @@ package org.spearce.jgit.pgm;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.Option;
 import org.spearce.jgit.lib.FileMode;
+import org.spearce.jgit.pgm.opt.PathTreeFilterHandler;
+import org.spearce.jgit.treewalk.AbstractTreeIterator;
 import org.spearce.jgit.treewalk.TreeWalk;
 import org.spearce.jgit.treewalk.filter.AndTreeFilter;
-import org.spearce.jgit.treewalk.filter.OrTreeFilter;
-import org.spearce.jgit.treewalk.filter.PathFilter;
 import org.spearce.jgit.treewalk.filter.TreeFilter;
 
 class DiffTree extends TextBuiltin {
+	@Option(name = "--recursive", usage = "recurse into subtrees", aliases = { "-r" })
+	private boolean recursive;
+
+	@Argument(index = 0, metaVar = "tree-ish", required = true)
+	void tree_0(final AbstractTreeIterator c) {
+		trees.add(c);
+	}
+
+	@Argument(index = 1, metaVar = "tree-ish", required = true)
+	private final List<AbstractTreeIterator> trees = new ArrayList<AbstractTreeIterator>();
+
+	@Option(name = "--", metaVar = "path", multiValued = true, handler = PathTreeFilterHandler.class)
+	private TreeFilter pathFilter = TreeFilter.ALL;
+
 	@Override
-	public void execute(String[] args) throws Exception {
+	protected void run() throws Exception {
 		final TreeWalk walk = new TreeWalk(db);
-		final List<String> argList = new ArrayList<String>();
-		List<TreeFilter> pathLimiter = null;
-		for (final String a : args) {
-			if (pathLimiter != null)
-				pathLimiter.add(PathFilter.create(a));
-			else if ("--".equals(a))
-				pathLimiter = new ArrayList<TreeFilter>();
-			else if ("-r".equals(a))
-				walk.setRecursive(true);
-			else
-				argList.add(a);
-		}
-
-		final TreeFilter pathFilter;
-		if (pathLimiter == null || pathLimiter.isEmpty())
-			pathFilter = TreeFilter.ALL;
-		else if (pathLimiter.size() == 1)
-			pathFilter = pathLimiter.get(0);
-		else
-			pathFilter = OrTreeFilter.create(pathLimiter);
+		walk.reset();
+		walk.setRecursive(recursive);
+		for (final AbstractTreeIterator i : trees)
+			walk.addTree(i);
 		walk.setFilter(AndTreeFilter.create(TreeFilter.ANY_DIFF, pathFilter));
-
-		if (argList.size() == 0)
-			argList.add("HEAD");
-		if (argList.size() == 1) {
-			final String a = argList.get(0);
-			argList.clear();
-			argList.add(a + "^^{tree}");
-			argList.add(a + "^{tree}");
-		}
-		for (final String a : argList)
-			walk.addTree(resolve(a));
 
 		final int nTree = walk.getTreeCount();
 		while (walk.next()) {
