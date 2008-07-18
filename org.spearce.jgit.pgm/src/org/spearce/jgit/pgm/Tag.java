@@ -37,48 +37,35 @@
 
 package org.spearce.jgit.pgm;
 
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.Option;
+import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.PersonIdent;
 
 class Tag extends TextBuiltin {
+	@Option(name = "-f", usage = "force replacing an existing tag")
+	private boolean force;
+
+	@Option(name = "-m", metaVar = "message", usage = "tag message")
+	private String message = "";
+
+	@Argument(index = 0, required = true, metaVar = "name")
+	private String tagName;
+
+	@Argument(index = 1, metaVar = "object")
+	private ObjectId object;
+
 	@Override
-	public void execute(String[] args) throws Exception {
-		String tagName = null;
-		String message = null;
-		String ref = "HEAD";
-		boolean force = false;
-               if (args.length == 0)
-                       usage();
-		for (int i = 0; i < args.length; ++i) {
-			if (args[i].equals("-f")) {
-				force = true;
-				continue;
-			}
-			if (args[i].equals("-m")) {
-				if (i < args.length - 2)
-					message = args[i++] + "\n";
-				else
-					usage();
-				continue;
-			}
-			if (args[i].startsWith("-m")) {
-				message = args[i].substring(2) + "\n";
-				continue;
-			}
-			if (args[i].startsWith("-") && i == args.length - 1)
-				usage();
-			if (i == args.length - 2) {
-				tagName = args[i];
-				ref = args[i+1];
-				++i;
-				continue;
-			}
-			if (i == args.length - 1) {
-				tagName = args[i];
-				continue;
-			}
-			usage();
+	protected void run() throws Exception {
+		if (object == null) {
+			object = db.resolve(Constants.HEAD);
+			if (object == null)
+				throw die("Cannot resolve " + Constants.HEAD);
 		}
+
 		if (!tagName.startsWith(Constants.TAGS_PREFIX + "/"))
 			tagName = Constants.TAGS_PREFIX + "/" + tagName;
 		if (!force && db.resolve(tagName) != null) {
@@ -86,19 +73,17 @@ class Tag extends TextBuiltin {
 					+ tagName.substring(Constants.TAGS_PREFIX.length() + 1)
 					+ "' exists");
 		}
+
+		final ObjectLoader ldr = db.openObject(object);
+		if (ldr == null)
+			throw new MissingObjectException(object, "any");
+
 		org.spearce.jgit.lib.Tag tag = new org.spearce.jgit.lib.Tag(db);
-		tag.setObjId(db.resolve(ref));
-		if (message != null) {
-			message = message.replaceAll("\r", "");
-			tag.setMessage(message);
-			tag.setTagger(new PersonIdent(db));
-			tag.setType("commit");
-		}
+		tag.setObjId(object);
+		tag.setType(Constants.typeString(ldr.getType()));
+		tag.setTagger(new PersonIdent(db));
+		tag.setMessage(message.replaceAll("\r", ""));
 		tag.setTag(tagName.substring(Constants.TAGS_PREFIX.length() + 1));
 		tag.tag();
-	}
-
-	private void usage() {
-               throw die("Usage: [-m message] [-f] tag [head]");
 	}
 }
