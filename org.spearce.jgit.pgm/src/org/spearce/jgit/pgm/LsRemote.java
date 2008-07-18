@@ -37,30 +37,19 @@
 
 package org.spearce.jgit.pgm;
 
+import org.kohsuke.args4j.Argument;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.transport.FetchConnection;
 import org.spearce.jgit.transport.Transport;
 
 class LsRemote extends TextBuiltin {
+	@Argument(index = 0, metaVar = "uri-ish", required = true)
+	private String remote;
+
 	@Override
-	public void execute(final String[] args) throws Exception {
-		int argi = 0;
-		for (; argi < args.length; argi++) {
-			final String a = args[argi];
-			if ("--".equals(a)) {
-				argi++;
-				break;
-			} else
-				break;
-		}
-
-		if (argi == args.length)
-			throw die("usage: url");
-		else if (argi + 1 < args.length)
-			throw die("too many arguments");
-
-		final Transport tn = Transport.open(db, args[argi]);
+	protected void run() throws Exception {
+		final Transport tn = Transport.open(db, remote);
 		final FetchConnection c = tn.openFetch();
 		try {
 			for (final Ref r : c.getRefs()) {
