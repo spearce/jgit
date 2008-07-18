@@ -49,7 +49,7 @@ import org.spearce.jgit.treewalk.filter.TreeFilter;
 
 class DiffTree extends TextBuiltin {
 	@Override
-	void execute(String[] args) throws Exception {
+	public void execute(String[] args) throws Exception {
 		final TreeWalk walk = new TreeWalk(db);
 		final List<String> argList = new ArrayList<String>();
 		List<TreeFilter> pathLimiter = null;

@@ -44,7 +44,7 @@ import org.spearce.jgit.lib.TextProgressMonitor;
 
 class IndexPack extends TextBuiltin {
 	@Override
-	void execute(final String[] args) throws Exception {
+	public void execute(final String[] args) throws Exception {
 		boolean fixThin = false;
 		int argi = 0;
 		int version = 0;

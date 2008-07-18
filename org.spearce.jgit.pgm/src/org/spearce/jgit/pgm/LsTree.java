@@ -46,7 +46,7 @@ import org.spearce.jgit.treewalk.TreeWalk;
 
 class LsTree extends TextBuiltin {
 	@Override
-	void execute(final String[] args) throws Exception {
+	public void execute(final String[] args) throws Exception {
 		final TreeWalk walk = new TreeWalk(db);
 		int argi = 0;
 		for (; argi < args.length; argi++) {

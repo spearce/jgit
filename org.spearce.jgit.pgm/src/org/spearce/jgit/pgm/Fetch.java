@@ -49,7 +49,7 @@ import org.spearce.jgit.transport.Transport;
 
 class Fetch extends TextBuiltin {
 	@Override
-	void execute(String[] args) throws Exception {
+	public void execute(String[] args) throws Exception {
 		int argi = 0;
 		for (; argi < args.length; argi++) {
 			final String a = args[argi];

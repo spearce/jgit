@@ -43,7 +43,7 @@ import org.spearce.jgit.revwalk.filter.RevFilter;
 
 class MergeBase extends TextBuiltin {
 	@Override
-	void execute(final String[] args) throws Exception {
+	public void execute(final String[] args) throws Exception {
 		final RevWalk walk = new RevWalk(db);
 		int max = 1;
 		for (final String a : args) {

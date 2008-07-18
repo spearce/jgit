@@ -69,7 +69,7 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 	char[] outbuffer = new char[Constants.OBJECT_ID_LENGTH * 2];
 
 	@Override
-	final void execute(String[] args) throws Exception {
+	public final void execute(String[] args) throws Exception {
 		final EnumSet<RevSort> sorting = EnumSet.noneOf(RevSort.class);
 		final List<String> argList = new ArrayList<String>();
 		final List<RevFilter> revLimiter = new ArrayList<RevFilter>();

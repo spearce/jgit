@@ -44,6 +44,8 @@ import java.util.Arrays;
 import org.spearce.jgit.awtui.AwtAuthenticator;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.pgm.opt.CmdLineParser;
+import org.spearce.jgit.pgm.opt.SubcommandHandler;
 import org.spearce.jgit.util.HttpSupport;
 
 /** Command line entry point. */

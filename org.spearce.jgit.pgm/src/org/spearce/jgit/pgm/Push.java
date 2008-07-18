@@ -55,7 +55,7 @@ class Push extends TextBuiltin {
 	private boolean first = true;
 
 	@Override
-	void execute(String[] args) throws Exception {
+	public void execute(String[] args) throws Exception {
 		final LinkedList<RefSpec> refSpecs = new LinkedList<RefSpec>();
 		Boolean thin = null;
 		String exec = null;

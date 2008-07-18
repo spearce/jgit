@@ -44,7 +44,7 @@ import org.spearce.jgit.transport.Transport;
 
 class LsRemote extends TextBuiltin {
 	@Override
-	void execute(final String[] args) throws Exception {
+	public void execute(final String[] args) throws Exception {
 		int argi = 0;
 		for (; argi < args.length; argi++) {
 			final String a = args[argi];

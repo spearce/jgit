@@ -42,7 +42,7 @@ import org.spearce.jgit.lib.PersonIdent;
 
 class Tag extends TextBuiltin {
 	@Override
-	void execute(String[] args) throws Exception {
+	public void execute(String[] args) throws Exception {
 		String tagName = null;
 		String message = null;
 		String ref = "HEAD";

@@ -47,15 +47,28 @@ import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
 
-abstract class TextBuiltin {
+/**
+ * Abstract command which can be invoked from the command line.
+ * <p>
+ * Commands are configured with a single "current" repository and then the
+ * {@link #execute(String[])} method is invoked with the arguments that appear
+ * on the command line after the command name.
+ * <p>
+ * Command constructors should perform as little work as possible as they may be
+ * invoked very early during process loading, and the command may not execute
+ * even though it was constructed.
+ */
+public abstract class TextBuiltin {
 	protected static final String REFS_HEADS = Constants.HEADS_PREFIX + "/";
 
 	protected static final String REFS_REMOTES = Constants.REMOTES_PREFIX + "/";
 
 	protected static final String REFS_TAGS = Constants.TAGS_PREFIX + "/";
 
+	/** Stream to output to, typically this is standard output. */
 	protected PrintWriter out;
 
+	/** Git repository the command was invoked within. */
 	protected Repository db;
 
 	TextBuiltin() {
@@ -67,7 +80,17 @@ abstract class TextBuiltin {
 		}
 	}
 
-	abstract void execute(String[] args) throws Exception;
+	/**
+	 * Perform the action(s) of this command.
+	 *
+	 * @param args
+	 *            command line arguments passed after the command name.
+	 * @throws Exception
+	 *             an error occurred while processing the command. The main
+	 *             framework will catch the exception and print a message on
+	 *             standard error.
+	 */
+	public abstract void execute(String[] args) throws Exception;
 
 	protected ObjectId resolve(final String s) throws IOException {
 		final ObjectId r = db.resolve(s);

@@ -37,10 +37,23 @@
 
 package org.spearce.jgit.pgm;
 
-class Die extends RuntimeException {
+/**
+ * Indicates a {@link TextBuiltin} implementation has failed during execution.
+ * <p>
+ * Typically the stack trace for a Die exception is not shown to the user as it
+ * may indicate a simple error condition that the end-user can fix on their own,
+ * without needing a screen of Java stack frames.
+ */
+public class Die extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 
-	Die(final String why) {
+	/**
+	 * Construct a new message explaining what has gone wrong.
+	 *
+	 * @param why
+	 *            the message to show to the end-user.
+	 */
+	public Die(final String why) {
 		super(why);
 	}
 }
