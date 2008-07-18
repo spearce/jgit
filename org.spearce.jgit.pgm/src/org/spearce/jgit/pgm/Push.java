@@ -37,9 +37,12 @@
 
 package org.spearce.jgit.pgm;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
+import java.util.List;
 
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.Option;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.TextProgressMonitor;
 import org.spearce.jgit.transport.PushResult;
@@ -49,64 +52,54 @@ import org.spearce.jgit.transport.Transport;
 import org.spearce.jgit.transport.RemoteRefUpdate.Status;
 
 class Push extends TextBuiltin {
+	@Argument(index = 0, metaVar = "uri-ish")
+	private String remote = "origin";
 
+	@Argument(index = 1, metaVar = "refspec")
+	private final List<RefSpec> refSpecs = new ArrayList<RefSpec>();
+
+	@Option(name = "--all")
+	void addAll(final boolean ignored) {
+		refSpecs.add(Transport.REFSPEC_PUSH_ALL);
+	}
+
+	@Option(name = "--tags")
+	void addTags(final boolean ignored) {
+		refSpecs.add(Transport.REFSPEC_TAGS);
+	}
+
+	@Option(name = "--verbose", aliases = { "-v" })
 	private boolean verbose = false;
+
+	@Option(name = "--thin")
+	private boolean thin = Transport.DEFAULT_PUSH_THIN;
+
+	@Option(name = "--no-thin")
+	void nothin(final boolean ignored) {
+		thin = false;
+	}
+
+	@Option(name = "--force", aliases = { "-f" })
+	private boolean force;
+
+	@Option(name = "--receive-pack", metaVar = "path")
+	private String receivePack;
 
 	private boolean first = true;
 
 	@Override
-	public void execute(String[] args) throws Exception {
-		final LinkedList<RefSpec> refSpecs = new LinkedList<RefSpec>();
-		Boolean thin = null;
-		String exec = null;
-		boolean forceAll = false;
-
-		int argi = 0;
-		for (; argi < args.length; argi++) {
-			final String a = args[argi];
-			if ("--thin".equals(a))
-				thin = true;
-			else if ("--no-thin".equals(a))
-				thin = false;
-			else if ("-f".equals(a) || "--force".equals(a))
-				forceAll = true;
-			else if (a.startsWith("--exec="))
-				exec = a.substring("--exec=".length());
-			else if (a.startsWith("--receive-pack="))
-				exec = a.substring("--receive-pack=".length());
-			else if ("--tags".equals(a))
-				refSpecs.add(Transport.REFSPEC_TAGS);
-			else if ("--all".equals(a))
-				refSpecs.add(Transport.REFSPEC_PUSH_ALL);
-			else if ("-v".equals(a))
-				verbose = true;
-			else if ("--".equals(a)) {
-				argi++;
-				break;
-			} else if (a.startsWith("-"))
-				die("usage: push [--all] [--tags] [--force] [--thin]\n"
-						+ "[--receive-pack=<git-receive-pack>] [<repository> [<refspec>]...]");
-			else
-				break;
+	protected void run() throws Exception {
+		if (force) {
+			final List<RefSpec> orig = new ArrayList<RefSpec>(refSpecs);
+			refSpecs.clear();
+			for (final RefSpec spec : orig)
+				refSpecs.add(spec.setForceUpdate(true));
 		}
 
-		final String repository;
-		if (argi == args.length)
-			repository = "origin";
-		else
-			repository = args[argi++];
-		final Transport transport = Transport.open(db, repository);
-		if (thin != null)
-			transport.setPushThin(thin);
-		if (exec != null)
-			transport.setOptionReceivePack(exec);
-
-		for (; argi < args.length; argi++) {
-			RefSpec spec = new RefSpec(args[argi]);
-			if (forceAll)
-				spec = spec.setForceUpdate(true);
-			refSpecs.add(spec);
-		}
+		final Transport transport = Transport.open(db, remote);
+		transport.setPushThin(thin);
+		if (receivePack != null)
+			transport.setOptionReceivePack(receivePack);
 		final Collection<RemoteRefUpdate> toPush = transport
 				.findRemoteRefUpdatesFor(refSpecs);
 
