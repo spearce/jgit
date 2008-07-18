@@ -110,7 +110,7 @@ class Glog extends RevWalkTextBuiltin {
 	@Override
 	protected RevWalk createWalk() {
 		if (objects)
-			throw new Die("Cannot use --objects with glog");
+			throw die("Cannot use --objects with glog");
 		final PlotWalk w = new PlotWalk(db);
 		w.sort(RevSort.BOUNDARY, true);
 		return w;
