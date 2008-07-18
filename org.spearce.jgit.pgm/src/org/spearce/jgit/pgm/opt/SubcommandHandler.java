@@ -1,0 +1,149 @@
+/*
+ * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or
+ * without modification, are permitted provided that the following
+ * conditions are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following
+ *   disclaimer in the documentation and/or other materials provided
+ *   with the distribution.
+ *
+ * - Neither the name of the Git Development Community nor the
+ *   names of its contributors may be used to endorse or promote
+ *   products derived from this software without specific prior
+ *   written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+package org.spearce.jgit.pgm.opt;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
+
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.OptionDef;
+import org.kohsuke.args4j.spi.OptionHandler;
+import org.kohsuke.args4j.spi.Parameters;
+import org.kohsuke.args4j.spi.Setter;
+import org.spearce.jgit.pgm.Main;
+import org.spearce.jgit.pgm.TextBuiltin;
+
+/**
+ * Custom Argument handler for jgit command selection.
+ * <p>
+ * Translates a single argument string to a {@link TextBuiltin} instance which
+ * we can execute at runtime with the remaining arguments of the parser.
+ */
+public class SubcommandHandler extends OptionHandler<TextBuiltin> {
+	private static String mypackage() {
+		final String p = Main.class.getName();
+		final int dot = p.lastIndexOf('.');
+		return p.substring(0, dot);
+	}
+
+	/**
+	 * Create a new handler for the command name.
+	 * <p>
+	 * This constructor is used only by args4j.
+	 *
+	 * @param parser
+	 * @param option
+	 * @param setter
+	 */
+	public SubcommandHandler(final CmdLineParser parser,
+			final OptionDef option, final Setter<? super TextBuiltin> setter) {
+		super(parser, option, setter);
+	}
+
+	@Override
+	public int parseArguments(final Parameters params) throws CmdLineException {
+		final String name = params.getParameter(0);
+		final StringBuilder s = new StringBuilder();
+		s.append(mypackage());
+		s.append('.');
+		boolean upnext = true;
+		for (int i = 0; i < name.length(); i++) {
+			final char c = name.charAt(i);
+			if (c == '-') {
+				upnext = true;
+				continue;
+			}
+			if (upnext)
+				s.append(Character.toUpperCase(c));
+			else
+				s.append(c);
+			upnext = false;
+		}
+
+		final Class<?> clazz;
+		try {
+			clazz = Class.forName(s.toString());
+		} catch (ClassNotFoundException e) {
+			throw new CmdLineException(MessageFormat.format(
+					"{0} is not a jgit command", name));
+		}
+
+		if (!TextBuiltin.class.isAssignableFrom(clazz))
+			throw new CmdLineException(MessageFormat.format(
+					"{0} is not a jgit command", name));
+
+		final Constructor<?> cons;
+		try {
+			cons = clazz.getDeclaredConstructor();
+		} catch (SecurityException e) {
+			throw new CmdLineException("Cannot create " + name, e);
+		} catch (NoSuchMethodException e) {
+			throw new CmdLineException("Cannot create " + name, e);
+		}
+		cons.setAccessible(true);
+
+		final TextBuiltin cmd;
+		try {
+			cmd = (TextBuiltin) cons.newInstance();
+		} catch (InstantiationException e) {
+			throw new CmdLineException("Cannot create " + name, e);
+		} catch (IllegalAccessException e) {
+			throw new CmdLineException("Cannot create " + name, e);
+		} catch (InvocationTargetException e) {
+			throw new CmdLineException("Cannot create " + name, e);
+		}
+
+		cmd.setCommandName(name);
+		setter.addValue(cmd);
+
+		// Force option parsing to stop. Everything after us should
+		// be arguments known only to this command and must not be
+		// recognized by the current parser.
+		//
+		owner.stopOptionParsing();
+
+		return 1;
+	}
+
+	@Override
+	public String getDefaultMetaVariable() {
+		return "command";
+	}
+}

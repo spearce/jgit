@@ -39,8 +39,13 @@
 package org.spearce.jgit.pgm;
 
 import java.io.File;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.ExampleMode;
+import org.kohsuke.args4j.Option;
 import org.spearce.jgit.awtui.AwtAuthenticator;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Repository;
@@ -50,7 +55,20 @@ import org.spearce.jgit.util.HttpSupport;
 
 /** Command line entry point. */
 public class Main {
-	private static boolean showStackTrace;
+	@Option(name = "--help", usage = "display this help text", aliases = { "-h" })
+	private boolean help;
+
+	@Option(name = "--show-stack-trace", usage = "display the Java stack trace on exceptions")
+	private boolean showStackTrace;
+
+	@Option(name = "--git-dir", metaVar = "GIT_DIR", usage = "set the git repository to operate on")
+	private File gitdir;
+
+	@Argument(index = 0, metaVar = "command", required = true, handler = SubcommandHandler.class)
+	private TextBuiltin subcommand;
+
+	@Argument(index = 1, metaVar = "ARG")
+	private List<String> arguments = new ArrayList<String>();
 
 	/**
 	 * Execute the command line.
@@ -59,23 +77,24 @@ public class Main {
 	 *            arguments.
 	 */
 	public static void main(final String[] argv) {
+		final Main me = new Main();
 		try {
 			AwtAuthenticator.install();
 			HttpSupport.configureHttpProxy();
-			execute(argv);
+			me.execute(argv);
 		} catch (Die err) {
 			System.err.println("fatal: " + err.getMessage());
-			if (showStackTrace)
+			if (me.showStackTrace)
 				err.printStackTrace();
 			System.exit(128);
 		} catch (Exception err) {
-			if (!showStackTrace && err.getCause() != null
+			if (!me.showStackTrace && err.getCause() != null
 					&& err instanceof TransportException)
 				System.err.println("fatal: " + err.getCause().getMessage());
 
 			if (err.getClass().getName().startsWith("org.spearce.jgit.errors.")) {
 				System.err.println("fatal: " + err.getMessage());
-				if (showStackTrace)
+				if (me.showStackTrace)
 					err.printStackTrace();
 				System.exit(128);
 			}
@@ -84,24 +103,28 @@ public class Main {
 		}
 	}
 
-	private static void execute(final String[] argv) throws Exception {
-		int argi = 0;
-
-		File gitdir = null;
-		for (; argi < argv.length; argi++) {
-			final String arg = argv[argi];
-			if (arg.startsWith("--git-dir="))
-				gitdir = new File(arg.substring("--git-dir=".length()));
-			else if (arg.equals("--show-stack-trace"))
-				showStackTrace = true;
-			else if (arg.startsWith("--"))
-				usage();
-			else
-				break;
+	private void execute(final String[] argv) throws Exception {
+		final CmdLineParser clp = new CmdLineParser(this);
+		try {
+			clp.parseArgument(argv);
+		} catch (CmdLineException err) {
+			if (argv.length > 0 && !help) {
+				System.err.println("fatal: " + err.getMessage());
+				System.exit(1);
+			}
 		}
 
-		if (argi == argv.length)
-			usage();
+		if (argv.length == 0 || help) {
+			final String ex = clp.printExample(ExampleMode.ALL);
+			System.err.println("jgit" + ex + " command [ARG ...]");
+			if (help) {
+				System.err.println();
+				clp.printUsage(System.err);
+				System.err.println();
+			}
+			System.exit(1);
+		}
+
 		if (gitdir == null)
 			gitdir = findGitDir();
 		if (gitdir == null || !gitdir.isDirectory()) {
@@ -109,10 +132,10 @@ public class Main {
 			System.exit(1);
 		}
 
-		final TextBuiltin cmd = createCommand(argv[argi++]);
+		final TextBuiltin cmd = subcommand;
 		cmd.init(new Repository(gitdir));
 		try {
-			cmd.execute(subarray(argv, argi));
+			cmd.execute(arguments.toArray(new String[arguments.size()]));
 		} finally {
 			if (cmd.out != null)
 				cmd.out.flush();
@@ -128,47 +151,5 @@ public class Main {
 			current = current.getParentFile();
 		}
 		return null;
-	}
-
-	private static String[] subarray(final String[] argv, final int i) {
-		return Arrays.asList(argv).subList(i, argv.length).toArray(
-				new String[0]);
-	}
-
-	private static TextBuiltin createCommand(final String name) {
-		final StringBuilder s = new StringBuilder();
-		s.append(mypackage());
-		s.append('.');
-		boolean upnext = true;
-		for (int i = 0; i < name.length(); i++) {
-			final char c = name.charAt(i);
-			if (c == '-') {
-				upnext = true;
-				continue;
-			}
-			if (upnext)
-				s.append(Character.toUpperCase(c));
-			else
-				s.append(c);
-			upnext = false;
-		}
-		try {
-			return (TextBuiltin) Class.forName(s.toString()).newInstance();
-		} catch (Exception e) {
-			System.err.println("error: " + name + " is not a jgit command.");
-			System.exit(1);
-			return null;
-		}
-	}
-
-	private static String mypackage() {
-		final String p = Main.class.getName();
-		final int dot = p.lastIndexOf('.');
-		return p.substring(0, dot);
-	}
-
-	private static void usage() {
-		System.err.println("jgit [--git-dir=path] cmd ...");
-		System.exit(1);
 	}
 }

@@ -65,11 +65,23 @@ public abstract class TextBuiltin {
 
 	protected static final String REFS_TAGS = Constants.TAGS_PREFIX + "/";
 
+	private String commandName;
+
 	/** Stream to output to, typically this is standard output. */
 	protected PrintWriter out;
 
 	/** Git repository the command was invoked within. */
 	protected Repository db;
+
+	/**
+	 * Set the name this command can be invoked as on the command line.
+	 *
+	 * @param name
+	 *            the name of the command.
+	 */
+	public void setCommandName(final String name) {
+		commandName = name;
+	}
 
 	void init(final Repository repo) {
 		try {
@@ -92,6 +104,13 @@ public abstract class TextBuiltin {
 	 *             standard error.
 	 */
 	public abstract void execute(String[] args) throws Exception;
+
+	/**
+	 * @return the repository this command accesses.
+	 */
+	public Repository getRepository() {
+		return db;
+	}
 
 	protected ObjectId resolve(final String s) throws IOException {
 		final ObjectId r = db.resolve(s);
