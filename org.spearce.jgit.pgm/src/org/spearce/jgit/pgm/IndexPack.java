@@ -40,39 +40,28 @@ package org.spearce.jgit.pgm;
 import java.io.BufferedInputStream;
 import java.io.File;
 
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.Option;
 import org.spearce.jgit.lib.TextProgressMonitor;
 
 class IndexPack extends TextBuiltin {
+	@Option(name = "--fix-thin", usage = "fix a thin pack to be complete")
+	private boolean fixThin;
+
+	@Option(name = "--index-version", usage = "index file format to create")
+	private int indexVersion;
+
+	@Argument(index = 0, required = true, metaVar = "base")
+	private File base;
+
 	@Override
-	public void execute(final String[] args) throws Exception {
-		boolean fixThin = false;
-		int argi = 0;
-		int version = 0;
-		for (; argi < args.length; argi++) {
-			final String a = args[argi];
-			if ("--fix-thin".equals(a))
-				fixThin = true;
-			else if (a.startsWith("--index-version="))
-				version = Integer.parseInt(a.substring(a.indexOf('=') + 1));
-			else if ("--".equals(a)) {
-				argi++;
-				break;
-			} else
-				break;
-		}
-
-		if (argi == args.length)
-			throw die("usage: index-pack base");
-		else if (argi + 1 < args.length)
-			throw die("too many arguments");
-
-		final File base = new File(args[argi]);
+	protected void run() throws Exception {
 		final BufferedInputStream in;
 		final org.spearce.jgit.transport.IndexPack ip;
 		in = new BufferedInputStream(System.in);
 		ip = new org.spearce.jgit.transport.IndexPack(db, in, base);
 		ip.setFixThin(fixThin);
-		ip.setIndexVersion(version);
+		ip.setIndexVersion(indexVersion);
 		ip.index(new TextProgressMonitor());
 	}
 }
