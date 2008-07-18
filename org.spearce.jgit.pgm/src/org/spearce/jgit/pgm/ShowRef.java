@@ -44,7 +44,7 @@ import org.spearce.jgit.lib.Ref;
 
 class ShowRef extends TextBuiltin {
 	@Override
-	public void execute(String[] args) throws Exception {
+	protected void run() throws Exception {
 		for (final Ref r : new TreeMap<String, Ref>(db.getAllRefs()).values()) {
 			show(r.getObjectId(), r.getName());
 			if (r.getPeeledObjectId() != null)
