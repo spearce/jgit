@@ -110,7 +110,7 @@ public class Main {
 		}
 
 		final TextBuiltin cmd = createCommand(argv[argi++]);
-		cmd.db = new Repository(gitdir);
+		cmd.init(new Repository(gitdir));
 		try {
 			cmd.execute(subarray(argv, argi));
 		} finally {

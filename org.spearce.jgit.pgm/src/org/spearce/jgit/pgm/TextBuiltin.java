@@ -71,13 +71,14 @@ public abstract class TextBuiltin {
 	/** Git repository the command was invoked within. */
 	protected Repository db;
 
-	TextBuiltin() {
+	void init(final Repository repo) {
 		try {
 			out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(
 					System.out, "UTF-8")));
 		} catch (IOException e) {
 			throw die("cannot create output stream");
 		}
+		db = repo;
 	}
 
 	/**
