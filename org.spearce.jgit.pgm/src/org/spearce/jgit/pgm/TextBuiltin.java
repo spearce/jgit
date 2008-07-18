@@ -113,7 +113,7 @@ public abstract class TextBuiltin {
 	 *             framework will catch the exception and print a message on
 	 *             standard error.
 	 */
-	public void execute(String[] args) throws Exception {
+	public final void execute(String[] args) throws Exception {
 		parseArguments(args);
 		run();
 	}
@@ -166,9 +166,7 @@ public abstract class TextBuiltin {
 	 *             framework will catch the exception and print a message on
 	 *             standard error.
 	 */
-	protected void run() throws Exception {
-		throw die("Override either execute (legacy) or run (new style).");
-	}
+	protected abstract void run() throws Exception;
 
 	/**
 	 * @return the repository this command accesses.
