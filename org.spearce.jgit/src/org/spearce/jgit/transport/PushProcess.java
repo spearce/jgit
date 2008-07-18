@@ -211,7 +211,7 @@ class PushProcess {
 
 	private PushResult prepareOperationResult() {
 		final PushResult result = new PushResult();
-		result.setAdvertisedRefs(connection.getRefsMap());
+		result.setAdvertisedRefs(transport.getURI(), connection.getRefsMap());
 		result.setRemoteUpdates(toPush);
 
 		for (final RemoteRefUpdate rru : toPush.values()) {

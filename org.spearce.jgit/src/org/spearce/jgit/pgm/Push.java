@@ -52,8 +52,6 @@ class Push extends TextBuiltin {
 
 	private boolean verbose = false;
 
-	private Transport transport;
-
 	private boolean first = true;
 
 	@Override
@@ -97,7 +95,7 @@ class Push extends TextBuiltin {
 			repository = "origin";
 		else
 			repository = args[argi++];
-		transport = Transport.open(db, repository);
+		final Transport transport = Transport.open(db, repository);
 		if (thin != null)
 			transport.setPushThin(thin);
 		if (exec != null)
@@ -114,6 +112,8 @@ class Push extends TextBuiltin {
 
 		final PushResult result = transport.push(new TextProgressMonitor(),
 				toPush);
+		transport.close();
+
 		printPushResult(result);
 	}
 
@@ -149,7 +149,7 @@ class Push extends TextBuiltin {
 			final RemoteRefUpdate rru) {
 		if (first) {
 			first = false;
-			out.format("To %s\n", transport.getURI());
+			out.format("To %s\n", result.getURI());
 		}
 
 		final String remoteName = rru.getRemoteName();

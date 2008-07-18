@@ -55,7 +55,20 @@ public abstract class OperationResult {
 
 	protected Map<String, Ref> advertisedRefs = Collections.emptyMap();
 
+	protected URIish uri;
+
 	protected final SortedMap<String, TrackingRefUpdate> updates = new TreeMap<String, TrackingRefUpdate>();
+
+	/**
+	 * Get the URI this result came from.
+	 * <p>
+	 * Each transport instance connects to at most one URI at any point in time.
+	 *
+	 * @return the URI describing the location of the remote repository.
+	 */
+	public URIish getURI() {
+		return uri;
+	}
 
 	/**
 	 * Get the complete list of refs advertised by the remote.
@@ -109,7 +122,8 @@ public abstract class OperationResult {
 		return updates.get(localName);
 	}
 
-	protected void setAdvertisedRefs(final Map<String, Ref> ar) {
+	protected void setAdvertisedRefs(final URIish u, final Map<String, Ref> ar) {
+		uri = u;
 		advertisedRefs = ar;
 	}
 
