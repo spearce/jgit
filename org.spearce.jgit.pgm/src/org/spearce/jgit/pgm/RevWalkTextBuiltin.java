@@ -41,9 +41,14 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.Option;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.pgm.opt.PathTreeFilterHandler;
 import org.spearce.jgit.revwalk.ObjectWalk;
 import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.revwalk.RevFlag;
 import org.spearce.jgit.revwalk.RevObject;
 import org.spearce.jgit.revwalk.RevSort;
 import org.spearce.jgit.revwalk.RevWalk;
@@ -53,98 +58,105 @@ import org.spearce.jgit.revwalk.filter.CommitterRevFilter;
 import org.spearce.jgit.revwalk.filter.MessageRevFilter;
 import org.spearce.jgit.revwalk.filter.RevFilter;
 import org.spearce.jgit.treewalk.filter.AndTreeFilter;
-import org.spearce.jgit.treewalk.filter.PathFilter;
-import org.spearce.jgit.treewalk.filter.PathFilterGroup;
 import org.spearce.jgit.treewalk.filter.TreeFilter;
 
 abstract class RevWalkTextBuiltin extends TextBuiltin {
 	RevWalk walk;
 
+	@Option(name = "--objects")
 	boolean objects = false;
 
+	@Option(name = "--parents")
 	boolean parents = false;
 
+	@Option(name = "--total-count")
 	boolean count = false;
 
 	char[] outbuffer = new char[Constants.OBJECT_ID_LENGTH * 2];
 
-	@Override
-	public final void execute(String[] args) throws Exception {
-		final EnumSet<RevSort> sorting = EnumSet.noneOf(RevSort.class);
-		final List<String> argList = new ArrayList<String>();
-		final List<RevFilter> revLimiter = new ArrayList<RevFilter>();
-		List<PathFilter> pathLimiter = null;
-		for (final String a : args) {
-			if (pathLimiter != null)
-				pathLimiter.add(PathFilter.create(a));
-			else if ("--".equals(a))
-				pathLimiter = new ArrayList<PathFilter>();
-			else if (a.startsWith("--author="))
-				revLimiter.add(AuthorRevFilter.create(a.substring("--author="
-						.length())));
-			else if (a.startsWith("--committer="))
-				revLimiter.add(CommitterRevFilter.create(a
-						.substring("--committer=".length())));
-			else if (a.startsWith("--grep="))
-				revLimiter.add(MessageRevFilter.create(a.substring("--grep="
-						.length())));
-			else if ("--objects".equals(a))
-				objects = true;
-			else if ("--date-order".equals(a))
-				sorting.add(RevSort.COMMIT_TIME_DESC);
-			else if ("--topo-order".equals(a))
-				sorting.add(RevSort.TOPO);
-			else if ("--reverse".equals(a))
-				sorting.add(RevSort.REVERSE);
-			else if ("--boundary".equals(a))
-				sorting.add(RevSort.BOUNDARY);
-			else if ("--parents".equals(a))
-				parents = true;
-			else if ("--total-count".equals(a))
-				count = true;
-			else
-				argList.add(a);
-		}
+	private final EnumSet<RevSort> sorting = EnumSet.noneOf(RevSort.class);
 
+	private void enableRevSort(final RevSort type, final boolean on) {
+		if (on)
+			sorting.add(type);
+		else
+			sorting.remove(type);
+	}
+
+	@Option(name = "--date-order")
+	void enableDateOrder(final boolean on) {
+		enableRevSort(RevSort.COMMIT_TIME_DESC, on);
+	}
+
+	@Option(name = "--topo-order")
+	void enableTopoOrder(final boolean on) {
+		enableRevSort(RevSort.TOPO, on);
+	}
+
+	@Option(name = "--reverse")
+	void enableReverse(final boolean on) {
+		enableRevSort(RevSort.REVERSE, on);
+	}
+
+	@Option(name = "--boundary")
+	void enableBoundary(final boolean on) {
+		enableRevSort(RevSort.BOUNDARY, on);
+	}
+
+	@Argument(index = 0, metaVar = "commit-ish")
+	private final List<RevCommit> commits = new ArrayList<RevCommit>();
+
+	@Option(name = "--", metaVar = "path", multiValued = true, handler = PathTreeFilterHandler.class)
+	private TreeFilter pathFilter = TreeFilter.ALL;
+
+	private final List<RevFilter> revLimiter = new ArrayList<RevFilter>();
+
+	@Option(name = "--author")
+	void addAuthorRevFilter(final String who) {
+		revLimiter.add(AuthorRevFilter.create(who));
+	}
+
+	@Option(name = "--committer")
+	void addCommitterRevFilter(final String who) {
+		revLimiter.add(CommitterRevFilter.create(who));
+	}
+
+	@Option(name = "--grep")
+	void addCMessageRevFilter(final String msg) {
+		revLimiter.add(MessageRevFilter.create(msg));
+	}
+
+	@Override
+	protected void run() throws Exception {
 		walk = createWalk();
 		for (final RevSort s : sorting)
 			walk.sort(s, true);
 
-		if (pathLimiter != null && !pathLimiter.isEmpty())
-			walk.setTreeFilter(AndTreeFilter.create(PathFilterGroup
-					.create(pathLimiter), TreeFilter.ANY_DIFF));
+		if (pathFilter != TreeFilter.ALL)
+			walk.setTreeFilter(AndTreeFilter.create(pathFilter,
+					TreeFilter.ANY_DIFF));
 
 		if (revLimiter.size() == 1)
 			walk.setRevFilter(revLimiter.get(0));
 		else if (revLimiter.size() > 1)
 			walk.setRevFilter(AndRevFilter.create(revLimiter));
 
-		final long start = System.currentTimeMillis();
-		boolean have_revision = false;
-		boolean not = false;
-		for (String a : argList) {
-			if ("--not".equals(a)) {
-				not = true;
-				continue;
-			}
-			boolean menot = false;
-			if (a.startsWith("^")) {
-				a = a.substring(1);
-				menot = true;
-			}
-			final RevCommit c = walk.parseCommit(resolve(a));
-			if (not ^ menot)
-				walk.markUninteresting(c);
-			else {
-				walk.markStart(c);
-				have_revision = true;
-			}
+		if (commits.isEmpty()) {
+			final ObjectId head = db.resolve(Constants.HEAD);
+			if (head == null)
+				throw die("Cannot resolve " + Constants.HEAD);
+			commits.add(walk.parseCommit(head));
 		}
-		if (!have_revision)
-			walk.markStart(walk.parseCommit(resolve("HEAD")));
+		for (final RevCommit c : commits) {
+			final RevCommit real = argWalk == walk ? c : walk.parseCommit(c);
+			if (c.has(RevFlag.UNINTERESTING))
+				walk.markUninteresting(real);
+			else
+				walk.markStart(c);
+		}
 
-		int n = walkLoop();
-
+		final long start = System.currentTimeMillis();
+		final int n = walkLoop();
 		if (count) {
 			final long end = System.currentTimeMillis();
 			System.err.print(n);
@@ -158,7 +170,9 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 	protected RevWalk createWalk() {
 		if (objects)
 			return new ObjectWalk(db);
-		return new RevWalk(db);
+		if (argWalk == null)
+			argWalk = new RevWalk(db);
+		return argWalk;
 	}
 
 	protected int walkLoop() throws Exception {
