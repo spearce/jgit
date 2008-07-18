@@ -43,9 +43,14 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.IllegalAnnotationError;
 import org.kohsuke.args4j.Option;
+import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.pgm.TextBuiltin;
+import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.revwalk.RevTree;
 import org.spearce.jgit.revwalk.RevWalk;
+import org.spearce.jgit.transport.RefSpec;
+import org.spearce.jgit.treewalk.AbstractTreeIterator;
 
 /**
  * Extended command line parser which handles --foo=value arguments.
@@ -56,6 +61,15 @@ import org.spearce.jgit.revwalk.RevWalk;
  * args4j style format prior to invoking args4j for parsing.
  */
 public class CmdLineParser extends org.kohsuke.args4j.CmdLineParser {
+	static {
+		registerHandler(AbstractTreeIterator.class,
+				AbstractTreeIteratorHandler.class);
+		registerHandler(ObjectId.class, ObjectIdHandler.class);
+		registerHandler(RefSpec.class, RefSpecHandler.class);
+		registerHandler(RevCommit.class, RevCommitHandler.class);
+		registerHandler(RevTree.class, RevTreeHandler.class);
+	}
+
 	private final Repository db;
 
 	private RevWalk walk;
