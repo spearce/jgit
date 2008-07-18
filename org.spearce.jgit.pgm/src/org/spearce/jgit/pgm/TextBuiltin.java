@@ -43,9 +43,13 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.Option;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.pgm.opt.CmdLineParser;
+import org.spearce.jgit.revwalk.RevWalk;
 
 /**
  * Abstract command which can be invoked from the command line.
@@ -67,11 +71,17 @@ public abstract class TextBuiltin {
 
 	private String commandName;
 
+	@Option(name = "--help", usage = "display this help text", aliases = { "-h" })
+	private boolean help;
+
 	/** Stream to output to, typically this is standard output. */
 	protected PrintWriter out;
 
 	/** Git repository the command was invoked within. */
 	protected Repository db;
+
+	/** RevWalk used during command line parsing, if it was required. */
+	protected RevWalk argWalk;
 
 	/**
 	 * Set the name this command can be invoked as on the command line.
@@ -94,7 +104,7 @@ public abstract class TextBuiltin {
 	}
 
 	/**
-	 * Perform the action(s) of this command.
+	 * Parse arguments and run this command.
 	 *
 	 * @param args
 	 *            command line arguments passed after the command name.
@@ -103,7 +113,62 @@ public abstract class TextBuiltin {
 	 *             framework will catch the exception and print a message on
 	 *             standard error.
 	 */
-	public abstract void execute(String[] args) throws Exception;
+	public void execute(String[] args) throws Exception {
+		parseArguments(args);
+		run();
+	}
+
+	/**
+	 * Parses the command line arguments prior to running.
+	 * <p>
+	 * This method should only be invoked by {@link #execute(String[])}, prior
+	 * to calling {@link #run()}. The default implementation parses all
+	 * arguments into this object's instance fields.
+	 *
+	 * @param args
+	 *            the arguments supplied on the command line, if any.
+	 */
+	protected void parseArguments(final String[] args) {
+		final CmdLineParser clp = new CmdLineParser(this);
+		try {
+			clp.parseArgument(args);
+		} catch (CmdLineException err) {
+			if (!help) {
+				System.err.println("fatal: " + err.getMessage());
+				System.exit(1);
+			}
+		}
+
+		if (help) {
+			System.err.print("jgit ");
+			System.err.print(commandName);
+			clp.printSingleLineUsage(System.err);
+			System.err.println();
+
+			if (help) {
+				System.err.println();
+				clp.printUsage(System.err);
+				System.err.println();
+			}
+			System.exit(1);
+		}
+
+		argWalk = clp.getRevWalkGently();
+	}
+
+	/**
+	 * Perform the actions of this command.
+	 * <p>
+	 * This method should only be invoked by {@link #execute(String[])}.
+	 *
+	 * @throws Exception
+	 *             an error occurred while processing the command. The main
+	 *             framework will catch the exception and print a message on
+	 *             standard error.
+	 */
+	protected void run() throws Exception {
+		throw die("Override either execute (legacy) or run (new style).");
+	}
 
 	/**
 	 * @return the repository this command accesses.
