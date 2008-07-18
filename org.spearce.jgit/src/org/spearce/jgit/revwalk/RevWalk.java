@@ -612,6 +612,41 @@ public class RevWalk implements Iterable<RevCommit> {
 	}
 
 	/**
+	 * Locate a reference to a tree.
+	 * <p>
+	 * This method only returns successfully if the tree object exists, is
+	 * verified to be a tree, and was parsed without error.
+	 *
+	 * @param id
+	 *            name of the tree object, or a commit or annotated tag that may
+	 *            reference a tree.
+	 * @return reference to the tree object. Never null.
+	 * @throws MissingObjectException
+	 *             the supplied tree does not exist.
+	 * @throws IncorrectObjectTypeException
+	 *             the supplied id is not a tree, a commit or an annotated tag.
+	 * @throws IOException
+	 *             a pack file or loose object could not be read.
+	 */
+	public RevTree parseTree(final AnyObjectId id)
+			throws MissingObjectException, IncorrectObjectTypeException,
+			IOException {
+		RevObject c = parseAny(id);
+		while (c instanceof RevTag) {
+			c = ((RevTag) c).getObject();
+			parse(c);
+		}
+		if (c instanceof RevCommit) {
+			c = ((RevCommit) c).getTree();
+			parse(c);
+		}
+		final RevTree t = (RevTree) c;
+		if (db.openObject(t).getType() != Constants.OBJ_TREE)
+			throw new IncorrectObjectTypeException(t, Constants.TYPE_TREE);
+		return t;
+	}
+
+	/**
 	 * Locate a reference to any object and immediately parse its content.
 	 * <p>
 	 * This method only returns successfully if the object exists and was parsed
