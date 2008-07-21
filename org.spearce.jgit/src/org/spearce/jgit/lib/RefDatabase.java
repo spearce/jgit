@@ -209,7 +209,9 @@ class RefDatabase {
 		readPackedRefs(avail);
 		readLooseRefs(avail, REFS_SLASH, refsDir);
 		try {
-			avail.put(Constants.HEAD, readRefBasic(Constants.HEAD, 0));
+			final Ref r = readRefBasic(Constants.HEAD, 0);
+			if (r != null && r.getObjectId() != null)
+				avail.put(Constants.HEAD, r);
 		} catch (IOException e) {
 			// ignore here
 		}
