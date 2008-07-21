@@ -71,6 +71,7 @@ sed s/@@use_self@@/1/ jgit.sh >$O+ &&
 java org.spearce.jgit.pgm.build.JarLinkUtil \
 	`for p in $JARS   ; do printf %s " -include $p"     ;done` \
 	`for p in $PLUGINS; do printf %s " -include $p/bin2";done` \
+	-file META-INF/services/org.spearce.jgit.pgm.TextBuiltin=org.spearce.jgit.pgm/src/META-INF/services/org.spearce.jgit.pgm.TextBuiltin \
 	-file META-INF/MANIFEST.MF=$T_MF \
 	>>$O+ &&
 chmod 555 $O+ &&

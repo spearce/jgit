@@ -1,0 +1,12 @@
+org.spearce.jgit.pgm.DiffTree
+org.spearce.jgit.pgm.Fetch
+org.spearce.jgit.pgm.Glog
+org.spearce.jgit.pgm.IndexPack
+org.spearce.jgit.pgm.Log
+org.spearce.jgit.pgm.LsRemote
+org.spearce.jgit.pgm.LsTree
+org.spearce.jgit.pgm.MergeBase
+org.spearce.jgit.pgm.Push
+org.spearce.jgit.pgm.RevList
+org.spearce.jgit.pgm.ShowRev
+org.spearce.jgit.pgm.Tag
