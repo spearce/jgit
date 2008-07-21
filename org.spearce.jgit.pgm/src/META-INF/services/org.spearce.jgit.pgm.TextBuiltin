@@ -10,3 +10,5 @@ org.spearce.jgit.pgm.Push
 org.spearce.jgit.pgm.RevList
 org.spearce.jgit.pgm.ShowRev
 org.spearce.jgit.pgm.Tag
+
+org.spearce.jgit.pgm.debug.ShowCommands

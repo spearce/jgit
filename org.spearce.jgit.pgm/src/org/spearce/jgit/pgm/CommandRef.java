@@ -120,6 +120,13 @@ public class CommandRef {
 	}
 
 	/**
+	 * @return loader for {@link #getImplementationClassName()}.
+	 */
+	public ClassLoader getImplementationClassLoader() {
+		return impl.getClassLoader();
+	}
+
+	/**
 	 * @return a new instance of the command implementation.
 	 */
 	public TextBuiltin create() {
