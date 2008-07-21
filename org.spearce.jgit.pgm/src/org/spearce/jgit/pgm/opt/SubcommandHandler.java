@@ -37,8 +37,6 @@
 
 package org.spearce.jgit.pgm.opt;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 
 import org.kohsuke.args4j.CmdLineException;
@@ -47,7 +45,8 @@ import org.kohsuke.args4j.OptionDef;
 import org.kohsuke.args4j.spi.OptionHandler;
 import org.kohsuke.args4j.spi.Parameters;
 import org.kohsuke.args4j.spi.Setter;
-import org.spearce.jgit.pgm.Main;
+import org.spearce.jgit.pgm.CommandCatalog;
+import org.spearce.jgit.pgm.CommandRef;
 import org.spearce.jgit.pgm.TextBuiltin;
 
 /**
@@ -57,12 +56,6 @@ import org.spearce.jgit.pgm.TextBuiltin;
  * we can execute at runtime with the remaining arguments of the parser.
  */
 public class SubcommandHandler extends OptionHandler<TextBuiltin> {
-	private static String mypackage() {
-		final String p = Main.class.getName();
-		final int dot = p.lastIndexOf('.');
-		return p.substring(0, dot);
-	}
-
 	/**
 	 * Create a new handler for the command name.
 	 * <p>
@@ -80,65 +73,17 @@ public class SubcommandHandler extends OptionHandler<TextBuiltin> {
 	@Override
 	public int parseArguments(final Parameters params) throws CmdLineException {
 		final String name = params.getParameter(0);
-		final StringBuilder s = new StringBuilder();
-		s.append(mypackage());
-		s.append('.');
-		boolean upnext = true;
-		for (int i = 0; i < name.length(); i++) {
-			final char c = name.charAt(i);
-			if (c == '-') {
-				upnext = true;
-				continue;
-			}
-			if (upnext)
-				s.append(Character.toUpperCase(c));
-			else
-				s.append(c);
-			upnext = false;
-		}
-
-		final Class<?> clazz;
-		try {
-			clazz = Class.forName(s.toString());
-		} catch (ClassNotFoundException e) {
+		final CommandRef cr = CommandCatalog.get(name);
+		if (cr == null)
 			throw new CmdLineException(MessageFormat.format(
 					"{0} is not a jgit command", name));
-		}
-
-		if (!TextBuiltin.class.isAssignableFrom(clazz))
-			throw new CmdLineException(MessageFormat.format(
-					"{0} is not a jgit command", name));
-
-		final Constructor<?> cons;
-		try {
-			cons = clazz.getDeclaredConstructor();
-		} catch (SecurityException e) {
-			throw new CmdLineException("Cannot create " + name, e);
-		} catch (NoSuchMethodException e) {
-			throw new CmdLineException("Cannot create " + name, e);
-		}
-		cons.setAccessible(true);
-
-		final TextBuiltin cmd;
-		try {
-			cmd = (TextBuiltin) cons.newInstance();
-		} catch (InstantiationException e) {
-			throw new CmdLineException("Cannot create " + name, e);
-		} catch (IllegalAccessException e) {
-			throw new CmdLineException("Cannot create " + name, e);
-		} catch (InvocationTargetException e) {
-			throw new CmdLineException("Cannot create " + name, e);
-		}
-
-		cmd.setCommandName(name);
-		setter.addValue(cmd);
 
 		// Force option parsing to stop. Everything after us should
 		// be arguments known only to this command and must not be
 		// recognized by the current parser.
 		//
 		owner.stopOptionParsing();
-
+		setter.addValue(cr.create());
 		return 1;
 	}
 

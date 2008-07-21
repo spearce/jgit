@@ -83,13 +83,7 @@ public abstract class TextBuiltin {
 	/** RevWalk used during command line parsing, if it was required. */
 	protected RevWalk argWalk;
 
-	/**
-	 * Set the name this command can be invoked as on the command line.
-	 *
-	 * @param name
-	 *            the name of the command.
-	 */
-	public void setCommandName(final String name) {
+	final void setCommandName(final String name) {
 		commandName = name;
 	}
 
