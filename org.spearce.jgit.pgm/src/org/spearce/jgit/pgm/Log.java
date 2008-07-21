@@ -45,6 +45,7 @@ import java.util.TimeZone;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.revwalk.RevCommit;
 
+@Command(common = true, usage = "View commit history")
 class Log extends RevWalkTextBuiltin {
 	private final TimeZone myTZ = TimeZone.getDefault();
 

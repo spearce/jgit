@@ -51,6 +51,7 @@ import org.spearce.jgit.transport.RemoteRefUpdate;
 import org.spearce.jgit.transport.Transport;
 import org.spearce.jgit.transport.RemoteRefUpdate.Status;
 
+@Command(common = true, usage = "Update remote repository from local refs")
 class Push extends TextBuiltin {
 	@Argument(index = 0, metaVar = "uri-ish")
 	private String remote = "origin";

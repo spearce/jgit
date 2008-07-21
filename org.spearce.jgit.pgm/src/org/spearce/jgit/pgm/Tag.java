@@ -45,6 +45,7 @@ import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.PersonIdent;
 
+@Command(common = true, usage = "Create a tag")
 class Tag extends TextBuiltin {
 	@Option(name = "-f", usage = "force replacing an existing tag")
 	private boolean force;

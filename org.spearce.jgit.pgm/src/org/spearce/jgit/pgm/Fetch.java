@@ -48,6 +48,7 @@ import org.spearce.jgit.transport.RefSpec;
 import org.spearce.jgit.transport.TrackingRefUpdate;
 import org.spearce.jgit.transport.Transport;
 
+@Command(common = true, usage = "Update remote refs from another repository")
 class Fetch extends TextBuiltin {
 	@Option(name = "--verbose", aliases = { "-v" }, usage = "be more verbose")
 	private boolean verbose;
