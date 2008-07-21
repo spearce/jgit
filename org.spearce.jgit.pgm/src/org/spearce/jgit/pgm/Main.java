@@ -121,6 +121,24 @@ public class Main {
 				System.err.println();
 				clp.printUsage(System.err);
 				System.err.println();
+			} else if (subcommand == null) {
+				System.err.println();
+				System.err.println("The most commonly used commands are:");
+				final CommandRef[] common = CommandCatalog.common();
+				int width = 0;
+				for (final CommandRef c : common)
+					width = Math.max(width, c.getName().length());
+				width += 2;
+
+				for (final CommandRef c : common) {
+					System.err.print(' ');
+					System.err.print(c.getName());
+					for (int i = c.getName().length(); i < width; i++)
+						System.err.print(' ');
+					System.err.print(c.getUsage());
+					System.err.println();
+				}
+				System.err.println();
 			}
 			System.exit(1);
 		}
