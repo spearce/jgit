@@ -2,6 +2,7 @@
  * Copyright (C) 2007, Dave Watson <dwatson@mimvista.com>
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
  *
  * All rights reserved.
  *
@@ -41,6 +42,8 @@ package org.spearce.jgit.lib;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.LinkedList;
 
 /**
  * Test reading of git config
@@ -84,11 +87,26 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 		checkFile(cfgFile, "[sec \"ext\"]\n\tname = value\n\tname2 = value2\n");
 	}
 
-	public void test004_PutSimple() throws IOException {
+	public void test004_PutGetSimple() throws IOException {
 		File cfgFile = writeTrashFile("config_004", "");
 		RepositoryConfig repositoryConfig = new RepositoryConfig(null, cfgFile);
 		repositoryConfig.setString("my", null, "somename", "false");
 		repositoryConfig.save();
 		checkFile(cfgFile, "[my]\n\tsomename = false\n");
+		assertEquals("false", repositoryConfig
+				.getString("my", null, "somename"));
+	}
+
+	public void test005_PutGetStringList() throws IOException {
+		File cfgFile = writeTrashFile("config_005", "");
+		RepositoryConfig repositoryConfig = new RepositoryConfig(null, cfgFile);
+		final LinkedList<String> values = new LinkedList<String>();
+		values.add("value1");
+		values.add("value2");
+		repositoryConfig.setStringList("my", null, "somename", values);
+		repositoryConfig.save();
+		assertTrue(Arrays.equals(values.toArray(), repositoryConfig
+				.getStringList("my", null, "somename")));
+		checkFile(cfgFile, "[my]\n\tsomename = value1\n\tsomename = value2\n");
 	}
 }
