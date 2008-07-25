@@ -145,11 +145,10 @@ public abstract class TextBuiltin {
 			clp.printSingleLineUsage(System.err);
 			System.err.println();
 
-			if (help) {
-				System.err.println();
-				clp.printUsage(System.err);
-				System.err.println();
-			}
+			System.err.println();
+			clp.printUsage(System.err);
+			System.err.println();
+
 			System.exit(1);
 		}
 
