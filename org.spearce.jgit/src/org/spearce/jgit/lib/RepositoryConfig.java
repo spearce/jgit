@@ -381,10 +381,25 @@ public class RepositoryConfig {
 		key += "." + name.toLowerCase();
 		if (values.size() == 0)
 			byName.remove(key);
-		else if (values.size() == 1)
-			byName.put(key, values.get(0));
-		else
-			byName.put(key, new ArrayList<String>(values));
+		else if (values.size() == 1) {
+			final Entry e = new Entry();
+			e.base = section;
+			e.extendedBase = subsection;
+			e.name = name;
+			e.value = values.get(0);
+			byName.put(key, e);
+		} else {
+			final ArrayList<Entry> eList = new ArrayList<Entry>(values.size());
+			for (final String v : values) {
+				final Entry e = new Entry();
+				e.base = section;
+				e.extendedBase = subsection;
+				e.name = name;
+				e.value = v;
+				eList.add(e);
+			}
+			byName.put(key, eList);
+		}
 
 		int entryIndex = 0;
 		int valueIndex = 0;
