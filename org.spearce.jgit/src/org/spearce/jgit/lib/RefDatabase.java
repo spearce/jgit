@@ -115,6 +115,7 @@ class RefDatabase {
 	}
 
 	ObjectId idOf(final String name) throws IOException {
+		refreshPackedRefs();
 		final Ref r = readRefBasic(name, 0);
 		return r != null ? r.getObjectId() : null;
 	}
@@ -132,6 +133,7 @@ class RefDatabase {
 	 *             to the base ref, as the symbolic ref could not be read.
 	 */
 	RefUpdate newUpdate(final String name) throws IOException {
+		refreshPackedRefs();
 		Ref r = readRefBasic(name, 0);
 		if (r == null)
 			r = new Ref(Ref.Storage.NEW, name, null);
