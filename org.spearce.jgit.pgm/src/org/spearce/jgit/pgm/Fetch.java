@@ -40,6 +40,7 @@ package org.spearce.jgit.pgm;
 import java.util.List;
 
 import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.Option;
 import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.TextProgressMonitor;
 import org.spearce.jgit.transport.FetchResult;
@@ -48,6 +49,9 @@ import org.spearce.jgit.transport.TrackingRefUpdate;
 import org.spearce.jgit.transport.Transport;
 
 class Fetch extends TextBuiltin {
+	@Option(name = "--verbose", aliases = { "-v" }, usage = "be more verbose")
+	private boolean verbose;
+
 	@Argument(index = 0, metaVar = "uri-ish")
 	private String remote = "origin";
 
@@ -66,14 +70,22 @@ class Fetch extends TextBuiltin {
 			tn.close();
 		}
 
-		out.print("From ");
-		out.print(tn.getURI());
-		out.println();
+		boolean shownURI = false;
 		for (final TrackingRefUpdate u : r.getTrackingRefUpdates()) {
+			if (!verbose && u.getResult() == RefUpdate.Result.NO_CHANGE)
+				continue;
+
 			final char type = shortTypeOf(u.getResult());
 			final String longType = longTypeOf(u);
 			final String src = abbreviateRef(u.getRemoteName(), false);
 			final String dst = abbreviateRef(u.getLocalName(), true);
+
+			if (!shownURI) {
+				out.print("From ");
+				out.print(tn.getURI());
+				out.println();
+				shownURI = true;
+			}
 
 			out.format(" %c %-17s %-10s -> %s", type, longType, src, dst);
 			out.println();
