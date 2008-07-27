@@ -58,6 +58,7 @@ do
 	 xargs javac \
 		-source 1.5 \
 		-target 1.5 \
+		-encoding UTF-8 \
 		-g \
 		-d ../bin2) || die "Building $p failed."
 	CLASSPATH="$CLASSPATH:$R/$p/bin2"
