@@ -415,31 +415,6 @@ public class GitProjectData {
 						} else if (s == null) {
 							return true;
 						}
-
-//						final Tree cacheTree = m.getCacheTree();
-//						if (cacheTree != null) {
-//							try {
-//								synchronized (cacheTree) {
-//									final TreeEntry e;
-//									if (res.getType() == IResource.FILE)
-//										e = cacheTree.findBlobMember(s);
-//									else
-//										e = cacheTree.findTreeMember(s);
-//									if (e instanceof FileTreeEntry) {
-//										trace("modified " + r + " -> "
-//												+ e.getFullName());
-//										e.setModified();
-//										affectedMappings.add(m);
-//									}
-//								}
-//							} catch (IOException ioe) {
-//								throw Activator
-//										.error(
-//												CoreText.GitProjectData_lazyResolveFailed,
-//												ioe);
-//							}
-//							return true;
-//						}
 					}
 					return false;
 				}
@@ -451,16 +426,6 @@ public class GitProjectData {
 			detachFromWorkspace();
 			Activator.logError(CoreText.GitProjectData_notifyChangedFailed, ce);
 		}
-
-//		try {
-//			final Iterator i = affectedMappings.iterator();
-//			while (i.hasNext()) {
-//				((RepositoryMapping) i.next()).recomputeMerge();
-//			}
-//		} catch (IOException ioe) {
-//			Activator
-//					.logError(CoreText.GitProjectData_notifyChangedFailed, ioe);
-//		}
 	}
 
 	private File propertyFile() {
