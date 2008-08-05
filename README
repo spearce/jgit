@@ -66,15 +66,6 @@ three for packaging.
 
             == WARNINGS / CAVEATS              ==
 
-- The plugin could lockup your Eclipse workbench.  I've tried to
-  make it stable and function in such a way that it can't crash
-  the workbench, but that doesn't mean it won't.  :-)
-
-- This package might eat your files.  Everything I've added to a
-  repository with it has unpacked properly both with itself and
-  with the canonical C based implementation, but that doesn't mean
-  it won't generate a corrupt object.
-
 - Symbolic links are not supported because java does not support it.
   Such links could be damaged.
 
@@ -87,10 +78,6 @@ three for packaging.
   supported. Apple's Java 1.5.0_07 is reported to work acceptably. We
   have no information about other vendors. Please report your findings
   if you try.
-
-- Do not trust this plugin to always do the right thing (yet). Please
-  check with the real Git and report any problems.
-
 
             == COMPATIBILITY                   ==
 
