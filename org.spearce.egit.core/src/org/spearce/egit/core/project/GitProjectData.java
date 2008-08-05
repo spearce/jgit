@@ -1,6 +1,7 @@
 /*******************************************************************************
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Google Inc.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -32,6 +33,7 @@ import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Preferences;
+import org.eclipse.core.runtime.QualifiedName;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.Activator;
@@ -70,6 +72,9 @@ public class GitProjectData {
 			}
 		}
 	}
+
+	private static QualifiedName MAPPING_KEY = new QualifiedName(
+			GitProjectData.class.getName(), "RepositoryMapping");
 
 	/**
 	 * Start listening for resource changes.
@@ -226,8 +231,6 @@ public class GitProjectData {
 
 	private final Collection mappings;
 
-	private final Map c2mapping;
-
 	private final Set protectedResources;
 
 	/**
@@ -239,7 +242,6 @@ public class GitProjectData {
 	public GitProjectData(final IProject p) {
 		project = p;
 		mappings = new ArrayList();
-		c2mapping = new HashMap();
 		protectedResources = new HashSet();
 	}
 
@@ -267,15 +269,16 @@ public class GitProjectData {
 	 * @throws CoreException
 	 */
 	public void markTeamPrivateResources() throws CoreException {
-		final Iterator i = c2mapping.entrySet().iterator();
-		while (i.hasNext()) {
-			final Map.Entry e = (Map.Entry) i.next();
-			final IContainer c = (IContainer) e.getKey();
+		for (final Object rmObj : mappings) {
+			final RepositoryMapping rm = (RepositoryMapping)rmObj;
+			final IContainer c = rm.getContainer();
+			if (c == null)
+				continue; // Not fully mapped yet?
+
 			final IResource dotGit = c.findMember(".git");
 			if (dotGit != null) {
 				try {
-					final Repository r = ((RepositoryMapping) e.getValue())
-							.getRepository();
+					final Repository r = rm.getRepository();
 					final File dotGitDir = dotGit.getLocation().toFile()
 							.getCanonicalFile();
 					if (dotGitDir.equals(r.getDirectory())) {
@@ -298,14 +301,24 @@ public class GitProjectData {
 	}
 
 	/**
-	 * TODO: check usage, we should probably declare the parameter
-	 * as IProject.
-	 *
-	 * @param r Eclipse project
+	 * @param r any workbench resource contained within this project.
 	 * @return the mapping for the specified project
 	 */
-	public RepositoryMapping getRepositoryMapping(final IResource r) {
-		return (RepositoryMapping) c2mapping.get(r);
+	public RepositoryMapping getRepositoryMapping(IResource r) {
+		try {
+			for (; r != null; r = r.getParent()) {
+				final RepositoryMapping m;
+
+				if (!r.isAccessible())
+					continue;
+				m = (RepositoryMapping) r.getSessionProperty(MAPPING_KEY);
+				if (m != null)
+					return m;
+			}
+		} catch (CoreException err) {
+			Activator.logError("Falied finding RepositoryMapping", err);
+		}
+		return null;
 	}
 
 	private void delete() {
@@ -445,7 +458,11 @@ public class GitProjectData {
 		m.fireRepositoryChanged();
 
 		trace("map " + c + " -> " + m.getRepository());
-		c2mapping.put(c, m);
+		try {
+			c.setSessionProperty(MAPPING_KEY, m);
+		} catch (CoreException err) {
+			Activator.logError("Failed to cache RepositoryMapping", err);
+		}
 
 		dotGit = c.findMember(".git");
 		if (dotGit != null && dotGit.getLocation().toFile().equals(git)) {
