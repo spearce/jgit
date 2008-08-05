@@ -174,10 +174,6 @@ partial files simple.
 
 - Documentation. :-)
 
-- Windows support is new and very ligthly tested. Do not blame us if
-  it blows, but tell us about it and what you did. Double check
-  everything.
-
 - gitattributes support
   In particular CRLF conversion is not implemented. Files are treated
   as byte sequences.
