@@ -94,8 +94,7 @@ three for packaging.
 
             == COMPATIBILITY                   ==
 
-- Eclipse 3.2.1 is the minimum Eclipse version. Expect this to change
-  in future versions.
+- Eclipse 3.3.1 is the minimum Eclipse version, 3.4 is preferred.
 
 - Newer version of EGit/JGit may implement new functionality, remove
   existing functions and change others without other notice than what

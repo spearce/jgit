@@ -6,7 +6,7 @@ PREREQUISITES
 In order to install the Git Eclipse plugin you need to have the following
 things.
 
-- Eclipse version 3.2.1 or later (works up to 3.4 M1).
+- Eclipse version 3.3.1, or 3.4.0
 
 - Java 6. Java 1.5.0_11 and later seems to work. The reason is that
   the garbage collection does not do a good enough job when using memory
