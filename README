@@ -188,36 +188,6 @@ partial files simple.
 - The Eclipse plugin cannot handle files outside any Eclipse project. You
   need commit changes to such files outside of Eclipse.
 
-- Speed in some areas
-
-  Java is "slooow", they say. Not true as a general statement. A lot of Java
-  code is slow because it it not optimized (to some extent due to this
-  belief). Java has quite good performance although it cannot compete with
-  C code written by good hackers simply because C can be optimized more than
-  Java when you actually do it and have the skills to do it. Some areas of
-  the plugin have been optimized but not all and not conclusively. In general
-  however Java almost always needs more memory than an application written in 
-  e.g. C. In particular there is an overhead from the rather large standard
-  libraries that a normal Java installation comes with. See the ACM report:
-
-	Prechelt, L. 1999. Technical opinion: comparing Java vs. C/C++
-        efficiency differences to interpersonal differences. Commun. ACM 42, 
-        10 (Oct. 1999), 109-112. DOI= http://doi.acm.org/10.1145/317665.317683
-
-  for an interesting comparison of C, C++ and Java. It is somewhat dated so 
-  the comparison involved Java 1.2, i.e. without hotspot that appeared in Java 
-  1.3 and the shared runtime in 1.4. Those features made common Java
-  applications many times faster than with Java 1.2
-
-  The conclusion from having about 30 programmers write a program to the same
-  specification using their own choice of language (from C,C++ and Java) is
-  that the skills of the programmer is what determines the performance of the
-  code rather than choice of programming language.
-
-  JGit is much slower (measured up to eight times for some random cases), but
-  then the real Git is ridicilously fast.
-
-
             == Support                         ==
 
   Post question, comments or patches to the git@vger.kernel.org mailing list.
