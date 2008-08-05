@@ -177,9 +177,6 @@ For some operations it may just be the preferred solution also. There
 are not just a command line, there is e.g. git-gui that makes committing
 partial files simple.
 
-- GIT network protocol to pull objects from a remote repository or
-  push objects to a remote repository.
-
 - Merging. 
 
 - Repacking from within the plugin.
