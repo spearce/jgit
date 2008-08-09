@@ -1,3 +1,4 @@
+org.spearce.jgit.pgm.Branch
 org.spearce.jgit.pgm.DiffTree
 org.spearce.jgit.pgm.Fetch
 org.spearce.jgit.pgm.Glog
