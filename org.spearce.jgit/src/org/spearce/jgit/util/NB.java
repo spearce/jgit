@@ -91,6 +91,22 @@ public final class NB {
 	}
 
 	/**
+	 * Convert sequence of 2 bytes (network byte order) into unsigned value.
+	 *
+	 * @param intbuf
+	 *            buffer to acquire the 2 bytes of data from.
+	 * @param offset
+	 *            position within the buffer to begin reading from. This
+	 *            position and the next byte after it (for a total of 2 bytes)
+	 *            will be read.
+	 * @return unsigned integer value that matches the 16 bits read.
+	 */
+	public static int decodeUInt16(final byte[] intbuf, final int offset) {
+		int r = (intbuf[offset] << 8) & 0xff;
+		return r | (intbuf[offset + 1] & 0xff);
+	}
+
+	/**
 	 * Convert sequence of 4 bytes (network byte order) into signed value.
 	 * 
 	 * @param intbuf
@@ -145,6 +161,25 @@ public final class NB {
 	public static long decodeUInt64(final byte[] intbuf, final int offset) {
 		return (decodeUInt32(intbuf, offset) << 32)
 				| decodeUInt32(intbuf, offset + 4);
+	}
+
+	/**
+	 * Write a 16 bit integer as a sequence of 2 bytes (network byte order).
+	 *
+	 * @param intbuf
+	 *            buffer to write the 2 bytes of data into.
+	 * @param offset
+	 *            position within the buffer to begin writing to. This position
+	 *            and the next byte after it (for a total of 2 bytes) will be
+	 *            replaced.
+	 * @param v
+	 *            the value to write.
+	 */
+	public static void encodeInt16(final byte[] intbuf, final int offset, int v) {
+		intbuf[offset + 1] = (byte) v;
+		v >>>= 8;
+
+		intbuf[offset] = (byte) v;
 	}
 
 	/**
