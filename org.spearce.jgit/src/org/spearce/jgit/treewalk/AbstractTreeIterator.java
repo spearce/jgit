@@ -46,6 +46,7 @@ import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.treewalk.filter.TreeFilter;
 
 /**
  * Walks a Git tree (directory) in Git sort order.
@@ -316,4 +317,19 @@ public abstract class AbstractTreeIterator {
 	 *             the tree is invalid.
 	 */
 	public abstract void next() throws CorruptObjectException;
+
+	/**
+	 * Advance to the next tree entry, populating this iterator with its data.
+	 * <p>
+	 * This method behaves like {@link #next()} but is called by
+	 * {@link TreeWalk} only if a {@link TreeFilter} was used and ruled out the
+	 * current entry from the results. In such cases this tree iterator may
+	 * perform special behavior.
+	 *
+	 * @throws CorruptObjectException
+	 *             the tree is invalid.
+	 */
+	public void skip() throws CorruptObjectException {
+		next();
+	}
 }

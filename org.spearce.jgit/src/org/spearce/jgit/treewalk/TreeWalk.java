@@ -395,7 +395,7 @@ public class TreeWalk {
 
 				currentHead = t;
 				if (!filter.include(this)) {
-					popEntriesEqual();
+					skipEntriesEqual();
 					continue;
 				}
 
@@ -630,6 +630,17 @@ public class TreeWalk {
 			final AbstractTreeIterator t = trees[i];
 			if (t.matches == ch) {
 				t.next();
+				t.matches = null;
+			}
+		}
+	}
+
+	private void skipEntriesEqual() throws CorruptObjectException {
+		final AbstractTreeIterator ch = currentHead;
+		for (int i = 0; i < trees.length; i++) {
+			final AbstractTreeIterator t = trees[i];
+			if (t.matches == ch) {
+				t.skip();
 				t.matches = null;
 			}
 		}
