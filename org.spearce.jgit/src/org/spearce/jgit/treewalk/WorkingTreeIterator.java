@@ -259,6 +259,25 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 		pathLen = pathOffset + nameLen;
 	}
 
+	/**
+	 * Get the byte length of this entry.
+	 *
+	 * @return size of this file, in bytes.
+	 */
+	public long getEntryLength() {
+		return current().getLength();
+	}
+
+	/**
+	 * Get the last modified time of this entry.
+	 *
+	 * @return last modified time of this file, in milliseconds since the epoch
+	 *         (Jan 1, 1970 UTC).
+	 */
+	public long getEntryLastModified() {
+		return current().getLastModified();
+	}
+
 	private static final Comparator<Entry> ENTRY_CMP = new Comparator<Entry>() {
 		public int compare(final Entry o1, final Entry o2) {
 			final byte[] a = o1.encodedName;
