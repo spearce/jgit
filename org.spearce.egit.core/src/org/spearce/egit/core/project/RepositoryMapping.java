@@ -222,15 +222,15 @@ public class RepositoryMapping {
 	 * @return the RepositoryMapping for this resource,
 	 *         or null for non GitProvider.
 	 */
-	public static RepositoryMapping getMapping(IResource resource) {
-		IProject project = resource.getProject();
+	public static RepositoryMapping getMapping(final IResource resource) {
+		final IProject project = resource.getProject();
 		if (project == null)
 			return null;
-		RepositoryProvider provider = RepositoryProvider.getProvider(project);
-		if (!(provider instanceof GitProvider))
+
+		final RepositoryProvider rp = RepositoryProvider.getProvider(project);
+		if (!(rp instanceof GitProvider))
 			return null;
-		GitProvider gp = (GitProvider)provider;
-		RepositoryMapping repositoryMapping = gp.getData().getRepositoryMapping(project);
-		return repositoryMapping;
+
+		return ((GitProvider)rp).getData().getRepositoryMapping(resource);
 	}
 }

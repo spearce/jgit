@@ -15,7 +15,6 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 
 import org.eclipse.core.resources.IContainer;
-import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.resources.IWorkspaceRunnable;
@@ -67,9 +66,8 @@ public class UntrackOperation implements IWorkspaceRunnable {
 				obj = ((IAdaptable)obj).getAdapter(IResource.class);
 				if (obj instanceof IResource) {
 					final IResource toRemove = (IResource)obj;
-					final IProject p = toRemove.getProject();					
 					final GitProjectData pd = GitProjectData.get(toRemove.getProject());
-					final RepositoryMapping rm = pd.getRepositoryMapping(p);
+					final RepositoryMapping rm = pd.getRepositoryMapping(toRemove);
 					final GitIndex index = rm.getRepository().getIndex();
 					tomerge.put(rm, Boolean.TRUE);
 					if (toRemove instanceof IContainer) {

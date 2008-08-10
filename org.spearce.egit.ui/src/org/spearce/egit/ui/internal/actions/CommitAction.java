@@ -363,7 +363,7 @@ public class CommitAction extends RepositoryAction {
 
 		try {
 			RepositoryMapping repositoryMapping = projectData
-					.getRepositoryMapping(resource.getProject());
+					.getRepositoryMapping(resource);
 
 			if (isChanged(repositoryMapping, resource)) {
 				files.add(resource);
