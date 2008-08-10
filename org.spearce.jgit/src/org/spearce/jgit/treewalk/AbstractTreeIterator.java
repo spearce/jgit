@@ -146,6 +146,29 @@ public abstract class AbstractTreeIterator {
 	}
 
 	/**
+	 * Create an iterator for a subtree of an existing iterator.
+	 * <p>
+	 * The caller is responsible for setting up the path of the child iterator.
+	 *
+	 * @param p
+	 *            parent tree iterator.
+	 * @param childPath
+	 *            path array to be used by the child iterator. This path must
+	 *            contain the path from the top of the walk to the first child
+	 *            and must end with a '/'.
+	 * @param childPathOffset
+	 *            position within <code>childPath</code> where the child can
+	 *            insert its data. The value at
+	 *            <code>childPath[childPathOffset-1]</code> must be '/'.
+	 */
+	protected AbstractTreeIterator(final AbstractTreeIterator p,
+			final byte[] childPath, final int childPathOffset) {
+		parent = p;
+		path = childPath;
+		pathOffset = childPathOffset;
+	}
+
+	/**
 	 * Grow the path buffer larger.
 	 * 
 	 * @param len
