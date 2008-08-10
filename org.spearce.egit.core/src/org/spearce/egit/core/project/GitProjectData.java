@@ -29,8 +29,6 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
-import org.eclipse.core.resources.IResourceDelta;
-import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Preferences;
@@ -61,10 +59,6 @@ public class GitProjectData {
 		@SuppressWarnings("synthetic-access")
 		public void resourceChanged(final IResourceChangeEvent event) {
 			switch (event.getType()) {
-			case IResourceChangeEvent.POST_CHANGE:
-				projectsChanged(event.getDelta().getAffectedChildren(
-						IResourceDelta.CHANGED));
-				break;
 			case IResourceChangeEvent.PRE_CLOSE:
 				uncache((IProject) event.getResource());
 				break;
@@ -180,16 +174,6 @@ public class GitProjectData {
 
 	static void trace(final String m) {
 		Activator.trace("(GitProjectData) " + m);
-	}
-
-	private static void projectsChanged(final IResourceDelta[] projDeltas) {
-		for (int k = 0; k < projDeltas.length; k++) {
-			final IResource r = projDeltas[k].getResource();
-			final GitProjectData d = get((IProject) r);
-			if (d != null) {
-				d.notifyChanged(projDeltas[k]);
-			}
-		}
 	}
 
 	private synchronized static void cache(final IProject p,
@@ -377,54 +361,6 @@ public class GitProjectData {
 			tmp.delete();
 			throw Activator.error(NLS.bind(CoreText.GitProjectData_saveFailed,
 					dat), null);
-		}
-	}
-
-	private void notifyChanged(final IResourceDelta projDelta) {
-//		final Set affectedMappings = new HashSet();
-		try {
-			projDelta.accept(new IResourceDeltaVisitor() {
-				public boolean visit(final IResourceDelta d)
-						throws CoreException {
-					final int f = d.getFlags();
-					IResource res = d.getResource();
-					IResource r = res;
-					if ((f & IResourceDelta.CONTENT) != 0
-							|| (f & IResourceDelta.ENCODING) != 0
-							|| r instanceof IContainer) {
-						String s = null;
-						RepositoryMapping m = null;
-
-						while (r != null) {
-							m = getRepositoryMapping(r);
-							if (m != null) {
-								break;
-							}
-
-							if (s != null) {
-								s = r.getName() + "/" + s;
-							} else {
-								s = r.getName();
-							}
-
-							r = r.getParent();
-						}
-
-						if (m == null) {
-							return false;
-						} else if (s == null) {
-							return true;
-						}
-					}
-					return false;
-				}
-			});
-		} catch (CoreException ce) {
-			// We are in deep trouble. This should NOT have happend. Detach
-			// our listeners and forget it ever did.
-			//
-			detachFromWorkspace();
-			Activator.logError(CoreText.GitProjectData_notifyChangedFailed, ce);
 		}
 	}
 
