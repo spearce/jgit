@@ -2,6 +2,7 @@
  * Copyright (C) 2007, Dave Watson <dwatson@mimvista.com>
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Google Inc.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -126,6 +127,14 @@ public class GitResourceDecorator extends LabelProvider implements
 						Iterator<IResource> i = resources.iterator();
 						m = i.next();
 						i.remove();
+
+						while (!m.isAccessible()) {
+							if (!i.hasNext())
+								return Status.OK_STATUS;
+							m = i.next();
+							i.remove();
+						}
+
 						if (resources.size() > 0)
 							schedule();
 					}
@@ -188,8 +197,7 @@ public class GitResourceDecorator extends LabelProvider implements
 	} // End ResCL
 
 	void clearDecorationState(IResource r) throws CoreException {
-		if (r.isAccessible())
-			r.setSessionProperty(GITFOLDERDIRTYSTATEPROPERTY, null);
+		r.setSessionProperty(GITFOLDERDIRTYSTATEPROPERTY, null);
 		fireLabelProviderChanged(new LabelProviderChangedEvent(this, r));
 	}
 
