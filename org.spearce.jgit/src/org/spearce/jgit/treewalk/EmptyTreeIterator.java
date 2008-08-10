@@ -69,12 +69,12 @@ public class EmptyTreeIterator extends AbstractTreeIterator {
 	}
 
 	@Override
-	protected byte[] idBuffer() {
+	public byte[] idBuffer() {
 		return zeroid;
 	}
 
 	@Override
-	protected int idOffset() {
+	public int idOffset() {
 		return 0;
 	}
 

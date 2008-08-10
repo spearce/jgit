@@ -321,7 +321,7 @@ public abstract class AbstractTreeIterator {
 	 * @return byte array the implementation stores object IDs within.
 	 * @see #getEntryObjectId()
 	 */
-	protected abstract byte[] idBuffer();
+	public abstract byte[] idBuffer();
 
 	/**
 	 * Get the position within {@link #idBuffer()} of this entry's ObjectId.
@@ -329,7 +329,7 @@ public abstract class AbstractTreeIterator {
 	 * @return offset into the array returned by {@link #idBuffer()} where the
 	 *         ObjectId must be copied out of.
 	 */
-	protected abstract int idOffset();
+	public abstract int idOffset();
 
 	/**
 	 * Create a new iterator for the current entry's subtree.

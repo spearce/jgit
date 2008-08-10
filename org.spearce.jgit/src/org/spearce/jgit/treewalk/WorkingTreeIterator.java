@@ -131,7 +131,7 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 	}
 
 	@Override
-	protected byte[] idBuffer() {
+	public byte[] idBuffer() {
 		if (contentIdFromPtr == ptr - 1)
 			return contentId;
 		if (entries == EOF)
@@ -229,7 +229,7 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 	}
 
 	@Override
-	protected int idOffset() {
+	public int idOffset() {
 		return 0;
 	}
 

@@ -112,12 +112,12 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 	}
 
 	@Override
-	protected byte[] idBuffer() {
+	public byte[] idBuffer() {
 		return raw;
 	}
 
 	@Override
-	protected int idOffset() {
+	public int idOffset() {
 		return rawPtr - Constants.OBJECT_ID_LENGTH;
 	}
 
