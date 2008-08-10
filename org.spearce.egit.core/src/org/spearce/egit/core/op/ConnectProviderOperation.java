@@ -1,5 +1,6 @@
 /*******************************************************************************
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Google Inc.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -15,10 +16,8 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.Activator;
@@ -70,17 +69,7 @@ public class ConnectProviderOperation implements IWorkspaceRunnable {
 
 					db = new Repository(newGitDir);
 					db.create();
-					IPath gitDirParent = Path.fromOSString(
-							db.getDirectory().getAbsolutePath())
-							.removeLastSegments(1);
-					IPath cPath = project.getLocation();
-					String subset = null;
-					if (gitDirParent.isPrefixOf(cPath)) {
-						int n = cPath.matchingFirstSegments(gitDirParent);
-						subset = cPath.removeFirstSegments(n).toPortableString();
-					}
-					repos.add(new RepositoryMapping(project, db.getDirectory(),
-							subset));
+					repos.add(new RepositoryMapping(project, db.getDirectory()));
 					db.close();
 
 					// If we don't refresh the project directory right

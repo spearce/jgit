@@ -3,6 +3,7 @@
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  * Copyright (C) 2008, Shunichi Fuji <palglowr@gmail.com>
+ * Copyright (C) 2008, Google Inc.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -41,9 +42,9 @@ public class RepositoryMapping {
 
 	private final String gitdirPath;
 
-	private final String subset;
-
 	private Repository db;
+
+	private String workdirPrefix;
 
 	private IContainer container;
 
@@ -55,12 +56,9 @@ public class RepositoryMapping {
 	 */
 	public RepositoryMapping(final Properties p, final String initialKey) {
 		final int dot = initialKey.lastIndexOf('.');
-		String s;
 
 		containerPath = initialKey.substring(0, dot);
 		gitdirPath = p.getProperty(initialKey);
-		s = p.getProperty(containerPath + ".subset");
-		subset = "".equals(s) ? null : s;
 	}
 
 	/**
@@ -69,10 +67,8 @@ public class RepositoryMapping {
 	 *
 	 * @param mappedContainer
 	 * @param gitDir
-	 * @param subsetRoot
 	 */
-	public RepositoryMapping(final IContainer mappedContainer,
-			final File gitDir, final String subsetRoot) {
+	public RepositoryMapping(final IContainer mappedContainer, final File gitDir) {
 		final IPath cLoc = mappedContainer.getLocation()
 				.removeTrailingSeparator();
 		final IPath gLoc = Path.fromOSString(gitDir.getAbsolutePath())
@@ -98,8 +94,6 @@ public class RepositoryMapping {
 		} else {
 			gitdirPath = gLoc.toPortableString();
 		}
-
-		subset = "".equals(subsetRoot) ? null : subsetRoot;
 	}
 
 	IPath getContainerPath() {
@@ -111,17 +105,6 @@ public class RepositoryMapping {
 	}
 
 	/**
-	 * Eclipse projects typically reside one or more levels
-	 * below the repository. This method return the relative
-	 * path to the project. Null is returned instead of "".
-	 *
-	 * @return relative path from repository to project, or null
-	 */
-	public String getSubset() {
-		return subset;
-	}
-
-	/**
 	 * @return the workdir file, i.e. where the files are checked out
 	 */
 	public File getWorkDir() {
@@ -130,6 +113,7 @@ public class RepositoryMapping {
 
 	synchronized void clear() {
 		db = null;
+		workdirPrefix = null;
 		container = null;
 	}
 
@@ -142,6 +126,15 @@ public class RepositoryMapping {
 
 	synchronized void setRepository(final Repository r) {
 		db = r;
+
+		try {
+			workdirPrefix = getWorkDir().getCanonicalPath();
+		} catch (IOException err) {
+			workdirPrefix = getWorkDir().getAbsolutePath();
+		}
+		workdirPrefix = workdirPrefix.replace('\\', '/');
+		if (!workdirPrefix.endsWith("/"))
+			workdirPrefix += "/";
 	}
 
 	/**
@@ -166,9 +159,6 @@ public class RepositoryMapping {
 
 	synchronized void store(final Properties p) {
 		p.setProperty(containerPath + ".gitdir", gitdirPath);
-		if (subset != null && !"".equals(subset)) {
-			p.setProperty(containerPath + ".subset", subset);
-		}
 	}
 
 	public String toString() {
@@ -209,20 +199,20 @@ public class RepositoryMapping {
 	 * @param rsrc
 	 * @return the path relative to the Git repository, including base name.
 	 */
-	public String getRepoRelativePath(IResource rsrc) {
-		String prefix = getSubset();
-		String projectRelativePath = rsrc.getProjectRelativePath().toString();
-		String repoRelativePath;
-		if (prefix != null) {
-			if (projectRelativePath.length() == 0)
-				repoRelativePath = prefix;
-			else
-				repoRelativePath = prefix + "/" + projectRelativePath;
-		} else
-			repoRelativePath = projectRelativePath;
-
-		assert repoRelativePath != null;
-		return repoRelativePath;
+	public String getRepoRelativePath(final IResource rsrc) {
+		// We should only be called for resources that are actually
+		// in this repository, so we can safely assume that their
+		// path prefix matches workdirPrefix. Testing that here is
+		// rather expensive so we don't bother.
+		//
+		final int pfxLen = workdirPrefix.length();
+		final String p = rsrc.getLocation().toString();
+		final int pLen = p.length();
+		if (pLen > pfxLen)
+			return p.substring(pfxLen);
+		else if (p.length() == pfxLen - 1)
+			return "";
+		return null;
 	}
 
 	/**

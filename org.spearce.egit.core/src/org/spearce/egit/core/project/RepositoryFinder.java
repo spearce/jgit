@@ -1,6 +1,7 @@
 /*******************************************************************************
  * Copyright (C) 2007, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2007, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Google Inc.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -92,17 +93,15 @@ public class RepositoryFinder {
 				final IResource[] children;
 
 				if (ownCfg.isFile()) {
-					register(c, ownCfg.getParentFile(), null);
+					register(c, ownCfg.getParentFile());
 				} else if (c.isLinked() || c instanceof IProject) {
-					String s = fsLoc.getName();
 					File p = fsLoc.getParentFile();
 					while (p != null) {
 						final File pCfg = configFor(p);
 						if (pCfg.isFile()) {
-							register(c, pCfg.getParentFile(), s);
+							register(c, pCfg.getParentFile());
 							break;
 						}
-						s = p.getName() + "/" + s;
 						p = p.getParentFile();
 					}
 				}
@@ -132,14 +131,13 @@ public class RepositoryFinder {
 		return new File(new File(fsLoc, ".git"), "config");
 	}
 
-	private void register(final IContainer c, final File gitdir,
-			final String subset) {
+	private void register(final IContainer c, final File gitdir) {
 		File f;
 		try {
 			f = gitdir.getCanonicalFile();
 		} catch (IOException ioe) {
 			f = gitdir.getAbsoluteFile();
 		}
-		results.add(new RepositoryMapping(c, f, subset));
+		results.add(new RepositoryMapping(c, f));
 	}
 }
