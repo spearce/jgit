@@ -433,6 +433,19 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 		public abstract long getLength();
 
 		/**
+		 * Get the last modified time of this entry.
+		 * <p>
+		 * <b>Note: Efficient implementation required.</b>
+		 * <p>
+		 * The implementation of this method must be efficient. If a subclass
+		 * needs to compute the value they should cache the reference within an
+		 * instance member instead.
+		 *
+		 * @return time since the epoch (in ms) of the last change.
+		 */
+		public abstract long getLastModified();
+
+		/**
 		 * Get the name of this entry within its directory.
 		 * <p>
 		 * Efficient implementations are not required. The caller will obtain
