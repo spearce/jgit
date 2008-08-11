@@ -15,6 +15,11 @@ else
 	java_args=
 fi
 
+if [ -n "$JGIT_CLASSPATH" ]
+then
+	cp="$cp:$JGIT_CLASSPATH"
+fi
+
 # Cleanup paths for Cygwin.
 #
 case "`uname`" in
