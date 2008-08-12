@@ -354,6 +354,22 @@ public class DirCacheEntry {
 		return Constants.CHARSET.decode(ByteBuffer.wrap(path)).toString();
 	}
 
+	/**
+	 * Copy the ObjectId and other meta fields from an existing entry.
+	 * <p>
+	 * This method copies everything except the path from one entry to another,
+	 * supporting renaming.
+	 *
+	 * @param src
+	 *            the entry to copy ObjectId and meta fields from.
+	 */
+	public void copyMetaData(final DirCacheEntry src) {
+		final int pLen = NB.decodeUInt16(info, infoOffset + P_FLAGS) & 0xfff;
+		System.arraycopy(src.info, src.infoOffset, info, infoOffset, INFO_LEN);
+		NB.encodeInt16(info, infoOffset + P_FLAGS, pLen
+				| NB.decodeUInt16(info, infoOffset + P_FLAGS) & ~0xfff);
+	}
+
 	private long decodeTS(final int pIdx) {
 		final int base = infoOffset + pIdx;
 		final int sec = NB.decodeInt32(info, base);
