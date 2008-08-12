@@ -236,6 +236,24 @@ public class DirCache {
 	}
 
 	/**
+	 * Create a new builder to update this cache.
+	 * <p>
+	 * Callers should add all entries to the builder, then use
+	 * {@link DirCacheBuilder#finish()} to update this instance.
+	 *
+	 * @return a new builder instance for this cache.
+	 */
+	public DirCacheBuilder builder() {
+		return new DirCacheBuilder(this, entryCnt + 16);
+	}
+
+	void replace(final DirCacheEntry[] e, final int cnt) {
+		sortedEntries = e;
+		entryCnt = cnt;
+		tree = null;
+	}
+
+	/**
 	 * Read the index from disk, if it has changed on disk.
 	 * <p>
 	 * This method tries to avoid loading the index if it has not changed since
@@ -589,6 +607,11 @@ public class DirCache {
 	public DirCacheEntry getEntry(final String path) {
 		final int i = findEntry(path);
 		return i < 0 ? null : sortedEntries[i];
+	}
+
+	void toArray(final int i, final DirCacheEntry[] dst, final int off,
+			final int cnt) {
+		System.arraycopy(sortedEntries, i, dst, off, cnt);
 	}
 
 	/**
