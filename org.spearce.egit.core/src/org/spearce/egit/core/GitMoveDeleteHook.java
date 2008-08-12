@@ -1,6 +1,7 @@
 /*******************************************************************************
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2007, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Google Inc.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -139,12 +140,52 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 		return true;
 	}
 
-	public boolean moveFolder(final IResourceTree tree, final IFolder source,
-			final IFolder destination, final int updateFlags,
+	public boolean moveFolder(final IResourceTree tree, final IFolder srcf,
+			final IFolder dstf, final int updateFlags,
 			final IProgressMonitor monitor) {
-		// TODO: Implement this. Should be relatively easy, but consider that
-		// Eclipse thinks folders are real thinsgs, while Git does not care.
-		return FINISH_FOR_ME;
+		final boolean force = (updateFlags & IResource.FORCE) == IResource.FORCE;
+		if (!force && !tree.isSynchronized(srcf, IResource.DEPTH_ZERO))
+			return false;
+
+		final RepositoryMapping srcm = RepositoryMapping.getMapping(srcf);
+		if (srcm == null)
+			return false;
+		final RepositoryMapping dstm = RepositoryMapping.getMapping(dstf);
+
+		try {
+			final DirCache sCache = DirCache.lock(srcm.getRepository());
+			final String sPath = srcm.getRepoRelativePath(srcf);
+			final DirCacheEntry[] sEnt = sCache.getEntriesWithin(sPath);
+			if (sEnt.length == 0) {
+				sCache.unlock();
+				return false;
+			}
+
+			final DirCacheEditor sEdit = sCache.editor();
+			sEdit.add(new DirCacheEditor.DeleteTree(sPath));
+			if (dstm != null && dstm.getRepository() == srcm.getRepository()) {
+				final String dPath = srcm.getRepoRelativePath(dstf) + "/";
+				final int sPathLen = sPath.length() + 1;
+				for (final DirCacheEntry se : sEnt) {
+					final String p = se.getPathString().substring(sPathLen);
+					sEdit.add(new DirCacheEditor.PathEdit(dPath + p) {
+						@Override
+						public void apply(final DirCacheEntry dEnt) {
+							dEnt.copyMetaData(se);
+						}
+					});
+				}
+			}
+			if (!sEdit.commit())
+				tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(),
+						0, CoreText.MoveDeleteHook_operationError, null));
+
+			tree.standardMoveFolder(srcf, dstf, updateFlags, monitor);
+		} catch (IOException e) {
+			tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(), 0,
+					CoreText.MoveDeleteHook_operationError, e));
+		}
+		return true;
 	}
 
 	public boolean moveProject(final IResourceTree tree, final IProject source,
