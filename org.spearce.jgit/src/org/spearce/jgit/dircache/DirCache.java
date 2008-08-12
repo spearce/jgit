@@ -48,6 +48,7 @@ import java.util.Comparator;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.util.NB;
 
@@ -144,6 +145,56 @@ public class DirCache {
 		return read(new File(db.getDirectory(), "index"));
 	}
 
+	/**
+	 * Create a new in-core index representation, lock it, and read from disk.
+	 * <p>
+	 * The new index will be locked and then read before it is returned to the
+	 * caller. Read failures are reported as exceptions and therefore prevent
+	 * the method from returning a partially populated index.
+	 *
+	 * @param indexLocation
+	 *            location of the index file on disk.
+	 * @return a cache representing the contents of the specified index file (if
+	 *         it exists) or an empty cache if the file does not exist.
+	 * @throws IOException
+	 *             the index file is present but could not be read, or the lock
+	 *             could not be obtained.
+	 * @throws CorruptObjectException
+	 *             the index file is using a format or extension that this
+	 *             library does not support.
+	 */
+	public static DirCache lock(final File indexLocation)
+			throws CorruptObjectException, IOException {
+		final DirCache c = new DirCache(indexLocation);
+		if (!c.lock())
+			throw new IOException("Cannot lock " + indexLocation);
+		c.read();
+		return c;
+	}
+
+	/**
+	 * Create a new in-core index representation, lock it, and read from disk.
+	 * <p>
+	 * The new index will be locked and then read before it is returned to the
+	 * caller. Read failures are reported as exceptions and therefore prevent
+	 * the method from returning a partially populated index.
+	 *
+	 * @param db
+	 *            repository the caller wants to read the default index of.
+	 * @return a cache representing the contents of the specified index file (if
+	 *         it exists) or an empty cache if the file does not exist.
+	 * @throws IOException
+	 *             the index file is present but could not be read, or the lock
+	 *             could not be obtained.
+	 * @throws CorruptObjectException
+	 *             the index file is using a format or extension that this
+	 *             library does not support.
+	 */
+	public static DirCache lock(final Repository db)
+			throws CorruptObjectException, IOException {
+		return lock(new File(db.getDirectory(), "index"));
+	}
+
 	/** Location of the current version of the index file. */
 	private final File liveFile;
 
@@ -155,6 +206,9 @@ public class DirCache {
 
 	/** Number of positions within {@link #sortedEntries} that are valid. */
 	private int entryCnt;
+
+	/** Our active lock (if we hold it); null if we don't have it locked. */
+	private LockFile myLock;
 
 	/**
 	 * Create a new in-core index representation.
@@ -276,6 +330,38 @@ public class DirCache {
 			if (hdr[i] != SIG_DIRC[i])
 				return false;
 		return true;
+	}
+
+	/**
+	 * Try to establish an update lock on the cache file.
+	 *
+	 * @return true if the lock is now held by the caller; false if it is held
+	 *         by someone else.
+	 * @throws IOException
+	 *             the output file could not be created. The caller does not
+	 *             hold the lock.
+	 */
+	public boolean lock() throws IOException {
+		final LockFile tmp = new LockFile(liveFile);
+		if (tmp.lock()) {
+			tmp.setNeedStatInformation(true);
+			myLock = tmp;
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Unlock this file and abort this change.
+	 * <p>
+	 * The temporary file (if created) is deleted before returning.
+	 */
+	public void unlock() {
+		final LockFile tmp = myLock;
+		if (tmp != null) {
+			myLock = null;
+			tmp.unlock();
+		}
 	}
 
 	/**
