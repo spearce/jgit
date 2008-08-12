@@ -54,7 +54,9 @@ import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.util.MutableInteger;
 import org.spearce.jgit.util.NB;
+import org.spearce.jgit.util.TemporaryBuffer;
 
 /**
  * Support for the Git dircache (aka index file).
@@ -71,6 +73,8 @@ import org.spearce.jgit.util.NB;
  */
 public class DirCache {
 	private static final byte[] SIG_DIRC = { 'D', 'I', 'R', 'C' };
+
+	private static final int EXT_TREE = 0x54524545 /* 'TREE' */;
 
 	private static final int INFO_LEN = DirCacheEntry.INFO_LEN;
 
@@ -211,6 +215,9 @@ public class DirCache {
 	/** Number of positions within {@link #sortedEntries} that are valid. */
 	private int entryCnt;
 
+	/** Cache tree for this index; null if the cache tree is not available. */
+	private DirCacheTree tree;
+
 	/** Our active lock (if we hold it); null if we don't have it locked. */
 	private LockFile myLock;
 
@@ -272,6 +279,7 @@ public class DirCache {
 		lastModified = 0;
 		sortedEntries = NO_ENTRIES;
 		entryCnt = 0;
+		tree = null;
 	}
 
 	private void readFrom(final FileInputStream inStream) throws IOException,
@@ -306,6 +314,12 @@ public class DirCache {
 		while (fd.position() - in.available() < sizeOnDisk - 20) {
 			NB.readFully(in, hdr, 0, 8);
 			switch (NB.decodeInt32(hdr, 0)) {
+			case EXT_TREE: {
+				final byte[] raw = new byte[NB.decodeInt32(hdr, 4)];
+				NB.readFully(in, raw, 0, raw.length);
+				tree = new DirCacheTree(raw, new MutableInteger(), null);
+				break;
+			}
 			default:
 				if (hdr[0] >= 'A' && hdr[0] <= 'Z') {
 					// The extension is optional and is here only as
@@ -415,6 +429,17 @@ public class DirCache {
 					e.smudgeRacilyClean();
 				e.write(dos);
 			}
+		}
+
+		if (tree != null) {
+			final TemporaryBuffer bb = new TemporaryBuffer();
+			tree.write(tmp, bb);
+			bb.close();
+
+			NB.encodeInt32(tmp, 0, EXT_TREE);
+			NB.encodeInt32(tmp, 4, (int) bb.length());
+			dos.write(tmp, 0, 8);
+			bb.writeTo(dos, null);
 		}
 
 		os.write(foot.digest());
@@ -564,5 +589,26 @@ public class DirCache {
 	public DirCacheEntry getEntry(final String path) {
 		final int i = findEntry(path);
 		return i < 0 ? null : sortedEntries[i];
+	}
+
+	/**
+	 * Obtain (or build) the current cache tree structure.
+	 * <p>
+	 * This method can optionally recreate the cache tree, without flushing the
+	 * tree objects themselves to disk.
+	 *
+	 * @param build
+	 *            if true and the cache tree is not present in the index it will
+	 *            be generated and returned to the caller.
+	 * @return the cache tree; null if there is no current cache tree available
+	 *         and <code>build</code> was false.
+	 */
+	public DirCacheTree getCacheTree(final boolean build) {
+		if (build) {
+			if (tree == null)
+				tree = new DirCacheTree();
+			tree.validate(sortedEntries, entryCnt, 0, 0);
+		}
+		return tree;
 	}
 }
