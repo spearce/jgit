@@ -631,6 +631,28 @@ public class DirCache {
 		return i < 0 ? null : sortedEntries[i];
 	}
 
+	/**
+	 * Recursively get all entries within a subtree.
+	 *
+	 * @param path
+	 *            the subtree path to get all entries within.
+	 * @return all entries recursively contained within the subtree.
+	 */
+	public DirCacheEntry[] getEntriesWithin(String path) {
+		if (!path.endsWith("/"))
+			path += "/";
+		final byte[] p = Constants.encode(path);
+		final int pLen = p.length;
+
+		int eIdx = findEntry(p, pLen);
+		if (eIdx < 0)
+			eIdx = -(eIdx + 1);
+		final int lastIdx = nextEntry(p, pLen, eIdx);
+		final DirCacheEntry[] r = new DirCacheEntry[lastIdx - eIdx];
+		System.arraycopy(sortedEntries, eIdx, r, 0, r.length);
+		return r;
+	}
+
 	void toArray(final int i, final DirCacheEntry[] dst, final int off,
 			final int cnt) {
 		System.arraycopy(sortedEntries, i, dst, off, cnt);
