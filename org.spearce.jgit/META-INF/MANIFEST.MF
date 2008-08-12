@@ -5,7 +5,8 @@ Bundle-SymbolicName: org.spearce.jgit
 Bundle-Version: 0.3.1.qualifier
 Bundle-Localization: plugin
 Bundle-Vendor: %provider_name
-Export-Package: org.spearce.jgit.errors;uses:="org.spearce.jgit.lib",
+Export-Package: org.spearce.jgit.dircache,
+ org.spearce.jgit.errors;uses:="org.spearce.jgit.lib",
  org.spearce.jgit.lib,
  org.spearce.jgit.revplot,
  org.spearce.jgit.revwalk,
