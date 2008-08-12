@@ -87,4 +87,10 @@ public class EmptyTreeIterator extends AbstractTreeIterator {
 	public void next() throws CorruptObjectException {
 		// Do nothing.
 	}
+
+	@Override
+	public void stopWalk() {
+		if (parent != null)
+			parent.stopWalk();
+	}
 }

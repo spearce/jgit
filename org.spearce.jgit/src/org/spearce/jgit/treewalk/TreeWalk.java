@@ -408,6 +408,8 @@ public class TreeWalk {
 				return true;
 			}
 		} catch (StopWalkException stop) {
+			for (final AbstractTreeIterator t : trees)
+				t.stopWalk();
 			return false;
 		}
 	}
