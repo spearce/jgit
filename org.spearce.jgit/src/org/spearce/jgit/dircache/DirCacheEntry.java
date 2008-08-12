@@ -39,7 +39,9 @@ package org.spearce.jgit.dircache;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
@@ -53,6 +55,8 @@ import org.spearce.jgit.util.NB;
  * then multiple DirCacheEntry instances may appear for the same path name.
  */
 public class DirCacheEntry {
+	private static final byte[] nullpad = new byte[8];
+
 	// private static final int P_CTIME = 0;
 
 	// private static final int P_CTIME_NSEC = 4;
@@ -108,6 +112,77 @@ public class DirCacheEntry {
 		final int expLen = (actLen + 8) & ~7;
 		if (actLen != expLen)
 			in.skip(expLen - actLen);
+	}
+
+	void write(final OutputStream os) throws IOException {
+		final int pathLen = path.length;
+		os.write(info, infoOffset, INFO_LEN);
+		os.write(path, 0, pathLen);
+
+		// Index records are padded out to the next 8 byte alignment
+		// for historical reasons related to how C Git read the files.
+		//
+		final int actLen = INFO_LEN + pathLen;
+		final int expLen = (actLen + 8) & ~7;
+		if (actLen != expLen)
+			os.write(nullpad, 0, expLen - actLen);
+	}
+
+	/**
+	 * Is it possible for this entry to be accidently assumed clean?
+	 * <p>
+	 * The "racy git" problem happens when a work file can be updated faster
+	 * than the filesystem records file modification timestamps. It is possible
+	 * for an application to edit a work file, update the index, then edit it
+	 * again before the filesystem will give the work file a new modification
+	 * timestamp. This method tests to see if file was written out at the same
+	 * time as the index.
+	 *
+	 * @param smudge_s
+	 *            seconds component of the index's last modified time.
+	 * @param smudge_ns
+	 *            nanoseconds component of the index's last modified time.
+	 * @return true if extra careful checks should be used.
+	 */
+	final boolean mightBeRacilyClean(final int smudge_s, final int smudge_ns) {
+		// If the index has a modification time then it came from disk
+		// and was not generated from scratch in memory. In such cases
+		// the entry is 'racily clean' if the entry's cached modification
+		// time is equal to or later than the index modification time. In
+		// such cases the work file is too close to the index to tell if
+		// it is clean or not based on the modification time alone.
+		//
+		final int base = infoOffset + P_MTIME;
+		final int mtime = NB.decodeInt32(info, base);
+		if (smudge_s < mtime)
+			return true;
+		if (smudge_s == mtime)
+			return smudge_ns <= NB.decodeInt32(info, base + 4) / 1000000;
+		return false;
+	}
+
+	/**
+	 * Force this entry to no longer match its working tree file.
+	 * <p>
+	 * This avoids the "racy git" problem by making this index entry no longer
+	 * match the file in the working directory. Later git will be forced to
+	 * compare the file content to ensure the file matches the working tree.
+	 */
+	final void smudgeRacilyClean() {
+		// We don't use the same approach as C Git to smudge the entry,
+		// as we cannot compare the working tree file to our SHA-1 and
+		// thus cannot use the "size to 0" trick without accidentally
+		// thinking a zero length file is clean.
+		//
+		// Instead we force the mtime to the largest possible value, so
+		// it is certainly after the index's own modification time and
+		// on a future read will cause mightBeRacilyClean to say "yes!".
+		// It is also unlikely to match with the working tree file.
+		//
+		// I'll see you again before Jan 19, 2038, 03:14:07 AM GMT.
+		//
+		final int base = infoOffset + P_MTIME;
+		Arrays.fill(info, base, base + 8, (byte) 127);
 	}
 
 	final byte[] idBuffer() {

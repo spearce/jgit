@@ -38,12 +38,16 @@
 package org.spearce.jgit.dircache;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
 import java.util.Comparator;
 
 import org.spearce.jgit.errors.CorruptObjectException;
@@ -349,6 +353,99 @@ public class DirCache {
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * Write the entry records from memory to disk.
+	 * <p>
+	 * The cache must be locked first by calling {@link #lock()} and receiving
+	 * true as the return value. Applications are encouraged to lock the index,
+	 * then invoke {@link #read()} to ensure the in-memory data is current,
+	 * prior to updating the in-memory entries.
+	 * <p>
+	 * Once written the lock is closed and must be either committed with
+	 * {@link #commit()} or rolled back with {@link #unlock()}.
+	 *
+	 * @throws IOException
+	 *             the output file could not be created. The caller no longer
+	 *             holds the lock.
+	 */
+	public void write() throws IOException {
+		final LockFile tmp = myLock;
+		requireLocked(tmp);
+		try {
+			writeTo(new BufferedOutputStream(tmp.getOutputStream()));
+		} catch (IOException err) {
+			tmp.unlock();
+			throw err;
+		} catch (RuntimeException err) {
+			tmp.unlock();
+			throw err;
+		} catch (Error err) {
+			tmp.unlock();
+			throw err;
+		}
+	}
+
+	private void writeTo(final OutputStream os) throws IOException {
+		final MessageDigest foot = Constants.newMessageDigest();
+		final DigestOutputStream dos = new DigestOutputStream(os, foot);
+
+		// Write the header.
+		//
+		final byte[] tmp = new byte[128];
+		System.arraycopy(SIG_DIRC, 0, tmp, 0, SIG_DIRC.length);
+		NB.encodeInt32(tmp, 4, /* version */2);
+		NB.encodeInt32(tmp, 8, entryCnt);
+		dos.write(tmp, 0, 12);
+
+		// Write the individual file entries.
+		//
+		if (lastModified <= 0) {
+			// Write a new index, as no entries require smudging.
+			//
+			for (int i = 0; i < entryCnt; i++)
+				sortedEntries[i].write(dos);
+		} else {
+			final int smudge_s = (int) (lastModified / 1000);
+			final int smudge_ns = ((int) (lastModified % 1000)) * 1000000;
+			for (int i = 0; i < entryCnt; i++) {
+				final DirCacheEntry e = sortedEntries[i];
+				if (e.mightBeRacilyClean(smudge_s, smudge_ns))
+					e.smudgeRacilyClean();
+				e.write(dos);
+			}
+		}
+
+		os.write(foot.digest());
+		os.close();
+	}
+
+	/**
+	 * Commit this change and release the lock.
+	 * <p>
+	 * If this method fails (returns false) the lock is still released.
+	 *
+	 * @return true if the commit was successful and the file contains the new
+	 *         data; false if the commit failed and the file remains with the
+	 *         old data.
+	 * @throws IllegalStateException
+	 *             the lock is not held.
+	 */
+	public boolean commit() {
+		final LockFile tmp = myLock;
+		requireLocked(tmp);
+		myLock = null;
+		if (!tmp.commit())
+			return false;
+		lastModified = tmp.getCommitLastModified();
+		return true;
+	}
+
+	private void requireLocked(final LockFile tmp) {
+		if (tmp == null)
+			throw new IllegalStateException("DirCache "
+					+ liveFile.getAbsolutePath() + " not locked.");
 	}
 
 	/**
