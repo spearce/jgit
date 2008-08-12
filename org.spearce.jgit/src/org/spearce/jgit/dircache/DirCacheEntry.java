@@ -114,6 +114,30 @@ public class DirCacheEntry {
 			in.skip(expLen - actLen);
 	}
 
+	/**
+	 * Create an empty entry.
+	 *
+	 * @param newPath
+	 *            name of the cache entry.
+	 */
+	public DirCacheEntry(final String newPath) {
+		this(Constants.encode(newPath));
+	}
+
+	/**
+	 * Create an empty entry.
+	 *
+	 * @param newPath
+	 *            name of the cache entry, in the standard encoding.
+	 */
+	public DirCacheEntry(final byte[] newPath) {
+		info = new byte[INFO_LEN];
+		infoOffset = 0;
+
+		path = newPath;
+		NB.encodeInt16(info, infoOffset + P_FLAGS, path.length);
+	}
+
 	void write(final OutputStream os) throws IOException {
 		final int pathLen = path.length;
 		os.write(info, infoOffset, INFO_LEN);
