@@ -37,8 +37,6 @@
 
 package org.spearce.jgit.treewalk.filter;
 
-import java.io.UnsupportedEncodingException;
-
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.treewalk.TreeWalk;
 
@@ -81,13 +79,7 @@ public class PathFilter extends TreeFilter {
 
 	private PathFilter(final String s) {
 		pathStr = s;
-		try {
-			pathRaw = pathStr.getBytes(Constants.CHARACTER_ENCODING);
-		} catch (UnsupportedEncodingException uee) {
-			throw new RuntimeException("JVM doesn't support "
-					+ Constants.CHARACTER_ENCODING
-					+ " which is required for path filtering.", uee);
-		}
+		pathRaw = Constants.encode(pathStr);
 	}
 
 	@Override

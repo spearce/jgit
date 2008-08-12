@@ -67,8 +67,6 @@ import org.spearce.jgit.util.NB;
  * independent {@link WalkFetchConnection}.
  */
 abstract class WalkRemoteObjectDatabase {
-	static final String CHARENC = Constants.CHARACTER_ENCODING;
-
 	static final String INFO_PACKS = "info/packs";
 
 	static final String INFO_ALTERNATES = "info/alternates";
@@ -448,7 +446,8 @@ abstract class WalkRemoteObjectDatabase {
 	 *             stream could be created.
 	 */
 	BufferedReader openReader(final String path) throws IOException {
-		return new BufferedReader(new InputStreamReader(open(path).in, CHARENC));
+		final InputStream is = open(path).in;
+		return new BufferedReader(new InputStreamReader(is, Constants.CHARSET));
 	}
 
 	/**

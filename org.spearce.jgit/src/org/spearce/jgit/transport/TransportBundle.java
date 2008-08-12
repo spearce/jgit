@@ -58,6 +58,7 @@ import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.util.FS;
+import org.spearce.jgit.util.RawParseUtils;
 
 /**
  * Supports fetching from a git bundle (sneaker-net object transport).
@@ -193,7 +194,7 @@ class TransportBundle extends PackTransport {
 			bin.skip(lf);
 			if (lf < cnt && hdrbuf[lf] == '\n')
 				bin.skip(1);
-			return new String(hdrbuf, 0, lf, Constants.CHARACTER_ENCODING);
+			return RawParseUtils.decode(Constants.CHARSET, hdrbuf, 0, lf);
 		}
 
 		@Override
