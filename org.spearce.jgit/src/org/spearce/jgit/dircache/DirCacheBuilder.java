@@ -50,6 +50,8 @@ import java.util.Arrays;
  * Adding entries out of order is permitted, however a final sorting pass will
  * be implicitly performed during {@link #finish()} to correct any out-of-order
  * entries. Duplicate detection is also delayed until the sorting is complete.
+ *
+ * @see DirCacheEditor
  */
 public class DirCacheBuilder extends BaseDirCacheEditor {
 	private boolean sorted;

@@ -247,6 +247,18 @@ public class DirCache {
 		return new DirCacheBuilder(this, entryCnt + 16);
 	}
 
+	/**
+	 * Create a new editor to recreate this cache.
+	 * <p>
+	 * Callers should add commands to the editor, then use
+	 * {@link DirCacheEditor#finish()} to update this instance.
+	 *
+	 * @return a new builder instance for this cache.
+	 */
+	public DirCacheEditor editor() {
+		return new DirCacheEditor(this, entryCnt + 16);
+	}
+
 	void replace(final DirCacheEntry[] e, final int cnt) {
 		sortedEntries = e;
 		entryCnt = cnt;
@@ -564,6 +576,16 @@ public class DirCache {
 			if (cmp(last, next) != 0)
 				break;
 			last = next;
+			nextIdx++;
+		}
+		return nextIdx;
+	}
+
+	int nextEntry(final byte[] p, final int pLen, int nextIdx) {
+		while (nextIdx < entryCnt) {
+			final DirCacheEntry next = sortedEntries[nextIdx];
+			if (!DirCacheTree.peq(p, next.path, pLen))
+				break;
 			nextIdx++;
 		}
 		return nextIdx;
