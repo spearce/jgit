@@ -46,6 +46,8 @@ import org.kohsuke.args4j.OptionDef;
 import org.kohsuke.args4j.spi.OptionHandler;
 import org.kohsuke.args4j.spi.Parameters;
 import org.kohsuke.args4j.spi.Setter;
+import org.spearce.jgit.dircache.DirCache;
+import org.spearce.jgit.dircache.DirCacheIterator;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.ObjectId;
@@ -84,6 +86,17 @@ public class AbstractTreeIteratorHandler extends
 
 		if (new File(name).isDirectory()) {
 			setter.addValue(new FileTreeIterator(new File(name)));
+			return 1;
+		}
+
+		if (new File(name).isFile()) {
+			final DirCache dirc;
+			try {
+				dirc = DirCache.read(new File(name));
+			} catch (IOException e) {
+				throw new CmdLineException(name + " is not an index file", e);
+			}
+			setter.addValue(new DirCacheIterator(dirc));
 			return 1;
 		}
 
