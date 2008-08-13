@@ -608,11 +608,12 @@ public class TreeWalk {
 	 */
 	public void enterSubtree() throws MissingObjectException,
 			IncorrectObjectTypeException, CorruptObjectException, IOException {
+		final AbstractTreeIterator ch = currentHead;
 		final AbstractTreeIterator[] tmp = new AbstractTreeIterator[trees.length];
 		for (int i = 0; i < trees.length; i++) {
 			final AbstractTreeIterator t = trees[i];
 			final AbstractTreeIterator n;
-			if (!t.eof() && FileMode.TREE.equals(t.mode))
+			if (t.matches == ch && !t.eof() && FileMode.TREE.equals(t.mode))
 				n = t.createSubtreeIterator(db);
 			else
 				n = new EmptyTreeIterator(t);
