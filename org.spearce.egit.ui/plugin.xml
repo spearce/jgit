@@ -9,7 +9,7 @@
       <category name="%Git_clone_category"
 	    id="org.spearce.egit.ui.internal.clone.gitclonecategory"/>
       <wizard name="%Git_clone_wizard"
-	    icon="icons/etool16/import_wiz.gif"
+	    icon="icons/obj16/import_obj.gif"
 	    class="org.spearce.egit.ui.internal.clone.GitCloneWizard"
 	    id="org.spearce.egit.ui.internal.clone.GitCloneWizard"
 	    category="org.spearce.egit.ui.internal.clone.gitclonecategory">
@@ -19,7 +19,7 @@
 
    <extension point="org.eclipse.team.ui.configurationWizards">
       <wizard name="%SharingWizard_name"
-            icon="icons/sharing.gif"
+	    icon="icons/etool16/newconnect_wiz.gif"
             class="org.spearce.egit.ui.internal.sharing.SharingWizard"
             id="org.spearce.egit.ui.internal.sharing.SharingWizard">
       </wizard>

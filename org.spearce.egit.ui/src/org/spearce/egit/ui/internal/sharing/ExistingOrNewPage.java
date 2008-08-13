@@ -15,6 +15,7 @@ import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Group;
+import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIText;
 
 class ExistingOrNewPage extends WizardPage {
@@ -25,6 +26,7 @@ class ExistingOrNewPage extends WizardPage {
 		super(ExistingOrNewPage.class.getName());
 		setTitle(UIText.ExistingOrNewPage_title);
 		setDescription(UIText.ExistingOrNewPage_description);
+		setImageDescriptor(UIIcons.WIZBAN_CONNECT_REPO);
 		myWizard = w;
 	}
 

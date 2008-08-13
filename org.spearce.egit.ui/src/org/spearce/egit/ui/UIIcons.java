@@ -68,6 +68,9 @@ public class UIIcons {
 	/** Import Wizard banner */
 	public static final ImageDescriptor WIZBAN_IMPORT_REPO;
 
+	/** Connect Wizard banner */
+	public static final ImageDescriptor WIZBAN_CONNECT_REPO;
+
 	private static final URL base;
 
 	static {
@@ -80,7 +83,8 @@ public class UIIcons {
 		ELCL16_FIND = map("elcl16/find.gif");
 		ELCL16_NEXT = map("elcl16/next.gif");
 		ELCL16_PREVIOUS = map("elcl16/previous.gif");
-		WIZBAN_IMPORT_REPO = map("wizban/import.png");
+		WIZBAN_IMPORT_REPO = map("wizban/import_wiz.png");
+		WIZBAN_CONNECT_REPO = map("wizban/newconnect_wizban.png");
 		ELCL16_COMMIT = map("elcl16/commit.gif");
 		ELCL16_COMMENTS = map("elcl16/comment.gif");
 		ELCL16_AUTHOR = map("elcl16/author.gif");
