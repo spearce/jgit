@@ -37,24 +37,50 @@
 
 package org.spearce.jgit.pgm;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
+import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Ref;
+import org.spearce.jgit.lib.RefUpdate;
+import org.spearce.jgit.lib.RefUpdate.Result;
 
 @Command(common = true, usage = "List, create, or delete branches")
 class Branch extends TextBuiltin {
 
 	@Option(name = "--remote", aliases = { "-r" }, usage = "act on remote-tracking branches")
-	boolean remote = false;
+	private boolean remote = false;
 
 	@Option(name = "--all", aliases = { "-a" }, usage = "list both remote-tracking and local branches")
-	boolean all = false;
+	private boolean all = false;
+
+	@Option(name = "--delete", aliases = { "-d" }, usage = "delete fully merged branch")
+	private boolean delete = false;
+
+	@Option(name = "--delete-force", aliases = { "-D" }, usage = "delete branch (even if not merged)")
+	private boolean deleteForce = false;
+
+	@Option(name = "--verbose", aliases = { "-v" }, usage = "be verbose")
+	private boolean verbose = false;
+
+	@Argument
+	private List<String> branches = new ArrayList<String>();
 
 	@Override
 	protected void run() throws Exception {
+		if (delete || deleteForce)
+			delete(deleteForce);
+		else
+			list();
+	}
+
+	private void list() {
 		Map<String, Ref> refs = db.getAllRefs();
 		Ref head = refs.get(Constants.HEAD);
 		// This can happen if HEAD is stillborn
@@ -79,5 +105,32 @@ class Branch extends TextBuiltin {
 		out.print(' ');
 		ref = ref.substring(ref.indexOf('/', 5) + 1);
 		out.println(ref);
+	}
+
+	private void delete(boolean force) throws IOException {
+		String current = db.getBranch();
+		ObjectId head = db.resolve(Constants.HEAD);
+		for (String branch : branches) {
+			if (current.equals(branch)) {
+				String err = "Cannot delete the branch '%s' which you are currently on.";
+				throw die(String.format(err, branch));
+			}
+			RefUpdate update = db.updateRef((remote ? Constants.REMOTES_PREFIX
+					: Constants.HEADS_PREFIX)
+					+ '/' + branch);
+			update.setNewObjectId(head);
+			update.setForceUpdate(force || remote);
+			Result result = update.delete();
+			if (result == Result.REJECTED) {
+				String err = "The branch '%s' is not an ancestor of your current HEAD.\n"
+						+ "If you are sure you want to delete it, run 'jgit branch -D %1$s'.";
+				throw die(String.format(err, branch));
+			} else if (result == Result.NEW)
+				throw die(String.format("branch '%s' not found.", branch));
+			if (remote)
+				out.println(String.format("Deleted remote branch %s", branch));
+			else if (verbose)
+				out.println(String.format("Deleted branch %s", branch));
+		}
 	}
 }
