@@ -395,7 +395,7 @@ public class TreeWalk {
 
 				currentHead = t;
 				if (!filter.include(this)) {
-					popEntriesEqual();
+					skipEntriesEqual();
 					continue;
 				}
 
@@ -410,6 +410,29 @@ public class TreeWalk {
 		} catch (StopWalkException stop) {
 			return false;
 		}
+	}
+
+	/**
+	 * Obtain the tree iterator for the current entry.
+	 * <p>
+	 * Entering into (or exiting out of) a subtree causes the current tree
+	 * iterator instance to be changed for the nth tree. This allows the tree
+	 * iterators to manage only one list of items, with the diving handled by
+	 * recursive trees.
+	 *
+	 * @param <T>
+	 *            type of the tree iterator expected by the caller.
+	 * @param nth
+	 *            tree to obtain the current iterator of.
+	 * @param clazz
+	 *            type of the tree iterator expected by the caller.
+	 * @return r the current iterator of the requested type; null if the tree
+	 *         has no entry to match the current path.
+	 */
+	public <T extends AbstractTreeIterator> T getTree(final int nth,
+			final Class<T> clazz) {
+		final AbstractTreeIterator t = trees[nth];
+		return t.matches == currentHead ? (T) t : null;
 	}
 
 	/**
@@ -630,6 +653,17 @@ public class TreeWalk {
 			final AbstractTreeIterator t = trees[i];
 			if (t.matches == ch) {
 				t.next();
+				t.matches = null;
+			}
+		}
+	}
+
+	private void skipEntriesEqual() throws CorruptObjectException {
+		final AbstractTreeIterator ch = currentHead;
+		for (int i = 0; i < trees.length; i++) {
+			final AbstractTreeIterator t = trees[i];
+			if (t.matches == ch) {
+				t.skip();
 				t.matches = null;
 			}
 		}

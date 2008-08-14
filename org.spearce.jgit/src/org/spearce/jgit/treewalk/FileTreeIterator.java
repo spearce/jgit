@@ -106,6 +106,8 @@ public class FileTreeIterator extends WorkingTreeIterator {
 
 		private long length = -1;
 
+		private long lastModified;
+
 		FileEntry(final File f) {
 			file = f;
 
@@ -135,6 +137,13 @@ public class FileTreeIterator extends WorkingTreeIterator {
 			if (length < 0)
 				length = file.length();
 			return length;
+		}
+
+		@Override
+		public long getLastModified() {
+			if (lastModified == 0)
+				lastModified = file.lastModified();
+			return lastModified;
 		}
 
 		@Override

@@ -422,20 +422,21 @@ public final class RawParseUtils {
 	 * 
 	 * @param b
 	 *            buffer to scan.
-	 * @param ptr
+	 * @param start
 	 *            position in buffer to start the scan at. Most callers will
 	 *            want to pass the first position of the commit message (as
 	 *            found by {@link #commitMessage(byte[], int)}.
 	 * @return position of the LF at the end of the paragraph;
 	 *         <code>b.length</code> if no paragraph end could be located.
 	 */
-	public static final int endOfParagraph(final byte[] b, int ptr) {
+	public static final int endOfParagraph(final byte[] b, final int start) {
+		int ptr = start;
 		final int sz = b.length;
 		while (ptr < sz && b[ptr] != '\n')
 			ptr = next(b, ptr, '\n');
-		if (ptr < sz && b[ptr] == '\n')
-			return ptr - 1;
-		return sz;
+		while (0 < ptr && start < ptr && b[ptr - 1] == '\n')
+			ptr--;
+		return ptr;
 	}
 
 	private RawParseUtils() {
