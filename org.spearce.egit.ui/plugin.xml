@@ -241,13 +241,16 @@
 	    description="Common things to do with Git"
 	    id="org.spearce.egit.ui.gitaction"
 	    label="%GitActions_label"
-	    visible="true"
+	    visible="false"
 	    >
 	    <menu
            id="org.spearce.egit.ui.gitmenu"
            label="%GitMenu_label"
-           path="org.spearce.egit.ui.gitmenu"
+           path="additions"
            >
+        <separator
+              name="repositoryGroup">
+        </separator>
 	    </menu>
 		<action
 		       class="org.spearce.egit.ui.internal.actions.BranchAction"
@@ -256,8 +259,8 @@
 		       id="org.spearce.egit.ui.actionbranch"
 		       label="%BranchAction_label"
 		       style="push"
-		       menubarPath="org.spearce.egit.ui.gitmenu/repo"
-		       toolbarPath="org.spearce.egit.ui"
+		       menubarPath="org.spearce.egit.ui.gitmenu/repositoryGroup"
+		       toolbarPath="Normal/additions"
 		       tooltip="%BranchAction_tooltip">
 		</action>
 		<action
@@ -267,8 +270,8 @@
 		       id="org.spearce.egit.ui.actioncommit"
 		       label="%CommitAction_label"
 		       style="push"
-		       menubarPath="org.spearce.egit.ui.gitmenu/repo"
-		       toolbarPath="org.spearce.egit.ui"
+		       menubarPath="org.spearce.egit.ui.gitmenu/repositoryGroup"
+		       toolbarPath="Normal/additions"
 		       tooltip="%CommitAction_tooltip">
 		</action>
 		<action
@@ -278,8 +281,8 @@
 		       id="org.spearce.egit.ui.actionreset"
 		       label="%ResetAction_label"
 		       style="push"
-		       menubarPath="org.spearce.egit.ui.gitmenu/repo"
-		       toolbarPath="org.spearce.egit.ui"
+		       menubarPath="org.spearce.egit.ui.gitmenu/repositoryGroup"
+		       toolbarPath="Normal/additions"
 		       tooltip="%ResetAction_tooltip">
 		</action>
 		<action
@@ -288,9 +291,9 @@
 		       icon="icons/toolbar/tracke.png"
 		       id="org.spearce.egit.ui.trackaction"
 		       label="%TrackAction_label"
-		       menubarPath="org.spearce.egit.ui.gitmenu/repo"
 		       style="push"
-		       toolbarPath="org.spearce.egit.ui"
+		       menubarPath="org.spearce.egit.ui.gitmenu/repositoryGroup"
+		       toolbarPath="Normal/additions"
 		       tooltip="Start tracking the selected resources">
 		</action>
       </actionSet>
