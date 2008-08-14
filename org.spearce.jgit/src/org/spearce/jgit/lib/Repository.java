@@ -493,7 +493,7 @@ public class Repository {
 	}
 
 	/**
-	 * Create a command to update (or create) a ref in this repository.
+	 * Create a command to update, create or delete a ref in this repository.
 	 * 
 	 * @param ref
 	 *            name of the ref the caller wants to modify.

@@ -118,7 +118,7 @@ class RefDatabase {
 	}
 
 	/**
-	 * Create a command to update (or create) a ref in this repository.
+	 * Create a command to update, create or delete a ref in this repository.
 	 * 
 	 * @param name
 	 *            name of the ref the caller wants to modify.
@@ -427,6 +427,20 @@ class RefDatabase {
 		}
 		if (!lck.commit())
 			throw new ObjectWritingException("Unable to write " + name);
+	}
+
+	void removePackedRef(String name) throws IOException {
+		packedRefs.remove(name);
+		writePackedRefs();
+	}
+
+	private void writePackedRefs() throws IOException {
+		new RefWriter(packedRefs.values()) {
+			@Override
+			protected void writeFile(String name, byte[] content) throws IOException {
+				lockAndWriteFile(new File(db.getDirectory(), name), content);
+			}
+		}.writePackedRefs();
 	}
 
 	private static String readLine(final File file)
