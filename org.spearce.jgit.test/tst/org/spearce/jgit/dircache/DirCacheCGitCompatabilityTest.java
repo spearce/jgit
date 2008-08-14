@@ -138,7 +138,7 @@ public class DirCacheCGitCompatabilityTest extends RepositoryTestCase {
 	}
 
 	private File pathOf(final String name) {
-		return new File(getClass().getResource(name).getPath());
+		return new File("tst", name);
 	}
 
 	private Map<String, CGitIndexRecord> readLsFiles() throws Exception {
