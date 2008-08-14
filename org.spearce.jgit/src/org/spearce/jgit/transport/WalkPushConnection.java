@@ -37,6 +37,8 @@
 
 package org.spearce.jgit.transport;
 
+import static org.spearce.jgit.transport.WalkRemoteObjectDatabase.ROOT_DIR;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -163,7 +165,7 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 			@Override
 			protected void writeFile(String file, byte[] content)
 					throws IOException {
-				dest.writeFile("../" + file, content);
+				dest.writeFile(ROOT_DIR + file, content);
 			}
 		};
 		if (!packedRefUpdates.isEmpty()) {
@@ -334,7 +336,7 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 		try {
 			final String ref = "ref: " + pickHEAD(updates) + "\n";
 			final byte[] bytes = Constants.encode(ref);
-			dest.writeFile("../HEAD", bytes);
+			dest.writeFile(ROOT_DIR + "HEAD", bytes);
 		} catch (IOException e) {
 			throw new TransportException(uri, "cannot create HEAD", e);
 		}
@@ -343,7 +345,7 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 			final String config = "[core]\n"
 					+ "\trepositoryformatversion = 0\n";
 			final byte[] bytes = Constants.encode(config);
-			dest.writeFile("../config", bytes);
+			dest.writeFile(ROOT_DIR + "config", bytes);
 		} catch (IOException e) {
 			throw new TransportException(uri, "cannot create config", e);
 		}

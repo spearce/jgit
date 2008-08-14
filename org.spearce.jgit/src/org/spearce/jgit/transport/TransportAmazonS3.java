@@ -178,7 +178,7 @@ class TransportAmazonS3 extends WalkTransport {
 			if (subpath.endsWith("/"))
 				subpath = subpath.substring(0, subpath.length() - 1);
 			String k = objectsKey;
-			while (subpath.startsWith("../")) {
+			while (subpath.startsWith(ROOT_DIR)) {
 				k = k.substring(0, k.lastIndexOf('/'));
 				subpath = subpath.substring(3);
 			}
@@ -264,7 +264,8 @@ class TransportAmazonS3 extends WalkTransport {
 		private void readLooseRefs(final TreeMap<String, Ref> avail)
 				throws TransportException {
 			try {
-				for (final String n : s3.list(bucket, resolveKey("../refs")))
+				for (final String n : s3.list(bucket, resolveKey(ROOT_DIR
+						+ "refs")))
 					readRef(avail, "refs/" + n);
 			} catch (IOException e) {
 				throw new TransportException(getURI(), "cannot list refs", e);
@@ -274,8 +275,9 @@ class TransportAmazonS3 extends WalkTransport {
 		private Ref readRef(final TreeMap<String, Ref> avail, final String rn)
 				throws TransportException {
 			final String s;
+			String ref = ROOT_DIR + rn;
 			try {
-				final BufferedReader br = openReader("../" + rn);
+				final BufferedReader br = openReader(ref);
 				try {
 					s = br.readLine();
 				} finally {
@@ -284,7 +286,7 @@ class TransportAmazonS3 extends WalkTransport {
 			} catch (FileNotFoundException noRef) {
 				return null;
 			} catch (IOException err) {
-				throw new TransportException(getURI(), "read ../" + rn, err);
+				throw new TransportException(getURI(), "read " + ref, err);
 			}
 
 			if (s == null)

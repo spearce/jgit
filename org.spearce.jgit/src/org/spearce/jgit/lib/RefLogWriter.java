@@ -70,7 +70,7 @@ public class RefLogWriter {
 		String entry = buildReflogString(repo, oldCommit, commit, message);
 
 		File directory = repo.getDirectory();
-		File reflogfile = new File(directory, "logs/" + refName);
+		File reflogfile = new File(directory, Constants.LOGS + "/" + refName);
 		File reflogdir = reflogfile.getParentFile();
 		if (!reflogdir.exists())
 			if (!reflogdir.mkdirs())

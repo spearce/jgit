@@ -66,15 +66,15 @@ import org.spearce.jgit.util.NB;
  * independent {@link WalkFetchConnection}.
  */
 abstract class WalkRemoteObjectDatabase {
+	static final String ROOT_DIR = "../";
+
 	static final String INFO_PACKS = "info/packs";
 
 	static final String INFO_ALTERNATES = "info/alternates";
 
 	static final String INFO_HTTP_ALTERNATES = "info/http-alternates";
 
-	static final String INFO_REFS = "../info/refs";
-
-	static final String PACKED_REFS = "../packed-refs";
+	static final String INFO_REFS = ROOT_DIR + Constants.INFO_REFS;
 
 	abstract URIish getURI();
 
@@ -269,7 +269,7 @@ abstract class WalkRemoteObjectDatabase {
 	 *             deletion is not supported, or deletion failed.
 	 */
 	void deleteRef(final String name) throws IOException {
-		deleteFile("../" + name);
+		deleteFile(ROOT_DIR + name);
 	}
 
 	/**
@@ -282,7 +282,7 @@ abstract class WalkRemoteObjectDatabase {
 	 *             deletion is not supported, or deletion failed.
 	 */
 	void deleteRefLog(final String name) throws IOException {
-		deleteFile("../logs/" + name);
+		deleteFile(ROOT_DIR + Constants.LOGS + "/" + name);
 	}
 
 	/**
@@ -306,7 +306,7 @@ abstract class WalkRemoteObjectDatabase {
 		value.copyTo(b);
 		b.write('\n');
 
-		writeFile("../" + name, b.toByteArray());
+		writeFile(ROOT_DIR + name, b.toByteArray());
 	}
 
 	/**
@@ -410,7 +410,8 @@ abstract class WalkRemoteObjectDatabase {
 	protected void readPackedRefs(final Map<String, Ref> avail)
 			throws TransportException {
 		try {
-			final BufferedReader br = openReader(PACKED_REFS);
+			final BufferedReader br = openReader(ROOT_DIR
+					+ Constants.PACKED_REFS);
 			try {
 				readPackedRefsImpl(avail, br);
 			} finally {

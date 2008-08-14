@@ -372,8 +372,8 @@ class TransportSftp extends WalkTransport {
 		Map<String, Ref> readAdvertisedRefs() throws TransportException {
 			final TreeMap<String, Ref> avail = new TreeMap<String, Ref>();
 			readPackedRefs(avail);
-			readRef(avail, "../HEAD", "HEAD");
-			readLooseRefs(avail, "../refs", "refs/");
+			readRef(avail, ROOT_DIR + "HEAD", "HEAD");
+			readLooseRefs(avail, ROOT_DIR + "refs", "refs/");
 			return avail;
 		}
 
@@ -423,7 +423,7 @@ class TransportSftp extends WalkTransport {
 
 			if (line.startsWith("ref: ")) {
 				final String p = line.substring("ref: ".length());
-				Ref r = readRef(avail, "../" + p, p);
+				Ref r = readRef(avail, ROOT_DIR + p, p);
 				if (r == null)
 					r = avail.get(p);
 				if (r != null) {
