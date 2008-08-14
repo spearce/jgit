@@ -155,16 +155,7 @@ class RefDatabase {
 	 */
 	void link(final String name, final String target) throws IOException {
 		final byte[] content = Constants.encode("ref: " + target + "\n");
-		final LockFile lck = new LockFile(fileForRef(name));
-		if (!lck.lock())
-			throw new ObjectWritingException("Unable to lock " + name);
-		try {
-			lck.write(content);
-		} catch (IOException ioe) {
-			throw new ObjectWritingException("Unable to write " + name, ioe);
-		}
-		if (!lck.commit())
-			throw new ObjectWritingException("Unable to write " + name);
+		lockAndWriteFile(fileForRef(name), content);
 		setModified();
 		db.fireRefsMaybeChanged();
 	}
@@ -422,6 +413,20 @@ class RefDatabase {
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot read packed refs", e);
 		}
+	}
+
+	private void lockAndWriteFile(File file, byte[] content) throws IOException {
+		String name = file.getName();
+		final LockFile lck = new LockFile(file);
+		if (!lck.lock())
+			throw new ObjectWritingException("Unable to lock " + name);
+		try {
+			lck.write(content);
+		} catch (IOException ioe) {
+			throw new ObjectWritingException("Unable to write " + name, ioe);
+		}
+		if (!lck.commit())
+			throw new ObjectWritingException("Unable to write " + name);
 	}
 
 	private static String readLine(final File file)
