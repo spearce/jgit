@@ -1,5 +1,4 @@
 /*
- * Copyright (C) 2007, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
  * All rights reserved.
@@ -36,61 +35,35 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.spearce.jgit.treewalk;
+package org.spearce.jgit.pgm.debug;
 
-import java.io.IOException;
+import org.spearce.jgit.dircache.DirCache;
+import org.spearce.jgit.dircache.DirCacheTree;
+import org.spearce.jgit.pgm.TextBuiltin;
 
-import org.spearce.jgit.errors.CorruptObjectException;
-import org.spearce.jgit.errors.IncorrectObjectTypeException;
-import org.spearce.jgit.lib.ObjectId;
-import org.spearce.jgit.lib.Repository;
-
-/** Iterator over an empty tree (a directory with no files). */
-public class EmptyTreeIterator extends AbstractTreeIterator {
-	/** Create a new iterator with no parent. */
-	public EmptyTreeIterator() {
-		// Create a root empty tree.
-	}
-
-	EmptyTreeIterator(final AbstractTreeIterator p) {
-		super(p);
-		pathLen = pathOffset;
-	}
-
+class ShowCacheTree extends TextBuiltin {
 	@Override
-	public AbstractTreeIterator createSubtreeIterator(final Repository repo)
-			throws IncorrectObjectTypeException, IOException {
-		return new EmptyTreeIterator(this);
+	protected void run() throws Exception {
+		final DirCache cache = DirCache.read(db);
+		final DirCacheTree tree = cache.getCacheTree(false);
+		if (tree == null)
+			throw die("no 'TREE' section in index");
+		show(tree);
 	}
 
-	@Override
-	public ObjectId getEntryObjectId() {
-		return ObjectId.zeroId();
-	}
+	private void show(final DirCacheTree tree) {
+		out.print("\"");
+		out.print(tree.getPathString());
+		out.print("\"");
+		out.print(":  ");
+		out.print(tree.getEntrySpan());
+		out.print(" entries");
+		out.print(", ");
+		out.print(tree.getChildCount());
+		out.print(" children");
+		out.println();
 
-	@Override
-	public byte[] idBuffer() {
-		return zeroid;
-	}
-
-	@Override
-	public int idOffset() {
-		return 0;
-	}
-
-	@Override
-	public boolean eof() {
-		return true;
-	}
-
-	@Override
-	public void next() throws CorruptObjectException {
-		// Do nothing.
-	}
-
-	@Override
-	public void stopWalk() {
-		if (parent != null)
-			parent.stopWalk();
+		for (int i = 0; i < tree.getChildCount(); i++)
+			show(tree.getChild(i));
 	}
 }

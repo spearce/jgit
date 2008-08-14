@@ -45,7 +45,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,8 +53,6 @@ import org.spearce.jgit.util.FS;
 import org.spearce.jgit.util.NB;
 
 class RefDatabase {
-	private static final String CHAR_ENC = Constants.CHARACTER_ENCODING;
-
 	private static final String REFS_SLASH = "refs/";
 
 	private static final String HEADS_SLASH = Constants.HEADS_PREFIX + "/";
@@ -157,7 +154,7 @@ class RefDatabase {
 	 * @throws IOException
 	 */
 	void link(final String name, final String target) throws IOException {
-		final byte[] content = ("ref: " + target + "\n").getBytes(CHAR_ENC);
+		final byte[] content = Constants.encode("ref: " + target + "\n");
 		final LockFile lck = new LockFile(fileForRef(name));
 		if (!lck.lock())
 			throw new ObjectWritingException("Unable to lock " + name);
@@ -438,9 +435,9 @@ class RefDatabase {
 	}
 
 	private static BufferedReader openReader(final File fileLocation)
-			throws UnsupportedEncodingException, FileNotFoundException {
+			throws FileNotFoundException {
 		return new BufferedReader(new InputStreamReader(new FileInputStream(
-				fileLocation), CHAR_ENC));
+				fileLocation), Constants.CHARSET));
 	}
 
 }

@@ -48,6 +48,7 @@ import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.util.NB;
+import org.spearce.jgit.util.RawParseUtils;
 
 /**
  * Unmultiplexes the data portion of a side-band channel.
@@ -194,6 +195,6 @@ class SideBandInputStream extends InputStream {
 	private String readString(final int len) throws IOException {
 		final byte[] raw = new byte[len];
 		NB.readFully(in, raw, 0, len);
-		return new String(raw, 0, len, Constants.CHARACTER_ENCODING);
+		return RawParseUtils.decode(Constants.CHARSET, raw, 0, len);
 	}
 }

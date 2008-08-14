@@ -391,4 +391,15 @@ public abstract class AbstractTreeIterator {
 	public void skip() throws CorruptObjectException {
 		next();
 	}
+
+	/**
+	 * Indicates to the iterator that no more entries will be read.
+	 * <p>
+	 * This is only invoked by TreeWalk when the iteration is aborted early due
+	 * to a {@link org.spearce.jgit.errors.StopWalkException} being thrown from
+	 * within a TreeFilter.
+	 */
+	public void stopWalk() {
+		// Do nothing by default.  Most iterators do not care.
+	}
 }

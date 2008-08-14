@@ -38,7 +38,6 @@
 package org.spearce.jgit.treewalk;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 
 import org.spearce.jgit.errors.CorruptObjectException;
@@ -52,6 +51,7 @@ import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.revwalk.RevTree;
 import org.spearce.jgit.treewalk.filter.PathFilterGroup;
 import org.spearce.jgit.treewalk.filter.TreeFilter;
+import org.spearce.jgit.util.RawParseUtils;
 
 /**
  * Walks one or more {@link AbstractTreeIterator}s in parallel.
@@ -408,6 +408,8 @@ public class TreeWalk {
 				return true;
 			}
 		} catch (StopWalkException stop) {
+			for (final AbstractTreeIterator t : trees)
+				t.stopWalk();
 			return false;
 		}
 	}
@@ -685,12 +687,6 @@ public class TreeWalk {
 	}
 
 	private static String pathOf(final AbstractTreeIterator t) {
-		try {
-			return new String(t.path, 0, t.pathLen,
-					Constants.CHARACTER_ENCODING);
-		} catch (UnsupportedEncodingException uee) {
-			throw new RuntimeException("JVM doesn't support "
-					+ Constants.CHARACTER_ENCODING, uee);
-		}
+		return RawParseUtils.decode(Constants.CHARSET, t.path, 0, t.pathLen);
 	}
 }

@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Google Inc.
  *
  * All rights reserved.
  *
@@ -38,6 +39,7 @@
 
 package org.spearce.jgit.lib;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -385,6 +387,29 @@ public final class Constants {
 			r[k] = (byte) c;
 		}
 		return r;
+	}
+
+	/**
+	 * Convert a string to a byte array in the standard character encoding.
+	 *
+	 * @param str
+	 *            the string to convert. May contain any Unicode characters.
+	 * @return a byte array representing the requested string, encoded using the
+	 *         default character encoding (UTF-8).
+	 * @see #CHARACTER_ENCODING
+	 */
+	public static byte[] encode(final String str) {
+		final ByteBuffer bb = Constants.CHARSET.encode(str);
+		final int len = bb.limit();
+		if (bb.hasArray() && bb.arrayOffset() == 0) {
+			final byte[] arr = bb.array();
+			if (arr.length == len)
+				return arr;
+		}
+
+		final byte[] arr = new byte[len];
+		bb.get(arr);
+		return arr;
 	}
 
 	static {

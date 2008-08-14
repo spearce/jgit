@@ -236,7 +236,7 @@ public class ObjectWriter {
 	public ObjectId writeTag(final Tag c) throws IOException {
 		final ByteArrayOutputStream os = new ByteArrayOutputStream();
 		final OutputStreamWriter w = new OutputStreamWriter(os,
-				Constants.CHARACTER_ENCODING);
+				Constants.CHARSET);
 
 		w.write("object ");
 		c.getObjId().copyTo(w);

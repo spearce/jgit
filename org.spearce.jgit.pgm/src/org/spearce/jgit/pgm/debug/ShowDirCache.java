@@ -1,5 +1,4 @@
 /*
- * Copyright (C) 2007, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
  * All rights reserved.
@@ -36,61 +35,38 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.spearce.jgit.treewalk;
+package org.spearce.jgit.pgm.debug;
 
-import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-import org.spearce.jgit.errors.CorruptObjectException;
-import org.spearce.jgit.errors.IncorrectObjectTypeException;
-import org.spearce.jgit.lib.ObjectId;
-import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.dircache.DirCache;
+import org.spearce.jgit.dircache.DirCacheEntry;
+import org.spearce.jgit.lib.FileMode;
+import org.spearce.jgit.pgm.TextBuiltin;
 
-/** Iterator over an empty tree (a directory with no files). */
-public class EmptyTreeIterator extends AbstractTreeIterator {
-	/** Create a new iterator with no parent. */
-	public EmptyTreeIterator() {
-		// Create a root empty tree.
-	}
-
-	EmptyTreeIterator(final AbstractTreeIterator p) {
-		super(p);
-		pathLen = pathOffset;
-	}
-
+class ShowDirCache extends TextBuiltin {
 	@Override
-	public AbstractTreeIterator createSubtreeIterator(final Repository repo)
-			throws IncorrectObjectTypeException, IOException {
-		return new EmptyTreeIterator(this);
-	}
+	protected void run() throws Exception {
+		final SimpleDateFormat fmt;
+		fmt = new SimpleDateFormat("yyyyMMdd,HHmmss.SSS");
 
-	@Override
-	public ObjectId getEntryObjectId() {
-		return ObjectId.zeroId();
-	}
+		final DirCache cache = DirCache.read(db);
+		for (int i = 0; i < cache.getEntryCount(); i++) {
+			final DirCacheEntry ent = cache.getEntry(i);
+			final FileMode mode = FileMode.fromBits(ent.getRawMode());
+			final int len = ent.getLength();
+			final Date mtime = new Date(ent.getLastModified());
 
-	@Override
-	public byte[] idBuffer() {
-		return zeroid;
-	}
-
-	@Override
-	public int idOffset() {
-		return 0;
-	}
-
-	@Override
-	public boolean eof() {
-		return true;
-	}
-
-	@Override
-	public void next() throws CorruptObjectException {
-		// Do nothing.
-	}
-
-	@Override
-	public void stopWalk() {
-		if (parent != null)
-			parent.stopWalk();
+			out.print(mode);
+			out.format(" %6d", len);
+			out.print(' ');
+			out.print(fmt.format(mtime));
+			out.print(' ');
+			out.print(ent.getObjectId());
+			out.print('\t');
+			out.print(ent.getPathString());
+			out.println();
+		}
 	}
 }

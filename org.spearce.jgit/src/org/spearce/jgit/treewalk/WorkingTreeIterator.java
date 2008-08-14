@@ -415,7 +415,7 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 				throws CharacterCodingException {
 			final ByteBuffer b = enc.encode(CharBuffer.wrap(getName()));
 			encodedNameLen = b.limit();
-			if (b.hasArray())
+			if (b.hasArray() && b.arrayOffset() == 0)
 				encodedName = b.array();
 			else
 				b.get(encodedName = new byte[encodedNameLen]);

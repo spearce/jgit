@@ -517,7 +517,7 @@ public class RepositoryConfig {
 				+ ".lock");
 		final PrintWriter r = new PrintWriter(new BufferedWriter(
 				new OutputStreamWriter(new FileOutputStream(tmp),
-						Constants.CHARACTER_ENCODING))) {
+						Constants.CHARSET))) {
 			@Override
 			public void println() {
 				print('\n');
@@ -585,7 +585,7 @@ public class RepositoryConfig {
 		clear();
 		readFile = true;
 		final BufferedReader r = new BufferedReader(new InputStreamReader(
-				new FileInputStream(configFile), Constants.CHARACTER_ENCODING));
+				new FileInputStream(configFile), Constants.CHARSET));
 		try {
 			Entry last = null;
 			Entry e = new Entry();

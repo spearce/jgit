@@ -47,6 +47,7 @@ import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.util.NB;
+import org.spearce.jgit.util.RawParseUtils;
 
 class PacketLineIn {
 	private static final byte fromhex[];
@@ -107,7 +108,7 @@ class PacketLineIn {
 		final byte[] raw = new byte[len];
 		NB.readFully(in, raw, 0, len);
 		readLF();
-		return new String(raw, 0, len, Constants.CHARACTER_ENCODING);
+		return RawParseUtils.decode(Constants.CHARSET, raw, 0, len);
 	}
 
 	private void readLF() throws IOException {

@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2007, Robin Rosenberg <robin.rosenberg@dewire.com>
- * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Google Inc.
  *
  * All rights reserved.
  *
@@ -36,61 +35,52 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.spearce.jgit.treewalk;
+package org.spearce.jgit.dircache;
 
-import java.io.IOException;
+import org.spearce.jgit.lib.RepositoryTestCase;
 
-import org.spearce.jgit.errors.CorruptObjectException;
-import org.spearce.jgit.errors.IncorrectObjectTypeException;
-import org.spearce.jgit.lib.ObjectId;
-import org.spearce.jgit.lib.Repository;
+public class DirCacheFindTest extends RepositoryTestCase {
+	public void testEntriesWithin() throws Exception {
+		final DirCache dc = DirCache.read(db);
 
-/** Iterator over an empty tree (a directory with no files). */
-public class EmptyTreeIterator extends AbstractTreeIterator {
-	/** Create a new iterator with no parent. */
-	public EmptyTreeIterator() {
-		// Create a root empty tree.
-	}
+		final String[] paths = { "a.", "a/b", "a/c", "a/d", "a0b" };
+		final DirCacheEntry[] ents = new DirCacheEntry[paths.length];
+		for (int i = 0; i < paths.length; i++)
+			ents[i] = new DirCacheEntry(paths[i]);
+		final int aFirst = 1;
+		final int aLast = 3;
 
-	EmptyTreeIterator(final AbstractTreeIterator p) {
-		super(p);
-		pathLen = pathOffset;
-	}
+		final DirCacheBuilder b = dc.builder();
+		for (int i = 0; i < ents.length; i++)
+			b.add(ents[i]);
+		b.finish();
 
-	@Override
-	public AbstractTreeIterator createSubtreeIterator(final Repository repo)
-			throws IncorrectObjectTypeException, IOException {
-		return new EmptyTreeIterator(this);
-	}
+		assertEquals(paths.length, dc.getEntryCount());
+		for (int i = 0; i < ents.length; i++)
+			assertSame(ents[i], dc.getEntry(i));
 
-	@Override
-	public ObjectId getEntryObjectId() {
-		return ObjectId.zeroId();
-	}
+		{
+			final DirCacheEntry[] aContents = dc.getEntriesWithin("a");
+			assertNotNull(aContents);
+			assertEquals(aLast - aFirst + 1, aContents.length);
+			for (int i = aFirst, j = 0; i <= aLast; i++, j++)
+				assertSame(ents[i], aContents[j]);
+		}
+		{
+			final DirCacheEntry[] aContents = dc.getEntriesWithin("a/");
+			assertNotNull(aContents);
+			assertEquals(aLast - aFirst + 1, aContents.length);
+			for (int i = aFirst, j = 0; i <= aLast; i++, j++)
+				assertSame(ents[i], aContents[j]);
+		}
 
-	@Override
-	public byte[] idBuffer() {
-		return zeroid;
-	}
+		assertNotNull(dc.getEntriesWithin("a."));
+		assertEquals(0, dc.getEntriesWithin("a.").length);
 
-	@Override
-	public int idOffset() {
-		return 0;
-	}
+		assertNotNull(dc.getEntriesWithin("a0b"));
+		assertEquals(0, dc.getEntriesWithin("a0b.").length);
 
-	@Override
-	public boolean eof() {
-		return true;
-	}
-
-	@Override
-	public void next() throws CorruptObjectException {
-		// Do nothing.
-	}
-
-	@Override
-	public void stopWalk() {
-		if (parent != null)
-			parent.stopWalk();
+		assertNotNull(dc.getEntriesWithin("zoo"));
+		assertEquals(0, dc.getEntriesWithin("zoo.").length);
 	}
 }

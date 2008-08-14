@@ -9,7 +9,13 @@ org.spearce.jgit.pgm.LsTree
 org.spearce.jgit.pgm.MergeBase
 org.spearce.jgit.pgm.Push
 org.spearce.jgit.pgm.RevList
+org.spearce.jgit.pgm.Rm
 org.spearce.jgit.pgm.ShowRev
 org.spearce.jgit.pgm.Tag
 
+org.spearce.jgit.pgm.debug.MakeCacheTree
+org.spearce.jgit.pgm.debug.ReadDirCache
+org.spearce.jgit.pgm.debug.ShowCacheTree
 org.spearce.jgit.pgm.debug.ShowCommands
+org.spearce.jgit.pgm.debug.ShowDirCache
+org.spearce.jgit.pgm.debug.WriteDirCache

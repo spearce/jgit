@@ -1,6 +1,7 @@
 /*******************************************************************************
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2007, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Google Inc.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -8,13 +9,13 @@
  *******************************************************************************/
 package org.spearce.egit.core;
 
-import java.io.File;
 import java.io.IOException;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.team.IMoveDeleteHook;
 import org.eclipse.core.resources.team.IResourceTree;
 import org.eclipse.core.runtime.Assert;
@@ -23,8 +24,10 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryMapping;
-import org.spearce.jgit.lib.GitIndex;
-import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.dircache.DirCache;
+import org.spearce.jgit.dircache.DirCacheBuilder;
+import org.spearce.jgit.dircache.DirCacheEditor;
+import org.spearce.jgit.dircache.DirCacheEntry;
 
 class GitMoveDeleteHook implements IMoveDeleteHook {
 	private static final boolean I_AM_DONE = true;
@@ -40,21 +43,37 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 
 	public boolean deleteFile(final IResourceTree tree, final IFile file,
 			final int updateFlags, final IProgressMonitor monitor) {
+		final boolean force = (updateFlags & IResource.FORCE) == IResource.FORCE;
+		if (!force && !tree.isSynchronized(file, IResource.DEPTH_ZERO))
+			return false;
+
+		final RepositoryMapping map = RepositoryMapping.getMapping(file);
+		if (map == null)
+			return false;
+
 		try {
-			RepositoryMapping map = RepositoryMapping.getMapping(file);
-			if (map != null) {
-				Repository repository = map.getRepository();
-				GitIndex index = repository.getIndex();
-				if (index.remove(map.getWorkDir(), file.getLocation().toFile()))
-					index.write();
+			final DirCache dirc = DirCache.lock(map.getRepository());
+			final int first = dirc.findEntry(map.getRepoRelativePath(file));
+			if (first < 0) {
+				dirc.unlock();
+				return false;
 			}
-			return FINISH_FOR_ME;
+
+			final DirCacheBuilder edit = dirc.builder();
+			if (first > 0)
+				edit.keep(0, first);
+			final int next = dirc.nextEntry(first);
+			if (next < dirc.getEntryCount())
+				edit.keep(next, dirc.getEntryCount() - next);
+			if (!edit.commit())
+				tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(),
+						0, CoreText.MoveDeleteHook_operationError, null));
+			tree.standardDeleteFile(file, updateFlags, monitor);
 		} catch (IOException e) {
-			e.printStackTrace();
 			tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(), 0,
 					CoreText.MoveDeleteHook_operationError, e));
-			return I_AM_DONE;
 		}
+		return true;
 	}
 
 	public boolean deleteFolder(final IResourceTree tree, final IFolder folder,
@@ -77,53 +96,96 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 		return FINISH_FOR_ME;
 	}
 
-	public boolean moveFile(final IResourceTree tree, final IFile source,
-			final IFile destination, final int updateFlags,
+	public boolean moveFile(final IResourceTree tree, final IFile srcf,
+			final IFile dstf, final int updateFlags,
 			final IProgressMonitor monitor) {
-		try {
-			final RepositoryMapping map1 = RepositoryMapping.getMapping(source);
-			if (map1 == null) {
-				// Source is not in a Git controlled project, fine
-				return FINISH_FOR_ME;
-			}
-			final GitIndex index1 = map1.getRepository().getIndex();
-			final RepositoryMapping map2 = RepositoryMapping.getMapping(destination);
-			final File sourceFile = source.getLocation().toFile();
-			if (map2 == null) {
-				if (index1.getEntry(Repository.stripWorkDir(map1.getWorkDir(), sourceFile)) == null) {
-					// if the source resource is not tracked by Git that is ok too
-					return FINISH_FOR_ME;
-				}
-				tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(),
-						0, "Destination not in a git versioned project", null));
-				return FINISH_FOR_ME;
-			}
-			GitIndex index2 = map2.getRepository().getIndex();
-			tree.standardMoveFile(source, destination, updateFlags, monitor);
-			if (index1.remove(map1.getWorkDir(), sourceFile)) {
-				index2.add(map2.getWorkDir(), destination.getLocation().toFile());
-				index1.write();
-				if (index2 != index1)
-					index2.write();
-			}
-			return I_AM_DONE;
+		final boolean force = (updateFlags & IResource.FORCE) == IResource.FORCE;
+		if (!force && !tree.isSynchronized(srcf, IResource.DEPTH_ZERO))
+			return false;
 
+		final RepositoryMapping srcm = RepositoryMapping.getMapping(srcf);
+		if (srcm == null)
+			return false;
+		final RepositoryMapping dstm = RepositoryMapping.getMapping(dstf);
+
+		try {
+			final DirCache sCache = DirCache.lock(srcm.getRepository());
+			final String sPath = srcm.getRepoRelativePath(srcf);
+			final DirCacheEntry sEnt = sCache.getEntry(sPath);
+			if (sEnt == null) {
+				sCache.unlock();
+				return false;
+			}
+
+			final DirCacheEditor sEdit = sCache.editor();
+			sEdit.add(new DirCacheEditor.DeletePath(sEnt));
+			if (dstm != null && dstm.getRepository() == srcm.getRepository()) {
+				final String dPath = srcm.getRepoRelativePath(dstf);
+				sEdit.add(new DirCacheEditor.PathEdit(dPath) {
+					@Override
+					public void apply(final DirCacheEntry dEnt) {
+						dEnt.copyMetaData(sEnt);
+					}
+				});
+			}
+			if (!sEdit.commit())
+				tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(),
+						0, CoreText.MoveDeleteHook_operationError, null));
+
+			tree.standardMoveFile(srcf, dstf, updateFlags, monitor);
 		} catch (IOException e) {
-			// Recover properly!
-			e.printStackTrace();
 			tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(), 0,
 					CoreText.MoveDeleteHook_operationError, e));
-			return I_AM_DONE;
-
 		}
+		return true;
 	}
 
-	public boolean moveFolder(final IResourceTree tree, final IFolder source,
-			final IFolder destination, final int updateFlags,
+	public boolean moveFolder(final IResourceTree tree, final IFolder srcf,
+			final IFolder dstf, final int updateFlags,
 			final IProgressMonitor monitor) {
-		// TODO: Implement this. Should be relatively easy, but consider that
-		// Eclipse thinks folders are real thinsgs, while Git does not care.
-		return FINISH_FOR_ME;
+		final boolean force = (updateFlags & IResource.FORCE) == IResource.FORCE;
+		if (!force && !tree.isSynchronized(srcf, IResource.DEPTH_ZERO))
+			return false;
+
+		final RepositoryMapping srcm = RepositoryMapping.getMapping(srcf);
+		if (srcm == null)
+			return false;
+		final RepositoryMapping dstm = RepositoryMapping.getMapping(dstf);
+
+		try {
+			final DirCache sCache = DirCache.lock(srcm.getRepository());
+			final String sPath = srcm.getRepoRelativePath(srcf);
+			final DirCacheEntry[] sEnt = sCache.getEntriesWithin(sPath);
+			if (sEnt.length == 0) {
+				sCache.unlock();
+				return false;
+			}
+
+			final DirCacheEditor sEdit = sCache.editor();
+			sEdit.add(new DirCacheEditor.DeleteTree(sPath));
+			if (dstm != null && dstm.getRepository() == srcm.getRepository()) {
+				final String dPath = srcm.getRepoRelativePath(dstf) + "/";
+				final int sPathLen = sPath.length() + 1;
+				for (final DirCacheEntry se : sEnt) {
+					final String p = se.getPathString().substring(sPathLen);
+					sEdit.add(new DirCacheEditor.PathEdit(dPath + p) {
+						@Override
+						public void apply(final DirCacheEntry dEnt) {
+							dEnt.copyMetaData(se);
+						}
+					});
+				}
+			}
+			if (!sEdit.commit())
+				tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(),
+						0, CoreText.MoveDeleteHook_operationError, null));
+
+			tree.standardMoveFolder(srcf, dstf, updateFlags, monitor);
+		} catch (IOException e) {
+			tree.failed(new Status(IStatus.ERROR, Activator.getPluginId(), 0,
+					CoreText.MoveDeleteHook_operationError, e));
+		}
+		return true;
 	}
 
 	public boolean moveProject(final IResourceTree tree, final IProject source,

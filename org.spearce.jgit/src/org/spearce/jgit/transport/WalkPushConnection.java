@@ -325,7 +325,7 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 			throws TransportException {
 		try {
 			final String ref = "ref: " + pickHEAD(updates) + "\n";
-			final byte[] bytes = ref.getBytes(Constants.CHARACTER_ENCODING);
+			final byte[] bytes = Constants.encode(ref);
 			dest.writeFile("../HEAD", bytes);
 		} catch (IOException e) {
 			throw new TransportException(uri, "cannot create HEAD", e);
@@ -334,7 +334,7 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 		try {
 			final String config = "[core]\n"
 					+ "\trepositoryformatversion = 0\n";
-			final byte[] bytes = config.getBytes(Constants.CHARACTER_ENCODING);
+			final byte[] bytes = Constants.encode(config);
 			dest.writeFile("../config", bytes);
 		} catch (IOException e) {
 			throw new TransportException(uri, "cannot create config", e);
