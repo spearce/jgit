@@ -53,6 +53,7 @@ import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.PackWriter;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
+import org.spearce.jgit.lib.RefWriter;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Ref.Storage;
 import org.spearce.jgit.transport.RemoteRefUpdate.Status;
@@ -158,9 +159,16 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 		if (!updates.isEmpty() && isNewRepository())
 			createNewRepository(updates);
 
+		RefWriter refWriter = new RefWriter(newRefs.values()) {
+			@Override
+			protected void writeFile(String file, byte[] content)
+					throws IOException {
+				dest.writeFile("../" + file, content);
+			}
+		};
 		if (!packedRefUpdates.isEmpty()) {
 			try {
-				dest.writePackedRefs(newRefs.values());
+				refWriter.writePackedRefs();
 				for (final RemoteRefUpdate u : packedRefUpdates)
 					u.setStatus(Status.OK);
 			} catch (IOException err) {
@@ -173,7 +181,7 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 		}
 
 		try {
-			dest.writeInfoRefs(newRefs.values());
+			refWriter.writeInfoRefs();
 		} catch (IOException err) {
 			throw new TransportException(uri, "failed updating refs", err);
 		}

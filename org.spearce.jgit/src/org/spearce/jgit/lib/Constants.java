@@ -216,6 +216,12 @@ public final class Constants {
 	/** Prefix for tag refs */
 	public static final String TAGS_PREFIX = "refs/tags";
 
+	/** Info refs folder */
+	public static final String INFO_REFS = "info/refs";
+
+	/** Packed refs file */
+	public static final String PACKED_REFS = "packed-refs";
+
 	/**
 	 * Create a new digest function for objects.
 	 * 

@@ -44,7 +44,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -332,99 +331,6 @@ abstract class WalkRemoteObjectDatabase {
 			w.append('\n');
 		}
 		writeFile(INFO_PACKS, Constants.encodeASCII(w.toString()));
-	}
-
-	/**
-	 * Rebuild the {@link #INFO_REFS} for dumb transport clients.
-	 * <p>
-	 * This method rebuilds the contents of the {@link #INFO_REFS} file to match
-	 * the passed list of references.
-	 *
-	 * @param refs
-	 *            the complete set of references the remote side now has. This
-	 *            should have been computed by applying updates to the
-	 *            advertised refs already discovered.
-	 * @throws IOException
-	 *             writing is not supported, or attempting to write the file
-	 *             failed, possibly due to permissions or remote disk full, etc.
-	 */
-	void writeInfoRefs(final Collection<Ref> refs) throws IOException {
-		final StringWriter w = new StringWriter();
-		final char[] tmp = new char[Constants.OBJECT_ID_LENGTH * 2];
-		for (final Ref r : refs) {
-			if (Constants.HEAD.equals(r.getName())) {
-				// Historically HEAD has never been published through
-				// the INFO_REFS file. This is a mistake, but its the
-				// way things are.
-				//
-				continue;
-			}
-
-			r.getObjectId().copyTo(tmp, w);
-			w.write('\t');
-			w.write(r.getName());
-			w.write('\n');
-
-			if (r.getPeeledObjectId() != null) {
-				r.getPeeledObjectId().copyTo(tmp, w);
-				w.write('\t');
-				w.write(r.getName());
-				w.write("^{}\n");
-			}
-		}
-		writeFile(INFO_REFS, Constants.encodeASCII(w.toString()));
-	}
-
-	/**
-	 * Rebuild the {@link #PACKED_REFS} file.
-	 * <p>
-	 * This method rebuilds the contents of the {@link #PACKED_REFS} file to
-	 * match the passed list of references, including only those refs that have
-	 * a storage type of {@link Ref.Storage#PACKED}.
-	 *
-	 * @param refs
-	 *            the complete set of references the remote side now has. This
-	 *            should have been computed by applying updates to the
-	 *            advertised refs already discovered.
-	 * @throws IOException
-	 *             writing is not supported, or attempting to write the file
-	 *             failed, possibly due to permissions or remote disk full, etc.
-	 */
-	void writePackedRefs(final Collection<Ref> refs) throws IOException {
-		boolean peeled = false;
-
-		for (final Ref r : refs) {
-			if (r.getStorage() != Ref.Storage.PACKED)
-				continue;
-			if (r.getPeeledObjectId() != null)
-				peeled = true;
-		}
-
-		final StringWriter w = new StringWriter();
-		if (peeled) {
-			w.write("# pack-refs with:");
-			if (peeled)
-				w.write(" peeled");
-			w.write('\n');
-		}
-
-		final char[] tmp = new char[Constants.OBJECT_ID_LENGTH * 2];
-		for (final Ref r : refs) {
-			if (r.getStorage() != Ref.Storage.PACKED)
-				continue;
-
-			r.getObjectId().copyTo(tmp, w);
-			w.write(' ');
-			w.write(r.getName());
-			w.write('\n');
-
-			if (r.getPeeledObjectId() != null) {
-				w.write('^');
-				r.getPeeledObjectId().copyTo(tmp, w);
-				w.write('\n');
-			}
-		}
-		writeFile(PACKED_REFS, Constants.encodeASCII(w.toString()));
 	}
 
 	/**
