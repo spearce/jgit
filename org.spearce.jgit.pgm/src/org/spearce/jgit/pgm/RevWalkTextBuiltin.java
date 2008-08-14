@@ -152,7 +152,7 @@ abstract class RevWalkTextBuiltin extends TextBuiltin {
 			if (c.has(RevFlag.UNINTERESTING))
 				walk.markUninteresting(real);
 			else
-				walk.markStart(c);
+				walk.markStart(real);
 		}
 
 		final long start = System.currentTimeMillis();
