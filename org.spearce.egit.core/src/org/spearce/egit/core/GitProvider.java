@@ -41,6 +41,11 @@ public class GitProvider extends RepositoryProvider {
 		return true;
 	}
 
+	@Override
+	public boolean canHandleLinkedResourceURI() {
+		return true;
+	}
+
 	public synchronized IMoveDeleteHook getMoveDeleteHook() {
 		if (hook == null) {
 			hook = new GitMoveDeleteHook(getData());
