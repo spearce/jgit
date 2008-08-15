@@ -40,6 +40,7 @@ package org.spearce.jgit.lib;
 import java.io.File;
 import java.io.IOException;
 
+import org.spearce.jgit.lib.Ref.Storage;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevObject;
 import org.spearce.jgit.revwalk.RevWalk;
@@ -146,8 +147,11 @@ public class RefUpdate {
 	/** Result of the update operation. */
 	private Result result = Result.NOT_ATTEMPTED;
 
+	private final Ref ref;
+
 	RefUpdate(final RefDatabase r, final Ref ref, final File f) {
 		db = r;
+		this.ref = ref;
 		name = ref.getName();
 		oldValue = ref.getObjectId();
 		looseFile = f;
@@ -304,14 +308,31 @@ public class RefUpdate {
 	public Result update(final RevWalk walk) throws IOException {
 		requireCanDoUpdate();
 		try {
-			return result = updateImpl(walk);
+			return result = updateImpl(walk, new UpdateStore());
 		} catch (IOException x) {
 			result = Result.IO_FAILURE;
 			throw x;
 		}
 	}
 
-	private Result updateImpl(final RevWalk walk) throws IOException {
+	/**
+	 * Delete the ref.
+	 * 
+	 * @return the result status of the delete.
+	 * @throws IOException
+	 */
+	public Result delete() throws IOException {
+		try {
+			return updateImpl(new RevWalk(db.getRepository()),
+					new DeleteStore());
+		} catch (IOException x) {
+			result = Result.IO_FAILURE;
+			throw x;
+		}
+	}
+
+	private Result updateImpl(final RevWalk walk, final Store store)
+			throws IOException {
 		final LockFile lock;
 		RevObject newObj;
 		RevObject oldObj;
@@ -322,7 +343,7 @@ public class RefUpdate {
 		try {
 			oldValue = db.idOf(name);
 			if (oldValue == null)
-				return store(lock, Result.NEW);
+				return store.store(lock, Result.NEW);
 
 			newObj = walk.parseAny(newValue);
 			oldObj = walk.parseAny(oldValue);
@@ -331,18 +352,18 @@ public class RefUpdate {
 
 			if (newObj instanceof RevCommit && oldObj instanceof RevCommit) {
 				if (walk.isMergedInto((RevCommit) oldObj, (RevCommit) newObj))
-					return store(lock, Result.FAST_FORWARD);
+					return store.store(lock, Result.FAST_FORWARD);
 			}
 
 			if (isForceUpdate())
-				return store(lock, Result.FORCED);
+				return store.store(lock, Result.FORCED);
 			return Result.REJECTED;
 		} finally {
 			lock.unlock();
 		}
 	}
 
-	private Result store(final LockFile lock, final Result status)
+	private Result updateStore(final LockFile lock, final Result status)
 			throws IOException {
 		lock.setNeedStatInformation(true);
 		lock.write(newValue);
@@ -361,5 +382,42 @@ public class RefUpdate {
 			return Result.LOCK_FAILURE;
 		db.stored(name, newValue, lock.getCommitLastModified());
 		return status;
+	}
+
+	/**
+	 * Handle the abstraction of storing a ref update. This is because both
+	 * updating and deleting of a ref have merge testing in common.
+	 */
+	private abstract class Store {
+		abstract Result store(final LockFile lock, final Result status)
+				throws IOException;
+	}
+
+	private class UpdateStore extends Store {
+
+		@Override
+		Result store(final LockFile lock, final Result status)
+				throws IOException {
+			return updateStore(lock, status);
+		}
+	}
+
+	private class DeleteStore extends Store {
+
+		@Override
+		Result store(LockFile lock, Result status) throws IOException {
+			Storage storage = ref.getStorage();
+			if (storage == Storage.NEW)
+				return status;
+			if (storage.isPacked())
+				db.removePackedRef(ref.getName());
+			if (storage.isLoose())
+				if (!looseFile.delete())
+					throw new IOException("File cannot be deleted: "
+							+ looseFile);
+			new File(db.getRepository().getDirectory(), Constants.LOGS + "/"
+					+ ref.getName()).delete();
+			return status;
+		}
 	}
 }
