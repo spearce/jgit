@@ -78,6 +78,8 @@ class DefaultSshSessionFactory extends SshSessionFactory {
 	/** IANA assigned port number for SSH. */
 	private static final int SSH_PORT = 22;
 
+	private Set<String> loadedIdentities;
+
 	private JSch userJSch;
 
 	@Override
@@ -106,10 +108,10 @@ class DefaultSshSessionFactory extends SshSessionFactory {
 
 	private JSch getUserJSch() throws JSchException {
 		if (userJSch == null) {
-			final JSch sch = new JSch();
-			knownHosts(sch);
-			identities(sch);
-			userJSch = sch;
+			loadedIdentities = new HashSet<String>();
+			userJSch = new JSch();
+			knownHosts(userJSch);
+			identities();
 		}
 		return userJSch;
 	}
@@ -133,7 +135,7 @@ class DefaultSshSessionFactory extends SshSessionFactory {
 		}
 	}
 
-	private void identities(final JSch sch) throws JSchException {
+	private void identities() throws JSchException {
 		final File home = FS.userHome();
 		if (home == null)
 			return;
@@ -149,8 +151,14 @@ class DefaultSshSessionFactory extends SshSessionFactory {
 			final File k = new File(sshdir, n.substring(0, n.length() - 4));
 			if (!k.isFile())
 				continue;
-			sch.addIdentity(k.getAbsolutePath());
+			addIdentity(k);
 		}
+	}
+
+	private void addIdentity(final File identityFile) throws JSchException {
+		final String path = identityFile.getAbsolutePath();
+		if (loadedIdentities.add(path))
+			userJSch.addIdentity(path);
 	}
 
 	private static class AWT_UserInfo implements UserInfo,
