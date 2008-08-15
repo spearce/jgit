@@ -40,6 +40,7 @@ package org.spearce.jgit.lib;
 import java.io.File;
 import java.io.IOException;
 
+import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.Ref.Storage;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevObject;
@@ -345,8 +346,8 @@ public class RefUpdate {
 			if (oldValue == null)
 				return store.store(lock, Result.NEW);
 
-			newObj = walk.parseAny(newValue);
-			oldObj = walk.parseAny(oldValue);
+			newObj = safeParse(walk, newValue);
+			oldObj = safeParse(walk, oldValue);
 			if (newObj == oldObj)
 				return Result.NO_CHANGE;
 
@@ -360,6 +361,20 @@ public class RefUpdate {
 			return Result.REJECTED;
 		} finally {
 			lock.unlock();
+		}
+	}
+
+	private static RevObject safeParse(final RevWalk rw, final AnyObjectId id)
+			throws IOException {
+		try {
+			return rw.parseAny(id);
+		} catch (MissingObjectException e) {
+			// We can expect some objects to be missing, like if we are
+			// trying to force a deletion of a branch and the object it
+			// points to has been pruned from the database due to freak
+			// corruption accidents (it happens with 'git new-work-dir').
+			//
+			return null;
 		}
 	}
 
