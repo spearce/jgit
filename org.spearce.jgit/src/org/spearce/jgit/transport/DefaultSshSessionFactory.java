@@ -49,6 +49,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -76,21 +78,27 @@ import com.jcraft.jsch.UserInfo;
  */
 class DefaultSshSessionFactory extends SshSessionFactory {
 	/** IANA assigned port number for SSH. */
-	private static final int SSH_PORT = 22;
+	static final int SSH_PORT = 22;
 
 	private Set<String> loadedIdentities;
 
 	private JSch userJSch;
 
+	private OpenSshConfig config;
+
 	@Override
 	public synchronized Session getSession(String user, String pass,
 			String host, int port) throws JSchException {
+		final OpenSshConfig.Host hc = getConfig().lookup(host);
+		host = hc.getHostName();
 		if (port <= 0)
-			port = SSH_PORT;
+			port = hc.getPort();
 		if (user == null)
-			user = userName();
+			user = hc.getUser();
 
 		final Session session = getUserJSch().getSession(user, host, port);
+		if (hc.getIdentityFile() != null)
+			addIdentity(hc.getIdentityFile());
 		if (pass != null)
 			session.setPassword(pass);
 		else
@@ -98,7 +106,7 @@ class DefaultSshSessionFactory extends SshSessionFactory {
 		return session;
 	}
 
-	private static String userName() {
+	static String userName() {
 		return AccessController.doPrivileged(new PrivilegedAction<String>() {
 			public String run() {
 				return System.getProperty("user.name");
@@ -114,6 +122,12 @@ class DefaultSshSessionFactory extends SshSessionFactory {
 			identities();
 		}
 		return userJSch;
+	}
+
+	private OpenSshConfig getConfig() {
+		if (config == null)
+			config = OpenSshConfig.get();
+		return config;
 	}
 
 	private void knownHosts(final JSch sch) throws JSchException {
