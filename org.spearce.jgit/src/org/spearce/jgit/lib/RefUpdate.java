@@ -258,39 +258,16 @@ public class RefUpdate {
 	/**
 	 * Force the ref to take the new value.
 	 * <p>
-	 * No merge tests are performed, so the value of {@link #isForceUpdate()}
-	 * will not be honored.
+	 * This is just a convenient helper for setting the force flag, and as such
+	 * the merge test is performed.
 	 * 
 	 * @return the result status of the update.
 	 * @throws IOException
 	 *             an unexpected IO error occurred while writing changes.
 	 */
 	public Result forceUpdate() throws IOException {
-		requireCanDoUpdate();
-		try {
-			return result = forceUpdateImpl();
-		} catch (IOException x) {
-			result = Result.IO_FAILURE;
-			throw x;
-		}
-	}
-
-	private Result forceUpdateImpl() throws IOException {
-		final LockFile lock;
-
-		lock = new LockFile(looseFile);
-		if (!lock.lock())
-			return Result.LOCK_FAILURE;
-		try {
-			oldValue = db.idOf(name);
-			if (oldValue == null)
-				return store(lock, Result.NEW);
-			if (oldValue.equals(newValue))
-				return Result.NO_CHANGE;
-			return store(lock, Result.FORCED);
-		} finally {
-			lock.unlock();
-		}
+		force = true;
+		return update();
 	}
 
 	/**
@@ -355,9 +332,6 @@ public class RefUpdate {
 			if (newObj instanceof RevCommit && oldObj instanceof RevCommit) {
 				if (walk.isMergedInto((RevCommit) oldObj, (RevCommit) newObj))
 					return store(lock, Result.FAST_FORWARD);
-				if (isForceUpdate())
-					return store(lock, Result.FORCED);
-				return Result.REJECTED;
 			}
 
 			if (isForceUpdate())
