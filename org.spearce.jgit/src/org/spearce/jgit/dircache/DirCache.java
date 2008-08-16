@@ -158,7 +158,8 @@ public class DirCache {
 	 * <p>
 	 * The new index will be locked and then read before it is returned to the
 	 * caller. Read failures are reported as exceptions and therefore prevent
-	 * the method from returning a partially populated index.
+	 * the method from returning a partially populated index.  On read failure,
+	 * the lock is released.
 	 *
 	 * @param indexLocation
 	 *            location of the index file on disk.
@@ -176,7 +177,20 @@ public class DirCache {
 		final DirCache c = new DirCache(indexLocation);
 		if (!c.lock())
 			throw new IOException("Cannot lock " + indexLocation);
-		c.read();
+
+		try {
+			c.read();
+		} catch (IOException e) {
+			c.unlock();
+			throw e;
+		} catch (RuntimeException e) {
+			c.unlock();
+			throw e;
+		} catch (Error e) {
+			c.unlock();
+			throw e;
+		}
+
 		return c;
 	}
 
