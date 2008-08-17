@@ -464,6 +464,141 @@ public class UIText extends NLS {
 	public static String HistoryPreferencePage_title;
 
 	/** */
+	public static String PushAction_wrongURIDescription;
+
+	/** */
+	public static String PushAction_wrongURITitle;
+
+	/** */
+	public static String PushWizard_cantConnectToAny;
+
+	/** */
+	public static String PushWizard_cantPrepareUpdatesMessage;
+
+	/** */
+	public static String PushWizard_cantPrepareUpdatesTitle;
+
+	/** */
+	public static String PushWizard_cantSaveMessage;
+
+	/** */
+	public static String PushWizard_cantSaveTitle;
+
+	/** */
+	public static String PushWizard_jobName;
+
+	/** */
+	public static String PushWizard_missingRefsMessage;
+
+	/** */
+	public static String PushWizard_missingRefsTitle;
+
+	/** */
+	public static String PushWizard_unexpectedError;
+
+	/** */
+	public static String PushWizard_windowTitleDefault;
+
+	/** */
+	public static String PushWizard_windowTitleWithDestination;
+
+	/** */
+	public static String ConfirmationPage_cantConnectToAny;
+
+	/** */
+	public static String ConfirmationPage_description;
+
+	/** */
+	public static String ConfirmationPage_errorCantResolveSpecs;
+
+	/** */
+	public static String ConfirmationPage_errorInterrupted;
+
+	/** */
+	public static String ConfirmationPage_errorRefsChangedNoMatch;
+
+	/** */
+	public static String ConfirmationPage_errorUnexpected;
+
+	/** */
+	public static String ConfirmationPage_requireUnchangedButton;
+
+	/** */
+	public static String ConfirmationPage_showOnlyIfChanged;
+
+	/** */
+	public static String ConfirmationPage_title;
+
+	/** */
+	public static String PushResultTable_columnStatusRepo;
+
+	/** */
+	public static String PushResultTable_columnDst;
+
+	/** */
+	public static String PushResultTable_columnSrc;
+
+	/** */
+	public static String PushResultTable_columnMode;
+
+	/** */
+	public static String PushResultTable_statusUnexpected;
+
+	/** */
+	public static String PushResultTable_statusConnectionFailed;
+
+	/** */
+	public static String PushResultTable_statusDetailChanged;
+
+	/** */
+	public static String PushResultTable_refNonExisting;
+
+	/** */
+	public static String PushResultTable_statusDetailDeleted;
+
+	/** */
+	public static String PushResultTable_statusDetailNonFastForward;
+
+	/** */
+	public static String PushResultTable_statusDetailNoDelete;
+
+	/** */
+	public static String PushResultTable_statusDetailNonExisting;
+
+	/** */
+	public static String PushResultTable_statusDetailForcedUpdate;
+
+	/** */
+	public static String PushResultTable_statusDetailFastForward;
+
+	/** */
+	public static String PushResultTable_statusRemoteRejected;
+
+	/** */
+	public static String PushResultTable_statusRejected;
+
+	/** */
+	public static String PushResultTable_statusNoMatch;
+
+	/** */
+	public static String PushResultTable_statusUpToDate;
+
+	/** */
+	public static String PushResultTable_statusOkDeleted;
+
+	/** */
+	public static String PushResultTable_statusOkNewBranch;
+
+	/** */
+	public static String PushResultTable_statusOkNewTag;
+
+	/** */
+	public static String ResultDialog_title;
+
+	/** */
+	public static String ResultDialog_label;
+
+	/** */
 	public static String WindowCachePreferencePage_title;
 
 	/** */
