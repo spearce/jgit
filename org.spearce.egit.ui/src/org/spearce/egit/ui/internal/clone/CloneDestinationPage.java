@@ -9,7 +9,6 @@
 package org.spearce.egit.ui.internal.clone;
 
 import java.io.File;
-import java.net.URISyntaxException;
 
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.jface.wizard.WizardPage;
@@ -28,10 +27,12 @@ import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
-import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIText;
+import org.spearce.egit.ui.internal.components.RepositorySelectionListener;
+import org.spearce.egit.ui.internal.components.RepositorySelectionPage;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.Ref;
+import org.spearce.jgit.transport.RemoteConfig;
 import org.spearce.jgit.transport.URIish;
 
 /**
@@ -39,7 +40,7 @@ import org.spearce.jgit.transport.URIish;
  * cloned.
  */
 class CloneDestinationPage extends WizardPage {
-	private final CloneSourcePage sourcePage;
+	private final RepositorySelectionPage sourcePage;
 
 	private final SourceBranchPage branchPage;
 
@@ -51,16 +52,17 @@ class CloneDestinationPage extends WizardPage {
 
 	private Text remoteText;
 
-	CloneDestinationPage(final CloneSourcePage sp, final SourceBranchPage bp) {
+	CloneDestinationPage(final RepositorySelectionPage sp,
+			final SourceBranchPage bp) {
 		super(CloneDestinationPage.class.getName());
 		sourcePage = sp;
 		branchPage = bp;
 
 		setTitle(UIText.CloneDestinationPage_title);
-		setImageDescriptor(UIIcons.WIZBAN_IMPORT_REPO);
 
-		sourcePage.addURIishChangeListener(new URIishChangeListener() {
-			public void uriishChanged(final URIish newURI) {
+		sourcePage.addRepositorySelectionListener(new RepositorySelectionListener() {
+			public void selectionChanged(final URIish newURI,
+					final RemoteConfig newConfig) {
 				if (newURI == null || !newURI.equals(validated))
 					setPageComplete(false);
 			}
@@ -221,12 +223,8 @@ class CloneDestinationPage extends WizardPage {
 
 	private void revalidate() {
 		URIish newURI = null;
-		try {
-			newURI = sourcePage.getURI();
-			validated = newURI;
-		} catch (URISyntaxException e) {
-			validated = null;
-		}
+		newURI = sourcePage.getURI();
+		validated = newURI;
 
 		if (newURI == null || !newURI.equals(validated)) {
 			final String n = getSuggestedName();

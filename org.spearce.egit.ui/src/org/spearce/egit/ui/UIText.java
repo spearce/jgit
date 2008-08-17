@@ -53,52 +53,67 @@ public class UIText extends NLS {
 	public static String GitCloneWizard_failed;
 
 	/** */
-	public static String CloneSourcePage_title;
+	public static String RepositorySelectionPage_sourceSelectionTitle;
 
 	/** */
-	public static String CloneSourcePage_description;
+	public static String RepositorySelectionPage_sourceSelectionDescription;
 
 	/** */
-	public static String CloneSourcePage_groupLocation;
+	public static String RepositorySelectionPage_destinationSelectionTitle;
 
 	/** */
-	public static String CloneSourcePage_groupAuthentication;
+	public static String RepositorySelectionPage_destinationSelectionDescription;
 
 	/** */
-	public static String CloneSourcePage_groupConnection;
+	public static String RepositorySelectionPage_groupLocation;
 
 	/** */
-	public static String CloneSourcePage_promptURI;
+	public static String RepositorySelectionPage_groupAuthentication;
 
 	/** */
-	public static String CloneSourcePage_promptHost;
+	public static String RepositorySelectionPage_groupConnection;
 
 	/** */
-	public static String CloneSourcePage_promptPath;
+	public static String RepositorySelectionPage_promptURI;
 
 	/** */
-	public static String CloneSourcePage_promptUser;
+	public static String RepositorySelectionPage_promptHost;
 
 	/** */
-	public static String CloneSourcePage_promptPassword;
+	public static String RepositorySelectionPage_promptPath;
 
 	/** */
-	public static String CloneSourcePage_promptScheme;
+	public static String RepositorySelectionPage_promptUser;
 
 	/** */
-	public static String CloneSourcePage_promptPort;
+	public static String RepositorySelectionPage_promptPassword;
 
 	/** */
-	public static String CloneSourcePage_fieldRequired;
+	public static String RepositorySelectionPage_promptScheme;
 
 	/** */
-	public static String CloneSourcePage_fieldNotSupported;
+	public static String RepositorySelectionPage_promptPort;
 
 	/** */
-	public static String CloneSourcePage_fileNotFound;
+	public static String RepositorySelectionPage_fieldRequired;
 
 	/** */
-	public static String CloneSourcePage_internalError;
+	public static String RepositorySelectionPage_fieldNotSupported;
+
+	/** */
+	public static String RepositorySelectionPage_fileNotFound;
+
+	/** */
+	public static String RepositorySelectionPage_internalError;
+
+	/** */
+	public static String RepositorySelectionPage_configuredRemoteChoice;
+
+	/** */
+	public static String RepositorySelectionPage_uriChoice;
+
+	/** */
+	public static String SourceBranchPage_title;
 
 	/** */
 	public static String SourceBranchPage_branchList;

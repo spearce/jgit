@@ -25,7 +25,9 @@ import org.eclipse.ui.IImportWizard;
 import org.eclipse.ui.IWorkbench;
 import org.spearce.egit.core.op.CloneOperation;
 import org.spearce.egit.ui.Activator;
+import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIText;
+import org.spearce.egit.ui.internal.components.RepositorySelectionPage;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
@@ -42,7 +44,7 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 	private static final String REMOTES_PREFIX_S = Constants.REMOTES_PREFIX
 			+ "/";
 
-	private CloneSourcePage cloneSource;
+	private RepositorySelectionPage cloneSource;
 
 	private SourceBranchPage validSource;
 
@@ -50,7 +52,8 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 
 	public void init(IWorkbench arg0, IStructuredSelection arg1) {
 		setWindowTitle(UIText.GitCloneWizard_title);
-		cloneSource = new CloneSourcePage();
+		setDefaultPageImageDescriptor(UIIcons.WIZBAN_IMPORT_REPO);
+		cloneSource = new RepositorySelectionPage(true);
 		validSource = new SourceBranchPage(cloneSource);
 		cloneDestination = new CloneDestinationPage(cloneSource, validSource);
 	}
@@ -68,11 +71,7 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 		final Repository db;
 		final RemoteConfig origin;
 
-		try {
-			uri = cloneSource.getURI();
-		} catch (URISyntaxException e) {
-			return false;
-		}
+		uri = cloneSource.getURI();
 
 		final File workdir = cloneDestination.getDestinationFile();
 		final String branch = cloneDestination.getInitialBranch();

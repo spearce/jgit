@@ -10,7 +10,6 @@ package org.spearce.egit.ui.internal.clone;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,19 +39,21 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 import org.spearce.egit.ui.Activator;
-import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIText;
+import org.spearce.egit.ui.internal.components.RepositorySelectionListener;
+import org.spearce.egit.ui.internal.components.RepositorySelectionPage;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.transport.FetchConnection;
+import org.spearce.jgit.transport.RemoteConfig;
 import org.spearce.jgit.transport.Transport;
 import org.spearce.jgit.transport.URIish;
 
 class SourceBranchPage extends WizardPage {
 	private final List<BranchChangeListener> branchChangeListeners;
 
-	private final CloneSourcePage sourcePage;
+	private final RepositorySelectionPage sourcePage;
 
 	private URIish validated;
 
@@ -68,19 +69,20 @@ class SourceBranchPage extends WizardPage {
 
 	private String transportError;
 
-	SourceBranchPage(final CloneSourcePage sp) {
+	SourceBranchPage(final RepositorySelectionPage sp) {
 		super(SourceBranchPage.class.getName());
 		sourcePage = sp;
-		setTitle(UIText.CloneSourcePage_title);
-		setImageDescriptor(UIIcons.WIZBAN_IMPORT_REPO);
-		sourcePage.addURIishChangeListener(new URIishChangeListener() {
-			public void uriishChanged(final URIish newURI) {
-				if (newURI == null || !newURI.equals(validated)) {
-					validated = null;
-					setPageComplete(false);
-				}
-			}
-		});
+		setTitle(UIText.SourceBranchPage_title);
+		sourcePage
+				.addRepositorySelectionListener(new RepositorySelectionListener() {
+					public void selectionChanged(final URIish newURI,
+							final RemoteConfig newConfig) {
+						if (newURI == null || !newURI.equals(validated)) {
+							validated = null;
+							setPageComplete(false);
+						}
+					}
+				});
 		branchChangeListeners = new ArrayList<BranchChangeListener>(3);
 	}
 
@@ -190,12 +192,7 @@ class SourceBranchPage extends WizardPage {
 
 	private void revalidate() {
 		final URIish newURI;
-		try {
-			newURI = sourcePage.getURI();
-		} catch (URISyntaxException e) {
-			transportError(e.getReason());
-			return;
-		}
+		newURI = sourcePage.getURI();
 
 		label.setText(NLS.bind(UIText.SourceBranchPage_branchList, newURI
 				.toString()));
