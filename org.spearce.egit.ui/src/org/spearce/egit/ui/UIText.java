@@ -176,6 +176,213 @@ public class UIText extends NLS {
 	public static String CloneDestinationPage_errorNotEmptyDir;
 
 	/** */
+	public static String RefSpecPanel_refChooseSome;
+
+	/** */
+	public static String RefSpecPanel_refChooseSomeWildcard;
+
+	/** */
+	public static String RefSpecPanel_clickToChange;
+
+	/** */
+	public static String RefSpecPanel_columnDst;
+
+	/** */
+	public static String RefSpecPanel_columnForce;
+
+	/** */
+	public static String RefSpecPanel_columnMode;
+
+	/** */
+	public static String RefSpecPanel_columnRemove;
+
+	/** */
+	public static String RefSpecPanel_columnSrc;
+
+	/** */
+	public static String RefSpecPanel_creationButton;
+
+	/** */
+	public static String RefSpecPanel_creationButtonDescription;
+
+	/** */
+	public static String RefSpecPanel_creationDst;
+
+	/** */
+	public static String RefSpecPanel_creationGroup;
+
+	/** */
+	public static String RefSpecPanel_creationSrc;
+
+	/** */
+	public static String RefSpecPanel_deletionButton;
+
+	/** */
+	public static String RefSpecPanel_deletionButtonDescription;
+
+	/** */
+	public static String RefSpecPanel_deletionGroup;
+
+	/** */
+	public static String RefSpecPanel_deletionRef;
+
+	/** */
+	public static String RefSpecPanel_dstDeletionDescription;
+
+	/** */
+	public static String RefSpecPanel_dstFetchDescription;
+
+	/** */
+	public static String RefSpecPanel_dstPushDescription;
+
+	/** */
+	public static String RefSpecPanel_errorRemoteConfigDescription;
+
+	/** */
+	public static String RefSpecPanel_errorRemoteConfigTitle;
+
+	/** */
+	public static String RefSpecPanel_fetch;
+
+	/** */
+	public static String RefSpecPanel_srcFetchDescription;
+
+	/** */
+	public static String RefSpecPanel_forceAll;
+
+	/** */
+	public static String RefSpecPanel_forceAllDescription;
+
+	/** */
+	public static String RefSpecPanel_forceDeleteDescription;
+
+	/** */
+	public static String RefSpecPanel_forceFalseDescription;
+
+	/** */
+	public static String RefSpecPanel_forceTrueDescription;
+
+	/** */
+	public static String RefSpecPanel_modeDelete;
+
+	/** */
+	public static String RefSpecPanel_modeDeleteDescription;
+
+	/** */
+	public static String RefSpecPanel_modeUpdate;
+
+	/** */
+	public static String RefSpecPanel_modeUpdateDescription;
+
+	/** */
+	public static String RefSpecPanel_predefinedAll;
+
+	/** */
+	public static String RefSpecPanel_predefinedAllDescription;
+
+	/** */
+	public static String RefSpecPanel_predefinedConfigured;
+
+	/** */
+	public static String RefSpecPanel_predefinedConfiguredDescription;
+
+	/** */
+	public static String RefSpecPanel_predefinedGroup;
+
+	/** */
+	public static String RefSpecPanel_predefinedTags;
+
+	/** */
+	public static String RefSpecPanel_predefinedTagsDescription;
+
+	/** */
+	public static String RefSpecPanel_push;
+
+	/** */
+	public static String RefSpecPanel_srcPushDescription;
+
+	/** */
+	public static String RefSpecPanel_removeAll;
+
+	/** */
+	public static String RefSpecPanel_removeAllDescription;
+
+	/** */
+	public static String RefSpecPanel_removeDescription;
+
+	/** */
+	public static String RefSpecPanel_specifications;
+
+	/** */
+	public static String RefSpecPanel_srcDeleteDescription;
+
+	/** */
+	public static String RefSpecPanel_validationDstInvalidExpression;
+
+	/** */
+	public static String RefSpecPanel_validationDstRequired;
+
+	/** */
+	public static String RefSpecPanel_validationRefDeleteRequired;
+
+	/** */
+	public static String RefSpecPanel_validationRefDeleteWildcard;
+
+	/** */
+	public static String RefSpecPanel_validationRefInvalidExpression;
+
+	/** */
+	public static String RefSpecPanel_validationRefInvalidLocal;
+
+	/** */
+	public static String RefSpecPanel_validationRefNonExistingRemote;
+
+	/** */
+	public static String RefSpecPanel_validationRefNonExistingRemoteDelete;
+
+	/** */
+	public static String RefSpecPanel_validationRefNonMatchingLocal;
+
+	/** */
+	public static String RefSpecPanel_validationRefNonMatchingRemote;
+
+	/** */
+	public static String RefSpecPanel_validationSpecificationsOverlappingDestination;
+
+	/** */
+	public static String RefSpecPanel_validationSrcUpdateRequired;
+
+	/** */
+	public static String RefSpecPanel_validationWildcardInconsistent;
+
+	/** */
+	public static String RefSpecPage_descriptionFetch;
+
+	/** */
+	public static String RefSpecPage_descriptionPush;
+
+	/** */
+	public static String RefSpecPage_errorDontMatchSrc;
+
+	/** */
+	public static String RefSpecPage_errorTransportDialogMessage;
+
+	/** */
+	public static String RefSpecPage_errorTransportDialogTitle;
+
+	/** */
+	public static String RefSpecPage_operationCancelled;
+
+	/** */
+	public static String RefSpecPage_saveSpecifications;
+
+	/** */
+	public static String RefSpecPage_titleFetch;
+
+	/** */
+	public static String RefSpecPage_titlePush;
+
+	/** */
 	public static String Decorator_failedLazyLoading;
 
 	/** */
