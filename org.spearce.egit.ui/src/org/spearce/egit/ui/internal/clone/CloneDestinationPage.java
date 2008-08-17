@@ -220,9 +220,17 @@ class CloneDestinationPage extends WizardPage {
 			setPageComplete(false);
 			return;
 		}
-		if (new File(dstpath).exists()) {
+		final File dstFile = new File(dstpath);
+		if (dstFile.exists()) {
 			setErrorMessage(NLS.bind(UIText.CloneDestinationPage_errorExists,
-					new File(dstpath).getName()));
+					dstFile.getName()));
+			setPageComplete(false);
+			return;
+		}
+		final File absoluteFile = dstFile.getAbsoluteFile();
+		if (!canCreateSubdir(absoluteFile.getParentFile())) {
+			setErrorMessage(NLS.bind(UIText.GitCloneWizard_errorCannotCreate,
+					dstFile.getPath()));
 			setPageComplete(false);
 			return;
 		}
@@ -241,6 +249,17 @@ class CloneDestinationPage extends WizardPage {
 
 		setErrorMessage(null);
 		setPageComplete(true);
+	}
+
+	// this is actually just an optimistic heuristic - should be named
+	// isThereHopeThatCanCreateSubdir() as probably there is no 100% reliable
+	// way to check that in Java for Windows
+	private static boolean canCreateSubdir(final File parent) {
+		if (parent == null)
+			return true;
+		if (parent.exists())
+			return parent.isDirectory() && parent.canWrite();
+		return canCreateSubdir(parent.getParentFile());
 	}
 
 	private void revalidate() {
