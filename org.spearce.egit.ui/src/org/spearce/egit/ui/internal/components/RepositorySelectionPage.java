@@ -13,11 +13,9 @@ package org.spearce.egit.ui.internal.components;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
@@ -45,7 +43,7 @@ import org.spearce.jgit.util.FS;
  * Wizard page that allows the user entering the location of a remote repository
  * by specifying URL manually or selecting a preconfigured remote repository.
  */
-public class RepositorySelectionPage extends WizardPage {
+public class RepositorySelectionPage extends BaseWizardPage {
 	private static final int REMOTE_CONFIG_TEXT_MAX_LENGTH = 80;
 
 	private static final String DEFAULT_REMOTE_NAME = "origin";
@@ -84,8 +82,6 @@ public class RepositorySelectionPage extends WizardPage {
 				setEnabledRecursively(child, enable);
 	}
 
-	private final List<RepositorySelectionListener> selectionListeners;
-
 	private final List<RemoteConfig> configuredRemotes;
 
 	private Group authGroup;
@@ -110,9 +106,7 @@ public class RepositorySelectionPage extends WizardPage {
 
 	private RemoteConfig remoteConfig;
 
-	private RemoteConfig exposedRemoteConfig;
-
-	private URIish exposedURI;
+	private RepositorySelection selection;
 
 	private Composite remotePanel;
 
@@ -155,6 +149,7 @@ public class RepositorySelectionPage extends WizardPage {
 			this.configuredRemotes = configuredRemotes;
 			this.remoteConfig = selectDefaultRemoteConfig();
 		}
+		selection = RepositorySelection.INVALID_SELECTION;
 
 		if (sourceSelection) {
 			setTitle(UIText.RepositorySelectionPage_sourceSelectionTitle);
@@ -163,7 +158,6 @@ public class RepositorySelectionPage extends WizardPage {
 			setTitle(UIText.RepositorySelectionPage_destinationSelectionTitle);
 			setDescription(UIText.RepositorySelectionPage_destinationSelectionDescription);
 		}
-		selectionListeners = new LinkedList<RepositorySelectionListener>();
 	}
 
 	/**
@@ -180,15 +174,22 @@ public class RepositorySelectionPage extends WizardPage {
 	}
 
 	/**
-	 * Add {@link RepositorySelectionListener} to list of listeners notified on
-	 * repository selection change.
-	 *
-	 * @param l
-	 *            listener that will be notified about changes
+	 * @return repository selection representing current page state.
 	 */
-	public void addRepositorySelectionListener(
-			final RepositorySelectionListener l) {
-		selectionListeners.add(l);
+	public RepositorySelection getSelection() {
+		return selection;
+	}
+
+	/**
+	 * Compare current repository selection set by user to provided one.
+	 *
+	 * @param s
+	 *            repository selection to compare.
+	 * @return true if provided selection is equal to current page selection,
+	 *         false otherwise.
+	 */
+	public boolean selectionEquals(final RepositorySelection s) {
+		return selection.equals(s);
 	}
 
 	public void createControl(final Composite parent) {
@@ -423,23 +424,6 @@ public class RepositorySelectionPage extends WizardPage {
 		return new GridData(SWT.FILL, SWT.DEFAULT, true, false);
 	}
 
-	/**
-	 * @return the URI entered in the Wizard page. null if URI is invalid or
-	 *         user chosen to select remote config instead of providing direct
-	 *         URI.
-	 */
-	public URIish getURI() {
-		return exposedURI;
-	}
-
-	/**
-	 * @return the selected remote configuration in the Wizard page. null if
-	 *         user chosen to select repository as URI.
-	 */
-	public RemoteConfig getRemoteConfig() {
-		return exposedRemoteConfig;
-	}
-
 	private static boolean isGIT(final URIish uri) {
 		return "git".equals(uri.getScheme());
 	}
@@ -637,13 +621,12 @@ public class RepositorySelectionPage extends WizardPage {
 	}
 
 	private void setExposedSelection(final URIish u, final RemoteConfig rc) {
-		if (u == exposedURI && rc == exposedRemoteConfig) // nothing changed
+		final RepositorySelection newSelection = new RepositorySelection(u, rc);
+		if (newSelection.equals(selection))
 			return;
-		this.exposedURI = u;
-		this.exposedRemoteConfig = rc;
 
-		for (final RepositorySelectionListener l : selectionListeners)
-			l.selectionChanged(u, rc);
+		selection = newSelection;
+		notifySelectionChanged();
 	}
 
 	private void updateRemoteAndURIPanels() {

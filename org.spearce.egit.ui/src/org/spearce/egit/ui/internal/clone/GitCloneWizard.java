@@ -1,6 +1,7 @@
 /*******************************************************************************
  * Copyright (C) 2008, Roger C. Soares <rogersoares@intelinet.com.br>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -71,7 +72,7 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 		final Repository db;
 		final RemoteConfig origin;
 
-		uri = cloneSource.getURI();
+		uri = cloneSource.getSelection().getURI();
 
 		final File workdir = cloneDestination.getDestinationFile();
 		final String branch = cloneDestination.getInitialBranch();
