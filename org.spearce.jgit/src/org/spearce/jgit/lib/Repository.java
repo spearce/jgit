@@ -385,6 +385,8 @@ public class Repository {
 	 */
 	public Object mapObject(final ObjectId id, final String refName) throws IOException {
 		final ObjectLoader or = openObject(id);
+		if (or == null)
+			return null;
 		final byte[] raw = or.getBytes();
 		if (or.getType() == Constants.OBJ_TREE)
 			return makeTree(id, raw);
@@ -394,7 +396,8 @@ public class Repository {
 			return makeTag(id, refName, raw);
 		if (or.getType() == Constants.OBJ_BLOB)
 			return raw;
-		return null;
+		throw new IncorrectObjectTypeException(id,
+				"COMMIT nor TREE nor BLOB nor TAG");
 	}
 
 	/**
