@@ -53,6 +53,9 @@ public class UIText extends NLS {
 	public static String GitCloneWizard_failed;
 
 	/** */
+	public static String GitCloneWizard_errorCannotCreate;
+
+	/** */
 	public static String RepositorySelectionPage_sourceSelectionTitle;
 
 	/** */
@@ -180,6 +183,7 @@ public class UIText extends NLS {
 
 	/** */
 	public static String ResourceHistory_toggleCommentFill;
+
 	/** */
 	public static String ResourceHistory_toggleRevDetail;
 

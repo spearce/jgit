@@ -10,9 +10,8 @@
 package org.spearce.egit.ui.internal.clone;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URISyntaxException;
+import java.util.Collection;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -29,22 +28,13 @@ import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIText;
 import org.spearce.egit.ui.internal.components.RepositorySelectionPage;
-import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.Ref;
-import org.spearce.jgit.lib.Repository;
-import org.spearce.jgit.transport.RefSpec;
-import org.spearce.jgit.transport.RemoteConfig;
 import org.spearce.jgit.transport.URIish;
 
 /**
  * Import Git Repository Wizard. A front end to a git clone operation.
  */
 public class GitCloneWizard extends Wizard implements IImportWizard {
-	private static final String HEADS_PREFIX = Constants.HEADS_PREFIX;
-
-	private static final String REMOTES_PREFIX_S = Constants.REMOTES_PREFIX
-			+ "/";
-
 	private RepositorySelectionPage cloneSource;
 
 	private SourceBranchPage validSource;
@@ -68,62 +58,35 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 
 	@Override
 	public boolean performFinish() {
-		final URIish uri;
-		final Repository db;
-		final RemoteConfig origin;
-
-		uri = cloneSource.getSelection().getURI();
-
+		final URIish uri = cloneSource.getSelection().getURI();
+		final boolean allSelected = validSource.isAllSelected();
+		final Collection<Ref> selectedBranches = validSource
+				.getSelectedBranches();
 		final File workdir = cloneDestination.getDestinationFile();
 		final String branch = cloneDestination.getInitialBranch();
-		final File gitdir = new File(workdir, ".git");
-		try {
-			db = new Repository(gitdir);
-			db.create();
-			db.writeSymref(Constants.HEAD, branch);
+		final String remoteName = cloneDestination.getRemote();
 
-			final String rn = cloneDestination.getRemote();
-			origin = new RemoteConfig(db.getConfig(), rn);
-			origin.addURI(uri);
-
-			final String dst = REMOTES_PREFIX_S + origin.getName();
-			RefSpec wcrs = new RefSpec();
-			wcrs = wcrs.setForceUpdate(true);
-			wcrs = wcrs.setSourceDestination(HEADS_PREFIX + "/*", dst + "/*");
-
-			if (validSource.isAllSelected()) {
-				origin.addFetchRefSpec(wcrs);
-			} else {
-				for (final Ref ref : validSource.getSelectedBranches())
-					if (wcrs.matchSource(ref))
-						origin.addFetchRefSpec(wcrs.expandFromSource(ref));
-			}
-
-			origin.update(db.getConfig());
-			db.getConfig().save();
-		} catch (IOException err) {
-			Activator.logError(UIText.GitCloneWizard_failed, err);
+		if (!workdir.mkdirs()) {
+			final String errorMessage = NLS.bind(
+					UIText.GitCloneWizard_errorCannotCreate, workdir.getPath());
 			ErrorDialog.openError(getShell(), getWindowTitle(),
 					UIText.GitCloneWizard_failed, new Status(IStatus.ERROR,
-							Activator.getPluginId(), 0, err.getMessage(), err));
-			return false;
-		} catch (URISyntaxException e) {
+							Activator.getPluginId(), 0, errorMessage, null));
+			// let's give user a chance to fix this minor problem
 			return false;
 		}
 
-		final CloneOperation op = new CloneOperation(db, origin, branch);
+		final CloneOperation op = new CloneOperation(uri, allSelected,
+				selectedBranches, workdir, branch, remoteName);
 		final Job job = new Job(NLS.bind(UIText.GitCloneWizard_jobName, uri
 				.toString())) {
 			@Override
 			protected IStatus run(final IProgressMonitor monitor) {
 				try {
 					op.run(monitor);
-					if (monitor.isCanceled()) {
-						db.close();
-						delete(workdir);
-						return Status.CANCEL_STATUS;
-					}
 					return Status.OK_STATUS;
+				} catch (InterruptedException e) {
+					return Status.CANCEL_STATUS;
 				} catch (InvocationTargetException e) {
 					Throwable thr = e.getCause();
 					return new Status(IStatus.ERROR, Activator.getPluginId(),
@@ -134,16 +97,5 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 		job.setUser(true);
 		job.schedule();
 		return true;
-	}
-
-	private static void delete(final File d) {
-		if (d.isDirectory()) {
-			final File[] items = d.listFiles();
-			if (items != null) {
-				for (final File c : items)
-					delete(c);
-			}
-		}
-		d.delete();
 	}
 }
