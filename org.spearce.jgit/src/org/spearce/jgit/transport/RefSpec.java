@@ -331,8 +331,11 @@ public class RefSpec {
 	 * otherwise expansion results may be unpredictable.
 	 *
 	 * @param r
-	 *            a ref name that matched our source specification.
-	 * @return a new specification that is not a wildcard.
+	 *            a ref name that matched our source specification. Could be a
+	 *            wildcard also.
+	 * @return a new specification expanded from provided ref name. Result
+	 *         specification is wildcard if and only if provided ref name is
+	 *         wildcard.
 	 */
 	public RefSpec expandFromSource(final String r) {
 		return isWildcard() ? new RefSpec(this, r) : this;
@@ -345,8 +348,11 @@ public class RefSpec {
 	 * otherwise expansion results may be unpredictable.
 	 * 
 	 * @param r
-	 *            a ref that matched our source specification.
-	 * @return a new specification that is not a wildcard.
+	 *            a ref that matched our source specification. Could be a
+	 *            wildcard also.
+	 * @return a new specification expanded from provided ref name. Result
+	 *         specification is wildcard if and only if provided ref name is
+	 *         wildcard.
 	 */
 	public RefSpec expandFromSource(final Ref r) {
 		return isWildcard() ? new RefSpec(this, r.getName()) : this;
