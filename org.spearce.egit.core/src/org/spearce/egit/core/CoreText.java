@@ -95,6 +95,9 @@ public class CoreText extends NLS {
 	/** */
 	public static String CloneOperation_title;
 
+	/** */
+	public static String ListRemoteOperation_title;
+
 	static {
 		final Class c = CoreText.class;
 		initializeMessages(c.getPackage().getName() + ".coretext", c);
