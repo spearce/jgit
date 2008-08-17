@@ -47,9 +47,20 @@ import org.spearce.jgit.lib.Ref;
  * reference in one repository to another reference in another repository.
  */
 public class RefSpec {
-	private static final String WILDCARD_SUFFIX = "/*";
+	/**
+	 * Suffix for wildcard ref spec component, that indicate matching all refs
+	 * with specified prefix.
+	 */
+	public static final String WILDCARD_SUFFIX = "/*";
 
-	private static boolean isWildcard(final String s) {
+	/**
+	 * Check whether provided string is a wildcard ref spec component.
+	 *
+	 * @param s
+	 *            ref spec component - string to test. Can be null.
+	 * @return true if provided string is a wildcard ref spec component.
+	 */
+	public static boolean isWildcard(final String s) {
 		return s != null && s.endsWith(WILDCARD_SUFFIX);
 	}
 
