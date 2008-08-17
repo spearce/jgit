@@ -128,9 +128,10 @@ class CloneDestinationPage extends WizardPage {
 
 				d = new FileDialog(getShell(), SWT.APPLICATION_MODAL | SWT.SAVE);
 				if (directoryText.getText().length() > 0) {
-					final File f = new File(directoryText.getText());
-					d.setFilterPath(f.getAbsoluteFile().getAbsolutePath());
-					d.setFileName(f.getName());
+					final File file = new File(directoryText.getText())
+							.getAbsoluteFile();
+					d.setFilterPath(file.getParent());
+					d.setFileName(file.getName());
 				}
 				final String r = d.open();
 				if (r != null)
