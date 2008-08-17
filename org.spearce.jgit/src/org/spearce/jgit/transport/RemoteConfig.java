@@ -267,6 +267,30 @@ public class RemoteConfig {
 	}
 
 	/**
+	 * Override existing fetch specifications with new ones.
+	 *
+	 * @param specs
+	 *            list of fetch specifications to set. List is copied, it can be
+	 *            modified after this call.
+	 */
+	public void setFetchRefSpecs(final List<RefSpec> specs) {
+		fetch.clear();
+		fetch.addAll(specs);
+	}
+
+	/**
+	 * Override existing push specifications with new ones.
+	 *
+	 * @param specs
+	 *            list of push specifications to set. List is copied, it can be
+	 *            modified after this call.
+	 */
+	public void setPushRefSpecs(final List<RefSpec> specs) {
+		push.clear();
+		push.addAll(specs);
+	}
+
+	/**
 	 * Remove a fetch RefSpec from this remote.
 	 * 
 	 * @param s
