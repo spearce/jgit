@@ -123,7 +123,7 @@ public class RemoteRefUpdate {
 
 	private final TrackingRefUpdate trackingRefUpdate;
 
-	private String srcRef;
+	private final String srcRef;
 
 	private final boolean forceUpdate;
 
@@ -133,13 +133,15 @@ public class RemoteRefUpdate {
 
 	private String message;
 
+	private final Repository localDb;
+
 	/**
 	 * Construct remote ref update request by providing an update specification.
 	 * Object is created with default {@link Status#NOT_ATTEMPTED} status and no
 	 * message.
 	 *
-	 * @param db
-	 *            repository to push from.
+	 * @param localDb
+	 *            local repository to push from.
 	 * @param srcRef
 	 *            source revision - any string resolvable by
 	 *            {@link Repository#resolve(String)}. This resolves to the new
@@ -171,27 +173,51 @@ public class RemoteRefUpdate {
 	 * @throws IllegalArgumentException
 	 *             if some required parameter was null
 	 */
-	public RemoteRefUpdate(final Repository db, final String srcRef,
+	public RemoteRefUpdate(final Repository localDb, final String srcRef,
 			final String remoteName, final boolean forceUpdate,
 			final String localName, final ObjectId expectedOldObjectId)
 			throws IOException {
 		if (remoteName == null)
 			throw new IllegalArgumentException("Remote name can't be null.");
 		this.srcRef = srcRef;
-		this.newObjectId = (srcRef == null ? ObjectId.zeroId() : db
+		this.newObjectId = (srcRef == null ? ObjectId.zeroId() : localDb
 				.resolve(srcRef));
 		if (newObjectId == null)
 			throw new IOException("Source ref " + srcRef
 					+ " doesn't resolve to any object.");
 		this.remoteName = remoteName;
 		this.forceUpdate = forceUpdate;
-		if (localName != null && db != null)
-			trackingRefUpdate = new TrackingRefUpdate(db, localName,
+		if (localName != null && localDb != null)
+			trackingRefUpdate = new TrackingRefUpdate(localDb, localName,
 					remoteName, forceUpdate, newObjectId, "push");
 		else
 			trackingRefUpdate = null;
+		this.localDb = localDb;
 		this.expectedOldObjectId = expectedOldObjectId;
 		this.status = Status.NOT_ATTEMPTED;
+	}
+
+	/**
+	 * Create a new instance of this object basing on existing instance for
+	 * configuration. State (like {@link #getMessage()}, {@link #getStatus()})
+	 * of base object is not shared. Expected old object id is set up from
+	 * scratch, as this constructor may be used for 2-stage push: first one
+	 * being dry run, second one being actual push.
+	 *
+	 * @param base
+	 *            configuration base.
+	 * @param newExpectedOldObjectId
+	 *            new expected object id value.
+	 * @throws IOException
+	 *             when I/O error occurred during creating
+	 *             {@link TrackingRefUpdate} for local tracking branch or srcRef
+	 *             of base object no longer can be resolved to any object.
+	 */
+	public RemoteRefUpdate(final RemoteRefUpdate base,
+			final ObjectId newExpectedOldObjectId) throws IOException {
+		this(base.localDb, base.srcRef, base.remoteName, base.forceUpdate,
+				(base.trackingRefUpdate == null ? null : base.trackingRefUpdate
+						.getLocalName()), newExpectedOldObjectId);
 	}
 
 	/**
