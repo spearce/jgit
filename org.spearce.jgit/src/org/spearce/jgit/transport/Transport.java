@@ -75,8 +75,10 @@ public abstract class Transport {
 	 * @param local
 	 *            existing local repository.
 	 * @param remote
-	 *            location of the remote repository.
-	 * @return the new transport instance. Never null.
+	 *            location of the remote repository - may be URI or remote
+	 *            configuration name.
+	 * @return the new transport instance. Never null. In case of multiple URIs
+	 *         in remote configuration, only the first is chosen.
 	 * @throws URISyntaxException
 	 *             the location is not a remote defined in the configuration
 	 *             file and is not a well-formed URL.
@@ -93,6 +95,35 @@ public abstract class Transport {
 	}
 
 	/**
+	 * Open new transport instances to connect two repositories.
+	 *
+	 * @param local
+	 *            existing local repository.
+	 * @param remote
+	 *            location of the remote repository - may be URI or remote
+	 *            configuration name.
+	 * @return the list of new transport instances for every URI in remote
+	 *         configuration.
+	 * @throws URISyntaxException
+	 *             the location is not a remote defined in the configuration
+	 *             file and is not a well-formed URL.
+	 * @throws NotSupportedException
+	 *             the protocol specified is not supported.
+	 */
+	public static List<Transport> openAll(final Repository local,
+			final String remote) throws NotSupportedException,
+			URISyntaxException {
+		final RemoteConfig cfg = new RemoteConfig(local.getConfig(), remote);
+		final List<URIish> uris = cfg.getURIs();
+		if (uris.size() == 0) {
+			final ArrayList<Transport> transports = new ArrayList<Transport>(1);
+			transports.add(open(local, new URIish(remote)));
+			return transports;
+		}
+		return openAll(local, cfg);
+	}
+
+	/**
 	 * Open a new transport instance to connect two repositories.
 	 * 
 	 * @param local
@@ -100,7 +131,8 @@ public abstract class Transport {
 	 * @param cfg
 	 *            configuration describing how to connect to the remote
 	 *            repository.
-	 * @return the new transport instance. Never null.
+	 * @return the new transport instance. Never null. In case of multiple URIs
+	 *         in remote configuration, only the first is chosen.
 	 * @throws NotSupportedException
 	 *             the protocol specified is not supported.
 	 * @throws IllegalArgumentException
@@ -114,12 +146,33 @@ public abstract class Transport {
 					"Remote config \""
 					+ cfg.getName() + "\" has no URIs associated");
 		final Transport tn = open(local, cfg.getURIs().get(0));
-		tn.setOptionUploadPack(cfg.getUploadPack());
-		tn.fetch = cfg.getFetchRefSpecs();
-		tn.tagopt = cfg.getTagOpt();
-		tn.setOptionReceivePack(cfg.getReceivePack());
-		tn.push = cfg.getPushRefSpecs();
+		tn.applyConfig(cfg);
 		return tn;
+	}
+
+	/**
+	 * Open new transport instances to connect two repositories.
+	 *
+	 * @param local
+	 *            existing local repository.
+	 * @param cfg
+	 *            configuration describing how to connect to the remote
+	 *            repository.
+	 * @return the list of new transport instances for every URI in remote
+	 *         configuration.
+	 * @throws NotSupportedException
+	 *             the protocol specified is not supported.
+	 */
+	public static List<Transport> openAll(final Repository local,
+			final RemoteConfig cfg) throws NotSupportedException {
+		final List<URIish> uris = cfg.getURIs();
+		final List<Transport> transports = new ArrayList<Transport>(uris.size());
+		for (final URIish uri : uris) {
+			final Transport tn = open(local, uri);
+			tn.applyConfig(cfg);
+			transports.add(tn);
+		}
+		return transports;
 	}
 
 	/**
@@ -356,6 +409,20 @@ public abstract class Transport {
 	 */
 	public void setPushThin(final boolean pushThin) {
 		this.pushThin = pushThin;
+	}
+
+	/**
+	 * Apply provided remote configuration on this transport.
+	 *
+	 * @param cfg
+	 *            configuration to apply on this transport.
+	 */
+	public void applyConfig(final RemoteConfig cfg) {
+		setOptionUploadPack(cfg.getUploadPack());
+		fetch = cfg.getFetchRefSpecs();
+		setTagOpt(cfg.getTagOpt());
+		optionReceivePack = cfg.getReceivePack();
+		push = cfg.getPushRefSpecs();
 	}
 
 	/**
