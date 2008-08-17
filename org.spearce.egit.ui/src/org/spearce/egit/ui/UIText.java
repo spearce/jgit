@@ -119,6 +119,9 @@ public class UIText extends NLS {
 	public static String SourceBranchPage_title;
 
 	/** */
+	public static String SourceBranchPage_description;
+
+	/** */
 	public static String SourceBranchPage_branchList;
 
 	/** */
@@ -134,13 +137,13 @@ public class UIText extends NLS {
 	public static String SourceBranchPage_transportError;
 
 	/** */
-	public static String SourceBranchPage_interrupted;
-
-	/** */
 	public static String SourceBranchPage_cannotListBranches;
 
 	/** */
 	public static String SourceBranchPage_remoteListingCancelled;
+
+	/** */
+	public static String SourceBranchPage_cannotCreateTemp;
 
 	/** */
 	public static String CloneDestinationPage_title;

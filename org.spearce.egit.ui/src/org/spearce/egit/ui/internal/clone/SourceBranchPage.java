@@ -10,20 +10,16 @@
 package org.spearce.egit.ui.internal.clone;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.ErrorDialog;
-import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -36,6 +32,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
+import org.spearce.egit.core.op.ListRemoteOperation;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
 import org.spearce.egit.ui.internal.components.BaseWizardPage;
@@ -45,8 +42,7 @@ import org.spearce.egit.ui.internal.components.SelectionChangeListener;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
-import org.spearce.jgit.transport.FetchConnection;
-import org.spearce.jgit.transport.Transport;
+import org.spearce.jgit.transport.URIish;
 
 class SourceBranchPage extends BaseWizardPage {
 	private final RepositorySelectionPage sourcePage;
@@ -69,6 +65,7 @@ class SourceBranchPage extends BaseWizardPage {
 		super(SourceBranchPage.class.getName());
 		sourcePage = sp;
 		setTitle(UIText.SourceBranchPage_title);
+		setDescription(UIText.SourceBranchPage_description);
 
 		sourcePage.addSelectionListener(new SelectionChangeListener() {
 			public void selectionChanged() {
@@ -134,10 +131,10 @@ class SourceBranchPage extends BaseWizardPage {
 
 		final Composite bPanel = new Composite(panel, SWT.NONE);
 		bPanel.setLayout(new RowLayout());
-		Button b;
-		b = new Button(bPanel, SWT.PUSH);
-		b.setText(UIText.SourceBranchPage_selectAll);
-		b.addSelectionListener(new SelectionAdapter() {
+		final Button selectB;
+		selectB = new Button(bPanel, SWT.PUSH);
+		selectB.setText(UIText.SourceBranchPage_selectAll);
+		selectB.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(final SelectionEvent e) {
 				for (int i = 0; i < refsTable.getItemCount(); i++)
 					refsTable.getItem(i).setChecked(true);
@@ -147,9 +144,9 @@ class SourceBranchPage extends BaseWizardPage {
 				checkPage();
 			}
 		});
-		b = new Button(bPanel, SWT.PUSH);
-		b.setText(UIText.SourceBranchPage_selectNone);
-		b.addSelectionListener(new SelectionAdapter() {
+		final Button unselectB = new Button(bPanel, SWT.PUSH);
+		unselectB.setText(UIText.SourceBranchPage_selectNone);
+		unselectB.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(final SelectionEvent e) {
 				for (int i = 0; i < refsTable.getItemCount(); i++)
 					refsTable.getItem(i).setChecked(false);
@@ -159,6 +156,13 @@ class SourceBranchPage extends BaseWizardPage {
 			}
 		});
 		bPanel.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+
+		addSelectionListener(new SelectionChangeListener() {
+			public void selectionChanged() {
+				selectB.setEnabled(selectedRefs.size() != availableRefs.size());
+				unselectB.setEnabled(selectedRefs.size() != 0);
+			}
+		});
 
 		setControl(panel);
 		checkPage();
@@ -210,7 +214,8 @@ class SourceBranchPage extends BaseWizardPage {
 		availableRefs.clear();
 		selectedRefs.clear();
 		refsTable.removeAll();
-		checkPage();
+		setPageComplete(false);
+		setErrorMessage(null);
 		label.getDisplay().asyncExec(new Runnable() {
 			public void run() {
 				revalidateImpl(newRepoSelection);
@@ -222,72 +227,49 @@ class SourceBranchPage extends BaseWizardPage {
 		if (label.isDisposed() || !isCurrentPage())
 			return;
 
+		final ListRemoteOperation listRemoteOp;
 		try {
-			getContainer().run(true, true, new IRunnableWithProgress() {
-				public void run(final IProgressMonitor pm)
-						throws InvocationTargetException, InterruptedException {
-					final IProgressMonitor monitor;
-					if (pm == null)
-						monitor = new NullProgressMonitor();
-					else
-						monitor = pm;
-					try {
-						final Repository db = new Repository(new File("/tmp"));
-						final Transport tn = Transport.open(db,
-								newRepoSelection.getURI());
-						final Collection<Ref> adv;
-						final FetchConnection fn = tn.openFetch();
-						try {
-							adv = fn.getRefs();
-						} finally {
-							fn.close();
-							tn.close();
-						}
-
-						final Ref idHEAD = fn.getRef(Constants.HEAD);
-						head = null;
-						for (final Ref r : adv) {
-							final String n = r.getName();
-							if (!n.startsWith(Constants.HEADS_PREFIX + "/"))
-								continue;
-							availableRefs.add(r);
-							if (idHEAD == null || head != null)
-								continue;
-							if (r.getObjectId().equals(idHEAD.getObjectId()))
-								head = r;
-						}
-						Collections.sort(availableRefs, new Comparator<Ref>() {
-							public int compare(final Ref o1, final Ref o2) {
-								return o1.getName().compareTo(o2.getName());
-							}
-						});
-						if (idHEAD != null && head == null) {
-							head = idHEAD;
-							availableRefs.add(0, idHEAD);
-						}
-					} catch (Exception err) {
-						throw new InvocationTargetException(err);
-					}
-					monitor.done();
-				}
-			});
+			final URIish uri = newRepoSelection.getURI();
+			final Repository db = new Repository(new File("/tmp"));
+			listRemoteOp = new ListRemoteOperation(db, uri);
+			getContainer().run(true, true, listRemoteOp);
 		} catch (InvocationTargetException e) {
 			Throwable why = e.getCause();
-			if ((why instanceof OperationCanceledException)) {
-				transportError(UIText.SourceBranchPage_remoteListingCancelled);
-				return;
-			} else {
-				ErrorDialog.openError(getShell(),
-						UIText.SourceBranchPage_transportError,
-						UIText.SourceBranchPage_cannotListBranches, new Status(
-								IStatus.ERROR, Activator.getPluginId(), 0, why
-										.getMessage(), why.getCause()));
-				transportError(why.getMessage());
-			}
+			transportError(why.getMessage());
+			ErrorDialog.openError(getShell(),
+					UIText.SourceBranchPage_transportError,
+					UIText.SourceBranchPage_cannotListBranches, new Status(
+							IStatus.ERROR, Activator.getPluginId(), 0, why
+									.getMessage(), why.getCause()));
+			return;
+		} catch (IOException e) {
+			transportError(UIText.SourceBranchPage_cannotCreateTemp);
 			return;
 		} catch (InterruptedException e) {
-			transportError(UIText.SourceBranchPage_interrupted);
+			transportError(UIText.SourceBranchPage_remoteListingCancelled);
 			return;
+		}
+
+		final Ref idHEAD = listRemoteOp.getRemoteRef(Constants.HEAD);
+		head = null;
+		for (final Ref r : listRemoteOp.getRemoteRefs()) {
+			final String n = r.getName();
+			if (!n.startsWith(Constants.HEADS_PREFIX + "/"))
+				continue;
+			availableRefs.add(r);
+			if (idHEAD == null || head != null)
+				continue;
+			if (r.getObjectId().equals(idHEAD.getObjectId()))
+				head = r;
+		}
+		Collections.sort(availableRefs, new Comparator<Ref>() {
+			public int compare(final Ref o1, final Ref o2) {
+				return o1.getName().compareTo(o2.getName());
+			}
+		});
+		if (idHEAD != null && head == null) {
+			head = idHEAD;
+			availableRefs.add(0, idHEAD);
 		}
 
 		validatedRepoSelection = newRepoSelection;
