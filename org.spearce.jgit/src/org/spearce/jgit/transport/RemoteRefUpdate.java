@@ -166,23 +166,23 @@ public class RemoteRefUpdate {
 	 *            remote ref with this name.
 	 * @throws IOException
 	 *             when I/O error occurred during creating
-	 *             {@link TrackingRefUpdate} for local tracking branch.
+	 *             {@link TrackingRefUpdate} for local tracking branch or srcRef
+	 *             can't be resolved to any object.
 	 * @throws IllegalArgumentException
-	 *             if some required parameter was null or srcRef can't be
-	 *             resolved to any object.
+	 *             if some required parameter was null
 	 */
 	public RemoteRefUpdate(final Repository db, final String srcRef,
 			final String remoteName, final boolean forceUpdate,
 			final String localName, final ObjectId expectedOldObjectId)
 			throws IOException {
 		if (remoteName == null)
-			throw new IllegalArgumentException("remote name can't be null");
+			throw new IllegalArgumentException("Remote name can't be null.");
 		this.srcRef = srcRef;
 		this.newObjectId = (srcRef == null ? ObjectId.zeroId() : db
 				.resolve(srcRef));
 		if (newObjectId == null)
-			throw new IllegalArgumentException(
-					"source ref doesn't resolve to any object");
+			throw new IOException("Source ref " + srcRef
+					+ " doesn't resolve to any object.");
 		this.remoteName = remoteName;
 		this.forceUpdate = forceUpdate;
 		if (localName != null && db != null)

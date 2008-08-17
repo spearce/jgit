@@ -39,6 +39,7 @@
 
 package org.spearce.jgit.transport;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -228,38 +229,29 @@ public abstract class Transport {
 	 *            fetch specifications used for finding localtracking refs. May
 	 *            be null or empty collection.
 	 * @return collection of set up {@link RemoteRefUpdate}.
-	 * @throws TransportException
+	 * @throws IOException
 	 *             when problem occurred during conversion or specification set
 	 *             up: most probably, missing objects or refs.
 	 */
 	public static Collection<RemoteRefUpdate> findRemoteRefUpdatesFor(
 			final Repository db, final Collection<RefSpec> specs,
-			Collection<RefSpec> fetchSpecs) throws TransportException {
+			Collection<RefSpec> fetchSpecs) throws IOException {
 		if (fetchSpecs == null)
 			fetchSpecs = Collections.emptyList();
 		final List<RemoteRefUpdate> result = new LinkedList<RemoteRefUpdate>();
 		final Collection<RefSpec> procRefs = expandPushWildcardsFor(db, specs);
 
 		for (final RefSpec spec : procRefs) {
-			try {
-				final String srcRef = spec.getSource();
-				// null destination (no-colon in ref-spec) is a special case
-				final String remoteName = (spec.getDestination() == null ? spec
-						.getSource() : spec.getDestination());
-				final boolean forceUpdate = spec.isForceUpdate();
-				final String localName = findTrackingRefName(remoteName,
-						fetchSpecs);
+			final String srcRef = spec.getSource();
+			// null destination (no-colon in ref-spec) is a special case
+			final String remoteName = (spec.getDestination() == null ? spec
+					.getSource() : spec.getDestination());
+			final boolean forceUpdate = spec.isForceUpdate();
+			final String localName = findTrackingRefName(remoteName, fetchSpecs);
 
-				final RemoteRefUpdate rru = new RemoteRefUpdate(db, srcRef,
-						remoteName, forceUpdate, localName, null);
-				result.add(rru);
-			} catch (TransportException x) {
-				throw x;
-			} catch (Exception x) {
-				throw new TransportException(
-						"Problem with resolving push ref spec \"" + spec
-								+ "\" locally: " + x.getMessage(), x);
-			}
+			final RemoteRefUpdate rru = new RemoteRefUpdate(db, srcRef,
+					remoteName, forceUpdate, localName, null);
+			result.add(rru);
 		}
 		return result;
 	}
@@ -638,7 +630,13 @@ public abstract class Transport {
 			TransportException {
 		if (toPush == null || toPush.isEmpty()) {
 			// If the caller did not ask for anything use the defaults.
-			toPush = findRemoteRefUpdatesFor(push);
+			try {
+				toPush = findRemoteRefUpdatesFor(push);
+			} catch (final IOException e) {
+				throw new TransportException(
+						"Problem with resolving push ref specs locally: "
+								+ e.getMessage(), e);
+			}
 			if (toPush.isEmpty())
 				throw new TransportException("Nothing to push.");
 		}
@@ -660,12 +658,12 @@ public abstract class Transport {
 	 * @param specs
 	 *            collection of RefSpec to convert.
 	 * @return collection of set up {@link RemoteRefUpdate}.
-	 * @throws TransportException
+	 * @throws IOException
 	 *             when problem occurred during conversion or specification set
 	 *             up: most probably, missing objects or refs.
 	 */
 	public Collection<RemoteRefUpdate> findRemoteRefUpdatesFor(
-			final Collection<RefSpec> specs) throws TransportException {
+			final Collection<RefSpec> specs) throws IOException {
 		return findRemoteRefUpdatesFor(local, specs, fetch);
 	}
 
