@@ -271,6 +271,9 @@ public abstract class Transport {
 	/** Should push produce thin-pack when sending objects to remote repository. */
 	private boolean pushThin = DEFAULT_PUSH_THIN;
 
+	/** Should push just check for operation result, not really push. */
+	private boolean dryRun;
+
 	/**
 	 * Create a new transport instance.
 	 * 
@@ -426,6 +429,27 @@ public abstract class Transport {
 	}
 
 	/**
+	 * @return true if push operation should just check for possible result and
+	 *         not really update remote refs, false otherwise - when push should
+	 *         act normally.
+	 */
+	public boolean isDryRun() {
+		return dryRun;
+	}
+
+	/**
+	 * Set dry run option for push operation.
+	 *
+	 * @param dryRun
+	 *            true if push operation should just check for possible result
+	 *            and not really update remote refs, false otherwise - when push
+	 *            should act normally.
+	 */
+	public void setDryRun(final boolean dryRun) {
+		this.dryRun = dryRun;
+	}
+
+	/**
 	 * Fetch objects and refs from the remote repository to the local one.
 	 * <p>
 	 * This is a utility function providing standard fetch behavior. Local
@@ -495,9 +519,12 @@ public abstract class Transport {
 	 * operation result is provided after execution.
 	 * <p>
 	 * For setting up remote ref update specification from ref spec, see helper
-	 * method {@link #findRemoteRefUpdatesFor(Collection)}, predefined refspecs ({@link #REFSPEC_TAGS},
-	 * {@link #REFSPEC_PUSH_ALL}) or consider using directly
-	 * {@link RemoteRefUpdate} for more possibilities.
+	 * method {@link #findRemoteRefUpdatesFor(Collection)}, predefined refspecs
+	 * ({@link #REFSPEC_TAGS}, {@link #REFSPEC_PUSH_ALL}) or consider using
+	 * directly {@link RemoteRefUpdate} for more possibilities.
+	 * <p>
+	 * When {@link #isDryRun()} is true, result of this operation is just
+	 * estimation of real operation result, no real action is performed.
 	 *
 	 * @see RemoteRefUpdate
 	 *

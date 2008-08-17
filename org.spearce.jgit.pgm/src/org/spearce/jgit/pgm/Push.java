@@ -86,6 +86,9 @@ class Push extends TextBuiltin {
 	@Option(name = "--receive-pack", metaVar = "path")
 	private String receivePack;
 
+	@Option(name = "--dry-run")
+	private boolean dryRun;
+
 	private boolean shownURI;
 
 	@Override
@@ -102,6 +105,7 @@ class Push extends TextBuiltin {
 			transport.setPushThin(thin);
 			if (receivePack != null)
 				transport.setOptionReceivePack(receivePack);
+			transport.setDryRun(dryRun);
 
 			final Collection<RemoteRefUpdate> toPush = transport
 					.findRemoteRefUpdatesFor(refSpecs);
