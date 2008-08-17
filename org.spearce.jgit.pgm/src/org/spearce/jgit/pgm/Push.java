@@ -173,10 +173,9 @@ class Push extends TextBuiltin {
 				} else {
 					boolean fastForward = rru.isFastForward();
 					final char flag = fastForward ? ' ' : '+';
-					final String summary = abbreviateObject(oldRef
-							.getObjectId())
+					final String summary = oldRef.getObjectId().abbreviate(db)
 							+ (fastForward ? ".." : "...")
-							+ abbreviateObject(rru.getNewObjectId());
+							+ rru.getNewObjectId().abbreviate(db);
 					final String message = fastForward ? null : "forced update";
 					printUpdateLine(flag, summary, srcRef, remoteName, message);
 				}
@@ -199,7 +198,7 @@ class Push extends TextBuiltin {
 
 		case REJECTED_REMOTE_CHANGED:
 			final String message = "remote ref object changed - is not expected one "
-					+ abbreviateObject(rru.getExpectedOldObjectId());
+					+ rru.getExpectedOldObjectId().abbreviate(db);
 			printUpdateLine('!', "[rejected]", srcRef, remoteName, message);
 			break;
 

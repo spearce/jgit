@@ -411,6 +411,21 @@ public abstract class AnyObjectId implements Comparable {
 	}
 
 	/**
+	 * Return unique abbreviation (prefix) of this object SHA-1.
+	 * <p>
+	 * Current implementation is not guaranteeing uniqueness, it just returns
+	 * fixed-length prefix of SHA-1 string.
+	 *
+	 * @param repo
+	 *            repository for checking uniqueness within.
+	 * @return SHA-1 abbreviation.
+	 */
+	public String abbreviate(final Repository repo) {
+		// TODO implement checking for uniqueness
+		return toString().substring(0, 7);
+	}
+
+	/**
 	 * Obtain an immutable copy of this current object name value.
 	 * <p>
 	 * Only returns <code>this</code> if this instance is an unsubclassed

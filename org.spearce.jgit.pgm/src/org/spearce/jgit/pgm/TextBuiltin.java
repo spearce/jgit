@@ -179,10 +179,6 @@ public abstract class TextBuiltin {
 		return new Die(why);
 	}
 
-	protected static String abbreviateObject(final ObjectId id) {
-		return id.toString().substring(0, 7);
-	}
-
 	protected String abbreviateRef(String dst, boolean abbreviateRemote) {
 		if (dst.startsWith(REFS_HEADS))
 			dst = dst.substring(REFS_HEADS.length());
