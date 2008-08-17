@@ -986,6 +986,9 @@ public class Repository {
 	 */
 	public static boolean isValidRefName(final String refName) {
 		final int len = refName.length();
+		if (len == 0)
+			return false;
+
 		char p = '\0';
 		for (int i=0; i<len; ++i) {
 			char c = refName.charAt(i);
