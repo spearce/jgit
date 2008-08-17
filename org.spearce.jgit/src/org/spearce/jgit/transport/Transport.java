@@ -622,7 +622,7 @@ public abstract class Transport {
 	 *            collection to use the specifications from the RemoteConfig
 	 *            converted by {@link #findRemoteRefUpdatesFor(Collection)}. No
 	 *            more than 1 RemoteRefUpdate with the same remoteName is
-	 *            allowed.
+	 *            allowed. These objects are modified during this call.
 	 * @return information about results of remote refs updates, tracking refs
 	 *         updates and refs advertised by remote repository.
 	 * @throws NotSupportedException
