@@ -74,6 +74,32 @@ public class RemoteConfig {
 	/** Default value for {@link #getReceivePack()} if not specified. */
 	public static final String DEFAULT_RECEIVE_PACK = "git-receive-pack";
 
+	/**
+	 * Parse all remote blocks in an existing configuration file, looking for
+	 * remotes configuration.
+	 *
+	 * @param rc
+	 *            the existing configuration to get the remote settings from.
+	 *            The configuration must already be loaded into memory.
+	 * @return all remotes configurations existing in provided repository
+	 *         configuration. Returned configurations are ordered
+	 *         lexicographically by names.
+	 * @throws URISyntaxException
+	 *             one of the URIs within the remote's configuration is invalid.
+	 */
+	public static List<RemoteConfig> getAllRemoteConfigs(
+			final RepositoryConfig rc) throws URISyntaxException {
+		final List<String> names = new ArrayList<String>(rc
+				.getSubsections(SECTION));
+		Collections.sort(names);
+
+		final List<RemoteConfig> result = new ArrayList<RemoteConfig>(names
+				.size());
+		for (final String name : names)
+			result.add(new RemoteConfig(rc, name));
+		return result;
+	}
+
 	private String name;
 
 	private List<URIish> uris;
