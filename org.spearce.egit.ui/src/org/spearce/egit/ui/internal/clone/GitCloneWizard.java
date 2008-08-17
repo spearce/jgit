@@ -66,7 +66,8 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 		final String branch = cloneDestination.getInitialBranch();
 		final String remoteName = cloneDestination.getRemote();
 
-		if (!workdir.mkdirs()) {
+		workdir.mkdirs();
+		if (!workdir.isDirectory()) {
 			final String errorMessage = NLS.bind(
 					UIText.GitCloneWizard_errorCannotCreate, workdir.getPath());
 			ErrorDialog.openError(getShell(), getWindowTitle(),

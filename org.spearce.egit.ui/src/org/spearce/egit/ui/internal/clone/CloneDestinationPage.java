@@ -221,17 +221,17 @@ class CloneDestinationPage extends WizardPage {
 			setPageComplete(false);
 			return;
 		}
-		final File dstFile = new File(dstpath);
-		if (dstFile.exists()) {
-			setErrorMessage(NLS.bind(UIText.CloneDestinationPage_errorExists,
-					dstFile.getName()));
+		final File absoluteFile = new File(dstpath).getAbsoluteFile();
+		if (!isEmptyDir(absoluteFile)) {
+			setErrorMessage(NLS.bind(UIText.CloneDestinationPage_errorNotEmptyDir,
+					absoluteFile.getPath()));
 			setPageComplete(false);
 			return;
 		}
-		final File absoluteFile = dstFile.getAbsoluteFile();
+
 		if (!canCreateSubdir(absoluteFile.getParentFile())) {
 			setErrorMessage(NLS.bind(UIText.GitCloneWizard_errorCannotCreate,
-					dstFile.getPath()));
+					absoluteFile.getPath()));
 			setPageComplete(false);
 			return;
 		}
@@ -250,6 +250,14 @@ class CloneDestinationPage extends WizardPage {
 
 		setErrorMessage(null);
 		setPageComplete(true);
+	}
+
+	private static boolean isEmptyDir(final File dir) {
+		if (!dir.exists())
+			return true;
+		if (!dir.isDirectory())
+			return false;
+		return dir.listFiles().length == 0;
 	}
 
 	// this is actually just an optimistic heuristic - should be named

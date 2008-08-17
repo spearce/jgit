@@ -170,7 +170,7 @@ public class UIText extends NLS {
 	public static String CloneDestinationPage_browseButton;
 
 	/** */
-	public static String CloneDestinationPage_errorExists;
+	public static String CloneDestinationPage_errorNotEmptyDir;
 
 	/** */
 	public static String Decorator_failedLazyLoading;
