@@ -278,14 +278,18 @@ class CloneDestinationPage extends WizardPage {
 			checkPage();
 			return;
 		}
-		validatedRepoSelection = sourcePage.getSelection();
+
+		if (!sourcePage.selectionEquals(validatedRepoSelection)) {
+			validatedRepoSelection = sourcePage.getSelection();
+			// update repo-related selection only if it changed
+			final String n = getSuggestedName();
+			setDescription(NLS.bind(UIText.CloneDestinationPage_description, n));
+			directoryText.setText(new File(ResourcesPlugin.getWorkspace()
+					.getRoot().getRawLocation().toFile(), n).getAbsolutePath());
+		}
+
 		validatedSelectedBranches = branchPage.getSelectedBranches();
 		validatedHEAD = branchPage.getHEAD();
-
-		final String n = getSuggestedName();
-		setDescription(NLS.bind(UIText.CloneDestinationPage_description, n));
-		directoryText.setText(new File(ResourcesPlugin.getWorkspace().getRoot()
-				.getRawLocation().toFile(), n).getAbsolutePath());
 
 		initialBranch.removeAll();
 		final Ref head = branchPage.getHEAD();
