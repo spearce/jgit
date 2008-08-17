@@ -47,6 +47,14 @@ public class UIIcons {
 	public static final ImageDescriptor ELCL16_AUTHOR;
 	/** Committer icon */
 	public static final ImageDescriptor ELCL16_COMMITTER;
+	/** Delete icon */
+	public static final ImageDescriptor ELCL16_DELETE;
+	/** Add icon */
+	public static final ImageDescriptor ELCL16_ADD;
+	/** Trash icon */
+	public static final ImageDescriptor ELCL16_TRASH;
+	/** Clear icon */
+	public static final ImageDescriptor ELCL16_CLEAR;
 
 	/** Import Wizard banner */
 	public static final ImageDescriptor WIZBAN_IMPORT_REPO;
@@ -68,6 +76,10 @@ public class UIIcons {
 		ELCL16_COMMENTS = map("elcl16/comment.gif");
 		ELCL16_AUTHOR = map("elcl16/author.gif");
 		ELCL16_COMMITTER = map("elcl16/committer.gif");
+		ELCL16_DELETE = map("elcl16/delete.gif");
+		ELCL16_ADD = map("elcl16/add.gif");
+		ELCL16_TRASH = map("elcl16/trash.gif");
+		ELCL16_CLEAR = map("elcl16/clear.gif");
 	}
 
 	private static ImageDescriptor map(final String icon) {
