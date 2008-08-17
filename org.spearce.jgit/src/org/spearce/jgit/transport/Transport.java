@@ -213,6 +213,91 @@ public abstract class Transport {
 	}
 
 	/**
+	 * Convert push remote refs update specification from {@link RefSpec} form
+	 * to {@link RemoteRefUpdate}. Conversion expands wildcards by matching
+	 * source part to local refs. expectedOldObjectId in RemoteRefUpdate is
+	 * always set as null. Tracking branch is configured if RefSpec destination
+	 * matches source of any fetch ref spec for this transport remote
+	 * configuration.
+	 *
+	 * @param db
+	 *            local database.
+	 * @param specs
+	 *            collection of RefSpec to convert.
+	 * @param fetchSpecs
+	 *            fetch specifications used for finding localtracking refs. May
+	 *            be null or empty collection.
+	 * @return collection of set up {@link RemoteRefUpdate}.
+	 * @throws TransportException
+	 *             when problem occurred during conversion or specification set
+	 *             up: most probably, missing objects or refs.
+	 */
+	public static Collection<RemoteRefUpdate> findRemoteRefUpdatesFor(
+			final Repository db, final Collection<RefSpec> specs,
+			Collection<RefSpec> fetchSpecs) throws TransportException {
+		if (fetchSpecs == null)
+			fetchSpecs = Collections.emptyList();
+		final List<RemoteRefUpdate> result = new LinkedList<RemoteRefUpdate>();
+		final Collection<RefSpec> procRefs = expandPushWildcardsFor(db, specs);
+
+		for (final RefSpec spec : procRefs) {
+			try {
+				final String srcRef = spec.getSource();
+				// null destination (no-colon in ref-spec) is a special case
+				final String remoteName = (spec.getDestination() == null ? spec
+						.getSource() : spec.getDestination());
+				final boolean forceUpdate = spec.isForceUpdate();
+				final String localName = findTrackingRefName(remoteName,
+						fetchSpecs);
+
+				final RemoteRefUpdate rru = new RemoteRefUpdate(db, srcRef,
+						remoteName, forceUpdate, localName, null);
+				result.add(rru);
+			} catch (TransportException x) {
+				throw x;
+			} catch (Exception x) {
+				throw new TransportException(
+						"Problem with resolving push ref spec \"" + spec
+								+ "\" locally: " + x.getMessage(), x);
+			}
+		}
+		return result;
+	}
+
+	private static Collection<RefSpec> expandPushWildcardsFor(
+			final Repository db, final Collection<RefSpec> specs) {
+		final Map<String, Ref> localRefs = db.getAllRefs();
+		final Collection<RefSpec> procRefs = new HashSet<RefSpec>();
+
+		for (final RefSpec spec : specs) {
+			if (spec.isWildcard()) {
+				for (final Ref localRef : localRefs.values()) {
+					if (spec.matchSource(localRef))
+						procRefs.add(spec.expandFromSource(localRef));
+				}
+			} else {
+				procRefs.add(spec);
+			}
+		}
+		return procRefs;
+	}
+
+	private static String findTrackingRefName(final String remoteName,
+			final Collection<RefSpec> fetchSpecs) {
+		// try to find matching tracking refs
+		for (final RefSpec fetchSpec : fetchSpecs) {
+			if (fetchSpec.matchSource(remoteName)) {
+				if (fetchSpec.isWildcard())
+					return fetchSpec.expandFromSource(remoteName)
+							.getDestination();
+				else
+					return fetchSpec.getDestination();
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Default setting for {@link #fetchThin} option.
 	 */
 	public static final boolean DEFAULT_FETCH_THIN = true;
@@ -568,6 +653,9 @@ public abstract class Transport {
 	 * always set as null. Tracking branch is configured if RefSpec destination
 	 * matches source of any fetch ref spec for this transport remote
 	 * configuration.
+	 * <p>
+	 * Conversion is performed for context of this transport (database, fetch
+	 * specifications).
 	 *
 	 * @param specs
 	 *            collection of RefSpec to convert.
@@ -578,30 +666,7 @@ public abstract class Transport {
 	 */
 	public Collection<RemoteRefUpdate> findRemoteRefUpdatesFor(
 			final Collection<RefSpec> specs) throws TransportException {
-		final List<RemoteRefUpdate> result = new LinkedList<RemoteRefUpdate>();
-		final Collection<RefSpec> procRefs = expandPushWildcardsFor(specs);
-
-		for (final RefSpec spec : procRefs) {
-			try {
-				final String srcRef = spec.getSource();
-				// null destination (no-colon in ref-spec) is a special case
-				final String remoteName = (spec.getDestination() == null ? spec
-						.getSource() : spec.getDestination());
-				final boolean forceUpdate = spec.isForceUpdate();
-				final String localName = findTrackingRefName(remoteName);
-
-				final RemoteRefUpdate rru = new RemoteRefUpdate(local, srcRef,
-						remoteName, forceUpdate, localName, null);
-				result.add(rru);
-			} catch (TransportException x) {
-				throw x;
-			} catch (Exception x) {
-				throw new TransportException(
-						"Problem with resolving push ref spec \"" + spec
-								+ "\" locally: " + x.getMessage(), x);
-			}
-		}
-		return result;
+		return findRemoteRefUpdatesFor(local, specs, fetch);
 	}
 
 	/**
@@ -637,36 +702,4 @@ public abstract class Transport {
 	 * any open file handles used to read the "remote" repository.
 	 */
 	public abstract void close();
-
-	private Collection<RefSpec> expandPushWildcardsFor(
-			final Collection<RefSpec> specs) {
-		final Map<String, Ref> localRefs = local.getAllRefs();
-		final Collection<RefSpec> procRefs = new HashSet<RefSpec>();
-
-		for (final RefSpec spec : specs) {
-			if (spec.isWildcard()) {
-				for (final Ref localRef : localRefs.values()) {
-					if (spec.matchSource(localRef))
-						procRefs.add(spec.expandFromSource(localRef));
-				}
-			} else {
-				procRefs.add(spec);
-			}
-		}
-		return procRefs;
-	}
-
-	private String findTrackingRefName(final String remoteName) {
-		// try to find matching tracking refs
-		for (final RefSpec fetchSpec : fetch) {
-			if (fetchSpec.matchSource(remoteName)) {
-				if (fetchSpec.isWildcard())
-					return fetchSpec.expandFromSource(remoteName)
-							.getDestination();
-				else
-					return fetchSpec.getDestination();
-			}
-		}
-		return null;
-	}
 }
