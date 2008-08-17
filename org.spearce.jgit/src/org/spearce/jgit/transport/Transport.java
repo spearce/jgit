@@ -103,9 +103,16 @@ public abstract class Transport {
 	 * @return the new transport instance. Never null.
 	 * @throws NotSupportedException
 	 *             the protocol specified is not supported.
+	 * @throws IllegalArgumentException
+	 *             if provided remote configuration doesn't have any URI
+	 *             associated.
 	 */
 	public static Transport open(final Repository local, final RemoteConfig cfg)
 			throws NotSupportedException {
+		if (cfg.getURIs().isEmpty())
+			throw new IllegalArgumentException(
+					"Remote config \""
+					+ cfg.getName() + "\" has no URIs associated");
 		final Transport tn = open(local, cfg.getURIs().get(0));
 		tn.setOptionUploadPack(cfg.getUploadPack());
 		tn.fetch = cfg.getFetchRefSpecs();
