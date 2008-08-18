@@ -45,6 +45,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.ObjectId;
@@ -364,6 +365,31 @@ public class DirCacheEntry {
 	 */
 	public ObjectId getObjectId() {
 		return ObjectId.fromRaw(idBuffer(), idOffset());
+	}
+
+	/**
+	 * Set the ObjectId for the entry.
+	 *
+	 * @param id
+	 *            new object identifier for the entry. May be
+	 *            {@link ObjectId#zeroId()} to remove the current identifier.
+	 */
+	public void setObjectId(final AnyObjectId id) {
+		id.copyRawTo(idBuffer(), idOffset());
+	}
+
+	/**
+	 * Set the ObjectId for the entry from the raw binary representation.
+	 *
+	 * @param bs
+	 *            the raw byte buffer to read from. At least 20 bytes after p
+	 *            must be available within this byte array.
+	 * @param p
+	 *            position to read the first byte of data from.
+	 */
+	public void setObjectIdFromRaw(final byte[] bs, final int p) {
+		final int n = Constants.OBJECT_ID_LENGTH;
+		System.arraycopy(bs, p, idBuffer(), idOffset(), n);
 	}
 
 	/**
