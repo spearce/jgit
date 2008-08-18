@@ -143,7 +143,7 @@ public class TreeWalk {
 
 	private TreeFilter filter;
 
-	private AbstractTreeIterator[] trees;
+	AbstractTreeIterator[] trees;
 
 	private boolean recursive;
 
@@ -151,7 +151,7 @@ public class TreeWalk {
 
 	private boolean advance;
 
-	private AbstractTreeIterator currentHead;
+	AbstractTreeIterator currentHead;
 
 	/**
 	 * Create a new tree walker for a given repository.
@@ -275,6 +275,7 @@ public class TreeWalk {
 					o = o.parent;
 				if (o instanceof CanonicalTreeParser) {
 					o.matches = null;
+					o.matchShift = 0;
 					((CanonicalTreeParser) o).reset(db, ids[i]);
 					r[i] = o;
 					continue;
@@ -338,6 +339,7 @@ public class TreeWalk {
 		System.arraycopy(trees, 0, newTrees, 0, n);
 		newTrees[n] = p;
 		p.matches = null;
+		p.matchShift = 0;
 
 		trees = newTrees;
 		return n;
@@ -621,7 +623,7 @@ public class TreeWalk {
 		System.arraycopy(tmp, 0, trees, 0, trees.length);
 	}
 
-	private AbstractTreeIterator min() {
+	AbstractTreeIterator min() throws CorruptObjectException {
 		int i = 0;
 		AbstractTreeIterator minRef = trees[i];
 		while (minRef.eof() && ++i < trees.length)
@@ -646,7 +648,7 @@ public class TreeWalk {
 		return minRef;
 	}
 
-	private void popEntriesEqual() throws CorruptObjectException {
+	void popEntriesEqual() throws CorruptObjectException {
 		final AbstractTreeIterator ch = currentHead;
 		for (int i = 0; i < trees.length; i++) {
 			final AbstractTreeIterator t = trees[i];
@@ -657,7 +659,7 @@ public class TreeWalk {
 		}
 	}
 
-	private void skipEntriesEqual() throws CorruptObjectException {
+	void skipEntriesEqual() throws CorruptObjectException {
 		final AbstractTreeIterator ch = currentHead;
 		for (int i = 0; i < trees.length; i++) {
 			final AbstractTreeIterator t = trees[i];

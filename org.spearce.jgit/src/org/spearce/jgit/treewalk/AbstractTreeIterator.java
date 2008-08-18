@@ -83,6 +83,13 @@ public abstract class AbstractTreeIterator {
 	AbstractTreeIterator matches;
 
 	/**
+	 * Number of entries we moved forward to force a D/F conflict match.
+	 *
+	 * @see NameConflictTreeWalk
+	 */
+	int matchShift;
+
+	/**
 	 * Mode bits for the current entry.
 	 * <p>
 	 * A numerical value from FileMode is usually faster for an iterator to
