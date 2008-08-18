@@ -79,6 +79,11 @@ public class EmptyTreeIterator extends AbstractTreeIterator {
 	}
 
 	@Override
+	public boolean first() {
+		return true;
+	}
+
+	@Override
 	public boolean eof() {
 		return true;
 	}

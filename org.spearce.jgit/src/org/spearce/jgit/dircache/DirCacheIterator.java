@@ -64,6 +64,9 @@ public class DirCacheIterator extends AbstractTreeIterator {
 	/** The tree this iterator is walking. */
 	private final DirCacheTree tree;
 
+	/** First position in this tree. */
+	private final int treeStart;
+
 	/** Last position in this tree. */
 	private final int treeEnd;
 
@@ -95,6 +98,7 @@ public class DirCacheIterator extends AbstractTreeIterator {
 	public DirCacheIterator(final DirCache dc) {
 		cache = dc;
 		tree = dc.getCacheTree(true);
+		treeStart = 0;
 		treeEnd = tree.getEntrySpan();
 		subtreeId = new byte[Constants.OBJECT_ID_LENGTH];
 		if (!eof())
@@ -105,7 +109,8 @@ public class DirCacheIterator extends AbstractTreeIterator {
 		super(p, p.path, p.pathLen + 1);
 		cache = p.cache;
 		tree = dct;
-		treeEnd = p.ptr + tree.getEntrySpan();
+		treeStart = p.ptr;
+		treeEnd = treeStart + tree.getEntrySpan();
 		subtreeId = p.subtreeId;
 		ptr = p.ptr;
 		parseEntry();
@@ -136,6 +141,11 @@ public class DirCacheIterator extends AbstractTreeIterator {
 		if (currentEntry != null)
 			return currentEntry.idOffset();
 		return 0;
+	}
+
+	@Override
+	public boolean first() {
+		return ptr == treeStart;
 	}
 
 	@Override

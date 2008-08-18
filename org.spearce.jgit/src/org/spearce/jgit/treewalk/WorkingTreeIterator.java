@@ -231,6 +231,11 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 	}
 
 	@Override
+	public boolean first() {
+		return ptr == 0;
+	}
+
+	@Override
 	public boolean eof() {
 		return ptr == entryCnt;
 	}

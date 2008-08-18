@@ -126,6 +126,11 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 		return nextPtr - Constants.OBJECT_ID_LENGTH;
 	}
 
+	@Override
+	public boolean first() {
+		return currPtr == 0;
+	}
+
 	public boolean eof() {
 		return currPtr == raw.length;
 	}

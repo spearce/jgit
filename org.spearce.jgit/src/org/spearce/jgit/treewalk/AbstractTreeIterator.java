@@ -340,6 +340,19 @@ public abstract class AbstractTreeIterator {
 			throws IncorrectObjectTypeException, IOException;
 
 	/**
+	 * Is this tree iterator positioned on its first entry?
+	 * <p>
+	 * An iterator is positioned on the first entry if <code>back(1)</code>
+	 * would be an invalid request as there is no entry before the current one.
+	 * <p>
+	 * An empty iterator (one with no entries) will be
+	 * <code>first() &amp;&amp; eof()</code>.
+	 *
+	 * @return true if the iterator is positioned on the first entry.
+	 */
+	public abstract boolean first();
+
+	/**
 	 * Is this tree iterator at its EOF point (no more entries)?
 	 * <p>
 	 * An iterator is at EOF if there is no current entry.
