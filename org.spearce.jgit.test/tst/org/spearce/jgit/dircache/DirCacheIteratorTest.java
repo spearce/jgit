@@ -87,7 +87,7 @@ public class DirCacheIteratorTest extends RepositoryTestCase {
 			assertSame(ents[pathIdx], i.getDirCacheEntry());
 			pathIdx++;
 		}
-		assertEquals(pathIdx, paths.length);
+		assertEquals(paths.length, pathIdx);
 	}
 
 	public void testNoSubtree_WithTreeWalk() throws Exception {
@@ -120,7 +120,7 @@ public class DirCacheIteratorTest extends RepositoryTestCase {
 			assertSame(modes[pathIdx], tw.getFileMode(0));
 			pathIdx++;
 		}
-		assertEquals(pathIdx, paths.length);
+		assertEquals(paths.length, pathIdx);
 	}
 
 	public void testSingleSubtree_NoRecursion() throws Exception {
@@ -164,7 +164,7 @@ public class DirCacheIteratorTest extends RepositoryTestCase {
 
 			pathIdx++;
 		}
-		assertEquals(pathIdx, expPaths.length);
+		assertEquals(expPaths.length, pathIdx);
 	}
 
 	public void testSingleSubtree_Recursive() throws Exception {
@@ -199,7 +199,7 @@ public class DirCacheIteratorTest extends RepositoryTestCase {
 			assertSame(mode, tw.getFileMode(0));
 			pathIdx++;
 		}
-		assertEquals(pathIdx, paths.length);
+		assertEquals(paths.length, pathIdx);
 	}
 
 	public void testTwoLevelSubtree_Recursive() throws Exception {
@@ -233,7 +233,7 @@ public class DirCacheIteratorTest extends RepositoryTestCase {
 			assertSame(mode, tw.getFileMode(0));
 			pathIdx++;
 		}
-		assertEquals(pathIdx, paths.length);
+		assertEquals(paths.length, pathIdx);
 	}
 
 	public void testTwoLevelSubtree_FilterPath() throws Exception {
