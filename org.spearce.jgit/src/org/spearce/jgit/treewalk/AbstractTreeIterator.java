@@ -243,45 +243,11 @@ public abstract class AbstractTreeIterator {
 				return cmp;
 		}
 
-		if (cPos < aLen) {
-			final int aj = a[cPos] & 0xff;
-			final int lastb = lastPathChar(pMode);
-			if (aj < lastb)
-				return -1;
-			else if (aj > lastb)
-				return 1;
-			else if (cPos == aLen - 1)
-				return 0;
-			else
-				return -1;
-		}
-
-		if (cPos < bLen) {
-			final int bk = b[cPos] & 0xff;
-			final int lasta = lastPathChar(mode);
-			if (lasta < bk)
-				return -1;
-			else if (lasta > bk)
-				return 1;
-			else if (cPos == bLen - 1)
-				return 0;
-			else
-				return 1;
-		}
-
-		final int lasta = lastPathChar(mode);
-		final int lastb = lastPathChar(pMode);
-		if (lasta < lastb)
-			return -1;
-		else if (lasta > lastb)
-			return 1;
-
-		if (aLen == bLen)
-			return 0;
-		else if (aLen < bLen)
-			return -1;
-		else
-			return 1;
+		if (cPos < aLen)
+			return (a[cPos] & 0xff) - lastPathChar(pMode);
+		if (cPos < bLen)
+			return lastPathChar(mode) - (b[cPos] & 0xff);
+		return lastPathChar(mode) - lastPathChar(pMode);
 	}
 
 	private static int lastPathChar(final int mode) {
