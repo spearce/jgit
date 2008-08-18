@@ -81,6 +81,9 @@ public class DirCacheEntry {
 
 	private static final int P_FLAGS = 60;
 
+	/** Mask applied to data in {@link #P_FLAGS} to get the name length. */
+	private static final int NAME_MASK = 0xfff;
+
 	static final int INFO_LEN = 62;
 
 	private static final int ASSUME_VALID = 0x80;
@@ -101,7 +104,9 @@ public class DirCacheEntry {
 
 		NB.readFully(in, info, infoOffset, INFO_LEN);
 
-		int pathLen = NB.decodeUInt16(info, infoOffset + P_FLAGS) & 0xfff;
+		int pathLen = NB.decodeUInt16(info, infoOffset + P_FLAGS) & NAME_MASK;
+		if (pathLen == NAME_MASK)
+			throw new IOException("Path name too long for jgit");
 		path = new byte[pathLen];
 		NB.readFully(in, path, 0, pathLen);
 
@@ -135,6 +140,8 @@ public class DirCacheEntry {
 		infoOffset = 0;
 
 		path = newPath;
+		if (path.length >= NAME_MASK)
+			throw new IllegalArgumentException("Path name too long for jgit");
 		NB.encodeInt16(info, infoOffset + P_FLAGS, path.length);
 	}
 
@@ -364,10 +371,10 @@ public class DirCacheEntry {
 	 *            the entry to copy ObjectId and meta fields from.
 	 */
 	public void copyMetaData(final DirCacheEntry src) {
-		final int pLen = NB.decodeUInt16(info, infoOffset + P_FLAGS) & 0xfff;
+		final int pLen = NB.decodeUInt16(info, infoOffset + P_FLAGS) & NAME_MASK;
 		System.arraycopy(src.info, src.infoOffset, info, infoOffset, INFO_LEN);
 		NB.encodeInt16(info, infoOffset + P_FLAGS, pLen
-				| NB.decodeUInt16(info, infoOffset + P_FLAGS) & ~0xfff);
+				| NB.decodeUInt16(info, infoOffset + P_FLAGS) & ~NAME_MASK);
 	}
 
 	private long decodeTS(final int pIdx) {
