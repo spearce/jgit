@@ -102,7 +102,7 @@ public final class NB {
 	 * @return unsigned integer value that matches the 16 bits read.
 	 */
 	public static int decodeUInt16(final byte[] intbuf, final int offset) {
-		int r = (intbuf[offset] << 8) & 0xff;
+		int r = (intbuf[offset] & 0xff) << 8;
 		return r | (intbuf[offset + 1] & 0xff);
 	}
 
