@@ -237,7 +237,13 @@ public abstract class AbstractTreeIterator {
 		final int bLen = p.pathLen;
 		int cPos;
 
-		for (cPos = 0; cPos < aLen && cPos < bLen; cPos++) {
+		// Its common when we are a subtree for both parents to match;
+		// when this happens everything in path[0..cPos] is known to
+		// be equal and does not require evaluation again.
+		//
+		cPos = alreadyMatch(this, p);
+
+		for (; cPos < aLen && cPos < bLen; cPos++) {
 			final int cmp = (a[cPos] & 0xff) - (b[cPos] & 0xff);
 			if (cmp != 0)
 				return cmp;
@@ -248,6 +254,20 @@ public abstract class AbstractTreeIterator {
 		if (cPos < bLen)
 			return lastPathChar(mode) - (b[cPos] & 0xff);
 		return lastPathChar(mode) - lastPathChar(pMode);
+	}
+
+	private static int alreadyMatch(AbstractTreeIterator a,
+			AbstractTreeIterator b) {
+		for (;;) {
+			final AbstractTreeIterator ap = a.parent;
+			final AbstractTreeIterator bp = b.parent;
+			if (ap == null || bp == null)
+				return 0;
+			if (ap.matches == bp.matches)
+				return a.pathOffset;
+			a = ap;
+			b = bp;
+		}
 	}
 
 	private static int lastPathChar(final int mode) {
