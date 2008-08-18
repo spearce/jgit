@@ -349,7 +349,34 @@ public abstract class AbstractTreeIterator {
 	public abstract boolean eof();
 
 	/**
-	 * Advance to the next tree entry, populating this iterator with its data.
+	 * Move to next entry, populating this iterator with the entry data.
+	 * <p>
+	 * The delta indicates how many moves forward should occur. The most common
+	 * delta is 1 to move to the next entry.
+	 * <p>
+	 * Implementations must populate the following members:
+	 * <ul>
+	 * <li>{@link #mode}</li>
+	 * <li>{@link #path} (from {@link #pathOffset} to {@link #pathLen})</li>
+	 * <li>{@link #pathLen}</li>
+	 * </ul>
+	 * as well as any implementation dependent information necessary to
+	 * accurately return data from {@link #idBuffer()} and {@link #idOffset()}
+	 * when demanded.
+	 *
+	 * @param delta
+	 *            number of entries to move the iterator by. Must be a positive,
+	 *            non-zero integer.
+	 * @throws CorruptObjectException
+	 *             the tree is invalid.
+	 */
+	public abstract void next(int delta) throws CorruptObjectException;
+
+	/**
+	 * Move to prior entry, populating this iterator with the entry data.
+	 * <p>
+	 * The delta indicates how many moves backward should occur.The most common
+	 * delta is 1 to move to the prior entry.
 	 * <p>
 	 * Implementations must populate the following members:
 	 * <ul>
@@ -361,15 +388,18 @@ public abstract class AbstractTreeIterator {
 	 * accurately return data from {@link #idBuffer()} and {@link #idOffset()}
 	 * when demanded.
 	 * 
+	 * @param delta
+	 *            number of entries to move the iterator by. Must be a positive,
+	 *            non-zero integer.
 	 * @throws CorruptObjectException
 	 *             the tree is invalid.
 	 */
-	public abstract void next() throws CorruptObjectException;
+	public abstract void back(int delta) throws CorruptObjectException;
 
 	/**
 	 * Advance to the next tree entry, populating this iterator with its data.
 	 * <p>
-	 * This method behaves like {@link #next()} but is called by
+	 * This method behaves like <code>seek(1)</code> but is called by
 	 * {@link TreeWalk} only if a {@link TreeFilter} was used and ruled out the
 	 * current entry from the results. In such cases this tree iterator may
 	 * perform special behavior.
@@ -378,7 +408,7 @@ public abstract class AbstractTreeIterator {
 	 *             the tree is invalid.
 	 */
 	public void skip() throws CorruptObjectException {
-		next();
+		next(1);
 	}
 
 	/**

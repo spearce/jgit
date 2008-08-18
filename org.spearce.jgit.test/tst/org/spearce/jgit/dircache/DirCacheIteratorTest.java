@@ -78,7 +78,7 @@ public class DirCacheIteratorTest extends RepositoryTestCase {
 
 		final DirCacheIterator i = new DirCacheIterator(dc);
 		int pathIdx = 0;
-		for (; !i.eof(); i.next()) {
+		for (; !i.eof(); i.next(1)) {
 			assertEquals(pathIdx, i.ptr);
 			assertSame(ents[pathIdx], i.getDirCacheEntry());
 			pathIdx++;

@@ -144,13 +144,28 @@ public class DirCacheIterator extends AbstractTreeIterator {
 	}
 
 	@Override
-	public void next() {
-		if (currentSubtree != null)
-			ptr += currentSubtree.getEntrySpan();
-		else
-			ptr++;
-		if (!eof())
+	public void next(int delta) {
+		while (--delta >= 0) {
+			if (currentSubtree != null)
+				ptr += currentSubtree.getEntrySpan();
+			else
+				ptr++;
+			if (eof())
+				break;
 			parseEntry();
+		}
+	}
+
+	@Override
+	public void back(int delta) {
+		while (--delta >= 0) {
+			if (currentSubtree != null)
+				nextSubtreePos--;
+			ptr--;
+			parseEntry();
+			if (currentSubtree != null)
+				ptr -= currentSubtree.getEntrySpan() - 1;
+		}
 	}
 
 	private void parseEntry() {

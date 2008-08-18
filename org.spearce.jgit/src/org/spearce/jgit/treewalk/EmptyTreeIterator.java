@@ -84,7 +84,12 @@ public class EmptyTreeIterator extends AbstractTreeIterator {
 	}
 
 	@Override
-	public void next() throws CorruptObjectException {
+	public void next(final int delta) throws CorruptObjectException {
+		// Do nothing.
+	}
+
+	@Override
+	public void back(final int delta) throws CorruptObjectException {
 		// Do nothing.
 	}
 

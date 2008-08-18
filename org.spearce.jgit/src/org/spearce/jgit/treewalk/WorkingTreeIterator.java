@@ -236,10 +236,16 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 	}
 
 	@Override
-	public void next() throws CorruptObjectException {
-		ptr++;
+	public void next(final int delta) throws CorruptObjectException {
+		ptr += delta;
 		if (!eof())
 			parseEntry();
+	}
+
+	@Override
+	public void back(final int delta) throws CorruptObjectException {
+		ptr -= delta;
+		parseEntry();
 	}
 
 	private void parseEntry() {

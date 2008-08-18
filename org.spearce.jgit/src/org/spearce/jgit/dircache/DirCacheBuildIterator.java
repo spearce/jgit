@@ -112,7 +112,7 @@ public class DirCacheBuildIterator extends DirCacheIterator {
 			builder.keep(ptr, currentSubtree.getEntrySpan());
 		else
 			builder.add(currentEntry);
-		next();
+		next(1);
 	}
 
 	@Override
