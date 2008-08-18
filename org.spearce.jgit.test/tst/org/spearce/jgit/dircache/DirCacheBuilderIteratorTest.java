@@ -74,7 +74,7 @@ public class DirCacheBuilderIteratorTest extends RepositoryTestCase {
 		assertTrue("found " + paths[expIdx], tw.next());
 		final DirCacheIterator c = tw.getTree(0, DirCacheIterator.class);
 		assertNotNull(c);
-		assertEquals(expIdx, c.cachePos);
+		assertEquals(expIdx, c.ptr);
 		assertSame(ents[expIdx], c.getDirCacheEntry());
 		assertEquals(paths[expIdx], tw.getPathString());
 		assertEquals(mode.getBits(), tw.getRawMode(0));

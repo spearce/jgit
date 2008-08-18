@@ -40,7 +40,6 @@ package org.spearce.jgit.dircache;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
@@ -65,19 +64,19 @@ public class DirCacheIterator extends AbstractTreeIterator {
 	/** The tree this iterator is walking. */
 	private final DirCacheTree tree;
 
+	/** Last position in this tree. */
+	private final int treeEnd;
+
 	/** Special buffer to hold the ObjectId of {@link #currentSubtree}. */
 	private final byte[] subtreeId;
 
 	/** Index of entry within {@link #cache}. */
-	protected int cachePos;
-
-	/** Position of entry within {@link #tree}'s entry span. */
-	private int treePos;
+	protected int ptr;
 
 	/** Next subtree to consider within {@link #tree}. */
-	private int subtreeIdx;
+	private int nextSubtreePos;
 
-	/** The current file entry from {@link #cache}, matching {@link #cachePos}. */
+	/** The current file entry from {@link #cache}. */
 	protected DirCacheEntry currentEntry;
 
 	/** The subtree containing {@link #currentEntry} if this is first entry. */
@@ -96,18 +95,20 @@ public class DirCacheIterator extends AbstractTreeIterator {
 	public DirCacheIterator(final DirCache dc) {
 		cache = dc;
 		tree = dc.getCacheTree(true);
+		treeEnd = tree.getEntrySpan();
 		subtreeId = new byte[Constants.OBJECT_ID_LENGTH];
-		cachePos = -1;
-		treePos = -1;
+		if (!eof())
+			parseEntry();
 	}
 
 	protected DirCacheIterator(final DirCacheIterator p, final DirCacheTree dct) {
 		super(p, p.path, p.pathLen + 1);
 		cache = p.cache;
 		tree = dct;
+		treeEnd = p.ptr + tree.getEntrySpan();
 		subtreeId = p.subtreeId;
-		cachePos = p.cachePos - 1; // back up so first next() call enters it
-		treePos = -1;
+		ptr = p.ptr;
+		parseEntry();
 	}
 
 	@Override
@@ -139,40 +140,31 @@ public class DirCacheIterator extends AbstractTreeIterator {
 
 	@Override
 	public boolean eof() {
-		return treePos >= tree.getEntrySpan();
+		return ptr == treeEnd;
 	}
 
 	@Override
-	public void next() throws CorruptObjectException {
-		if (currentSubtree != null) {
-			// If our last position was a subtree we need to skip over
-			// its entire span to get to the item after the subtree.
-			//
-			final int n = currentSubtree.getEntrySpan();
-			cachePos += n;
-			treePos += n;
-			currentSubtree = null;
-		} else {
-			// Our last position was a file/symlink/gitlink, so we
-			// only skip the one entry.
-			//
-			cachePos++;
-			treePos++;
-		}
+	public void next() {
+		if (currentSubtree != null)
+			ptr += currentSubtree.getEntrySpan();
+		else
+			ptr++;
+		if (!eof())
+			parseEntry();
+	}
 
-		if (treePos >= tree.getEntrySpan())
-			return; // this iterator is now at EOF.
-
-		currentEntry = cache.getEntry(cachePos);
+	private void parseEntry() {
+		currentEntry = cache.getEntry(ptr);
 		final byte[] cep = currentEntry.path;
-		if (subtreeIdx < tree.getChildCount()) {
-			final DirCacheTree s = tree.getChild(subtreeIdx);
+
+		if (nextSubtreePos != tree.getChildCount()) {
+			final DirCacheTree s = tree.getChild(nextSubtreePos);
 			if (s.contains(cep, pathOffset, cep.length)) {
 				// The current position is the first file of this subtree.
 				// Use the subtree instead as the current position.
 				//
 				currentSubtree = s;
-				subtreeIdx++;
+				nextSubtreePos++;
 
 				if (s.isValid())
 					s.getObjectId().copyRawTo(subtreeId, 0);
@@ -191,6 +183,7 @@ public class DirCacheIterator extends AbstractTreeIterator {
 		mode = currentEntry.getRawMode();
 		path = cep;
 		pathLen = cep.length;
+		currentSubtree = null;
 	}
 
 	/**

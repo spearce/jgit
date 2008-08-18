@@ -63,7 +63,7 @@ import org.spearce.jgit.lib.FileMode;
  * @see FileTreeIterator
  */
 public abstract class WorkingTreeIterator extends AbstractTreeIterator {
-	/** An empty entry array, suitable for return from {@link #getEntries()}. */
+	/** An empty entry array, suitable for {@link #init(Entry[])}. */
 	protected static final Entry[] EOF = {};
 
 	/** Size we perform file IO in if we have to read and hash a file. */
@@ -72,7 +72,7 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 	/** The {@link #idBuffer()} for the current entry. */
 	private byte[] contentId;
 
-	/** Value of {@link #ptr} when {@link #contentId} was last populated. */
+	/** Index within {@link #entries} that {@link #contentId} came from. */
 	private int contentIdFromPtr;
 
 	/** Buffer used to perform {@link #contentId} computations. */
@@ -132,15 +132,12 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 
 	@Override
 	public byte[] idBuffer() {
-		if (contentIdFromPtr == ptr - 1)
+		if (contentIdFromPtr == ptr)
 			return contentId;
-		if (entries == EOF)
-			return zeroid;
-
 		switch (mode & 0170000) {
 		case 0100000: /* normal files */
-			contentIdFromPtr = ptr - 1;
-			return contentId = idBufferBlob(entries[contentIdFromPtr]);
+			contentIdFromPtr = ptr;
+			return contentId = idBufferBlob(entries[ptr]);
 		case 0120000: /* symbolic links */
 			// Java does not support symbolic links, so we should not
 			// have reached this particular part of the walk code.
@@ -235,21 +232,18 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 
 	@Override
 	public boolean eof() {
-		return entries == EOF;
+		return ptr == entryCnt;
 	}
 
 	@Override
 	public void next() throws CorruptObjectException {
-		if (entries == null)
-			loadEntries();
-		if (ptr == entryCnt) {
-			entries = EOF;
-			return;
-		}
-		if (entries == EOF)
-			return;
+		ptr++;
+		if (!eof())
+			parseEntry();
+	}
 
-		final Entry e = entries[ptr++];
+	private void parseEntry() {
+		final Entry e = entries[ptr];
 		mode = e.getMode().getBits();
 
 		final int nameLen = e.encodedNameLen;
@@ -338,43 +332,35 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 		return e.getMode() == FileMode.TREE ? '/' : '\0';
 	}
 
-	private void loadEntries() throws CorruptObjectException {
+	protected void init(final Entry[] list) {
 		// Filter out nulls, . and .. as these are not valid tree entries,
 		// also cache the encoded forms of the path names for efficient use
 		// later on during sorting and iteration.
 		//
-		try {
-			entries = getEntries();
-			int i, o;
+		entries = list;
+		int i, o;
 
-			for (i = 0, o = 0; i < entries.length; i++) {
-				final Entry e = entries[i];
-				if (e == null)
-					continue;
-				final String name = e.getName();
-				if (".".equals(name) || "..".equals(name))
-					continue;
-				if (parent == null && ".git".equals(name))
-					continue;
-				if (i != o)
-					entries[o] = e;
-				e.encodeName(nameEncoder);
-				o++;
-			}
-			entryCnt = o;
-			contentIdFromPtr = -1;
-			Arrays.sort(entries, 0, entryCnt, ENTRY_CMP);
-		} catch (CharacterCodingException e) {
-			final CorruptObjectException why;
-			why = new CorruptObjectException("Invalid file name encoding");
-			why.initCause(e);
-			throw why;
-		} catch (IOException e) {
-			final CorruptObjectException why;
-			why = new CorruptObjectException("Error reading directory");
-			why.initCause(e);
-			throw why;
+		for (i = 0, o = 0; i < entries.length; i++) {
+			final Entry e = entries[i];
+			if (e == null)
+				continue;
+			final String name = e.getName();
+			if (".".equals(name) || "..".equals(name))
+				continue;
+			if (parent == null && ".git".equals(name))
+				continue;
+			if (i != o)
+				entries[o] = e;
+			e.encodeName(nameEncoder);
+			o++;
 		}
+		entryCnt = o;
+		Arrays.sort(entries, 0, entryCnt, ENTRY_CMP);
+
+		contentIdFromPtr = -1;
+		ptr = 0;
+		if (!eof())
+			parseEntry();
 	}
 
 	/**
@@ -383,27 +369,8 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 	 * @return the currently selected entry.
 	 */
 	protected Entry current() {
-		return entries[ptr - 1];
+		return entries[ptr];
 	}
-
-	/**
-	 * Obtain an unsorted list of this iterator's contents.
-	 * <p>
-	 * Implementations only need to provide the unsorted contents of their lower
-	 * level directory. The caller will automatically prune out ".", "..",
-	 * ".git", as well as null entries as necessary, and then sort the array
-	 * for iteration within a TreeWalk instance.
-	 * <p>
-	 * The returned array will be modified by the caller.
-	 * <p>
-	 * This method is only invoked once per iterator instance.
-	 * 
-	 * @return unsorted list of the immediate children. Never null, but may be
-	 *         {@link #EOF} if no items can be obtained.
-	 * @throws IOException
-	 *             reading the contents failed due to IO errors.
-	 */
-	protected abstract Entry[] getEntries() throws IOException;
 
 	/** A single entry within a working directory tree. */
 	protected static abstract class Entry {
@@ -411,9 +378,15 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 
 		int encodedNameLen;
 
-		void encodeName(final CharsetEncoder enc)
-				throws CharacterCodingException {
-			final ByteBuffer b = enc.encode(CharBuffer.wrap(getName()));
+		void encodeName(final CharsetEncoder enc) {
+			final ByteBuffer b;
+			try {
+				b = enc.encode(CharBuffer.wrap(getName()));
+			} catch (CharacterCodingException e) {
+				// This should so never happen.
+				throw new RuntimeException("Unencodeable file: " + getName());
+			}
+
 			encodedNameLen = b.limit();
 			if (b.hasArray() && b.arrayOffset() == 0)
 				encodedName = b.array();

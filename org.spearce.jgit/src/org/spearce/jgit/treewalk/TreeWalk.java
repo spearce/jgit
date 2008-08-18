@@ -276,14 +276,12 @@ public class TreeWalk {
 				if (o instanceof CanonicalTreeParser) {
 					o.matches = null;
 					((CanonicalTreeParser) o).reset(db, ids[i]);
-					o.next();
 					r[i] = o;
 					continue;
 				}
 			}
 
 			o = parserFor(ids[i]);
-			o.next();
 			r[i] = o;
 		}
 
@@ -340,7 +338,6 @@ public class TreeWalk {
 		System.arraycopy(trees, 0, newTrees, 0, n);
 		newTrees[n] = p;
 		p.matches = null;
-		p.next();
 
 		trees = newTrees;
 		return n;
@@ -617,7 +614,6 @@ public class TreeWalk {
 				n = t.createSubtreeIterator(db);
 			else
 				n = new EmptyTreeIterator(t);
-			n.next();
 			tmp[i] = n;
 		}
 		depth++;

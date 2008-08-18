@@ -53,9 +53,8 @@ import org.spearce.jgit.treewalk.filter.TreeFilter;
 /**
  * Walks a Git tree (directory) in Git sort order.
  * <p>
- * A new iterator instance should be positioned before the first entry. The data
- * about the first entry is not available until after the first call to
- * {@link #next()} is made.
+ * A new iterator instance should be positioned on the first entry, or at eof.
+ * Data for the first entry (if not at eof) should be available immediately.
  * <p>
  * Implementors must walk a tree in the Git sort order, which has the following
  * odd sorting:

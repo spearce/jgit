@@ -109,7 +109,7 @@ public class DirCacheBuildIterator extends DirCacheIterator {
 	@Override
 	public void skip() throws CorruptObjectException {
 		if (currentSubtree != null)
-			builder.keep(cachePos, currentSubtree.getEntrySpan());
+			builder.keep(ptr, currentSubtree.getEntrySpan());
 		else
 			builder.add(currentEntry);
 		next();
@@ -117,8 +117,9 @@ public class DirCacheBuildIterator extends DirCacheIterator {
 
 	@Override
 	public void stopWalk() {
+		final int cur = ptr;
 		final int cnt = cache.getEntryCount();
-		if (cachePos < cnt)
-			builder.keep(cachePos, cnt - cachePos);
+		if (cur < cnt)
+			builder.keep(cur, cnt - cur);
 	}
 }

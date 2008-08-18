@@ -52,7 +52,11 @@ import org.spearce.jgit.lib.Repository;
 public class CanonicalTreeParser extends AbstractTreeIterator {
 	private byte[] raw;
 
-	private int rawPtr;
+	/** First offset within {@link #raw} of the current entry's data. */
+	private int currPtr;
+
+	/** Offset one past the current entry (first byte of next entry. */
+	private int nextPtr;
 
 	/** Create a new parser. */
 	public CanonicalTreeParser() {
@@ -71,7 +75,9 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 	 */
 	public void reset(final byte[] treeData) {
 		raw = treeData;
-		rawPtr = 0;
+		currPtr = 0;
+		if (!eof())
+			parseEntry();
 	}
 
 	/**
@@ -118,20 +124,21 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 
 	@Override
 	public int idOffset() {
-		return rawPtr - Constants.OBJECT_ID_LENGTH;
+		return nextPtr - Constants.OBJECT_ID_LENGTH;
 	}
 
 	public boolean eof() {
-		return raw == null;
+		return currPtr == raw.length;
 	}
 
 	public void next() throws CorruptObjectException {
-		int ptr = rawPtr;
-		if (ptr >= raw.length) {
-			raw = null;
-			return;
-		}
+		currPtr = nextPtr;
+		if (!eof())
+			parseEntry();
+	}
 
+	private void parseEntry() {
+		int ptr = currPtr;
 		byte c = raw[ptr++];
 		int tmp = c - '0';
 		for (;;) {
@@ -156,6 +163,6 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 			}
 		}
 		pathLen = tmp;
-		rawPtr = ptr + Constants.OBJECT_ID_LENGTH;
+		nextPtr = ptr + Constants.OBJECT_ID_LENGTH;
 	}
 }

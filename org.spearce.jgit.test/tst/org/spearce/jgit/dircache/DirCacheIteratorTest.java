@@ -50,7 +50,6 @@ public class DirCacheIteratorTest extends RepositoryTestCase {
 		assertEquals(0, dc.getEntryCount());
 
 		final DirCacheIterator i = new DirCacheIterator(dc);
-		i.next();
 		assertTrue(i.eof());
 	}
 
@@ -79,11 +78,8 @@ public class DirCacheIteratorTest extends RepositoryTestCase {
 
 		final DirCacheIterator i = new DirCacheIterator(dc);
 		int pathIdx = 0;
-		for (;;) {
-			i.next();
-			if (i.eof())
-				break;
-			assertEquals(pathIdx, i.cachePos);
+		for (; !i.eof(); i.next()) {
+			assertEquals(pathIdx, i.ptr);
 			assertSame(ents[pathIdx], i.getDirCacheEntry());
 			pathIdx++;
 		}
@@ -113,7 +109,7 @@ public class DirCacheIteratorTest extends RepositoryTestCase {
 		int pathIdx = 0;
 		while (tw.next()) {
 			assertSame(i, tw.getTree(0, DirCacheIterator.class));
-			assertEquals(pathIdx, i.cachePos);
+			assertEquals(pathIdx, i.ptr);
 			assertSame(ents[pathIdx], i.getDirCacheEntry());
 			assertEquals(paths[pathIdx], tw.getPathString());
 			assertEquals(modes[pathIdx].getBits(), tw.getRawMode(0));
@@ -156,7 +152,7 @@ public class DirCacheIteratorTest extends RepositoryTestCase {
 			assertEquals(expPaths[pathIdx], tw.getPathString());
 
 			if (expPos[pathIdx] >= 0) {
-				assertEquals(expPos[pathIdx], i.cachePos);
+				assertEquals(expPos[pathIdx], i.ptr);
 				assertSame(ents[expPos[pathIdx]], i.getDirCacheEntry());
 			} else {
 				assertSame(FileMode.TREE, tw.getFileMode(0));
@@ -192,7 +188,7 @@ public class DirCacheIteratorTest extends RepositoryTestCase {
 		while (tw.next()) {
 			final DirCacheIterator c = tw.getTree(0, DirCacheIterator.class);
 			assertNotNull(c);
-			assertEquals(pathIdx, c.cachePos);
+			assertEquals(pathIdx, c.ptr);
 			assertSame(ents[pathIdx], c.getDirCacheEntry());
 			assertEquals(paths[pathIdx], tw.getPathString());
 			assertEquals(mode.getBits(), tw.getRawMode(0));
@@ -226,7 +222,7 @@ public class DirCacheIteratorTest extends RepositoryTestCase {
 		while (tw.next()) {
 			final DirCacheIterator c = tw.getTree(0, DirCacheIterator.class);
 			assertNotNull(c);
-			assertEquals(pathIdx, c.cachePos);
+			assertEquals(pathIdx, c.ptr);
 			assertSame(ents[pathIdx], c.getDirCacheEntry());
 			assertEquals(paths[pathIdx], tw.getPathString());
 			assertEquals(mode.getBits(), tw.getRawMode(0));
@@ -262,7 +258,7 @@ public class DirCacheIteratorTest extends RepositoryTestCase {
 			assertTrue(tw.next());
 			final DirCacheIterator c = tw.getTree(0, DirCacheIterator.class);
 			assertNotNull(c);
-			assertEquals(victimIdx, c.cachePos);
+			assertEquals(victimIdx, c.ptr);
 			assertSame(ents[victimIdx], c.getDirCacheEntry());
 			assertEquals(paths[victimIdx], tw.getPathString());
 			assertEquals(mode.getBits(), tw.getRawMode(0));

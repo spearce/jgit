@@ -67,12 +67,14 @@ public class ContainerTreeIterator extends WorkingTreeIterator {
 	public ContainerTreeIterator(final IContainer base) {
 		super(computePrefix(base));
 		node = base;
+		init(entries());
 	}
 
 	private ContainerTreeIterator(final WorkingTreeIterator p,
 			final IContainer base) {
 		super(p);
 		node = base;
+		init(entries());
 	}
 
 	@Override
@@ -86,16 +88,13 @@ public class ContainerTreeIterator extends WorkingTreeIterator {
 					Constants.TYPE_TREE);
 	}
 
-	@Override
-	protected Entry[] getEntries() throws IOException {
+	private Entry[] entries() {
 		final IResource[] all;
 		try {
 //			all = node.members(IContainer.INCLUDE_HIDDEN); 3.4 flag
 			all = node.members(0);
 		} catch (CoreException err) {
-			final IOException ioe = new IOException(err.getMessage());
-			ioe.initCause(err);
-			throw ioe;
+			return EOF;
 		}
 
 		final Entry[] r = new Entry[all.length];

@@ -66,6 +66,7 @@ public class FileTreeIterator extends WorkingTreeIterator {
 	 */
 	public FileTreeIterator(final File root) {
 		directory = root;
+		init(entries());
 	}
 
 	/**
@@ -80,6 +81,7 @@ public class FileTreeIterator extends WorkingTreeIterator {
 	protected FileTreeIterator(final FileTreeIterator p, final File root) {
 		super(p);
 		directory = root;
+		init(entries());
 	}
 
 	@Override
@@ -88,8 +90,7 @@ public class FileTreeIterator extends WorkingTreeIterator {
 		return new FileTreeIterator(this, ((FileEntry) current()).file);
 	}
 
-	@Override
-	protected Entry[] getEntries() {
+	private Entry[] entries() {
 		final File[] all = directory.listFiles();
 		if (all == null)
 			return EOF;
