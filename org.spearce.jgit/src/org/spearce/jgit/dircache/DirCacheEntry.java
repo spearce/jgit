@@ -116,7 +116,7 @@ public class DirCacheEntry {
 		final int actLen = INFO_LEN + pathLen;
 		final int expLen = (actLen + 8) & ~7;
 		if (actLen != expLen)
-			in.skip(expLen - actLen);
+			NB.skipFully(in, expLen - actLen);
 	}
 
 	/**

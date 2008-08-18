@@ -370,7 +370,7 @@ public class DirCache {
 					// a performance optimization. Since we do not
 					// understand it, we can safely skip past it.
 					//
-					in.skip(NB.decodeInt32(hdr, 4));
+					NB.skipFully(in, NB.decodeUInt32(hdr, 4));
 				} else {
 					// The extension is not an optimization and is
 					// _required_ to understand this index format.

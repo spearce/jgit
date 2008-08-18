@@ -71,6 +71,33 @@ public final class NB {
 	}
 
 	/**
+	 * Skip an entire region of an input stream.
+	 * <p>
+	 * The input stream's position is moved forward by the number of requested
+	 * bytes, discarding them from the input. This method does not return until
+	 * the exact number of bytes requested has been skipped.
+	 *
+	 * @param fd
+	 *            the stream to skip bytes from.
+	 * @param toSkip
+	 *            total number of bytes to be discarded. Must be >= 0.
+	 * @throws EOFException
+	 *             the stream ended before the requested number of bytes were
+	 *             skipped.
+	 * @throws IOException
+	 *             there was an error reading from the stream.
+	 */
+	public static void skipFully(final InputStream fd, long toSkip)
+			throws IOException {
+		while (toSkip > 0) {
+			final long r = fd.skip(toSkip);
+			if (r <= 0)
+				throw new EOFException("Short skip of block");
+			toSkip -= r;
+		}
+	}
+
+	/**
 	 * Compare a 32 bit unsigned integer stored in a 32 bit signed integer.
 	 * <p>
 	 * This function performs an unsigned compare operation, even though Java
