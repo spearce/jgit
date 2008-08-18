@@ -227,6 +227,10 @@ public abstract class AbstractTreeIterator {
 	 *         p's entry sorts first.
 	 */
 	public int pathCompare(final AbstractTreeIterator p) {
+		return pathCompare(p, p.mode);
+	}
+
+	int pathCompare(final AbstractTreeIterator p, final int pMode) {
 		final byte[] a = path;
 		final byte[] b = p.path;
 		final int aLen = pathLen;
@@ -241,7 +245,7 @@ public abstract class AbstractTreeIterator {
 
 		if (cPos < aLen) {
 			final int aj = a[cPos] & 0xff;
-			final int lastb = p.lastPathChar();
+			final int lastb = lastPathChar(pMode);
 			if (aj < lastb)
 				return -1;
 			else if (aj > lastb)
@@ -254,7 +258,7 @@ public abstract class AbstractTreeIterator {
 
 		if (cPos < bLen) {
 			final int bk = b[cPos] & 0xff;
-			final int lasta = lastPathChar();
+			final int lasta = lastPathChar(mode);
 			if (lasta < bk)
 				return -1;
 			else if (lasta > bk)
@@ -265,8 +269,8 @@ public abstract class AbstractTreeIterator {
 				return 1;
 		}
 
-		final int lasta = lastPathChar();
-		final int lastb = p.lastPathChar();
+		final int lasta = lastPathChar(mode);
+		final int lastb = lastPathChar(pMode);
 		if (lasta < lastb)
 			return -1;
 		else if (lasta > lastb)
@@ -280,7 +284,7 @@ public abstract class AbstractTreeIterator {
 			return 1;
 	}
 
-	private int lastPathChar() {
+	private static int lastPathChar(final int mode) {
 		return FileMode.TREE.equals(mode) ? '/' : '\0';
 	}
 
