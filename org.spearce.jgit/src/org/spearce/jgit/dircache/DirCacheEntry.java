@@ -37,6 +37,8 @@
 
 package org.spearce.jgit.dircache;
 
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -105,18 +107,36 @@ public class DirCacheEntry {
 		NB.readFully(in, info, infoOffset, INFO_LEN);
 
 		int pathLen = NB.decodeUInt16(info, infoOffset + P_FLAGS) & NAME_MASK;
-		if (pathLen == NAME_MASK)
-			throw new IOException("Path name too long for jgit");
-		path = new byte[pathLen];
-		NB.readFully(in, path, 0, pathLen);
+		int skipped = 0;
+		if (pathLen < NAME_MASK) {
+			path = new byte[pathLen];
+			NB.readFully(in, path, 0, pathLen);
+		} else {
+			final ByteArrayOutputStream tmp = new ByteArrayOutputStream();
+			{
+				final byte[] buf = new byte[NAME_MASK];
+				NB.readFully(in, buf, 0, NAME_MASK);
+				tmp.write(buf);
+			}
+			for (;;) {
+				final int c = in.read();
+				if (c < 0)
+					throw new EOFException("Short read of block.");
+				if (c == 0)
+					break;
+				tmp.write(c);
+			}
+			path = tmp.toByteArray();
+			pathLen = path.length;
+			skipped = 1; // we already skipped 1 '\0' above to break the loop.
+		}
 
 		// Index records are padded out to the next 8 byte alignment
 		// for historical reasons related to how C Git read the files.
 		//
 		final int actLen = INFO_LEN + pathLen;
 		final int expLen = (actLen + 8) & ~7;
-		if (actLen != expLen)
-			NB.skipFully(in, expLen - actLen);
+		NB.skipFully(in, expLen - actLen - skipped);
 	}
 
 	/**
@@ -140,9 +160,10 @@ public class DirCacheEntry {
 		infoOffset = 0;
 
 		path = newPath;
-		if (path.length >= NAME_MASK)
-			throw new IllegalArgumentException("Path name too long for jgit");
-		NB.encodeInt16(info, infoOffset + P_FLAGS, path.length);
+		if (path.length < NAME_MASK)
+			NB.encodeInt16(info, infoOffset + P_FLAGS, path.length);
+		else
+			NB.encodeInt16(info, infoOffset + P_FLAGS, NAME_MASK);
 	}
 
 	void write(final OutputStream os) throws IOException {
