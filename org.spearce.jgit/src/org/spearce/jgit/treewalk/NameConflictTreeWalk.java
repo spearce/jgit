@@ -78,6 +78,8 @@ import org.spearce.jgit.lib.Repository;
 public class NameConflictTreeWalk extends TreeWalk {
 	private static final int TREE_MODE = FileMode.TREE.getBits();
 
+	private boolean fastMinHasMatch;
+
 	/**
 	 * Create a new tree walker for a given repository.
 	 *
@@ -91,11 +93,11 @@ public class NameConflictTreeWalk extends TreeWalk {
 	@Override
 	AbstractTreeIterator min() throws CorruptObjectException {
 		for (;;) {
-			final AbstractTreeIterator minRef = super.min();
-			if (minRef.eof())
+			final AbstractTreeIterator minRef = fastMin();
+			if (fastMinHasMatch)
 				return minRef;
 
-			if (FileMode.TREE.equals(minRef.mode)) {
+			if (isTree(minRef)) {
 				if (skipEntry(minRef)) {
 					for (final AbstractTreeIterator t : trees) {
 						if (t.matches == minRef) {
@@ -110,6 +112,73 @@ public class NameConflictTreeWalk extends TreeWalk {
 
 			return combineDF(minRef);
 		}
+	}
+
+	private AbstractTreeIterator fastMin() {
+		fastMinHasMatch = true;
+
+		int i = 0;
+		AbstractTreeIterator minRef = trees[i];
+		while (minRef.eof() && ++i < trees.length)
+			minRef = trees[i];
+		if (minRef.eof())
+			return minRef;
+
+		minRef.matches = minRef;
+		while (++i < trees.length) {
+			final AbstractTreeIterator t = trees[i];
+			if (t.eof())
+				continue;
+
+			final int cmp = t.pathCompare(minRef);
+			if (cmp < 0) {
+				if (fastMinHasMatch && isTree(minRef) && !isTree(t)
+						&& nameEqual(minRef, t)) {
+					// We used to be at a tree, but now we are at a file
+					// with the same name. Allow the file to match the
+					// tree anyway.
+					//
+					t.matches = minRef;
+				} else {
+					fastMinHasMatch = false;
+					t.matches = t;
+					minRef = t;
+				}
+			} else if (cmp == 0) {
+				// Exact name/mode match is best.
+				//
+				t.matches = minRef;
+			} else if (fastMinHasMatch && isTree(t) && !isTree(minRef)
+					&& nameEqual(t, minRef)) {
+				// The minimum is a file (non-tree) but the next entry
+				// of this iterator is a tree whose name matches our file.
+				// This is a classic D/F conflict and commonly occurs like
+				// this, with no gaps in between the file and directory.
+				//
+				// Use the tree as the minimum instead (see combineDF).
+				//
+
+				for (int k = 0; k < i; k++) {
+					final AbstractTreeIterator p = trees[k];
+					if (p.matches == minRef)
+						p.matches = t;
+				}
+				t.matches = t;
+				minRef = t;
+			} else
+				fastMinHasMatch = false;
+		}
+
+		return minRef;
+	}
+
+	private static boolean nameEqual(final AbstractTreeIterator a,
+			final AbstractTreeIterator b) {
+		return a.pathCompare(b, TREE_MODE) == 0;
+	}
+
+	private static boolean isTree(final AbstractTreeIterator p) {
+		return FileMode.TREE.equals(p.mode);
 	}
 
 	private boolean skipEntry(final AbstractTreeIterator minRef)
