@@ -41,8 +41,6 @@ package org.spearce.jgit.lib;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.TreeSet;
 
 /**
  * Writes out refs to the {@link Constants#INFO_REFS} and
@@ -61,8 +59,7 @@ public abstract class RefWriter {
 	 *            by applying updates to the advertised refs already discovered.
 	 */
 	public RefWriter(Collection<Ref> refs) {
-		this.refs = new TreeSet<Ref>(RefComparator.INSTANCE);
-		this.refs.addAll(refs);
+		this.refs = RefComparator.sort(refs);
 	}
 
 	/**
@@ -163,13 +160,4 @@ public abstract class RefWriter {
 	 */
 	protected abstract void writeFile(String file, byte[] content)
 			throws IOException;
-
-	private static class RefComparator implements Comparator<Ref> {
-
-		private static final RefComparator INSTANCE = new RefComparator();
-
-		public int compare(Ref o1, Ref o2) {
-			return o1.getName().compareTo(o2.getName());
-		}
-	}
 }
