@@ -52,6 +52,7 @@ import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.RefComparator;
 import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.RefUpdate.Result;
+import org.spearce.jgit.revwalk.RevWalk;
 
 @Command(common = true, usage = "List, create, or delete branches")
 class Branch extends TextBuiltin {
@@ -76,15 +77,23 @@ class Branch extends TextBuiltin {
 
 	private final Map<String, Ref> printRefs = new LinkedHashMap<String, Ref>();
 
+	/** Only set for verbose branch listing at-the-moment */
+	private RevWalk rw;
+
+	private int maxNameLength;
+
 	@Override
 	protected void run() throws Exception {
 		if (delete || deleteForce)
 			delete(deleteForce);
-		else
+		else {
+			if (verbose)
+				rw = new RevWalk(db);
 			list();
+		}
 	}
 
-	private void list() {
+	private void list() throws Exception {
 		Map<String, Ref> refs = db.getAllRefs();
 		Ref head = refs.get(Constants.HEAD);
 		// This can happen if HEAD is stillborn
@@ -95,7 +104,8 @@ class Branch extends TextBuiltin {
 			addRefs(refs, Constants.HEADS_PREFIX + '/', !remote);
 			addRefs(refs, Constants.REMOTES_PREFIX + '/', remote);
 			for (final Entry<String, Ref> e : printRefs.entrySet()) {
-				printHead(e.getKey(), current.equals(e.getValue().getName()));
+				final Ref ref = e.getValue();
+				printHead(e.getKey(), current.equals(ref.getName()), ref);
 			}
 		}
 	}
@@ -106,20 +116,30 @@ class Branch extends TextBuiltin {
 			for (final Ref ref : RefComparator.sort(allRefs.values())) {
 				final String name = ref.getName();
 				if (name.startsWith(prefix))
-					addRef(name, ref);
+					addRef(name.substring(name.indexOf('/', 5) + 1), ref);
 			}
 		}
 	}
 
 	private void addRef(final String name, final Ref ref) {
 		printRefs.put(name, ref);
+		maxNameLength = Math.max(maxNameLength, name.length());
 	}
 
-	private void printHead(String ref, boolean isCurrent) {
+	private void printHead(final String ref, final boolean isCurrent,
+			final Ref refObj) throws Exception {
 		out.print(isCurrent ? '*' : ' ');
 		out.print(' ');
-		ref = ref.substring(ref.indexOf('/', 5) + 1);
-		out.println(ref);
+		out.print(ref);
+		if (verbose) {
+			final int spaces = maxNameLength - ref.length() + 1;
+			out.print(String.format("%" + spaces + "s", ""));
+			final ObjectId objectId = refObj.getObjectId();
+			out.print(abbreviateObject(objectId));
+			out.print(' ');
+			out.print(rw.parseCommit(objectId).getShortMessage());
+		}
+		out.println();
 	}
 
 	private void delete(boolean force) throws IOException {
