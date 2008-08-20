@@ -39,15 +39,17 @@ package org.spearce.jgit.pgm;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
+import java.util.Map.Entry;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Ref;
+import org.spearce.jgit.lib.RefComparator;
 import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.RefUpdate.Result;
 
@@ -72,6 +74,8 @@ class Branch extends TextBuiltin {
 	@Argument
 	private List<String> branches = new ArrayList<String>();
 
+	private final Map<String, Ref> printRefs = new LinkedHashMap<String, Ref>();
+
 	@Override
 	protected void run() throws Exception {
 		if (delete || deleteForce)
@@ -87,17 +91,28 @@ class Branch extends TextBuiltin {
 		if (head != null) {
 			String current = head.getName();
 			if (current.equals(Constants.HEAD))
-				printHead("(no branch)", true);
-			for (String ref : new TreeSet<String>(refs.keySet())) {
-				if (isHead(ref))
-					printHead(ref, current.equals(ref));
+				addRef("(no branch)", head);
+			addRefs(refs, Constants.HEADS_PREFIX + '/', !remote);
+			addRefs(refs, Constants.REMOTES_PREFIX + '/', remote);
+			for (final Entry<String, Ref> e : printRefs.entrySet()) {
+				printHead(e.getKey(), current.equals(e.getValue().getName()));
 			}
 		}
 	}
 
-	private boolean isHead(String key) {
-		return (all || !remote) && key.startsWith(Constants.HEADS_PREFIX)
-				|| (all || remote) && key.startsWith(Constants.REMOTES_PREFIX);
+	private void addRefs(final Map<String, Ref> allRefs, final String prefix,
+			final boolean add) {
+		if (all || add) {
+			for (final Ref ref : RefComparator.sort(allRefs.values())) {
+				final String name = ref.getName();
+				if (name.startsWith(prefix))
+					addRef(name, ref);
+			}
+		}
+	}
+
+	private void addRef(final String name, final Ref ref) {
+		printRefs.put(name, ref);
 	}
 
 	private void printHead(String ref, boolean isCurrent) {
