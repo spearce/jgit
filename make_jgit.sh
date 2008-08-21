@@ -10,14 +10,24 @@ JARS="
 	org.spearce.jgit.pgm/lib/args4j-2.0.9.jar
 "
 
-if [ -n "$JAVA_HOME" ]
-then
-	PATH=$JAVA_HOME/bin:$PATH
-fi
-
+PSEP=":"
 T=".temp$$.$O"
 T_MF="$T.MF"
 R=`pwd`
+if [ "$OSTYPE" = "cygwin" ]
+then
+	R=`cygpath -m $R`
+	PSEP=";"
+fi
+if [ "$MSYSTEM" = "MINGW" ]
+then
+	PSEP=";"
+fi
+
+if [ -n "$JAVA_HOME" ]
+then
+	PATH=${JAVA_HOME}/bin${PSEP}${PATH}
+fi
 
 cleanup_bin() {
 	rm -f $T $O+ $T_MF
@@ -44,7 +54,7 @@ do
 	then
 		CLASSPATH="$R/$j"
 	else
-		CLASSPATH="$CLASSPATH:$R/$j"
+		CLASSPATH="${CLASSPATH}${PSEP}$R/$j"
 	fi
 done
 export CLASSPATH
@@ -61,7 +71,7 @@ do
 		-encoding UTF-8 \
 		-g \
 		-d ../bin2) || die "Building $p failed."
-	CLASSPATH="$CLASSPATH:$R/$p/bin2"
+	CLASSPATH="${CLASSPATH}${PSEP}$R/$p/bin2"
 done
 
 echo Manifest-Version: 1.0 >$T_MF &&
