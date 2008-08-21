@@ -722,11 +722,19 @@ public class TreeWalk {
 		}
 	}
 
-	private void exitSubtree() throws CorruptObjectException {
+	private void exitSubtree() {
 		depth--;
 		for (int i = 0; i < trees.length; i++)
 			trees[i] = trees[i].parent;
-		currentHead = min();
+
+		AbstractTreeIterator minRef = null;
+		for (final AbstractTreeIterator t : trees) {
+			if (t.matches != t)
+				continue;
+			if (minRef == null || t.pathCompare(minRef) < 0)
+				minRef = t;
+		}
+		currentHead = minRef;
 	}
 
 	private CanonicalTreeParser parserFor(final ObjectId id)
