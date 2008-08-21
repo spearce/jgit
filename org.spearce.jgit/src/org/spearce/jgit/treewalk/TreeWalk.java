@@ -147,9 +147,13 @@ public class TreeWalk {
 
 	private boolean recursive;
 
+	private boolean postOrderTraversal;
+
 	private int depth;
 
 	private boolean advance;
+
+	private boolean postChildren;
 
 	AbstractTreeIterator currentHead;
 
@@ -233,6 +237,36 @@ public class TreeWalk {
 	 */
 	public void setRecursive(final boolean b) {
 		recursive = b;
+	}
+
+	/**
+	 * Does this walker return a tree entry after it exits the subtree?
+	 * <p>
+	 * If post order traversal is enabled then the walker will return a subtree
+	 * after it has returned the last entry within that subtree. This may cause
+	 * a subtree to be seen by the application twice if {@link #isRecursive()}
+	 * is false, as the application will see it once, call
+	 * {@link #enterSubtree()}, and then see it again as it leaves the subtree.
+	 * <p>
+	 * If an application does not enable {@link #isRecursive()} and it does not
+	 * call {@link #enterSubtree()} then the tree is returned only once as none
+	 * of the children were processed.
+	 *
+	 * @return true if subtrees are returned after entries within the subtree.
+	 */
+	public boolean isPostOrderTraversal() {
+		return postOrderTraversal;
+	}
+
+	/**
+	 * Set the walker to return trees after their children.
+	 *
+	 * @param b
+	 *            true to get trees after their children.
+	 * @see #isPostOrderTraversal()
+	 */
+	public void setPostOrderTraversal(final boolean b) {
+		postOrderTraversal = b;
 	}
 
 	/** Reset this walker so new tree iterators can be added to it. */
@@ -379,6 +413,7 @@ public class TreeWalk {
 		try {
 			if (advance) {
 				advance = false;
+				postChildren = false;
 				popEntriesEqual();
 			}
 
@@ -387,6 +422,12 @@ public class TreeWalk {
 				if (t.eof()) {
 					if (depth > 0) {
 						exitSubtree();
+						if (postOrderTraversal) {
+							advance = true;
+							postChildren = true;
+							return true;
+						}
+						popEntriesEqual();
 						continue;
 					}
 					return false;
@@ -587,6 +628,17 @@ public class TreeWalk {
 	}
 
 	/**
+	 * Is the current entry a subtree returned after its children?
+	 *
+	 * @return true if the current node is a tree that has been returned after
+	 *         its children were already processed.
+	 * @see #isPostOrderTraversal()
+	 */
+	public boolean isPostChildren() {
+		return postChildren && isSubtree();
+	}
+
+	/**
 	 * Enter into the current subtree.
 	 * <p>
 	 * If the current entry is a subtree this method arranges for its children
@@ -675,7 +727,6 @@ public class TreeWalk {
 		for (int i = 0; i < trees.length; i++)
 			trees[i] = trees[i].parent;
 		currentHead = min();
-		popEntriesEqual();
 	}
 
 	private CanonicalTreeParser parserFor(final ObjectId id)
