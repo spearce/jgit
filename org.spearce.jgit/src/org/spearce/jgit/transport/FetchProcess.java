@@ -361,6 +361,6 @@ class FetchProcess {
 	}
 
 	private static boolean isTag(final String name) {
-		return name.startsWith(Constants.TAGS_PREFIX + "/");
+		return name.startsWith(Constants.R_TAGS);
 	}
 }

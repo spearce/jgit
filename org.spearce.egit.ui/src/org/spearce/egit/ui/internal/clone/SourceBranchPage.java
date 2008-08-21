@@ -254,7 +254,7 @@ class SourceBranchPage extends BaseWizardPage {
 		head = null;
 		for (final Ref r : listRemoteOp.getRemoteRefs()) {
 			final String n = r.getName();
-			if (!n.startsWith(Constants.HEADS_PREFIX + "/"))
+			if (!n.startsWith(Constants.R_HEADS))
 				continue;
 			availableRefs.add(r);
 			if (idHEAD == null || head != null)
@@ -275,8 +275,8 @@ class SourceBranchPage extends BaseWizardPage {
 		validatedRepoSelection = newRepoSelection;
 		for (final Ref r : availableRefs) {
 			String n = r.getName();
-			if (n.startsWith(Constants.HEADS_PREFIX + "/"))
-				n = n.substring((Constants.HEADS_PREFIX + "/").length());
+			if (n.startsWith(Constants.R_HEADS))
+				n = n.substring(Constants.R_HEADS.length());
 			final TableItem ti = new TableItem(refsTable, SWT.NONE);
 			ti.setText(n);
 			ti.setChecked(true);

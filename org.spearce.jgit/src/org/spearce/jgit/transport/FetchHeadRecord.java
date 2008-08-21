@@ -37,18 +37,15 @@
 
 package org.spearce.jgit.transport;
 
+import static org.spearce.jgit.lib.Constants.R_HEADS;
+import static org.spearce.jgit.lib.Constants.R_REMOTES;
+import static org.spearce.jgit.lib.Constants.R_TAGS;
+
 import java.io.PrintWriter;
 
-import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 
 class FetchHeadRecord {
-	private static final String REFS_HEADS = Constants.HEADS_PREFIX + "/";
-
-	private static final String REFS_REMOTES = Constants.REMOTES_PREFIX + "/";
-
-	private static final String REFS_TAGS = Constants.TAGS_PREFIX + "/";
-
 	ObjectId newValue;
 
 	boolean notForMerge;
@@ -60,15 +57,15 @@ class FetchHeadRecord {
 	void write(final PrintWriter pw) {
 		final String type;
 		final String name;
-		if (sourceName.startsWith(REFS_HEADS)) {
+		if (sourceName.startsWith(R_HEADS)) {
 			type = "branch";
-			name = sourceName.substring(REFS_HEADS.length());
-		} else if (sourceName.startsWith(REFS_TAGS)) {
+			name = sourceName.substring(R_HEADS.length());
+		} else if (sourceName.startsWith(R_TAGS)) {
 			type = "tag";
-			name = sourceName.substring(REFS_TAGS.length());
-		} else if (sourceName.startsWith(REFS_REMOTES)) {
+			name = sourceName.substring(R_TAGS.length());
+		} else if (sourceName.startsWith(R_REMOTES)) {
 			type = "remote branch";
-			name = sourceName.substring(REFS_REMOTES.length());
+			name = sourceName.substring(R_REMOTES.length());
 		} else {
 			type = "";
 			name = sourceName;

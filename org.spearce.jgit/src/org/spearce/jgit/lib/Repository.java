@@ -170,7 +170,7 @@ public class Repository {
 
 		new File(gitDir, "branches").mkdir();
 		new File(gitDir, "remotes").mkdir();
-		final String master = Constants.HEADS_PREFIX + "/" + Constants.MASTER;
+		final String master = Constants.R_HEADS + Constants.MASTER;
 		refs.link(Constants.HEAD, master);
 
 		getConfig().create();

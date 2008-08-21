@@ -101,8 +101,8 @@ class Branch extends TextBuiltin {
 			String current = head.getName();
 			if (current.equals(Constants.HEAD))
 				addRef("(no branch)", head);
-			addRefs(refs, Constants.HEADS_PREFIX + '/', !remote);
-			addRefs(refs, Constants.REMOTES_PREFIX + '/', remote);
+			addRefs(refs, Constants.R_HEADS, !remote);
+			addRefs(refs, Constants.R_REMOTES, remote);
 			for (final Entry<String, Ref> e : printRefs.entrySet()) {
 				final Ref ref = e.getValue();
 				printHead(e.getKey(), current.equals(ref.getName()), ref);
@@ -150,9 +150,9 @@ class Branch extends TextBuiltin {
 				String err = "Cannot delete the branch '%s' which you are currently on.";
 				throw die(String.format(err, branch));
 			}
-			RefUpdate update = db.updateRef((remote ? Constants.REMOTES_PREFIX
-					: Constants.HEADS_PREFIX)
-					+ '/' + branch);
+			RefUpdate update = db.updateRef((remote ? Constants.R_REMOTES
+					: Constants.R_HEADS)
+					+ branch);
 			update.setNewObjectId(head);
 			update.setForceUpdate(force || remote);
 			Result result = update.delete();

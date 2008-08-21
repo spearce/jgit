@@ -41,6 +41,7 @@ import java.util.List;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.TextProgressMonitor;
 import org.spearce.jgit.transport.FetchResult;
@@ -102,9 +103,9 @@ class Fetch extends TextBuiltin {
 			return "[i/o error]";
 
 		if (r == RefUpdate.Result.NEW) {
-			if (u.getRemoteName().startsWith(REFS_HEADS))
+			if (u.getRemoteName().startsWith(Constants.R_HEADS))
 				return "[new branch]";
-			else if (u.getLocalName().startsWith(REFS_TAGS))
+			else if (u.getLocalName().startsWith(Constants.R_TAGS))
 				return "[new tag]";
 			return "[new]";
 		}

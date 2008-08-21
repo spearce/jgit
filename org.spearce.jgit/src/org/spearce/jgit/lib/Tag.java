@@ -202,7 +202,7 @@ public class Tag {
 			id = objId;
 		}
 
-		ru = objdb.updateRef(Constants.TAGS_PREFIX + "/" + getTag());
+		ru = objdb.updateRef(Constants.R_TAGS + getTag());
 		ru.setNewObjectId(id);
 		ru.setRefLogMessage("tagged " + getTag(), false);
 		if (ru.forceUpdate() == RefUpdate.Result.LOCK_FAILURE)

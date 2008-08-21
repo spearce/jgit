@@ -199,8 +199,8 @@ class CloneDestinationPage extends WizardPage {
 	public String getInitialBranch() {
 		final int ix = initialBranch.getSelectionIndex();
 		if (ix < 0)
-			return Constants.HEADS_PREFIX + "/" + Constants.MASTER;
-		return Constants.HEADS_PREFIX + "/" + initialBranch.getItem(ix);
+			return Constants.R_HEADS + Constants.MASTER;
+		return Constants.R_HEADS + initialBranch.getItem(ix);
 	}
 
 	/**
@@ -296,8 +296,8 @@ class CloneDestinationPage extends WizardPage {
 		int newix = 0;
 		for (final Ref r : branchPage.getSelectedBranches()) {
 			String name = r.getName();
-			if (name.startsWith(Constants.HEADS_PREFIX + "/"))
-				name = name.substring((Constants.HEADS_PREFIX + "/").length());
+			if (name.startsWith(Constants.R_HEADS))
+				name = name.substring((Constants.R_HEADS).length());
 			if (head != null && head.getName().equals(r.getName()))
 				newix = initialBranch.getItemCount();
 			initialBranch.add(name);

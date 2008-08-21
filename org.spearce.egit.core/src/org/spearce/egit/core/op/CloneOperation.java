@@ -44,11 +44,6 @@ import org.spearce.jgit.transport.URIish;
  * Clones a repository from a remote location to a local location.
  */
 public class CloneOperation implements IRunnableWithProgress {
-	private static final String HEADS_PREFIX = Constants.HEADS_PREFIX;
-
-	private static final String REMOTES_PREFIX_S = Constants.REMOTES_PREFIX
-			+ "/";
-
 	private final URIish uri;
 
 	private final boolean allSelected;
@@ -146,10 +141,10 @@ public class CloneOperation implements IRunnableWithProgress {
 		remoteConfig = new RemoteConfig(local.getConfig(), remoteName);
 		remoteConfig.addURI(uri);
 
-		final String dst = REMOTES_PREFIX_S + remoteConfig.getName();
+		final String dst = Constants.R_REMOTES + remoteConfig.getName();
 		RefSpec wcrs = new RefSpec();
 		wcrs = wcrs.setForceUpdate(true);
-		wcrs = wcrs.setSourceDestination(HEADS_PREFIX + "/*", dst + "/*");
+		wcrs = wcrs.setSourceDestination(Constants.R_HEADS + "*", dst + "/*");
 
 		if (allSelected) {
 			remoteConfig.addFetchRefSpec(wcrs);

@@ -208,13 +208,13 @@ public final class Constants {
 	public static final String MASTER = "master";
 
 	/** Prefix for branch refs */
-	public static final String HEADS_PREFIX = "refs/heads";
+	public static final String R_HEADS = "refs/heads/";
 
 	/** Prefix for remotes refs */
-	public static final String REMOTES_PREFIX = "refs/remotes";
+	public static final String R_REMOTES = "refs/remotes/";
 
 	/** Prefix for tag refs */
-	public static final String TAGS_PREFIX = "refs/tags";
+	public static final String R_TAGS = "refs/tags/";
 
 	/** Logs folder name */
 	public static final String LOGS = "logs";

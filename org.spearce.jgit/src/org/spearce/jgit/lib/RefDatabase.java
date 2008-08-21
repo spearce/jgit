@@ -38,6 +38,8 @@
 
 package org.spearce.jgit.lib;
 
+import static org.spearce.jgit.lib.Constants.R_TAGS;
+
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
@@ -55,12 +57,8 @@ import org.spearce.jgit.util.NB;
 class RefDatabase {
 	private static final String REFS_SLASH = "refs/";
 
-	private static final String HEADS_SLASH = Constants.HEADS_PREFIX + "/";
-
-	private static final String TAGS_SLASH = Constants.TAGS_PREFIX + "/";
-
 	private static final String[] refSearchPaths = { "", REFS_SLASH,
-			TAGS_SLASH, HEADS_SLASH, Constants.REMOTES_PREFIX + "/" };
+			R_TAGS, Constants.R_HEADS, Constants.R_REMOTES };
 
 	private final Repository db;
 
@@ -188,8 +186,8 @@ class RefDatabase {
 	Map<String, Ref> getTags() {
 		final Map<String, Ref> tags = new HashMap<String, Ref>();
 		for (final Ref r : readRefs().values()) {
-			if (r.getName().startsWith(TAGS_SLASH))
-				tags.put(r.getName().substring(TAGS_SLASH.length()), r);
+			if (r.getName().startsWith(R_TAGS))
+				tags.put(r.getName().substring(R_TAGS.length()), r);
 		}
 		return tags;
 	}

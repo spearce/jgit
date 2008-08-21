@@ -38,6 +38,10 @@
 
 package org.spearce.jgit.pgm;
 
+import static org.spearce.jgit.lib.Constants.R_HEADS;
+import static org.spearce.jgit.lib.Constants.R_REMOTES;
+import static org.spearce.jgit.lib.Constants.R_TAGS;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -45,7 +49,6 @@ import java.io.PrintWriter;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.Option;
-import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.pgm.opt.CmdLineParser;
@@ -63,12 +66,6 @@ import org.spearce.jgit.revwalk.RevWalk;
  * even though it was constructed.
  */
 public abstract class TextBuiltin {
-	protected static final String REFS_HEADS = Constants.HEADS_PREFIX + "/";
-
-	protected static final String REFS_REMOTES = Constants.REMOTES_PREFIX + "/";
-
-	protected static final String REFS_TAGS = Constants.TAGS_PREFIX + "/";
-
 	private String commandName;
 
 	@Option(name = "--help", usage = "display this help text", aliases = { "-h" })
@@ -180,12 +177,12 @@ public abstract class TextBuiltin {
 	}
 
 	protected String abbreviateRef(String dst, boolean abbreviateRemote) {
-		if (dst.startsWith(REFS_HEADS))
-			dst = dst.substring(REFS_HEADS.length());
-		else if (dst.startsWith(REFS_TAGS))
-			dst = dst.substring(REFS_TAGS.length());
-		else if (abbreviateRemote && dst.startsWith(REFS_REMOTES))
-			dst = dst.substring(REFS_REMOTES.length());
+		if (dst.startsWith(R_HEADS))
+			dst = dst.substring(R_HEADS.length());
+		else if (dst.startsWith(R_TAGS))
+			dst = dst.substring(R_TAGS.length());
+		else if (abbreviateRemote && dst.startsWith(R_REMOTES))
+			dst = dst.substring(R_REMOTES.length());
 		return dst;
 	}
 }

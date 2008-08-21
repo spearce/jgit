@@ -43,6 +43,7 @@ import java.util.List;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.TextProgressMonitor;
 import org.spearce.jgit.transport.PushResult;
@@ -165,7 +166,7 @@ class Push extends TextBuiltin {
 				final Ref oldRef = result.getAdvertisedRef(remoteName);
 				if (oldRef == null) {
 					final String summary;
-					if (remoteName.startsWith(REFS_TAGS))
+					if (remoteName.startsWith(Constants.R_TAGS))
 						summary = "[new tag]";
 					else
 						summary = "[new branch]";

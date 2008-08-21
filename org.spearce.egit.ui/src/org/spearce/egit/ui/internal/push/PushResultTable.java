@@ -223,8 +223,7 @@ class PushResultTable {
 
 				final Ref oldRef = rue.getAdvertisedRemoteRef(uri);
 				if (oldRef == null) {
-					if (rue.getDstRefName().startsWith(
-							Constants.TAGS_PREFIX + "/"))
+					if (rue.getDstRefName().startsWith(Constants.R_TAGS))
 						return UIText.PushResultTable_statusOkNewTag;
 					return UIText.PushResultTable_statusOkNewBranch;
 				}

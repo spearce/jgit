@@ -118,10 +118,6 @@ import org.spearce.jgit.transport.Transport;
  * @see SelectionChangeListener
  */
 public class RefSpecPanel {
-	private static final String REMOTES_PREFIX_S = Constants.REMOTES_PREFIX + '/';
-
-	private static final String HEADS_PREFIX_S = Constants.HEADS_PREFIX + '/';
-
 	private static final String IMAGE_ADD = "ADD"; //$NON-NLS-1$
 
 	private static final String IMAGE_DELETE = "DELETE"; //$NON-NLS-1$
@@ -203,7 +199,7 @@ public class RefSpecPanel {
 		for (final RefContentProposal p : proposals) {
 			final String content = p.getContent();
 			if (content.equals(Constants.HEAD)
-					|| content.startsWith(HEADS_PREFIX_S))
+					|| content.startsWith(Constants.R_HEADS))
 				result.add(p);
 		}
 		return result;
@@ -1391,9 +1387,9 @@ public class RefSpecPanel {
 					return;
 				}
 			}
-			if (remoteName != null && src.startsWith(HEADS_PREFIX_S)) {
-				final String newDst = REMOTES_PREFIX_S + remoteName + '/'
-						+ src.substring(HEADS_PREFIX_S.length());
+			if (remoteName != null && src.startsWith(Constants.R_HEADS)) {
+				final String newDst = Constants.R_REMOTES + remoteName + '/'
+						+ src.substring(Constants.R_HEADS.length());
 				creationDstCombo.setText(newDst);
 			}
 		}
@@ -1733,10 +1729,10 @@ public class RefSpecPanel {
 			final String content = p.getContent();
 			if (pushSpecs) {
 				if (content.equals(Constants.HEAD)
-						|| content.startsWith(HEADS_PREFIX_S))
+						|| content.startsWith(Constants.R_HEADS))
 					result.add(p);
 			} else {
-				if (content.startsWith(REMOTES_PREFIX_S))
+				if (content.startsWith(Constants.R_REMOTES))
 					result.add(p);
 			}
 		}

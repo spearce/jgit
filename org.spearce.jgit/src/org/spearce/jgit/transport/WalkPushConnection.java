@@ -358,7 +358,7 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 		//
 		for (final RemoteRefUpdate u : updates) {
 			final String n = u.getRemoteName();
-			if (n.equals(Constants.HEADS_PREFIX + "/" + Constants.MASTER))
+			if (n.equals(Constants.R_HEADS + Constants.MASTER))
 				return n;
 		}
 
@@ -367,7 +367,7 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 		//
 		for (final RemoteRefUpdate u : updates) {
 			final String n = u.getRemoteName();
-			if (n.startsWith(Constants.HEADS_PREFIX + "/"))
+			if (n.startsWith(Constants.R_HEADS))
 				return n;
 		}
 		return updates.get(0).getRemoteName();

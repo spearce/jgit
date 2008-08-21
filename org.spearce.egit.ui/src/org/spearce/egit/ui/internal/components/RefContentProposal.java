@@ -31,9 +31,8 @@ import org.spearce.jgit.lib.Tree;
  * prefixes) and information about pointed object if it exists locally.
  */
 public class RefContentProposal implements IContentProposal {
-	private static final String PREFIXES[] = new String[] {
-			Constants.HEADS_PREFIX + "/", Constants.REMOTES_PREFIX + "/",
-			Constants.TAGS_PREFIX + "/" };
+	private static final String PREFIXES[] = new String[] { Constants.R_HEADS,
+			Constants.R_REMOTES, Constants.R_TAGS };
 
 	private static final String PREFIXES_DESCRIPTIONS[] = new String[] {
 			" [branch]", " [tracking branch]", " [tag]" };

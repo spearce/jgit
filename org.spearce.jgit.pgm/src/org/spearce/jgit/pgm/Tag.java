@@ -67,11 +67,11 @@ class Tag extends TextBuiltin {
 				throw die("Cannot resolve " + Constants.HEAD);
 		}
 
-		if (!tagName.startsWith(Constants.TAGS_PREFIX + "/"))
-			tagName = Constants.TAGS_PREFIX + "/" + tagName;
+		if (!tagName.startsWith(Constants.R_TAGS))
+			tagName = Constants.R_TAGS + tagName;
 		if (!force && db.resolve(tagName) != null) {
 			throw die("fatal: tag '"
-					+ tagName.substring(Constants.TAGS_PREFIX.length() + 1)
+					+ tagName.substring(Constants.R_TAGS.length())
 					+ "' exists");
 		}
 
@@ -84,7 +84,7 @@ class Tag extends TextBuiltin {
 		tag.setType(Constants.typeString(ldr.getType()));
 		tag.setTagger(new PersonIdent(db));
 		tag.setMessage(message.replaceAll("\r", ""));
-		tag.setTag(tagName.substring(Constants.TAGS_PREFIX.length() + 1));
+		tag.setTag(tagName.substring(Constants.R_TAGS.length()));
 		tag.tag();
 	}
 }
