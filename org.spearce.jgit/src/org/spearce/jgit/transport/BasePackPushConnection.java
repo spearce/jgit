@@ -118,7 +118,7 @@ class BasePackPushConnection extends BasePackConnection implements
 
 	private void writeCommands(final Collection<RemoteRefUpdate> refUpdates,
 			final ProgressMonitor monitor) throws IOException {
-		final String capabilties = enableCapabilties();
+		final String capabilities = enableCapabilities();
 		for (final RemoteRefUpdate rru : refUpdates) {
 			if (!capableDeleteRefs && rru.isDelete()) {
 				rru.setStatus(Status.REJECTED_NODELETE);
@@ -136,7 +136,7 @@ class BasePackPushConnection extends BasePackConnection implements
 			sb.append(rru.getRemoteName());
 			if (!sentCommand) {
 				sentCommand = true;
-				sb.append(capabilties);
+				sb.append(capabilities);
 			}
 
 			pckOut.writeString(sb.toString());
@@ -151,7 +151,7 @@ class BasePackPushConnection extends BasePackConnection implements
 		outNeedsEnd = false;
 	}
 
-	private String enableCapabilties() {
+	private String enableCapabilities() {
 		final StringBuilder line = new StringBuilder();
 		capableReport = wantCapability(line, CAPABILITY_REPORT_STATUS);
 		capableDeleteRefs = wantCapability(line, CAPABILITY_DELETE_REFS);

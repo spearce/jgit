@@ -144,7 +144,7 @@ abstract class BasePackConnection extends BaseConnection {
 					line = line.substring(0, nul);
 				}
 
-				if (line.equals("capabilties^{}")) {
+				if (line.equals("capabilities^{}")) {
 					// special line from git-receive-pack to show
 					// capabilities when there are no refs to advertise
 					continue;
