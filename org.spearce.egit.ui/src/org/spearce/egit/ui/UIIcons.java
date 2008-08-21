@@ -56,6 +56,15 @@ public class UIIcons {
 	/** Clear icon */
 	public static final ImageDescriptor ELCL16_CLEAR;
 
+	/** Enabled, checked, checkbox image */
+	public static final ImageDescriptor CHECKBOX_ENABLED_CHECKED;
+	/** Enabled, unchecked, checkbox image */
+	public static final ImageDescriptor CHECKBOX_ENABLED_UNCHECKED;
+	/** Disabled, checked, checkbox image */
+	public static final ImageDescriptor CHECKBOX_DISABLED_CHECKED;
+	/** Disabled, unchecked, checkbox image */
+	public static final ImageDescriptor CHECKBOX_DISABLED_UNCHECKED;
+
 	/** Import Wizard banner */
 	public static final ImageDescriptor WIZBAN_IMPORT_REPO;
 
@@ -80,6 +89,10 @@ public class UIIcons {
 		ELCL16_ADD = map("elcl16/add.gif");
 		ELCL16_TRASH = map("elcl16/trash.gif");
 		ELCL16_CLEAR = map("elcl16/clear.gif");
+		CHECKBOX_ENABLED_CHECKED = map("checkboxes/enabled_checked.gif");
+		CHECKBOX_ENABLED_UNCHECKED = map("checkboxes/enabled_unchecked.gif");
+		CHECKBOX_DISABLED_CHECKED = map("checkboxes/disabled_checked.gif");
+		CHECKBOX_DISABLED_UNCHECKED = map("checkboxes/disabled_unchecked.gif");
 	}
 
 	private static ImageDescriptor map(final String icon) {
