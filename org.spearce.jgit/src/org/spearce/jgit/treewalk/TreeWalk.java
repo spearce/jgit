@@ -548,6 +548,24 @@ public class TreeWalk {
 	}
 
 	/**
+	 * Get the current entry's name within its parent tree.
+	 * <p>
+	 * This method is not very efficient and is primarily meant for debugging
+	 * and final output generation. Applications should try to avoid calling it,
+	 * and if invoked do so only once per interesting entry, where the name is
+	 * absolutely required for correct function.
+	 *
+	 * @return name of the current entry within the parent tree (or directory).
+	 *         The name never includes a '/'.
+	 */
+	public String getNameString() {
+		final AbstractTreeIterator t = currentHead;
+		final int off = t.pathOffset;
+		final int end = t.pathLen;
+		return RawParseUtils.decode(Constants.CHARSET, t.path, off, end);
+	}
+
+	/**
 	 * Get the current entry's complete path.
 	 * <p>
 	 * This method is not very efficient and is primarily meant for debugging
