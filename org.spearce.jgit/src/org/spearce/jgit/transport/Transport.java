@@ -39,6 +39,7 @@
 
 package org.spearce.jgit.transport;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -75,8 +76,10 @@ public abstract class Transport {
 	 * @param local
 	 *            existing local repository.
 	 * @param remote
-	 *            location of the remote repository.
-	 * @return the new transport instance. Never null.
+	 *            location of the remote repository - may be URI or remote
+	 *            configuration name.
+	 * @return the new transport instance. Never null. In case of multiple URIs
+	 *         in remote configuration, only the first is chosen.
 	 * @throws URISyntaxException
 	 *             the location is not a remote defined in the configuration
 	 *             file and is not a well-formed URL.
@@ -93,6 +96,35 @@ public abstract class Transport {
 	}
 
 	/**
+	 * Open new transport instances to connect two repositories.
+	 *
+	 * @param local
+	 *            existing local repository.
+	 * @param remote
+	 *            location of the remote repository - may be URI or remote
+	 *            configuration name.
+	 * @return the list of new transport instances for every URI in remote
+	 *         configuration.
+	 * @throws URISyntaxException
+	 *             the location is not a remote defined in the configuration
+	 *             file and is not a well-formed URL.
+	 * @throws NotSupportedException
+	 *             the protocol specified is not supported.
+	 */
+	public static List<Transport> openAll(final Repository local,
+			final String remote) throws NotSupportedException,
+			URISyntaxException {
+		final RemoteConfig cfg = new RemoteConfig(local.getConfig(), remote);
+		final List<URIish> uris = cfg.getURIs();
+		if (uris.size() == 0) {
+			final ArrayList<Transport> transports = new ArrayList<Transport>(1);
+			transports.add(open(local, new URIish(remote)));
+			return transports;
+		}
+		return openAll(local, cfg);
+	}
+
+	/**
 	 * Open a new transport instance to connect two repositories.
 	 * 
 	 * @param local
@@ -100,19 +132,48 @@ public abstract class Transport {
 	 * @param cfg
 	 *            configuration describing how to connect to the remote
 	 *            repository.
-	 * @return the new transport instance. Never null.
+	 * @return the new transport instance. Never null. In case of multiple URIs
+	 *         in remote configuration, only the first is chosen.
 	 * @throws NotSupportedException
 	 *             the protocol specified is not supported.
+	 * @throws IllegalArgumentException
+	 *             if provided remote configuration doesn't have any URI
+	 *             associated.
 	 */
 	public static Transport open(final Repository local, final RemoteConfig cfg)
 			throws NotSupportedException {
+		if (cfg.getURIs().isEmpty())
+			throw new IllegalArgumentException(
+					"Remote config \""
+					+ cfg.getName() + "\" has no URIs associated");
 		final Transport tn = open(local, cfg.getURIs().get(0));
-		tn.setOptionUploadPack(cfg.getUploadPack());
-		tn.fetch = cfg.getFetchRefSpecs();
-		tn.tagopt = cfg.getTagOpt();
-		tn.setOptionReceivePack(cfg.getReceivePack());
-		tn.push = cfg.getPushRefSpecs();
+		tn.applyConfig(cfg);
 		return tn;
+	}
+
+	/**
+	 * Open new transport instances to connect two repositories.
+	 *
+	 * @param local
+	 *            existing local repository.
+	 * @param cfg
+	 *            configuration describing how to connect to the remote
+	 *            repository.
+	 * @return the list of new transport instances for every URI in remote
+	 *         configuration.
+	 * @throws NotSupportedException
+	 *             the protocol specified is not supported.
+	 */
+	public static List<Transport> openAll(final Repository local,
+			final RemoteConfig cfg) throws NotSupportedException {
+		final List<URIish> uris = cfg.getURIs();
+		final List<Transport> transports = new ArrayList<Transport>(uris.size());
+		for (final URIish uri : uris) {
+			final Transport tn = open(local, uri);
+			tn.applyConfig(cfg);
+			transports.add(tn);
+		}
+		return transports;
 	}
 
 	/**
@@ -150,6 +211,82 @@ public abstract class Transport {
 			return new TransportLocal(local, remote);
 
 		throw new NotSupportedException("URI not supported: " + remote);
+	}
+
+	/**
+	 * Convert push remote refs update specification from {@link RefSpec} form
+	 * to {@link RemoteRefUpdate}. Conversion expands wildcards by matching
+	 * source part to local refs. expectedOldObjectId in RemoteRefUpdate is
+	 * always set as null. Tracking branch is configured if RefSpec destination
+	 * matches source of any fetch ref spec for this transport remote
+	 * configuration.
+	 *
+	 * @param db
+	 *            local database.
+	 * @param specs
+	 *            collection of RefSpec to convert.
+	 * @param fetchSpecs
+	 *            fetch specifications used for finding localtracking refs. May
+	 *            be null or empty collection.
+	 * @return collection of set up {@link RemoteRefUpdate}.
+	 * @throws IOException
+	 *             when problem occurred during conversion or specification set
+	 *             up: most probably, missing objects or refs.
+	 */
+	public static Collection<RemoteRefUpdate> findRemoteRefUpdatesFor(
+			final Repository db, final Collection<RefSpec> specs,
+			Collection<RefSpec> fetchSpecs) throws IOException {
+		if (fetchSpecs == null)
+			fetchSpecs = Collections.emptyList();
+		final List<RemoteRefUpdate> result = new LinkedList<RemoteRefUpdate>();
+		final Collection<RefSpec> procRefs = expandPushWildcardsFor(db, specs);
+
+		for (final RefSpec spec : procRefs) {
+			final String srcRef = spec.getSource();
+			// null destination (no-colon in ref-spec) is a special case
+			final String remoteName = (spec.getDestination() == null ? spec
+					.getSource() : spec.getDestination());
+			final boolean forceUpdate = spec.isForceUpdate();
+			final String localName = findTrackingRefName(remoteName, fetchSpecs);
+
+			final RemoteRefUpdate rru = new RemoteRefUpdate(db, srcRef,
+					remoteName, forceUpdate, localName, null);
+			result.add(rru);
+		}
+		return result;
+	}
+
+	private static Collection<RefSpec> expandPushWildcardsFor(
+			final Repository db, final Collection<RefSpec> specs) {
+		final Map<String, Ref> localRefs = db.getAllRefs();
+		final Collection<RefSpec> procRefs = new HashSet<RefSpec>();
+
+		for (final RefSpec spec : specs) {
+			if (spec.isWildcard()) {
+				for (final Ref localRef : localRefs.values()) {
+					if (spec.matchSource(localRef))
+						procRefs.add(spec.expandFromSource(localRef));
+				}
+			} else {
+				procRefs.add(spec);
+			}
+		}
+		return procRefs;
+	}
+
+	private static String findTrackingRefName(final String remoteName,
+			final Collection<RefSpec> fetchSpecs) {
+		// try to find matching tracking refs
+		for (final RefSpec fetchSpec : fetchSpecs) {
+			if (fetchSpec.matchSource(remoteName)) {
+				if (fetchSpec.isWildcard())
+					return fetchSpec.expandFromSource(remoteName)
+							.getDestination();
+				else
+					return fetchSpec.getDestination();
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -210,6 +347,9 @@ public abstract class Transport {
 
 	/** Should push produce thin-pack when sending objects to remote repository. */
 	private boolean pushThin = DEFAULT_PUSH_THIN;
+
+	/** Should push just check for operation result, not really push. */
+	private boolean dryRun;
 
 	/**
 	 * Create a new transport instance.
@@ -352,6 +492,41 @@ public abstract class Transport {
 	}
 
 	/**
+	 * Apply provided remote configuration on this transport.
+	 *
+	 * @param cfg
+	 *            configuration to apply on this transport.
+	 */
+	public void applyConfig(final RemoteConfig cfg) {
+		setOptionUploadPack(cfg.getUploadPack());
+		fetch = cfg.getFetchRefSpecs();
+		setTagOpt(cfg.getTagOpt());
+		optionReceivePack = cfg.getReceivePack();
+		push = cfg.getPushRefSpecs();
+	}
+
+	/**
+	 * @return true if push operation should just check for possible result and
+	 *         not really update remote refs, false otherwise - when push should
+	 *         act normally.
+	 */
+	public boolean isDryRun() {
+		return dryRun;
+	}
+
+	/**
+	 * Set dry run option for push operation.
+	 *
+	 * @param dryRun
+	 *            true if push operation should just check for possible result
+	 *            and not really update remote refs, false otherwise - when push
+	 *            should act normally.
+	 */
+	public void setDryRun(final boolean dryRun) {
+		this.dryRun = dryRun;
+	}
+
+	/**
 	 * Fetch objects and refs from the remote repository to the local one.
 	 * <p>
 	 * This is a utility function providing standard fetch behavior. Local
@@ -421,9 +596,12 @@ public abstract class Transport {
 	 * operation result is provided after execution.
 	 * <p>
 	 * For setting up remote ref update specification from ref spec, see helper
-	 * method {@link #findRemoteRefUpdatesFor(Collection)}, predefined refspecs ({@link #REFSPEC_TAGS},
-	 * {@link #REFSPEC_PUSH_ALL}) or consider using directly
-	 * {@link RemoteRefUpdate} for more possibilities.
+	 * method {@link #findRemoteRefUpdatesFor(Collection)}, predefined refspecs
+	 * ({@link #REFSPEC_TAGS}, {@link #REFSPEC_PUSH_ALL}) or consider using
+	 * directly {@link RemoteRefUpdate} for more possibilities.
+	 * <p>
+	 * When {@link #isDryRun()} is true, result of this operation is just
+	 * estimation of real operation result, no real action is performed.
 	 *
 	 * @see RemoteRefUpdate
 	 *
@@ -436,7 +614,7 @@ public abstract class Transport {
 	 *            collection to use the specifications from the RemoteConfig
 	 *            converted by {@link #findRemoteRefUpdatesFor(Collection)}. No
 	 *            more than 1 RemoteRefUpdate with the same remoteName is
-	 *            allowed.
+	 *            allowed. These objects are modified during this call.
 	 * @return information about results of remote refs updates, tracking refs
 	 *         updates and refs advertised by remote repository.
 	 * @throws NotSupportedException
@@ -452,7 +630,13 @@ public abstract class Transport {
 			TransportException {
 		if (toPush == null || toPush.isEmpty()) {
 			// If the caller did not ask for anything use the defaults.
-			toPush = findRemoteRefUpdatesFor(push);
+			try {
+				toPush = findRemoteRefUpdatesFor(push);
+			} catch (final IOException e) {
+				throw new TransportException(
+						"Problem with resolving push ref specs locally: "
+								+ e.getMessage(), e);
+			}
 			if (toPush.isEmpty())
 				throw new TransportException("Nothing to push.");
 		}
@@ -467,40 +651,20 @@ public abstract class Transport {
 	 * always set as null. Tracking branch is configured if RefSpec destination
 	 * matches source of any fetch ref spec for this transport remote
 	 * configuration.
+	 * <p>
+	 * Conversion is performed for context of this transport (database, fetch
+	 * specifications).
 	 *
 	 * @param specs
 	 *            collection of RefSpec to convert.
 	 * @return collection of set up {@link RemoteRefUpdate}.
-	 * @throws TransportException
+	 * @throws IOException
 	 *             when problem occurred during conversion or specification set
 	 *             up: most probably, missing objects or refs.
 	 */
 	public Collection<RemoteRefUpdate> findRemoteRefUpdatesFor(
-			final Collection<RefSpec> specs) throws TransportException {
-		final List<RemoteRefUpdate> result = new LinkedList<RemoteRefUpdate>();
-		final Collection<RefSpec> procRefs = expandPushWildcardsFor(specs);
-
-		for (final RefSpec spec : procRefs) {
-			try {
-				final String srcRef = spec.getSource();
-				// null destination (no-colon in ref-spec) is a special case
-				final String remoteName = (spec.getDestination() == null ? spec
-						.getSource() : spec.getDestination());
-				final boolean forceUpdate = spec.isForceUpdate();
-				final String localName = findTrackingRefName(remoteName);
-
-				final RemoteRefUpdate rru = new RemoteRefUpdate(local, srcRef,
-						remoteName, forceUpdate, localName, null);
-				result.add(rru);
-			} catch (TransportException x) {
-				throw x;
-			} catch (Exception x) {
-				throw new TransportException(
-						"Problem with resolving push ref spec \"" + spec
-								+ "\" locally: " + x.getMessage(), x);
-			}
-		}
-		return result;
+			final Collection<RefSpec> specs) throws IOException {
+		return findRemoteRefUpdatesFor(local, specs, fetch);
 	}
 
 	/**
@@ -536,36 +700,4 @@ public abstract class Transport {
 	 * any open file handles used to read the "remote" repository.
 	 */
 	public abstract void close();
-
-	private Collection<RefSpec> expandPushWildcardsFor(
-			final Collection<RefSpec> specs) {
-		final Map<String, Ref> localRefs = local.getAllRefs();
-		final Collection<RefSpec> procRefs = new HashSet<RefSpec>();
-
-		for (final RefSpec spec : specs) {
-			if (spec.isWildcard()) {
-				for (final Ref localRef : localRefs.values()) {
-					if (spec.matchSource(localRef))
-						procRefs.add(spec.expandFromSource(localRef));
-				}
-			} else {
-				procRefs.add(spec);
-			}
-		}
-		return procRefs;
-	}
-
-	private String findTrackingRefName(final String remoteName) {
-		// try to find matching tracking refs
-		for (final RefSpec fetchSpec : fetch) {
-			if (fetchSpec.matchSource(remoteName)) {
-				if (fetchSpec.isWildcard())
-					return fetchSpec.expandFromSource(remoteName)
-							.getDestination();
-				else
-					return fetchSpec.getDestination();
-			}
-		}
-		return null;
-	}
 }

@@ -53,9 +53,11 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.spearce.jgit.util.FS;
 
@@ -276,6 +278,25 @@ public class RepositoryConfig {
 		if (baseConfig != null)
 			return baseConfig.getStringList(section, subsection, name);
 		return new String[0];
+	}
+
+	/**
+	 * @param section
+	 *            section to search for.
+	 * @return set of all subsections of specified section within this
+	 *         configuration and its base configuration; may be empty if no
+	 *         subsection exists.
+	 */
+	public Set<String> getSubsections(final String section) {
+		final Set<String> result = new HashSet<String>();
+
+		for (final Entry e : entries) {
+			if (section.equals(e.base) && e.extendedBase != null)
+				result.add(e.extendedBase);
+		}
+		if (baseConfig != null)
+			result.addAll(baseConfig.getSubsections(section));
+		return result;
 	}
 
 	private String getRawString(final String section, final String subsection,

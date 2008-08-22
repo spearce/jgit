@@ -135,7 +135,7 @@ class Branch extends TextBuiltin {
 			final int spaces = maxNameLength - ref.length() + 1;
 			out.print(String.format("%" + spaces + "s", ""));
 			final ObjectId objectId = refObj.getObjectId();
-			out.print(abbreviateObject(objectId));
+			out.print(objectId.abbreviate(db));
 			out.print(' ');
 			out.print(rw.parseCommit(objectId).getShortMessage());
 		}

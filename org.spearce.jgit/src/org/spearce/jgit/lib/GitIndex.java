@@ -190,7 +190,6 @@ public class GitIndex {
 	 * @throws IOException
 	 */
 	public void read() throws IOException {
-		long t0 = System.currentTimeMillis();
 		changed = false;
 		statDirty = false;
 		if (!cacheFile.exists()) {
@@ -214,9 +213,7 @@ public class GitIndex {
 				Entry entry = new Entry(buffer);
 				entries.put(entry.name, entry);
 			}
-			long t1 = System.currentTimeMillis();
 			lastCacheTime = cacheFile.lastModified();
-			System.out.println("Read index "+cacheFile+" in "+((t1-t0)/1000.0)+"s");
 		} finally {
 			cache.close();
 		}

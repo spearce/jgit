@@ -93,7 +93,7 @@ class Fetch extends TextBuiltin {
 		}
 	}
 
-	private static String longTypeOf(final TrackingRefUpdate u) {
+	private String longTypeOf(final TrackingRefUpdate u) {
 		final RefUpdate.Result r = u.getResult();
 		if (r == RefUpdate.Result.LOCK_FAILURE)
 			return "[lock fail]";
@@ -110,14 +110,14 @@ class Fetch extends TextBuiltin {
 		}
 
 		if (r == RefUpdate.Result.FORCED) {
-			final String aOld = abbreviateObject(u.getOldObjectId());
-			final String aNew = abbreviateObject(u.getNewObjectId());
+			final String aOld = u.getOldObjectId().abbreviate(db);
+			final String aNew = u.getNewObjectId().abbreviate(db);
 			return aOld + "..." + aNew;
 		}
 
 		if (r == RefUpdate.Result.FAST_FORWARD) {
-			final String aOld = abbreviateObject(u.getOldObjectId());
-			final String aNew = abbreviateObject(u.getNewObjectId());
+			final String aOld = u.getOldObjectId().abbreviate(db);
+			final String aNew = u.getNewObjectId().abbreviate(db);
 			return aOld + ".." + aNew;
 		}
 

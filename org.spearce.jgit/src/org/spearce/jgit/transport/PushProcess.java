@@ -100,6 +100,9 @@ class PushProcess {
 	/**
 	 * Perform push operation between local and remote repository - set remote
 	 * refs appropriately, send needed objects and update local tracking refs.
+	 * <p>
+	 * When {@link Transport#isDryRun()} is true, result of this operation is
+	 * just estimation of real operation result, no real action is performed.
 	 *
 	 * @param monitor
 	 *            progress monitor used for feedback about operation.
@@ -118,12 +121,15 @@ class PushProcess {
 			monitor.endTask();
 
 			final Map<String, RemoteRefUpdate> preprocessed = prepareRemoteUpdates();
-			if (!preprocessed.isEmpty())
+			if (transport.isDryRun())
+				modifyUpdatesForDryRun();
+			else if (!preprocessed.isEmpty())
 				connection.push(monitor, preprocessed);
 		} finally {
 			connection.close();
 		}
-		updateTrackingRefs();
+		if (!transport.isDryRun())
+			updateTrackingRefs();
 		return prepareOperationResult();
 	}
 
@@ -189,6 +195,12 @@ class PushProcess {
 				result.put(rru.getRemoteName(), rru);
 		}
 		return result;
+	}
+
+	private void modifyUpdatesForDryRun() {
+		for (final RemoteRefUpdate rru : toPush.values())
+			if (rru.getStatus() == Status.NOT_ATTEMPTED)
+				rru.setStatus(Status.OK);
 	}
 
 	private void updateTrackingRefs() {

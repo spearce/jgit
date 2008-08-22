@@ -1,13 +1,19 @@
 /*******************************************************************************
- * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * See LICENSE for the full license text, also available.
  *******************************************************************************/
-package org.spearce.egit.ui.internal.clone;
+package org.spearce.egit.ui.internal.components;
 
-interface BranchChangeListener {
-	/** Notify the receiver that the branches have changed. */
-	void branchesChanged();
+/**
+ * General interface for receivers of selection-changed notifications from
+ * various components.
+ */
+public interface SelectionChangeListener {
+	/**
+	 * Called when selection in calling component has changed.
+	 */
+	public void selectionChanged();
 }

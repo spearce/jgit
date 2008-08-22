@@ -3,6 +3,7 @@
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Roger C. Soares <rogersoares@intelinet.com.br>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -10,8 +11,11 @@
  *******************************************************************************/
 package org.spearce.egit.core.op;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URISyntaxException;
+import java.util.Collection;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -31,39 +35,71 @@ import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.WorkDirCheckout;
 import org.spearce.jgit.transport.FetchResult;
+import org.spearce.jgit.transport.RefSpec;
 import org.spearce.jgit.transport.RemoteConfig;
 import org.spearce.jgit.transport.Transport;
+import org.spearce.jgit.transport.URIish;
 
 /**
  * Clones a repository from a remote location to a local location.
  */
 public class CloneOperation implements IRunnableWithProgress {
-	private final Repository local;
+	private static final String HEADS_PREFIX = Constants.HEADS_PREFIX;
 
-	private final RemoteConfig remote;
+	private static final String REMOTES_PREFIX_S = Constants.REMOTES_PREFIX
+			+ "/";
+
+	private final URIish uri;
+
+	private final boolean allSelected;
+
+	private final Collection<Ref> selectedBranches;
+
+	private final File workdir;
 
 	private final String branch;
+
+	private final String remoteName;
+
+	private Repository local;
+
+	private RemoteConfig remoteConfig;
 
 	private FetchResult fetchResult;
 
 	/**
 	 * Create a new clone operation.
 	 * 
-	 * @param r
-	 *            repository the checkout will happen within.
-	 * @param t
+	 * @param uri
 	 *            remote we should fetch from.
-	 * @param b
+	 * @param allSelected
+	 *            true when all branches have to be fetched (indicates wildcard
+	 *            in created fetch refspec), false otherwise.
+	 * @param selectedBranches
+	 *            collection of branches to fetch. Ignored when allSelected is
+	 *            true.
+	 * @param workdir
+	 *            working directory to clone to. The directory may or may not
+	 *            already exist.
+	 * @param branch
 	 *            branch to initially clone from.
+	 * @param remoteName
+	 *            name of created remote config as source remote (typically
+	 *            named "origin").
 	 */
-	public CloneOperation(final Repository r, final RemoteConfig t,
-			final String b) {
-		local = r;
-		remote = t;
-		branch = b;
+	public CloneOperation(final URIish uri, final boolean allSelected,
+			final Collection<Ref> selectedBranches, final File workdir,
+			final String branch, final String remoteName) {
+		this.uri = uri;
+		this.allSelected = allSelected;
+		this.selectedBranches = selectedBranches;
+		this.workdir = workdir;
+		this.branch = branch;
+		this.remoteName = remoteName;
 	}
 
-	public void run(final IProgressMonitor pm) throws InvocationTargetException {
+	public void run(final IProgressMonitor pm)
+			throws InvocationTargetException, InterruptedException {
 		final IProgressMonitor monitor;
 		if (pm == null)
 			monitor = new NullProgressMonitor();
@@ -71,21 +107,65 @@ public class CloneOperation implements IRunnableWithProgress {
 			monitor = pm;
 
 		try {
-			monitor.beginTask(NLS.bind(CoreText.CloneOperation_title, remote
-					.getURIs().get(0).toString()), 5000);
-			doFetch(new SubProgressMonitor(monitor, 4000));
-			doCheckout(new SubProgressMonitor(monitor, 1000));
-		} catch (IOException e) {
-			if (!monitor.isCanceled())
+			monitor.beginTask(NLS.bind(CoreText.CloneOperation_title, uri),
+					5000);
+			try {
+				doInit(new SubProgressMonitor(monitor, 100));
+				doFetch(new SubProgressMonitor(monitor, 4000));
+				doCheckout(new SubProgressMonitor(monitor, 900));
+			} finally {
+				closeLocal();
+			}
+		} catch (final Exception e) {
+			delete(workdir);
+			if (monitor.isCanceled())
+				throw new InterruptedException();
+			else
 				throw new InvocationTargetException(e);
 		} finally {
 			monitor.done();
 		}
 	}
 
+	private void closeLocal() {
+		if (local != null) {
+			local.close();
+			local = null;
+		}
+	}
+
+	private void doInit(final IProgressMonitor monitor)
+			throws URISyntaxException, IOException {
+		monitor.setTaskName("Initializing local repository");
+
+		final File gitdir = new File(workdir, ".git");
+		local = new Repository(gitdir);
+		local.create();
+		local.writeSymref(Constants.HEAD, branch);
+
+		remoteConfig = new RemoteConfig(local.getConfig(), remoteName);
+		remoteConfig.addURI(uri);
+
+		final String dst = REMOTES_PREFIX_S + remoteConfig.getName();
+		RefSpec wcrs = new RefSpec();
+		wcrs = wcrs.setForceUpdate(true);
+		wcrs = wcrs.setSourceDestination(HEADS_PREFIX + "/*", dst + "/*");
+
+		if (allSelected) {
+			remoteConfig.addFetchRefSpec(wcrs);
+		} else {
+			for (final Ref ref : selectedBranches)
+				if (wcrs.matchSource(ref))
+					remoteConfig.addFetchRefSpec(wcrs.expandFromSource(ref));
+		}
+
+		remoteConfig.update(local.getConfig());
+		local.getConfig().save();
+	}
+
 	private void doFetch(final IProgressMonitor monitor)
 			throws NotSupportedException, TransportException {
-		final Transport tn = Transport.open(local, remote);
+		final Transport tn = Transport.open(local, remoteConfig);
 		try {
 			final EclipseGitProgressTransformer pm;
 			pm = new EclipseGitProgressTransformer(monitor);
@@ -115,5 +195,16 @@ public class CloneOperation implements IRunnableWithProgress {
 		co.checkout();
 		monitor.setTaskName("Writing index");
 		index.write();
+	}
+
+	private static void delete(final File d) {
+		if (d.isDirectory()) {
+			final File[] items = d.listFiles();
+			if (items != null) {
+				for (final File c : items)
+					delete(c);
+			}
+		}
+		d.delete();
 	}
 }

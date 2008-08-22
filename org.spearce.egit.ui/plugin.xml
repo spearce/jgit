@@ -40,6 +40,12 @@
                id="org.spearce.egit.ui.internal.actions.Disconnect">
          </action>
          <action
+               class="org.spearce.egit.ui.internal.actions.PushAction"
+               id="org.spearce.egit.ui.internal.actions.PushAction"
+               label="%PushAction_label"
+               menubarPath="team.main/projectGroup"
+               tooltip="%PushAction_tooltip"/>
+         <action
                class="org.spearce.egit.ui.internal.actions.ResetAction"
                id="org.spearce.egit.ui.internal.actions.ResetAction"
                label="%ResetAction_label"
@@ -252,6 +258,15 @@
               name="repositoryGroup">
         </separator>
 	    </menu>
+		<action
+		       class="org.spearce.egit.ui.internal.actions.PushAction"
+		       id="org.spearce.egit.ui.actionpush"
+		       label="%PushAction_label"
+		       style="push"
+		       menubarPath="org.spearce.egit.ui.gitmenu/repo"
+		       toolbarPath="org.spearce.egit.ui"
+		       tooltip="%PushAction_tooltip">
+		</action>
 		<action
 		       class="org.spearce.egit.ui.internal.actions.BranchAction"
 		       disabledIcon="icons/toolbar/checkoutd.png"

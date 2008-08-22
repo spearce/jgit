@@ -385,6 +385,8 @@ public class Repository {
 	 */
 	public Object mapObject(final ObjectId id, final String refName) throws IOException {
 		final ObjectLoader or = openObject(id);
+		if (or == null)
+			return null;
 		final byte[] raw = or.getBytes();
 		if (or.getType() == Constants.OBJ_TREE)
 			return makeTree(id, raw);
@@ -394,7 +396,8 @@ public class Repository {
 			return makeTag(id, refName, raw);
 		if (or.getType() == Constants.OBJ_BLOB)
 			return raw;
-		return null;
+		throw new IncorrectObjectTypeException(id,
+				"COMMIT nor TREE nor BLOB nor TAG");
 	}
 
 	/**
@@ -566,9 +569,22 @@ public class Repository {
 								break;
 						}
 						String parentnum = new String(rev, i+1, j-i-1);
-						int pnum = Integer.parseInt(parentnum);
-						if (pnum != 0)
-							refId = ((Commit)ref).getParentIds()[pnum - 1];
+						int pnum;
+						try {
+							pnum = Integer.parseInt(parentnum);
+						} catch (NumberFormatException e) {
+							throw new RevisionSyntaxException(
+									"Invalid commit parent number",
+									revstr);
+						}
+						if (pnum != 0) {
+							final ObjectId parents[] = ((Commit) ref)
+									.getParentIds();
+							if (pnum > parents.length)
+								refId = null;
+							else
+								refId = parents[pnum - 1];
+						}
 						i = j - 1;
 						break;
 					case '{':
@@ -629,17 +645,27 @@ public class Repository {
 						break;
 					default:
 						ref = mapObject(refId, null);
-						if (ref instanceof Commit)
-							refId = ((Commit)ref).getParentIds()[0];
-						else
+						if (ref instanceof Commit) {
+							final ObjectId parents[] = ((Commit) ref)
+									.getParentIds();
+							if (parents.length == 0)
+								refId = null;
+							else
+								refId = parents[0];
+						} else
 							throw new IncorrectObjectTypeException(refId,  Constants.TYPE_COMMIT);
 						
 					}
 				} else {
 					ref = mapObject(refId, null);
-					if (ref instanceof Commit)
-						refId = ((Commit)ref).getParentIds()[0];
-					else
+					if (ref instanceof Commit) {
+						final ObjectId parents[] = ((Commit) ref)
+								.getParentIds();
+						if (parents.length == 0)
+							refId = null;
+						else
+							refId = parents[0];
+					} else
 						throw new IncorrectObjectTypeException(refId,  Constants.TYPE_COMMIT);
 				}
 				break;
@@ -655,9 +681,20 @@ public class Repository {
 						break;
 				}
 				String distnum = new String(rev, i+1, l-i-1);
-				int dist = Integer.parseInt(distnum);
+				int dist;
+				try {
+					dist = Integer.parseInt(distnum);
+				} catch (NumberFormatException e) {
+					throw new RevisionSyntaxException(
+							"Invalid ancestry length", revstr);
+				}
 				while (dist >= 0) {
-					refId = ((Commit)ref).getParentIds()[0];
+					final ObjectId[] parents = ((Commit) ref).getParentIds();
+					if (parents.length == 0) {
+						refId = null;
+						break;
+					}
+					refId = parents[0];
 					ref = mapCommit(refId);
 					--dist;
 				}
@@ -983,6 +1020,9 @@ public class Repository {
 	 */
 	public static boolean isValidRefName(final String refName) {
 		final int len = refName.length();
+		if (len == 0)
+			return false;
+
 		char p = '\0';
 		for (int i=0; i<len; ++i) {
 			char c = refName.charAt(i);

@@ -86,7 +86,10 @@ class Push extends TextBuiltin {
 	@Option(name = "--receive-pack", metaVar = "path")
 	private String receivePack;
 
-	private boolean first = true;
+	@Option(name = "--dry-run")
+	private boolean dryRun;
+
+	private boolean shownURI;
 
 	@Override
 	protected void run() throws Exception {
@@ -97,27 +100,32 @@ class Push extends TextBuiltin {
 				refSpecs.add(spec.setForceUpdate(true));
 		}
 
-		final Transport transport = Transport.open(db, remote);
-		transport.setPushThin(thin);
-		if (receivePack != null)
-			transport.setOptionReceivePack(receivePack);
-		final Collection<RemoteRefUpdate> toPush = transport
-				.findRemoteRefUpdatesFor(refSpecs);
+		final List<Transport> transports = Transport.openAll(db, remote);
+		for (final Transport transport : transports) {
+			transport.setPushThin(thin);
+			if (receivePack != null)
+				transport.setOptionReceivePack(receivePack);
+			transport.setDryRun(dryRun);
 
-		final PushResult result = transport.push(new TextProgressMonitor(),
-				toPush);
-		transport.close();
+			final Collection<RemoteRefUpdate> toPush = transport
+					.findRemoteRefUpdatesFor(refSpecs);
 
-		printPushResult(result);
+			final PushResult result = transport.push(new TextProgressMonitor(),
+					toPush);
+			printPushResult(transport, result);
+		}
 	}
 
-	private void printPushResult(final PushResult result) {
+	private void printPushResult(final Transport transport,
+			final PushResult result) {
+		shownURI = false;
 		boolean everythingUpToDate = true;
+
 		// at first, print up-to-date ones...
 		for (final RemoteRefUpdate rru : result.getRemoteUpdates()) {
 			if (rru.getStatus() == Status.UP_TO_DATE) {
 				if (verbose)
-					printRefUpdateResult(result, rru);
+					printRefUpdateResult(transport, result, rru);
 			} else
 				everythingUpToDate = false;
 		}
@@ -125,25 +133,25 @@ class Push extends TextBuiltin {
 		for (final RemoteRefUpdate rru : result.getRemoteUpdates()) {
 			// ...then successful updates...
 			if (rru.getStatus() == Status.OK)
-				printRefUpdateResult(result, rru);
+				printRefUpdateResult(transport, result, rru);
 		}
 
 		for (final RemoteRefUpdate rru : result.getRemoteUpdates()) {
 			// ...finally, others (problematic)
 			if (rru.getStatus() != Status.OK
 					&& rru.getStatus() != Status.UP_TO_DATE)
-				printRefUpdateResult(result, rru);
+				printRefUpdateResult(transport, result, rru);
 		}
 
 		if (everythingUpToDate)
 			out.println("Everything up-to-date");
 	}
 
-	private void printRefUpdateResult(final PushResult result,
-			final RemoteRefUpdate rru) {
-		if (first) {
-			first = false;
-			out.format("To %s\n", result.getURI());
+	private void printRefUpdateResult(final Transport transport,
+			final PushResult result, final RemoteRefUpdate rru) {
+		if (!shownURI) {
+			shownURI = true;
+			out.format("To %s\n", transport.getURI());
 		}
 
 		final String remoteName = rru.getRemoteName();
@@ -165,10 +173,9 @@ class Push extends TextBuiltin {
 				} else {
 					boolean fastForward = rru.isFastForward();
 					final char flag = fastForward ? ' ' : '+';
-					final String summary = abbreviateObject(oldRef
-							.getObjectId())
+					final String summary = oldRef.getObjectId().abbreviate(db)
 							+ (fastForward ? ".." : "...")
-							+ abbreviateObject(rru.getNewObjectId());
+							+ rru.getNewObjectId().abbreviate(db);
 					final String message = fastForward ? null : "forced update";
 					printUpdateLine(flag, summary, srcRef, remoteName, message);
 				}
@@ -191,7 +198,7 @@ class Push extends TextBuiltin {
 
 		case REJECTED_REMOTE_CHANGED:
 			final String message = "remote ref object changed - is not expected one "
-					+ abbreviateObject(rru.getExpectedOldObjectId());
+					+ rru.getExpectedOldObjectId().abbreviate(db);
 			printUpdateLine('!', "[rejected]", srcRef, remoteName, message);
 			break;
 

@@ -95,6 +95,24 @@ public class CoreText extends NLS {
 	/** */
 	public static String CloneOperation_title;
 
+	/** */
+	public static String ListRemoteOperation_title;
+
+	/** */
+	public static String PushOperation_resultCancelled;
+
+	/** */
+	public static String PushOperation_resultNotSupported;
+
+	/** */
+	public static String PushOperation_resultTransportError;
+
+	/** */
+	public static String PushOperation_taskNameDryRun;
+
+	/** */
+	public static String PushOperation_taskNameNormalRun;
+
 	static {
 		final Class c = CoreText.class;
 		initializeMessages(c.getPackage().getName() + ".coretext", c);
