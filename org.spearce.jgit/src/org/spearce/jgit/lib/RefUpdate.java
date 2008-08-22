@@ -110,6 +110,13 @@ public class RefUpdate {
 		REJECTED,
 
 		/**
+		 * Rejected because trying to delete the current branch.
+		 * <p>
+		 * Has no meaning for update.
+		 */
+		REJECTED_CURRENT_BRANCH,
+
+		/**
 		 * The ref was probably not updated because of I/O error.
 		 * <p>
 		 * Unexpected I/O error occurred when writing new ref. Such error may
@@ -323,6 +330,12 @@ public class RefUpdate {
 	 * @throws IOException
 	 */
 	public Result delete() throws IOException {
+		if (name.startsWith(Constants.R_HEADS)) {
+			final Ref head = db.readRef(Constants.HEAD);
+			if (head != null && name.equals(head.getName()))
+				return Result.REJECTED_CURRENT_BRANCH;
+		}
+
 		try {
 			return updateImpl(new RevWalk(db.getRepository()),
 					new DeleteStore());
