@@ -52,11 +52,11 @@ import org.spearce.jgit.revwalk.RevWalk;
 public class RefUpdate {
 	/** Status of an update request. */
 	public static enum Result {
-		/** The ref update has not been attempted by the caller. */
+		/** The ref update/delete has not been attempted by the caller. */
 		NOT_ATTEMPTED,
 
 		/**
-		 * The ref could not be locked for update.
+		 * The ref could not be locked for update/delete.
 		 * <p>
 		 * This is generally a transient failure and is usually caused by
 		 * another process trying to access the ref at the same time as this
@@ -69,12 +69,12 @@ public class RefUpdate {
 		 * Same value already stored.
 		 * <p>
 		 * Both the old value and the new value are identical. No change was
-		 * necessary.
+		 * necessary for an update. For delete the branch is removed.
 		 */
 		NO_CHANGE,
 
 		/**
-		 * The ref was created locally.
+		 * The ref was created locally for an update, but ignored for delete.
 		 * <p>
 		 * The ref did not exist when the update started, but it was created
 		 * successfully with the new value.
@@ -82,7 +82,7 @@ public class RefUpdate {
 		NEW,
 
 		/**
-		 * The ref had to be forcefully updated.
+		 * The ref had to be forcefully updated/deleted.
 		 * <p>
 		 * The ref already existed but its old value was not fully merged into
 		 * the new value. The configuration permitted a forced update to take
@@ -92,7 +92,7 @@ public class RefUpdate {
 		FORCED,
 
 		/**
-		 * The ref was updated in a fast-forward way.
+		 * The ref was updated/deleted in a fast-forward way.
 		 * <p>
 		 * The tracking ref already existed and its old value was fully merged
 		 * into the new value. No history was made unreachable.
@@ -104,7 +104,7 @@ public class RefUpdate {
 		 * <p>
 		 * The tracking ref already existed but its old value was not fully
 		 * merged into the new value. The configuration did not allow a forced
-		 * update to take place, so ref still contains the old value. No
+		 * update/delete to take place, so ref still contains the old value. No
 		 * previous history was lost.
 		 */
 		REJECTED,
@@ -117,7 +117,7 @@ public class RefUpdate {
 		REJECTED_CURRENT_BRANCH,
 
 		/**
-		 * The ref was probably not updated because of I/O error.
+		 * The ref was probably not updated/deleted because of I/O error.
 		 * <p>
 		 * Unexpected I/O error occurred when writing new ref. Such error may
 		 * result in uncertain state, but most probably ref was not updated.
