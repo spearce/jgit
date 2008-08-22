@@ -618,7 +618,7 @@ public abstract class Transport {
 	 * @return information about results of remote refs updates, tracking refs
 	 *         updates and refs advertised by remote repository.
 	 * @throws NotSupportedException
-	 *             this transport implementation does not support pusing
+	 *             this transport implementation does not support pushing
 	 *             objects.
 	 * @throws TransportException
 	 *             the remote connection could not be established or object

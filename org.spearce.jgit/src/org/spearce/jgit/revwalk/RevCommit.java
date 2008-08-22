@@ -307,7 +307,7 @@ public class RevCommit extends RevObject {
 	 * of commits.
 	 * 
 	 * @return identity of the committer (name, email) and the time the commit
-	 *         was made by the comitter; null if no committer line was found.
+	 *         was made by the committer; null if no committer line was found.
 	 */
 	public final PersonIdent getCommitterIdent() {
 		final byte[] raw = buffer;

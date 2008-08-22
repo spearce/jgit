@@ -182,7 +182,7 @@ public class DirCacheEntry {
 	}
 
 	/**
-	 * Is it possible for this entry to be accidently assumed clean?
+	 * Is it possible for this entry to be accidentally assumed clean?
 	 * <p>
 	 * The "racy git" problem happens when a work file can be updated faster
 	 * than the filesystem records file modification timestamps. It is possible

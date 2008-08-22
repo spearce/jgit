@@ -26,7 +26,7 @@ import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 
 /**
- * A resource node is for letting Eclipse access data in the git repo in a hierachical
+ * A resource node is for letting Eclipse access data in the git repo in a hierarchical
  * fashion, e.g. for the compare editor.
  */
 public class GitResourceNode extends BufferedContent implements IStructureComparator, ITypedElement {

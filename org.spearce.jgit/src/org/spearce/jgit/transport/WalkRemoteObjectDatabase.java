@@ -60,7 +60,7 @@ import org.spearce.jgit.util.NB;
  * <p>
  * Implementations are responsible for resolving path names relative to the
  * <code>objects/</code> subdirectory of a single remote Git repository or
- * nake object database and make the content available as a Java input stream
+ * naked object database and make the content available as a Java input stream
  * for reading during fetch. The actual object traversal logic to determine the
  * names of files to retrieve is handled through the generic, protocol
  * independent {@link WalkFetchConnection}.

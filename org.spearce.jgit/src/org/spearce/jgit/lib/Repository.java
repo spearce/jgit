@@ -185,7 +185,7 @@ public class Repository {
 	}
 
 	/**
-	 * @return the directory containg the objects owned by this repository.
+	 * @return the directory containing the objects owned by this repository.
 	 */
 	public File getObjectsDirectory() {
 		return objectsDirs[0];
@@ -1010,7 +1010,7 @@ public class Repository {
 	}
 
 	/**
-	 * Check validty of a ref name. It must not contain character that has
+	 * Check validity of a ref name. It must not contain character that has
 	 * a special meaning in a Git object reference expression. Some other
 	 * dangerous characters are also excluded.
 	 *
@@ -1055,10 +1055,10 @@ public class Repository {
 	}
 
 	/**
-	 * String work dir and return normalized repository path
+	 * Strip work dir and return normalized repository path
 	 *
 	 * @param wd Work dir
-	 * @param f File whose path shall be stripp off it's workdir
+	 * @param f File whose path shall be stripped of its workdir
 	 * @return normalized repository relative path
 	 */
 	public static String stripWorkDir(File wd, File f) {

@@ -577,7 +577,7 @@ public class RefSpecPanel {
 	 * <p>
 	 * Listeners are notified on events caused by both operations invoked by
 	 * external calls and user interaction. Listener method(s) is always called
-	 * from UI thread and shouln't perform long computations.
+	 * from UI thread and shouldn't perform long computations.
 	 * <p>
 	 * Order of adding listeners is significant. This method is not thread-safe.
 	 * Listeners should be set up before panel usage.

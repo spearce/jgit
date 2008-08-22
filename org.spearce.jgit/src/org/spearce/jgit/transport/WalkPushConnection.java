@@ -147,7 +147,7 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 		}
 
 		// If we have any updates we need to upload the objects first, to
-		// prevent creating refs pointing at non-existant data. Then we
+		// prevent creating refs pointing at non-existent data. Then we
 		// can update the refs, and the info-refs file for dumb transports.
 		//
 		if (!updates.isEmpty())

@@ -233,7 +233,7 @@ public class RefSpec {
 	 * Get the destination ref description.
 	 * <p>
 	 * During a fetch this is the local tracking branch that will be updated
-	 * with the new ObjectId after feching is complete. During a push this is
+	 * with the new ObjectId after fetching is complete. During a push this is
 	 * the remote ref that will be updated by the remote's receive-pack process.
 	 * <p>
 	 * If null during a fetch no tracking branch should be updated and the

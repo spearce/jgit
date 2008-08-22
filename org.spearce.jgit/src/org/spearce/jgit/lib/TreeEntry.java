@@ -246,7 +246,7 @@ public abstract class TreeEntry implements Comparable {
 	 * Helper for accessing tree/blob/index methods.
 	 *
 	 * @param i
-	 * @return '/' for Tre entries and NUL for non-treeish objects
+	 * @return '/' for Tree entries and NUL for non-treeish objects
 	 */
 	final public static int lastChar(Entry i) {
 		// FIXME, gitlink etc. Currently Trees cannot appear in the

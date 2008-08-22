@@ -47,7 +47,7 @@ public class BranchSelectionDialog extends Dialog {
 	private boolean showResetType = true;
 	
 	/**
-	 * Construct a dilog to select a branch to reset to or check out
+	 * Construct a dialog to select a branch to reset to or check out
 	 * @param parentShell
 	 * @param repo
 	 */

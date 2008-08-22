@@ -502,7 +502,7 @@ public class PackWriter {
 	 * At first, this method collects and sorts objects to pack, then deltas
 	 * search is performed if set up accordingly, finally pack stream is
 	 * written. {@link ProgressMonitor} tasks {@value #SEARCHING_REUSE_PROGRESS}
-	 * (only if resueDeltas or reuseObjects is enabled) and
+	 * (only if reuseDeltas or reuseObjects is enabled) and
 	 * {@value #WRITING_OBJECTS_PROGRESS} are updated during packing.
 	 * </p>
 	 * <p>

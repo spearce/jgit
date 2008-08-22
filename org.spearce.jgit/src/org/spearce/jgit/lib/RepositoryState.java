@@ -39,7 +39,7 @@ package org.spearce.jgit.lib;
 
 /**
  * Important state of the repository that affects what can and cannot bed
- * done. This is things like unhandles conflicted merges and unfinished rebase.
+ * done. This is things like unhandled conflicted merges and unfinished rebase.
  */
 public enum RepositoryState {
 	/**

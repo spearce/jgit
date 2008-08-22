@@ -44,7 +44,7 @@ import org.spearce.jgit.lib.Repository;
 /**
  * Canonical implementation of an object transport walking transport.
  * <p>
- * Implementations of WalkTransport transfer individual objects one at a a time
+ * Implementations of WalkTransport transfer individual objects one at a time
  * from the loose objects directory, or entire packs if the source side does not
  * have the object as a loose object.
  * <p>

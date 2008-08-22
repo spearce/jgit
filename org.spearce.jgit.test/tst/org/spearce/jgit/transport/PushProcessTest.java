@@ -231,7 +231,7 @@ public class PushProcessTest extends RepositoryTestCase {
 	}
 
 	/**
-	 * Test for remote ref udpate, when connection rejects update.
+	 * Test for remote ref update, when connection rejects update.
 	 *
 	 * @throws IOException
 	 */

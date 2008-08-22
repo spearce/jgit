@@ -310,7 +310,7 @@ public class CommitDialog extends Dialog {
 	}
 
 	/**
-	 * Preset a commit message. This might be for ammending a commit.
+	 * Preset a commit message. This might be for amending a commit.
 	 * @param s the commit message
 	 */
 	public void setCommitMessage(String s) {
@@ -376,7 +376,7 @@ public class CommitDialog extends Dialog {
 	}
 
 	/**
-	 * Set the total list of changed resourcess, including additions and
+	 * Set the total list of changed resources, including additions and
 	 * removals
 	 *
 	 * @param files potentially affected by a new commit
@@ -430,14 +430,14 @@ public class CommitDialog extends Dialog {
 	}
 
 	/**
-	 * @return whether the last commit is to be ammended
+	 * @return whether the last commit is to be amended
 	 */
 	public boolean isAmending() {
 		return amending;
 	}
 
 	/**
-	 * Pre-set whether the last commit is going to be ammended
+	 * Pre-set whether the last commit is going to be amended
 	 *
 	 * @param amending
 	 */
@@ -446,7 +446,7 @@ public class CommitDialog extends Dialog {
 	}
 
 	/**
-	 * Set the message from the previous commit for ammending.
+	 * Set the message from the previous commit for amending.
 	 *
 	 * @param string
 	 */
@@ -455,7 +455,7 @@ public class CommitDialog extends Dialog {
 	}
 
 	/**
-	 * Set whether the previous commit may be ammended
+	 * Set whether the previous commit may be amended
 	 *
 	 * @param amendAllowed
 	 */

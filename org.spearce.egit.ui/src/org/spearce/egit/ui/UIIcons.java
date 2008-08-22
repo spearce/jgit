@@ -21,10 +21,10 @@ public class UIIcons {
 	/** Decoration for resource added to index but not yet committed. */
 	public static final ImageDescriptor OVR_PENDING_ADD;
 
-	/** Decoratoin for resource removed from the index but not commit. */
+	/** Decoration for resource removed from the index but not commit. */
 	public static final ImageDescriptor OVR_PENDING_REMOVE;
 
-	/** Decoration for resource tracked and commited in git. */
+	/** Decoration for resource tracked and committed in git. */
 	public static final ImageDescriptor OVR_SHARED;
 
 	/** Decoration for tracked resource with a merge conflict.  */

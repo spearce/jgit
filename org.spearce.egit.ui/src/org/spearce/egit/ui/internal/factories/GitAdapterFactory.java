@@ -13,7 +13,7 @@ import org.eclipse.team.ui.history.IHistoryPageSource;
 import org.spearce.egit.ui.GitHistoryPageSource;
 
 /**
- * This class is an intellgest "cast" operation for getting
+ * This class is an intelligent "cast" operation for getting
  * an instance of a suitable object from another for a specific
  * purpose.
  */

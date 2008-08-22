@@ -57,7 +57,7 @@ public class PushOperationSpecification {
 	}
 
 	/**
-	 * @return set of remote repositories URIis. Set is ordered in addition
+	 * @return set of remote repositories URIish. Set is ordered in addition
 	 *         sequence.
 	 */
 	public Set<URIish> getURIs() {

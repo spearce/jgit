@@ -32,7 +32,7 @@ package org.spearce.jgit.util;
  *   Added the ability to "suspend" encoding in the Output Stream so
  *   you can turn on and off the encoding if you need to embed base64
  *   data in an otherwise "normal" stream (like an XML file).</li>
- *  <li>v1.5 - Output stream pases on flush() command but doesn't do anything itself.
+ *  <li>v1.5 - Output stream passes on flush() command but doesn't do anything itself.
  *      This helps when using GZIP streams.
  *      Added the ability to GZip-compress objects before encoding them.</li>
  *  <li>v1.4 - Added helper methods to read/write files.</li>
@@ -213,7 +213,7 @@ public class Base64
      * anywhere along their length by specifying
      * <var>srcOffset</var> and <var>destOffset</var>.
      * This method does not check to make sure your arrays
-     * are large enough to accomodate <var>srcOffset</var> + 3 for
+     * are large enough to accommodate <var>srcOffset</var> + 3 for
      * the <var>source</var> array or <var>destOffset</var> + 4 for
      * the <var>destination</var> array.
      * The actual number of significant bytes in your array is
@@ -527,7 +527,7 @@ public class Base64
                     e++;
                     lineLength = 0;
                 }   // end if: end of line
-            }   // en dfor: each piece of array
+            }   // end for: each piece of array
 
             if( d < len )
             {
@@ -565,7 +565,7 @@ public class Base64
      * anywhere along their length by specifying
      * <var>srcOffset</var> and <var>destOffset</var>.
      * This method does not check to make sure your arrays
-     * are large enough to accomodate <var>srcOffset</var> + 4 for
+     * are large enough to accommodate <var>srcOffset</var> + 4 for
      * the <var>source</var> array or <var>destOffset</var> + 3 for
      * the <var>destination</var> array.
      * This method returns the actual number of bytes that
@@ -1315,7 +1315,7 @@ public class Base64
             {
                 super.out.write( theByte );
                 return;
-            }   // end if: supsended
+            }   // end if: suspended
 
             // Encode?
             if( encode )
@@ -1376,7 +1376,7 @@ public class Base64
             {
                 super.out.write( theBytes, off, len );
                 return;
-            }   // end if: supsended
+            }   // end if: suspended
 
             for( int i = 0; i < len; i++ )
             {
