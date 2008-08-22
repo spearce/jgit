@@ -16,7 +16,7 @@ things.
 
 - A reasonably recent version of Git itself installed on your platform to
   take care of what the plugin does not yet do or do things that native
-  git does better. Some tests have been peformed using both Cygwin and MSYS git.
+  git does better. Some tests have been performed using both Cygwin and MSYS git.
   Both have issues that we need both feedback and patches for.
 
 INSTALLATION INSTRUCTIONS
@@ -25,7 +25,7 @@ INSTALLATION INSTRUCTIONS
 - Start eclipse
 - Make sure a recent JDK 1.5.0_11 or JDK 1.6.x is among your installed JRE's. Which
   one is the default should not matter but Java 6 is recommended. 
-- Import the egit projects. Make sure there aare no compilation errors
+- Import the egit projects. Make sure there are no compilation errors
 - Now you can either export the plugin to a set of jar files to use in an Eclipse 
   installation or run it from within Eclipse. The latter is for development and 
   tracking down bugs.
@@ -34,7 +34,7 @@ INSTALLATION INSTRUCTIONS
   fragments and choose the Next button. Set Directory to the top of your
   installation directory (NOT the plugins directory). Select Finish. After 
   that restart Eclipse. You can associate a project withe Eclipse using the
-  Team>Share meny in the context meny when a project is selected.
+  Team>Share menu in the context menu when a project is selected.
 
 DEBUGGING INSTRUCTIONS
 - Select the org.spearce.egit.ui project, and using the context menu select

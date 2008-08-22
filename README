@@ -127,7 +127,7 @@ three for packaging.
     * Connect/disconnect the provider to a project.
 
     * Search for the repositories associated with a project by
-      autodecting the GIT repository directories.
+      autodetecting the GIT repository directories.
 
     * Store which repositories are tied to which containers in the
       Eclipse workspace.
