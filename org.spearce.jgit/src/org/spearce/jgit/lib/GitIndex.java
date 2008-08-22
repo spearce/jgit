@@ -532,7 +532,7 @@ public class GitIndex {
 			if (file.length() != size)
 				return true;
 
-			// Git under windows only stores seconds so we round the timestmap
+			// Git under windows only stores seconds so we round the timestamp
 			// Java gives us if it looks like the timestamp in index is seconds
 			// only. Otherwise we compare the timestamp at millisecond prevision.
 			long javamtime = mtime / 1000000L;
@@ -689,7 +689,7 @@ public class GitIndex {
 						+ signature);
 			if (version != 2)
 				throw new CorruptObjectException(
-						"Unknow index version (or corrupt index):" + version);
+						"Unknown index version (or corrupt index):" + version);
 		}
 
 		void write(ByteBuffer buf) {

@@ -73,7 +73,7 @@ public class CommitAction extends RepositoryAction {
 		for (Repository repo : repos) {
 			if (!repo.getRepositoryState().canCommit()) {
 				MessageDialog.openError(getTargetPart().getSite().getShell(),
-					"Cannot commit now", "Respository state:"
+					"Cannot commit now", "Repository state:"
 							+ repo.getRepositoryState().getDescription());
 				return;
 			}
@@ -132,7 +132,7 @@ public class CommitAction extends RepositoryAction {
 			if (parentId != null)
 				previousCommit = repo.mapCommit(parentId);
 		} catch (IOException e) {
-			Utils.handleError(getTargetPart().getSite().getShell(), e, "Error during commit", "Error occurred retreiving last commit");
+			Utils.handleError(getTargetPart().getSite().getShell(), e, "Error during commit", "Error occurred retrieving last commit");
 		}
 	}
 

@@ -54,7 +54,7 @@ public class T0007_Index extends RepositoryTestCase {
 		try {
 			canrungitstatus = system(new File("."),"git --version") == 0;
 		} catch (IOException e) {
-			System.out.println("Warning: cannot invvoke native git to validate index");
+			System.out.println("Warning: cannot invoke native git to validate index");
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -364,7 +364,7 @@ public class T0007_Index extends RepositoryTestCase {
 			assertTrue(index2.getEntry(nonexecFile.getName()).isModified(trash));
 
 		} catch (NoSuchMethodException e) {
-			System.err.println("Test ignored when running under JDk < 1.6");
+			System.err.println("Test ignored when running under JDK < 1.6");
 			return;
 		}
 	}
@@ -416,7 +416,7 @@ public class T0007_Index extends RepositoryTestCase {
 			assertFalse(index2.getEntry(nonexecFile.getName()).isModified(trash));
 
 		} catch (NoSuchMethodException e) {
-			System.err.println("Test ignored when running under JDk < 1.6");
+			System.err.println("Test ignored when running under JDK < 1.6");
 			return;
 		}
 	}

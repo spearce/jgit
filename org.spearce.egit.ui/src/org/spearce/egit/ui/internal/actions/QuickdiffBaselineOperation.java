@@ -37,7 +37,7 @@ public class QuickdiffBaselineOperation extends AbstractRevObjectOperation {
 		try {
 			GitQuickDiffProvider.setBaselineReference(repository, baseline);
 		} catch (IOException e) {
-			Activator.logError("Cannot set quickdiff basekine", e);
+			Activator.logError("Cannot set quickdiff baseline", e);
 		}
 	}
 

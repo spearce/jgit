@@ -316,7 +316,7 @@ public class GitProjectData {
 					return m;
 			}
 		} catch (CoreException err) {
-			Activator.logError("Falied finding RepositoryMapping", err);
+			Activator.logError("Failed finding RepositoryMapping", err);
 		}
 		return null;
 	}

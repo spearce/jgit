@@ -98,6 +98,6 @@ public enum TagOpt {
 			if (tagopt.option().equals(o))
 				return tagopt;
 		}
-		throw new IllegalArgumentException("Invald tag option: " + o);
+		throw new IllegalArgumentException("Invalid tag option: " + o);
 	}
 }

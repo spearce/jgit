@@ -198,6 +198,6 @@ public class TreeIterator implements Iterator<TreeEntry> {
 
 	public void remove() {
 		throw new IllegalStateException(
-				"TreeIterator does not suppport remove()");
+				"TreeIterator does not support remove()");
 	}
 }

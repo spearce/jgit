@@ -37,7 +37,7 @@ public class BranchAction extends RepositoryAction {
 
 		if (!repository.getRepositoryState().canCheckout()) {
 			MessageDialog.openError(getShell(), "Cannot checkout now",
-					"Respository state:"
+					"Repository state:"
 							+ repository.getRepositoryState().getDescription());
 			return;
 		}
