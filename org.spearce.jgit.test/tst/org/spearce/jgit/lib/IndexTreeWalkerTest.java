@@ -120,19 +120,6 @@ public class IndexTreeWalkerTest extends RepositoryTestCase {
 		assertEquals("foo/bar/baz", indexOnlyEntriesVisited.get(1));
 	}
 	
-	public class MyIndexTreeVisitor extends AbstractIndexTreeVisitor {
-		public ArrayList<String> visits = new ArrayList<String>();
-		public void visitEntry(TreeEntry treeEntry, TreeEntry auxEntry,
-				Entry indexEntry, File file) throws IOException {
-			visits.add(file.getPath());
-		}
-	
-		public void visitEntry(TreeEntry treeEntry, Entry indexEntry, File file)
-				throws IOException {
-			visits.add(file.getPath());
-		}
-	}
-	
 	public void testLeavingTree() throws IOException {
 		GitIndex index = new GitIndex(db);
 		index.add(trash, writeTrashFile("foo/bar", "foo/bar"));
