@@ -362,7 +362,7 @@ public class RefUpdate {
 			newObj = safeParse(walk, newValue);
 			oldObj = safeParse(walk, oldValue);
 			if (newObj == oldObj)
-				return Result.NO_CHANGE;
+				return store.store(lock, Result.NO_CHANGE);
 
 			if (newObj instanceof RevCommit && oldObj instanceof RevCommit) {
 				if (walk.isMergedInto((RevCommit) oldObj, (RevCommit) newObj))
@@ -393,6 +393,8 @@ public class RefUpdate {
 
 	private Result updateStore(final LockFile lock, final Result status)
 			throws IOException {
+		if (status == Result.NO_CHANGE)
+			return status;
 		lock.setNeedStatInformation(true);
 		lock.write(newValue);
 		String msg = getRefLogMessage();
