@@ -614,6 +614,93 @@ public class UIText extends NLS {
 	public static String ResultDialog_label;
 
 	/** */
+	public static String FetchAction_wrongURITitle;
+
+	/** */
+	public static String FetchAction_wrongURIMessage;
+
+	/** */
+	public static String FetchResultDialog_labelEmptyResult;
+
+	/** */
+	public static String FetchResultDialog_labelNonEmptyResult;
+
+	/** */
+	public static String FetchResultDialog_title;
+
+	/** */
+	public static String FetchResultTable_columnDst;
+
+	/** */
+	public static String FetchResultTable_columnSrc;
+
+	/** */
+	public static String FetchResultTable_columnStatus;
+
+	/** */
+	public static String FetchResultTable_statusDetailCouldntLock;
+
+	/** */
+	public static String FetchResultTable_statusDetailFastForward;
+
+	/** */
+	public static String FetchResultTable_statusDetailIOError;
+
+	/** */
+	public static String FetchResultTable_statusDetailNonFastForward;
+
+	/** */
+	public static String FetchResultTable_statusIOError;
+
+	/** */
+	public static String FetchResultTable_statusLockFailure;
+
+	/** */
+	public static String FetchResultTable_statusNewBranch;
+
+	/** */
+	public static String FetchResultTable_statusNew;
+
+	/** */
+	public static String FetchResultTable_statusNewTag;
+
+	/** */
+	public static String FetchResultTable_statusRejected;
+
+	/** */
+	public static String FetchResultTable_statusUnexpected;
+
+	/** */
+	public static String FetchResultTable_statusUpToDate;
+
+	/** */
+	public static String FetchWizard_cantSaveMessage;
+
+	/** */
+	public static String FetchWizard_cantSaveTitle;
+
+	/** */
+	public static String FetchWizard_fetchNotSupported;
+
+	/** */
+	public static String FetchWizard_jobName;
+
+	/** */
+	public static String FetchWizard_transportError;
+
+	/** */
+	public static String FetchWizard_transportNotSupportedMessage;
+
+	/** */
+	public static String FetchWizard_transportNotSupportedTitle;
+
+	/** */
+	public static String FetchWizard_windowTitleDefault;
+
+	/** */
+	public static String FetchWizard_windowTitleWithSource;
+
+	/** */
 	public static String WindowCachePreferencePage_title;
 
 	/** */
