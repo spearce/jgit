@@ -139,7 +139,7 @@ class ConfirmationPage extends WizardPage {
 
 	private void revalidate() {
 		// always update this page
-		resultPanel.setData(local, new PushOperationResult());
+		resultPanel.setData(local, null);
 		confirmedResult = null;
 		displayedRepoSelection = repoPage.getSelection();
 		displayedRefSpecs = refSpecPage.getRefSpecs();

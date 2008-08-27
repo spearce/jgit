@@ -120,7 +120,7 @@ class PushResultTable {
 			}
 		});
 		tableViewer.setContentProvider(new RefUpdateContentProvider());
-		tableViewer.setInput(new PushOperationResult());
+		tableViewer.setInput(null);
 	}
 
 	void setData(final Repository localDb, final PushOperationResult result) {
@@ -128,7 +128,7 @@ class PushResultTable {
 		for (final TableColumn tc : tableViewer.getTable().getColumns())
 			tc.dispose();
 		// Set empty result for a while.
-		tableViewer.setInput(new PushOperationResult());
+		tableViewer.setInput(null);
 
 		// Layout should be recreated to work properly.
 		final TableColumnLayout layout = new TableColumnLayout();
@@ -170,6 +170,11 @@ class PushResultTable {
 				return ((RefUpdateElement) element).getDstRefName();
 			}
 		});
+
+		if (result == null) {
+			tablePanel.layout();
+			return;
+		}
 
 		int i = 0;
 		for (final URIish uri : result.getURIs()) {

@@ -21,13 +21,17 @@ import org.spearce.jgit.transport.URIish;
  * Content provided for push result table viewer.
  * <p>
  * Input of this provided must be {@link PushOperationResult} instance, while
- * returned elements are instances of {@link RefUpdateElement}.
+ * returned elements are instances of {@link RefUpdateElement}. Null input is
+ * allowed, resulting in no elements.
  *
  * @see PushOperationResult
  * @see RefUpdateElement
  */
 class RefUpdateContentProvider implements IStructuredContentProvider {
 	public Object[] getElements(final Object inputElement) {
+		if (inputElement == null)
+			return new RefUpdateElement[0];
+
 		final PushOperationResult result = (PushOperationResult) inputElement;
 
 		final SortedMap<String, String> dstToSrc = new TreeMap<String, String>();
