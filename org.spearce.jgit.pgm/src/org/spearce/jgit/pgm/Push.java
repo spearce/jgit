@@ -50,6 +50,7 @@ import org.spearce.jgit.transport.PushResult;
 import org.spearce.jgit.transport.RefSpec;
 import org.spearce.jgit.transport.RemoteRefUpdate;
 import org.spearce.jgit.transport.Transport;
+import org.spearce.jgit.transport.URIish;
 import org.spearce.jgit.transport.RemoteRefUpdate.Status;
 
 @Command(common = true, usage = "Update remote repository from local refs")
@@ -111,13 +112,18 @@ class Push extends TextBuiltin {
 			final Collection<RemoteRefUpdate> toPush = transport
 					.findRemoteRefUpdatesFor(refSpecs);
 
-			final PushResult result = transport.push(new TextProgressMonitor(),
-					toPush);
-			printPushResult(transport, result);
+			final URIish uri = transport.getURI();
+			final PushResult result;
+			try {
+				result = transport.push(new TextProgressMonitor(), toPush);
+			} finally {
+				transport.close();
+			}
+			printPushResult(uri, result);
 		}
 	}
 
-	private void printPushResult(final Transport transport,
+	private void printPushResult(final URIish uri,
 			final PushResult result) {
 		shownURI = false;
 		boolean everythingUpToDate = true;
@@ -126,7 +132,7 @@ class Push extends TextBuiltin {
 		for (final RemoteRefUpdate rru : result.getRemoteUpdates()) {
 			if (rru.getStatus() == Status.UP_TO_DATE) {
 				if (verbose)
-					printRefUpdateResult(transport, result, rru);
+					printRefUpdateResult(uri, result, rru);
 			} else
 				everythingUpToDate = false;
 		}
@@ -134,25 +140,25 @@ class Push extends TextBuiltin {
 		for (final RemoteRefUpdate rru : result.getRemoteUpdates()) {
 			// ...then successful updates...
 			if (rru.getStatus() == Status.OK)
-				printRefUpdateResult(transport, result, rru);
+				printRefUpdateResult(uri, result, rru);
 		}
 
 		for (final RemoteRefUpdate rru : result.getRemoteUpdates()) {
 			// ...finally, others (problematic)
 			if (rru.getStatus() != Status.OK
 					&& rru.getStatus() != Status.UP_TO_DATE)
-				printRefUpdateResult(transport, result, rru);
+				printRefUpdateResult(uri, result, rru);
 		}
 
 		if (everythingUpToDate)
 			out.println("Everything up-to-date");
 	}
 
-	private void printRefUpdateResult(final Transport transport,
+	private void printRefUpdateResult(final URIish uri,
 			final PushResult result, final RemoteRefUpdate rru) {
 		if (!shownURI) {
 			shownURI = true;
-			out.format("To %s\n", transport.getURI());
+			out.format("To %s\n", uri);
 		}
 
 		final String remoteName = rru.getRemoteName();
