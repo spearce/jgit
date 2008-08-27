@@ -23,11 +23,13 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Group;
 import org.spearce.egit.core.op.ListRemoteOperation;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.transport.RefSpec;
+import org.spearce.jgit.transport.TagOpt;
 import org.spearce.jgit.transport.URIish;
 
 /**
@@ -53,6 +55,12 @@ public class RefSpecPage extends BaseWizardPage {
 	private RefSpecPanel specsPanel;
 
 	private Button saveButton;
+
+	private Button tagsAutoFollowButton;
+
+	private Button tagsFetchTagsButton;
+
+	private Button tagsNoTagsButton;
 
 	private String transportError;
 
@@ -106,14 +114,35 @@ public class RefSpecPage extends BaseWizardPage {
 			}
 		});
 
-		saveButton = new Button(panel, SWT.CHECK);
-		saveButton.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, true, false));
-		saveButton.addSelectionListener(new SelectionAdapter() {
+		final SelectionAdapter changesNotifier = new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				notifySelectionChanged();
 			}
-		});
+		};
+		if (!pushPage) {
+			final Group tagsGroup = new Group(panel, SWT.NULL);
+			tagsGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true,
+					false));
+			tagsGroup.setText(UIText.RefSpecPage_annotatedTagsGroup);
+			tagsGroup.setLayout(new GridLayout());
+			tagsAutoFollowButton = new Button(tagsGroup, SWT.RADIO);
+			tagsAutoFollowButton
+					.setText(UIText.RefSpecPage_annotatedTagsAutoFollow);
+			tagsFetchTagsButton = new Button(tagsGroup, SWT.RADIO);
+			tagsFetchTagsButton
+					.setText(UIText.RefSpecPage_annotatedTagsFetchTags);
+			tagsNoTagsButton = new Button(tagsGroup, SWT.RADIO);
+			tagsNoTagsButton
+					.setText(UIText.RefSpecPage_annotatedTagsNoTags);
+			tagsAutoFollowButton.addSelectionListener(changesNotifier);
+			tagsFetchTagsButton.addSelectionListener(changesNotifier);
+			tagsNoTagsButton.addSelectionListener(changesNotifier);
+		}
+
+		saveButton = new Button(panel, SWT.CHECK);
+		saveButton.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, true, false));
+		saveButton.addSelectionListener(changesNotifier);
 
 		setControl(panel);
 		notifySelectionChanged();
@@ -144,6 +173,18 @@ public class RefSpecPage extends BaseWizardPage {
 	 */
 	public boolean isSaveRequested() {
 		return saveButton.getSelection();
+	}
+
+	/**
+	 * @return selected tag fetching strategy. This result is relevant only for
+	 *         fetch page.
+	 */
+	public TagOpt getTagOpt() {
+		if (tagsAutoFollowButton.getSelection())
+			return TagOpt.AUTO_FOLLOW;
+		if (tagsFetchTagsButton.getSelection())
+			return TagOpt.FETCH_TAGS;
+		return TagOpt.NO_TAGS;
 	}
 
 	/**
@@ -206,12 +247,31 @@ public class RefSpecPage extends BaseWizardPage {
 		final String remoteName = validatedRepoSelection.getConfigName();
 		specsPanel.setAssistanceData(local, listRemotesOp.getRemoteRefs(),
 				remoteName);
+
+		tagsAutoFollowButton.setSelection(false);
+		tagsFetchTagsButton.setSelection(false);
+		tagsNoTagsButton.setSelection(false);
+
 		if (newRepoSelection.isConfigSelected()) {
 			saveButton.setVisible(true);
 			saveButton.setText(NLS.bind(UIText.RefSpecPage_saveSpecifications,
 					remoteName));
 			saveButton.getParent().layout();
-		}
+			final TagOpt tagOpt = newRepoSelection.getConfig().getTagOpt();
+			switch (tagOpt) {
+			case AUTO_FOLLOW:
+				tagsAutoFollowButton.setSelection(true);
+				break;
+			case FETCH_TAGS:
+				tagsFetchTagsButton.setSelection(true);
+				break;
+			case NO_TAGS:
+				tagsNoTagsButton.setSelection(true);
+				break;
+			}
+		} else
+			tagsAutoFollowButton.setSelection(true);
+
 		checkPage();
 	}
 

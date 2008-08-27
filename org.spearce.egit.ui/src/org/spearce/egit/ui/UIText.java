@@ -386,6 +386,18 @@ public class UIText extends NLS {
 	public static String RefSpecPage_titlePush;
 
 	/** */
+	public static String RefSpecPage_annotatedTagsGroup;
+
+	/** */
+	public static String RefSpecPage_annotatedTagsAutoFollow;
+
+	/** */
+	public static String RefSpecPage_annotatedTagsFetchTags;
+
+	/** */
+	public static String RefSpecPage_annotatedTagsNoTags;
+
+	/** */
 	public static String Decorator_failedLazyLoading;
 
 	/** */
