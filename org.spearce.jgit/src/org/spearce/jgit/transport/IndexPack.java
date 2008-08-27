@@ -156,6 +156,9 @@ public class IndexPack {
 
 	private byte[] packcsum;
 
+	/** If {@link #fixThin} this is the last byte of the original checksum. */
+	private long originalEOF;
+
 	/**
 	 * Create a new pack indexer utility.
 	 * 
@@ -398,8 +401,9 @@ public class IndexPack {
 	private void fixThinPack(final ProgressMonitor progress) throws IOException {
 		growEntries();
 
+		originalEOF = packOut.length() - 20;
 		final Deflater def = new Deflater(Deflater.DEFAULT_COMPRESSION, false);
-		long end = packOut.length() - 20;
+		long end = originalEOF;
 		for (final ObjectId baseId : new ArrayList<ObjectId>(baseById.keySet())) {
 			final ObjectLoader ldr = repo.openObject(baseId);
 			if (ldr == null)
@@ -453,9 +457,13 @@ public class IndexPack {
 	}
 
 	private void fixHeaderFooter() throws IOException {
+		final MessageDigest origDigest = Constants.newMessageDigest();
+		long origRemaining = originalEOF - 12;
+
 		packOut.seek(0);
 		if (packOut.read(buf, 0, 12) != 12)
 			throw new IOException("Cannot re-read pack header to fix count");
+		origDigest.update(buf, 0, 12);
 		NB.encodeInt32(buf, 8, entryCount);
 		packOut.seek(0);
 		packOut.write(buf, 0, 12);
@@ -466,8 +474,15 @@ public class IndexPack {
 			final int n = packOut.read(buf);
 			if (n < 0)
 				break;
+			if (origRemaining > 0) {
+				origDigest.update(buf, 0, (int) Math.min(n, origRemaining));
+				origRemaining -= n;
+			}
 			packDigest.update(buf, 0, n);
 		}
+
+		if (!Arrays.equals(origDigest.digest(), packcsum))
+			throw new IOException("Pack corrupted while writing to filesystem");
 
 		packcsum = packDigest.digest();
 		packOut.write(packcsum);
