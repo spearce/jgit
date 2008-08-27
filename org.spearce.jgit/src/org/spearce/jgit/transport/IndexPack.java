@@ -259,6 +259,8 @@ public class IndexPack {
 						fixThinPack(progress);
 					}
 				}
+				if (packOut != null)
+					packOut.getChannel().force(true);
 
 				packDigest = null;
 				baseById = null;
@@ -510,6 +512,7 @@ public class IndexPack {
 			else
 				iw = PackIndexWriter.createVersion(os, outputVersion);
 			iw.write(list, packcsum);
+			os.getChannel().force(true);
 		} finally {
 			os.close();
 		}
