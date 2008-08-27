@@ -951,7 +951,8 @@ public class RefSpecPanel {
 		tablePanel.setLayout(columnLayout);
 
 		createDummyColumn(columnLayout);
-		createModeColumn(columnLayout);
+		if (pushSpecs)
+			createModeColumn(columnLayout);
 		createSrcColumn(columnLayout);
 		createDstColumn(columnLayout);
 		createForceColumn(columnLayout);
@@ -1277,7 +1278,8 @@ public class RefSpecPanel {
 	}
 
 	private void createCellEditors(final Table table) {
-		modeCellEditor = new CheckboxCellEditor(table);
+		if (pushSpecs)
+			modeCellEditor = new CheckboxCellEditor(table);
 		localRefCellEditor = createLocalRefCellEditor(table);
 		remoteRefCellEditor = createRemoteRefCellEditor(table);
 		forceUpdateCellEditor = new CheckboxCellEditor(table);
