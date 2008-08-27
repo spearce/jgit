@@ -20,14 +20,14 @@ import org.spearce.egit.core.op.PushOperationResult;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.Repository;
 
-class ResultDialog extends Dialog {
+class PushResultDialog extends Dialog {
 	private final Repository localDb;
 
 	private final PushOperationResult result;
 
 	private final String destinationString;
 
-	ResultDialog(final Shell parentShell, final Repository localDb,
+	PushResultDialog(final Shell parentShell, final Repository localDb,
 			final PushOperationResult result, final String destinationString) {
 		super(parentShell);
 		setShellStyle(getShellStyle() | SWT.RESIZE);

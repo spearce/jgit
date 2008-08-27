@@ -238,8 +238,9 @@ public class PushWizard extends Wizard {
 							public void run() {
 								final Shell shell = PlatformUI.getWorkbench()
 										.getActiveWorkbenchWindow().getShell();
-								final Dialog dialog = new ResultDialog(shell,
-										localDb, result, destinationString);
+								final Dialog dialog = new PushResultDialog(
+										shell, localDb, result,
+										destinationString);
 								dialog.open();
 							}
 						});
