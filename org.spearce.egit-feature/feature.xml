@@ -297,8 +297,7 @@ litigation.
    </url>
 
    <requires>
-      <import plugin="org.eclipse.core.runtime" version="3.2" match="greaterOrEqual"/>
-      <import plugin="org.eclipse.team.core"/>
+      <import plugin="org.eclipse.core.runtime" version="3.4" match="greaterOrEqual"/>
       <import plugin="org.eclipse.core.resources"/>
       <import plugin="org.eclipse.core.filesystem"/>
       <import plugin="org.eclipse.ui"/>
@@ -307,7 +306,11 @@ litigation.
       <import plugin="org.eclipse.ui.ide"/>
       <import plugin="org.eclipse.ui.workbench.texteditor"/>
       <import plugin="org.eclipse.compare"/>
-      <import plugin="org.junit"/>
+      <import plugin="org.eclipse.core.net"/>
+      <import plugin="org.eclipse.team.core" version="3.4.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.jsch.ui" version="1.1.100" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.jsch.core"/>
+      <import plugin="com.jcraft.jsch"/>
    </requires>
 
    <plugin
