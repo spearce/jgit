@@ -413,14 +413,18 @@ public class RefSpecPanel {
 		}
 
 		try {
-			final RemoteConfig rc = new RemoteConfig(localDb.getConfig(),
-					remoteName);
-			if (pushSpecs)
-				predefinedConfigured = rc.getPushRefSpecs();
-			else
-				predefinedConfigured = rc.getFetchRefSpecs();
-			for (final RefSpec spec : predefinedConfigured)
-				addRefSpec(spec);
+			if (remoteName == null)
+				predefinedConfigured = Collections.emptyList();
+			else {
+				final RemoteConfig rc = new RemoteConfig(localDb.getConfig(),
+						remoteName);
+				if (pushSpecs)
+					predefinedConfigured = rc.getPushRefSpecs();
+				else
+					predefinedConfigured = rc.getFetchRefSpecs();
+				for (final RefSpec spec : predefinedConfigured)
+					addRefSpec(spec);
+			}
 		} catch (URISyntaxException e) {
 			predefinedConfigured = null;
 			ErrorDialog.openError(panel.getShell(),
@@ -432,9 +436,15 @@ public class RefSpecPanel {
 		updateAddPredefinedButton(addConfiguredButton, predefinedConfigured);
 		if (pushSpecs)
 			predefinedBranches = Transport.REFSPEC_PUSH_ALL;
-		else
+		else {
+			final String r;
+			if (remoteName == null)
+				r = UIText.RefSpecPanel_refChooseRemoteName;
+			else
+				r = remoteName;
 			predefinedBranches = new RefSpec("refs/heads/*:refs/remotes/" //$NON-NLS-1$
-					+ remoteName + "/*"); //$NON-NLS-1$
+					+ r + "/*"); //$NON-NLS-1$
+		}
 		updateAddPredefinedButton(addBranchesButton, predefinedBranches);
 		setEnable(true);
 	}

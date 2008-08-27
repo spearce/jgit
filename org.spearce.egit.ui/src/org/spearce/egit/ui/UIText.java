@@ -182,6 +182,9 @@ public class UIText extends NLS {
 	public static String RefSpecPanel_refChooseSomeWildcard;
 
 	/** */
+	public static String RefSpecPanel_refChooseRemoteName;
+
+	/** */
 	public static String RefSpecPanel_clickToChange;
 
 	/** */
