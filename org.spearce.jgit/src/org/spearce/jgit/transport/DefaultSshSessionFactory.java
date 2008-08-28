@@ -165,14 +165,21 @@ class DefaultSshSessionFactory extends SshSessionFactory {
 			final File k = new File(sshdir, n.substring(0, n.length() - 4));
 			if (!k.isFile())
 				continue;
-			addIdentity(k);
+
+			try {
+				addIdentity(k);
+			} catch (JSchException e) {
+				continue;
+			}
 		}
 	}
 
 	private void addIdentity(final File identityFile) throws JSchException {
 		final String path = identityFile.getAbsolutePath();
-		if (loadedIdentities.add(path))
+		if (!loadedIdentities.contains(path)) {
 			userJSch.addIdentity(path);
+			loadedIdentities.add(path);
+		}
 	}
 
 	private static class AWT_UserInfo implements UserInfo,
