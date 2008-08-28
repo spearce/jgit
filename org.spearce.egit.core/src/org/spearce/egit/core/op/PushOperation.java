@@ -16,6 +16,7 @@ import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.osgi.util.NLS;
 import org.spearce.egit.core.CoreText;
 import org.spearce.egit.core.EclipseGitProgressTransformer;
+import org.spearce.jgit.errors.NoRemoteRepositoryException;
 import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Repository;
@@ -125,6 +126,10 @@ public class PushOperation implements IRunnableWithProgress {
 				final PushResult pr = transport.push(gitSubMonitor,
 						specification.getRefUpdates(uri));
 				operationResult.addOperationResult(uri, pr);
+			} catch (final NoRemoteRepositoryException e) {
+				operationResult.addOperationResult(uri, NLS.bind(
+						CoreText.PushOperation_resultNoServiceError, e
+								.getMessage()));
 			} catch (final TransportException e) {
 				operationResult.addOperationResult(uri, NLS.bind(
 						CoreText.PushOperation_resultTransportError, e

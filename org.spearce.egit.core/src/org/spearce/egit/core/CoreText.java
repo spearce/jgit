@@ -108,6 +108,9 @@ public class CoreText extends NLS {
 	public static String PushOperation_resultTransportError;
 
 	/** */
+	public static String PushOperation_resultNoServiceError;
+
+	/** */
 	public static String PushOperation_taskNameDryRun;
 
 	/** */
