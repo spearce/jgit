@@ -189,7 +189,7 @@ public class RemoteRefUpdate {
 		this.forceUpdate = forceUpdate;
 		if (localName != null && localDb != null)
 			trackingRefUpdate = new TrackingRefUpdate(localDb, localName,
-					remoteName, forceUpdate, newObjectId, "push");
+					remoteName, true, newObjectId, "push");
 		else
 			trackingRefUpdate = null;
 		this.localDb = localDb;
