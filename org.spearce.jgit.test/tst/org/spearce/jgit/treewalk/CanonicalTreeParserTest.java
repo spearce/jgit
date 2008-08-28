@@ -108,18 +108,21 @@ public class CanonicalTreeParserTest extends TestCase {
 	public void testOneEntry_Forward() throws Exception {
 		ctp.reset(tree1);
 
+		assertTrue(ctp.first());
 		assertFalse(ctp.eof());
 		assertEquals(m644.getBits(), ctp.mode);
 		assertEquals("a", path());
 		assertEquals(hash_a, ctp.getEntryObjectId());
 
 		ctp.next(1);
+		assertFalse(ctp.first());
 		assertTrue(ctp.eof());
 	}
 
 	public void testTwoEntries_ForwardOneAtATime() throws Exception {
 		ctp.reset(tree2);
 
+		assertTrue(ctp.first());
 		assertFalse(ctp.eof());
 		assertEquals(m644.getBits(), ctp.mode);
 		assertEquals("a", path());
@@ -132,6 +135,7 @@ public class CanonicalTreeParserTest extends TestCase {
 		assertEquals(hash_foo, ctp.getEntryObjectId());
 
 		ctp.next(1);
+		assertFalse(ctp.first());
 		assertTrue(ctp.eof());
 	}
 
@@ -170,9 +174,11 @@ public class CanonicalTreeParserTest extends TestCase {
 	public void testOneEntry_Backwards() throws Exception {
 		ctp.reset(tree1);
 		ctp.next(1);
+		assertFalse(ctp.first());
 		assertTrue(ctp.eof());
 
 		ctp.back(1);
+		assertTrue(ctp.first());
 		assertFalse(ctp.eof());
 		assertEquals(m644.getBits(), ctp.mode);
 		assertEquals("a", path());
@@ -257,5 +263,17 @@ public class CanonicalTreeParserTest extends TestCase {
 		assertEquals(m644.getBits(), ctp.mode);
 		assertEquals("a", path());
 		assertEquals(hash_a, ctp.getEntryObjectId());
+	}
+
+	public void testFreakingHugePathName() throws Exception {
+		final int n = AbstractTreeIterator.DEFAULT_PATH_SIZE * 4;
+		final StringBuilder b = new StringBuilder(n);
+		for (int i = 0; i < n; i++)
+			b.append('q');
+		final String name = b.toString();
+		ctp.reset(entry(m644, name, hash_a));
+		assertFalse(ctp.eof());
+		assertEquals(name, RawParseUtils.decode(Constants.CHARSET, ctp.path,
+				ctp.pathOffset, ctp.pathLen));
 	}
 }

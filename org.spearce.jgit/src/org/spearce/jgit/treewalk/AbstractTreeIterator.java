@@ -71,7 +71,7 @@ import org.spearce.jgit.treewalk.filter.TreeFilter;
  * @see CanonicalTreeParser
  */
 public abstract class AbstractTreeIterator {
-	private static final int DEFAULT_PATH_SIZE = 128;
+	static final int DEFAULT_PATH_SIZE = 128;
 
 	/** A dummy object id buffer that matches the zero ObjectId. */
 	protected static final byte[] zeroid = new byte[Constants.OBJECT_ID_LENGTH];
