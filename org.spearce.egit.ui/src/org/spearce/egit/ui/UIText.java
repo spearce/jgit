@@ -518,6 +518,9 @@ public class UIText extends NLS {
 	public static String PushWizard_windowTitleWithDestination;
 
 	/** */
+	public static String ConfirmationPage_cantConnectToAnyTitle;
+
+	/** */
 	public static String ConfirmationPage_cantConnectToAny;
 
 	/** */

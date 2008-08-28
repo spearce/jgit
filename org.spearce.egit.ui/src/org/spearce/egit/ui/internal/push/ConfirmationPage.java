@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
@@ -24,6 +27,7 @@ import org.eclipse.swt.widgets.Control;
 import org.spearce.egit.core.op.PushOperation;
 import org.spearce.egit.core.op.PushOperationResult;
 import org.spearce.egit.core.op.PushOperationSpecification;
+import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIText;
 import org.spearce.egit.ui.internal.components.RefSpecPage;
 import org.spearce.egit.ui.internal.components.RepositorySelection;
@@ -204,8 +208,16 @@ class ConfirmationPage extends WizardPage {
 			setPageComplete(true);
 			confirmedResult = result;
 		} else {
-			setErrorMessage(NLS.bind(UIText.ConfirmationPage_cantConnectToAny,
-					result.getErrorStringForAllURis()));
+			final String message = NLS.bind(
+					UIText.ConfirmationPage_cantConnectToAny, result
+							.getErrorStringForAllURis());
+			setErrorMessage(message);
+			ErrorDialog
+					.openError(getShell(),
+							UIText.ConfirmationPage_cantConnectToAnyTitle,
+							null,
+							new Status(IStatus.ERROR, Activator.getPluginId(),
+									message));
 		}
 	}
 }
