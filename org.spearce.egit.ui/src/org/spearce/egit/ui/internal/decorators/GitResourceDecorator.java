@@ -143,7 +143,9 @@ public class GitResourceDecorator extends LabelProvider implements
 					try {
 						m.accept(new IResourceVisitor() {
 							public boolean visit(IResource resource) throws CoreException {
-								getActiveDecorator().clearDecorationState(resource);
+								GitResourceDecorator decorator = getActiveDecorator();
+								if (decorator != null)
+									decorator.clearDecorationState(resource);
 								return true;
 							}
 						},
@@ -197,8 +199,10 @@ public class GitResourceDecorator extends LabelProvider implements
 	} // End ResCL
 
 	void clearDecorationState(IResource r) throws CoreException {
-		r.setSessionProperty(GITFOLDERDIRTYSTATEPROPERTY, null);
-		fireLabelProviderChanged(new LabelProviderChangedEvent(this, r));
+		if (r.exists()) {
+			r.setSessionProperty(GITFOLDERDIRTYSTATEPROPERTY, null);
+			fireLabelProviderChanged(new LabelProviderChangedEvent(this, r));
+		}
 	}
 
 	static ResCL myrescl = new ResCL();
