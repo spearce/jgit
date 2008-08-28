@@ -325,11 +325,30 @@ public class RefUpdate {
 
 	/**
 	 * Delete the ref.
+	 * <p>
+	 * This is the same as:
+	 * 
+	 * <pre>
+	 * return delete(new RevWalk(repository));
+	 * </pre>
 	 * 
 	 * @return the result status of the delete.
 	 * @throws IOException
 	 */
 	public Result delete() throws IOException {
+		return delete(new RevWalk(db.getRepository()));
+	}
+
+	/**
+	 * Delete the ref.
+	 * 
+	 * @param walk
+	 *            a RevWalk instance this delete command can borrow to perform
+	 *            the merge test. The walk will be reset to perform the test.
+	 * @return the result status of the delete.
+	 * @throws IOException
+	 */
+	public Result delete(final RevWalk walk) throws IOException {
 		if (name.startsWith(Constants.R_HEADS)) {
 			final Ref head = db.readRef(Constants.HEAD);
 			if (head != null && name.equals(head.getName()))
@@ -337,8 +356,7 @@ public class RefUpdate {
 		}
 
 		try {
-			return updateImpl(new RevWalk(db.getRepository()),
-					new DeleteStore());
+			return updateImpl(walk, new DeleteStore());
 		} catch (IOException x) {
 			result = Result.IO_FAILURE;
 			throw x;
