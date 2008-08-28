@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Google Inc.
  *
  * All rights reserved.
  *
@@ -37,56 +37,38 @@
 
 package org.spearce.jgit.treewalk.filter;
 
-import java.io.IOException;
-
-import org.spearce.jgit.errors.IncorrectObjectTypeException;
-import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.lib.RepositoryTestCase;
 import org.spearce.jgit.treewalk.TreeWalk;
 
-/** Includes an entry only if the subfilter does not include the entry. */
-public class NotTreeFilter extends TreeFilter {
-	/**
-	 * Create a filter that negates the result of another filter.
-	 * 
-	 * @param a
-	 *            filter to negate.
-	 * @return a filter that does the reverse of <code>a</code>.
-	 */
-	public static TreeFilter create(final TreeFilter a) {
-		return new NotTreeFilter(a);
+public class TreeFilterTest extends RepositoryTestCase {
+	public void testALL_IncludesAnything() throws Exception {
+		final TreeWalk tw = new TreeWalk(db);
+		assertTrue(TreeFilter.ALL.include(tw));
 	}
 
-	private final TreeFilter a;
-
-	private NotTreeFilter(final TreeFilter one) {
-		a = one;
+	public void testALL_ShouldNotBeRecursive() throws Exception {
+		assertFalse(TreeFilter.ALL.shouldBeRecursive());
 	}
 
-	@Override
-	public TreeFilter negate() {
-		return a;
+	public void testALL_IdentityClone() throws Exception {
+		assertSame(TreeFilter.ALL, TreeFilter.ALL.clone());
 	}
 
-	@Override
-	public boolean include(final TreeWalk walker)
-			throws MissingObjectException, IncorrectObjectTypeException,
-			IOException {
-		return !a.include(walker);
+	public void testNotALL_IncludesNothing() throws Exception {
+		final TreeWalk tw = new TreeWalk(db);
+		assertFalse(TreeFilter.ALL.negate().include(tw));
 	}
 
-	@Override
-	public boolean shouldBeRecursive() {
-		return a.shouldBeRecursive();
+	public void testANY_DIFF_IncludesSingleTreeCase() throws Exception {
+		final TreeWalk tw = new TreeWalk(db);
+		assertTrue(TreeFilter.ANY_DIFF.include(tw));
 	}
 
-	@Override
-	public TreeFilter clone() {
-		final TreeFilter n = a.clone();
-		return n == a ? this : new NotTreeFilter(n);
+	public void testANY_DIFF_ShouldNotBeRecursive() throws Exception {
+		assertFalse(TreeFilter.ANY_DIFF.shouldBeRecursive());
 	}
 
-	@Override
-	public String toString() {
-		return "NOT " + a.toString();
+	public void testANY_DIFF_IdentityClone() throws Exception {
+		assertSame(TreeFilter.ANY_DIFF, TreeFilter.ANY_DIFF.clone());
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Google Inc.
  *
  * All rights reserved.
  *
@@ -37,56 +37,49 @@
 
 package org.spearce.jgit.treewalk.filter;
 
-import java.io.IOException;
-
-import org.spearce.jgit.errors.IncorrectObjectTypeException;
-import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.lib.RepositoryTestCase;
 import org.spearce.jgit.treewalk.TreeWalk;
 
-/** Includes an entry only if the subfilter does not include the entry. */
-public class NotTreeFilter extends TreeFilter {
-	/**
-	 * Create a filter that negates the result of another filter.
-	 * 
-	 * @param a
-	 *            filter to negate.
-	 * @return a filter that does the reverse of <code>a</code>.
-	 */
-	public static TreeFilter create(final TreeFilter a) {
-		return new NotTreeFilter(a);
+public class NotTreeFilterTest extends RepositoryTestCase {
+	public void testWrap() throws Exception {
+		final TreeWalk tw = new TreeWalk(db);
+		final TreeFilter a = TreeFilter.ALL;
+		final TreeFilter n = NotTreeFilter.create(a);
+		assertNotNull(n);
+		assertTrue(a.include(tw));
+		assertFalse(n.include(tw));
 	}
 
-	private final TreeFilter a;
-
-	private NotTreeFilter(final TreeFilter one) {
-		a = one;
+	public void testNegateIsUnwrap() throws Exception {
+		final TreeFilter a = PathFilter.create("a/b");
+		final TreeFilter n = NotTreeFilter.create(a);
+		assertSame(a, n.negate());
 	}
 
-	@Override
-	public TreeFilter negate() {
-		return a;
+	public void testShouldBeRecursive_ALL() throws Exception {
+		final TreeFilter a = TreeFilter.ALL;
+		final TreeFilter n = NotTreeFilter.create(a);
+		assertEquals(a.shouldBeRecursive(), n.shouldBeRecursive());
 	}
 
-	@Override
-	public boolean include(final TreeWalk walker)
-			throws MissingObjectException, IncorrectObjectTypeException,
-			IOException {
-		return !a.include(walker);
+	public void testShouldBeRecursive_PathFilter() throws Exception {
+		final TreeFilter a = PathFilter.create("a/b");
+		assertTrue(a.shouldBeRecursive());
+		final TreeFilter n = NotTreeFilter.create(a);
+		assertTrue(n.shouldBeRecursive());
 	}
 
-	@Override
-	public boolean shouldBeRecursive() {
-		return a.shouldBeRecursive();
+	public void testCloneIsDeepClone() throws Exception {
+		final TreeFilter a = new AlwaysCloneTreeFilter();
+		assertNotSame(a, a.clone());
+		final TreeFilter n = NotTreeFilter.create(a);
+		assertNotSame(n, n.clone());
 	}
 
-	@Override
-	public TreeFilter clone() {
-		final TreeFilter n = a.clone();
-		return n == a ? this : new NotTreeFilter(n);
-	}
-
-	@Override
-	public String toString() {
-		return "NOT " + a.toString();
+	public void testCloneIsSparseWhenPossible() throws Exception {
+		final TreeFilter a = TreeFilter.ALL;
+		assertSame(a, a.clone());
+		final TreeFilter n = NotTreeFilter.create(a);
+		assertSame(n, n.clone());
 	}
 }
