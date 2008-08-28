@@ -336,6 +336,9 @@ public class RemoteRefUpdate {
 	 *             when I/O error occurred during update
 	 */
 	protected void updateTrackingRef(final RevWalk walk) throws IOException {
-		trackingRefUpdate.update(walk);
+		if (isDelete())
+			trackingRefUpdate.delete(walk);
+		else
+			trackingRefUpdate.update(walk);
 	}
 }

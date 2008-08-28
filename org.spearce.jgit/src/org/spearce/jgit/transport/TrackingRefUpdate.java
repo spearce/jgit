@@ -127,4 +127,8 @@ public class TrackingRefUpdate {
 	void update(final RevWalk walk) throws IOException {
 		update.update(walk);
 	}
+
+	void delete(final RevWalk walk) throws IOException {
+		update.delete(walk);
+	}
 }
