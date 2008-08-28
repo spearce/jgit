@@ -91,8 +91,7 @@ public class ContainerTreeIterator extends WorkingTreeIterator {
 	private Entry[] entries() {
 		final IResource[] all;
 		try {
-//			all = node.members(IContainer.INCLUDE_HIDDEN); 3.4 flag
-			all = node.members(0);
+			all = node.members(IContainer.INCLUDE_HIDDEN);
 		} catch (CoreException err) {
 			return EOF;
 		}
