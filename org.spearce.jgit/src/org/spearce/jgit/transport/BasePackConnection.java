@@ -129,8 +129,15 @@ abstract class BasePackConnection extends BaseConnection {
 			try {
 				line = pckIn.readString();
 			} catch (EOFException eof) {
-				if (avail.isEmpty())
-					throw new NoRemoteRepositoryException(uri, "not found.");
+				if (avail.isEmpty()) {
+					String service = "unknown";
+					if (this instanceof PushConnection)
+						service = "push";
+					else if (this instanceof FetchConnection)
+						service = "fetch";
+					throw new NoRemoteRepositoryException(uri, service
+							+ " service not found.");
+				}
 				throw eof;
 			}
 
