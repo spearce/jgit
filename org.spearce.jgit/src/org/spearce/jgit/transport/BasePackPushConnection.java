@@ -43,6 +43,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
+import org.spearce.jgit.errors.NoRemoteRepositoryException;
+import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.errors.PackProtocolException;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.ObjectId;
@@ -96,6 +98,29 @@ class BasePackPushConnection extends BasePackConnection implements
 			throws TransportException {
 		markStartedOperation();
 		doPush(monitor, refUpdates);
+	}
+
+	@Override
+	protected TransportException noRepository() {
+		// Sadly we cannot tell the "invalid URI" case from "push not allowed".
+		// Opening a fetch connection can help us tell the difference, as any
+		// useful repository is going to support fetch if it also would allow
+		// push. So if fetch throws NoRemoteRepositoryException we know the
+		// URI is wrong. Otherwise we can correctly state push isn't allowed
+		// as the fetch connection opened successfully.
+		//
+		try {
+			transport.openFetch().close();
+		} catch (NotSupportedException e) {
+			// Fall through.
+		} catch (NoRemoteRepositoryException e) {
+			// Fetch concluded the repository doesn't exist.
+			//
+			return e;
+		} catch (TransportException e) {
+			// Fall through.
+		}
+		return new TransportException(uri, "push not permitted");
 	}
 
 	protected void doPush(final ProgressMonitor monitor,

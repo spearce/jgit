@@ -72,6 +72,9 @@ abstract class BasePackConnection extends BaseConnection {
 	/** Remote repository location. */
 	protected final URIish uri;
 
+	/** A transport connected to {@link #uri}. */
+	protected final PackTransport transport;
+
 	/** Buffered input stream reading from the remote. */
 	protected InputStream in;
 
@@ -93,6 +96,7 @@ abstract class BasePackConnection extends BaseConnection {
 	BasePackConnection(final PackTransport packTransport) {
 		local = packTransport.local;
 		uri = packTransport.uri;
+		transport = packTransport;
 	}
 
 	protected void init(final InputStream myIn, final OutputStream myOut) {
@@ -129,15 +133,8 @@ abstract class BasePackConnection extends BaseConnection {
 			try {
 				line = pckIn.readString();
 			} catch (EOFException eof) {
-				if (avail.isEmpty()) {
-					String service = "unknown";
-					if (this instanceof PushConnection)
-						service = "push";
-					else if (this instanceof FetchConnection)
-						service = "fetch";
-					throw new NoRemoteRepositoryException(uri, service
-							+ " service not found.");
-				}
+				if (avail.isEmpty())
+					throw noRepository();
 				throw eof;
 			}
 
@@ -183,6 +180,19 @@ abstract class BasePackConnection extends BaseConnection {
 			}
 		}
 		available(avail);
+	}
+
+	/**
+	 * Create an exception to indicate problems finding a remote repository. The
+	 * caller is expected to throw the returned exception.
+	 *
+	 * Subclasses may override this method to provide better diagnostics.
+	 *
+	 * @return a TransportException saying a repository cannot be found and
+	 *         possibly why.
+	 */
+	protected TransportException noRepository() {
+		return new NoRemoteRepositoryException(uri, "not found.");
 	}
 
 	protected boolean isCapableOf(final String option) {
