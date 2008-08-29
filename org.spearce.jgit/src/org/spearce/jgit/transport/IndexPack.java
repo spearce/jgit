@@ -76,7 +76,7 @@ public class IndexPack {
 	/** Progress message when computing names of delta compressed objects. */
 	public static final String PROGRESS_RESOLVE_DELTA = "Resolving deltas";
 
-	private static final int BUFFER_SIZE = 2048;
+	private static final int BUFFER_SIZE = 4096;
 
 	/**
 	 * Create an index pack instance to load a new pack into a repository.
@@ -403,6 +403,7 @@ public class IndexPack {
 	private void fixThinPack(final ProgressMonitor progress) throws IOException {
 		growEntries();
 
+		packDigest.reset();
 		originalEOF = packOut.length() - 20;
 		final Deflater def = new Deflater(Deflater.DEFAULT_COMPRESSION, false);
 		long end = originalEOF;
@@ -432,7 +433,7 @@ public class IndexPack {
 			throw new MissingObjectException(need, "delta base");
 		}
 
-		fixHeaderFooter();
+		fixHeaderFooter(packcsum, packDigest.digest());
 	}
 
 	private void writeWhole(final Deflater def, final int typeCode,
@@ -446,6 +447,7 @@ public class IndexPack {
 			buf[hdrlen++] = (byte) (sz & 0x7f);
 			sz >>>= 7;
 		}
+		packDigest.update(buf, 0, hdrlen);
 		crc.update(buf, 0, hdrlen);
 		packOut.write(buf, 0, hdrlen);
 		def.reset();
@@ -453,37 +455,56 @@ public class IndexPack {
 		def.finish();
 		while (!def.finished()) {
 			final int datlen = def.deflate(buf);
+			packDigest.update(buf, 0, datlen);
 			crc.update(buf, 0, datlen);
 			packOut.write(buf, 0, datlen);
 		}
 	}
 
-	private void fixHeaderFooter() throws IOException {
+	private void fixHeaderFooter(final byte[] origcsum, final byte[] tailcsum)
+			throws IOException {
 		final MessageDigest origDigest = Constants.newMessageDigest();
-		long origRemaining = originalEOF - 12;
+		final MessageDigest tailDigest = Constants.newMessageDigest();
+		long origRemaining = originalEOF;
 
 		packOut.seek(0);
-		if (packOut.read(buf, 0, 12) != 12)
-			throw new IOException("Cannot re-read pack header to fix count");
-		origDigest.update(buf, 0, 12);
+		bAvail = 0;
+		bOffset = 0;
+		fillFromFile(12);
+
+		{
+			final int origCnt = (int) Math.min(bAvail, origRemaining);
+			origDigest.update(buf, 0, origCnt);
+			origRemaining -= origCnt;
+			if (origRemaining == 0)
+				tailDigest.update(buf, origCnt, bAvail - origCnt);
+		}
+
 		NB.encodeInt32(buf, 8, entryCount);
 		packOut.seek(0);
 		packOut.write(buf, 0, 12);
+		packOut.seek(bAvail);
 
 		packDigest.reset();
-		packDigest.update(buf, 0, 12);
+		packDigest.update(buf, 0, bAvail);
 		for (;;) {
 			final int n = packOut.read(buf);
 			if (n < 0)
 				break;
-			if (origRemaining > 0) {
-				origDigest.update(buf, 0, (int) Math.min(n, origRemaining));
-				origRemaining -= n;
-			}
+			if (origRemaining != 0) {
+				final int origCnt = (int) Math.min(n, origRemaining);
+				origDigest.update(buf, 0, origCnt);
+				origRemaining -= origCnt;
+				if (origRemaining == 0)
+					tailDigest.update(buf, origCnt, n - origCnt);
+			} else
+				tailDigest.update(buf, 0, n);
+
 			packDigest.update(buf, 0, n);
 		}
 
-		if (!Arrays.equals(origDigest.digest(), packcsum))
+		if (!Arrays.equals(origDigest.digest(), origcsum)
+				|| !Arrays.equals(tailDigest.digest(), tailcsum))
 			throw new IOException("Pack corrupted while writing to filesystem");
 
 		packcsum = packDigest.digest();
