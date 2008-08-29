@@ -199,7 +199,7 @@ public class GitResourceDecorator extends LabelProvider implements
 	} // End ResCL
 
 	void clearDecorationState(IResource r) throws CoreException {
-		if (r.exists()) {
+		if (r.isAccessible()) {
 			r.setSessionProperty(GITFOLDERDIRTYSTATEPROPERTY, null);
 			fireLabelProviderChanged(new LabelProviderChangedEvent(this, r));
 		}
