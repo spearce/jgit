@@ -13,6 +13,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.team.internal.ui.actions.TeamAction;
@@ -33,6 +35,54 @@ public abstract class RepositoryAction extends TeamAction {
 	 */
 	public void execute(IAction action) {
 		run(action);
+	}
+
+	/**
+	 * @return the projects hosting the selected resources
+	 */
+	protected IProject[] getProjectsForSelectedResources() {
+		Set<IProject> ret = new HashSet<IProject>();
+		for (IResource resource : (IResource[])getSelectedAdaptables(getSelection(), IResource.class))
+			ret.add(resource.getProject());
+		return ret.toArray(new IProject[ret.size()]);
+	}
+
+	/**
+	 * @param projects
+	 *            a list of projects
+	 * @return the repositories that projects map to iff all projects are mapped
+	 */ 
+	protected Repository[] getRepositoriesFor(final IProject[] projects) {
+		Set<Repository> ret = new HashSet<Repository>();
+		for (IProject project : projects) {
+			RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
+			if (repositoryMapping == null)
+				return new Repository[0];
+			ret.add(repositoryMapping.getRepository());
+		}
+		return ret.toArray(new Repository[ret.size()]);
+	}
+	
+	/**
+	 * List the projects with selected resources, if all projects are connected
+	 * to a Git repository.
+	 * 
+	 * @return the tracked projects affected by the current resource selection
+	 */
+	public IProject[] getProjectsInRepositoryOfSelectedResources() {
+		Set<IProject> ret = new HashSet<IProject>();
+		Repository[] repositories = getRepositoriesFor(getProjectsForSelectedResources());
+		final IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+		for (IProject project : projects) {
+			RepositoryMapping mapping = RepositoryMapping.getMapping(project);
+			for (Repository repository : repositories) {
+				if (mapping != null && mapping.getRepository() == repository) {
+					ret.add(project);
+					break;
+				}
+			}
+		}
+		return ret.toArray(new IProject[ret.size()]);
 	}
 
 	/**
