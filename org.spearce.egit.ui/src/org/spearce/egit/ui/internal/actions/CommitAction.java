@@ -68,7 +68,7 @@ public class CommitAction extends RepositoryAction {
 			return;
 		}
 
-		Repository[] repos = getRepositories();
+		Repository[] repos = getRepositoriesFor(getProjectsForSelectedResources());
 		amendAllowed = repos.length == 1;
 		for (Repository repo : repos) {
 			if (!repo.getRepositoryState().canCommit()) {
@@ -124,7 +124,7 @@ public class CommitAction extends RepositoryAction {
 	}
 
 	private void loadPreviousCommit() {
-		IProject project = getSelectedProjects()[0];
+		IProject project = getProjectsForSelectedResources()[0];
 
 		Repository repo = RepositoryMapping.getMapping(project).getRepository();
 		try {
@@ -313,21 +313,20 @@ public class CommitAction extends RepositoryAction {
 	}
 
 	private void buildIndexHeadDiffList() throws IOException {
-		for (IProject project : getSelectedProjects()) {
+		for (IProject project : getProjectsInRepositoryOfSelectedResources()) {
 			RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
-			if (repositoryMapping != null) {
-				Repository repository = repositoryMapping.getRepository();
-				Tree head = repository.mapTree("HEAD");
-				GitIndex index = repository.getIndex();
-				IndexDiff indexDiff = new IndexDiff(head, index);
-				indexDiff.diff();
+			assert repositoryMapping != null;
+			Repository repository = repositoryMapping.getRepository();
+			Tree head = repository.mapTree("HEAD");
+			GitIndex index = repository.getIndex();
+			IndexDiff indexDiff = new IndexDiff(head, index);
+			indexDiff.diff();
 
-				includeList(project, indexDiff.getAdded(), indexChanges);
-				includeList(project, indexDiff.getChanged(), indexChanges);
-				includeList(project, indexDiff.getRemoved(), indexChanges);
-				includeList(project, indexDiff.getMissing(), notIndexed);
-				includeList(project, indexDiff.getModified(), notIndexed);
-			}
+			includeList(project, indexDiff.getAdded(), indexChanges);
+			includeList(project, indexDiff.getChanged(), indexChanges);
+			includeList(project, indexDiff.getRemoved(), indexChanges);
+			includeList(project, indexDiff.getMissing(), notIndexed);
+			includeList(project, indexDiff.getModified(), notIndexed);
 		}
 	}
 
@@ -395,7 +394,7 @@ public class CommitAction extends RepositoryAction {
 
 	@Override
 	public boolean isEnabled() {
-		return getRepositories().length > 0;
+		return getProjectsInRepositoryOfSelectedResources().length > 0;
 	}
 
 }
