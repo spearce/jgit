@@ -12,6 +12,7 @@ org.spearce.jgit.pgm.RevList
 org.spearce.jgit.pgm.Rm
 org.spearce.jgit.pgm.ShowRev
 org.spearce.jgit.pgm.Tag
+org.spearce.jgit.pgm.Version
 
 org.spearce.jgit.pgm.debug.MakeCacheTree
 org.spearce.jgit.pgm.debug.ReadDirCache
