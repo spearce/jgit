@@ -93,6 +93,8 @@ public class JarLinkUtil {
 
 	private final Map<String, File> chosenSources = new HashMap<String, File>();
 
+	private long creationTime;
+
 	private ZipOutputStream zos;
 
 	private JarLinkUtil() {
@@ -109,6 +111,7 @@ public class JarLinkUtil {
 		for (final Map.Entry<String, String> e : files.entrySet())
 			chosenSources.put(e.getKey(), new File(e.getValue()));
 
+		creationTime = System.currentTimeMillis();
 		zos = new ZipOutputStream(System.out);
 		zos.setLevel(9);
 
@@ -180,9 +183,8 @@ public class JarLinkUtil {
 	private void appendFile(final File path, final String name)
 			throws IOException {
 		final long len = path.length();
-		final long time = path.lastModified();
 		final InputStream is = new FileInputStream(path);
-		appendEntry(name, len, time, is);
+		appendEntry(name, len, creationTime, is);
 	}
 
 	private void appendEntry(final String name, final long len,
