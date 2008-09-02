@@ -1,6 +1,9 @@
 #!/bin/sh
 
-O=jgit
+O_CLI=jgit
+O_JAR=jgit.jar
+O_SRC=jgit_src.zip
+
 PLUGINS="
 	org.spearce.jgit
 	org.spearce.jgit.pgm
@@ -11,7 +14,7 @@ JARS="
 "
 
 PSEP=":"
-T=".temp$$.$O"
+T=".temp$$.$O_CLI"
 T_MF="$T.MF"
 R=`pwd`
 if [ "$OSTYPE" = "cygwin" ]
@@ -30,7 +33,7 @@ then
 fi
 
 cleanup_bin() {
-	rm -f $T $O+ $T_MF
+	rm -f $T $O_CLI+ $O_JAR+ $O_SRC+ $T_MF
 	for p in $PLUGINS
 	do
 		rm -rf $p/bin2
@@ -39,13 +42,21 @@ cleanup_bin() {
 
 die() {
 	cleanup_bin
-	rm -f $O
+	rm -f $O_CLI $O_JAR $O_SRC
 	echo >&2 "$@"
 	exit 1
 }
 
 cleanup_bin
-rm -f $O
+rm -f $O_CLI $O_JAR $O_SRC
+
+VN=`git describe --abbrev=4 HEAD 2>/dev/null`
+git update-index -q --refresh
+if [ -n "`git diff-index --name-only HEAD --`" ]
+then
+	VN="$VN-dirty"
+fi
+VN=`echo "$VN" | sed -e s/-/./g`
 
 CLASSPATH=
 for j in $JARS
@@ -73,20 +84,39 @@ do
 		-d ../bin2) || die "Building $p failed."
 	CLASSPATH="${CLASSPATH}${PSEP}$R/$p/bin2"
 done
+echo
 
+echo "Version $VN" &&
 echo Manifest-Version: 1.0 >$T_MF &&
 echo Implementation-Title: jgit >>$T_MF &&
-echo Implementation-Version: `git describe HEAD` >>$T_MF &&
+echo Implementation-Version: $VN >>$T_MF &&
 
-sed s/@@use_self@@/1/ jgit.sh >$O+ &&
+java org.spearce.jgit.pgm.build.JarLinkUtil \
+	-include org.spearce.jgit/bin2 \
+	-file META-INF/MANIFEST.MF=$T_MF \
+	>$O_JAR+ &&
+chmod 555 $O_JAR+ &&
+mv $O_JAR+ $O_JAR &&
+echo "Created $O_JAR." &&
+
+java org.spearce.jgit.pgm.build.JarLinkUtil \
+	-include org.spearce.jgit/src \
+	-file META-INF/MANIFEST.MF=$T_MF \
+	>$O_SRC+ &&
+chmod 555 $O_SRC+ &&
+mv $O_SRC+ $O_SRC &&
+echo "Created $O_SRC." &&
+
+M_TB=META-INF/services/org.spearce.jgit.pgm.TextBuiltin &&
+sed s/@@use_self@@/1/ jgit.sh >$O_CLI+ &&
 java org.spearce.jgit.pgm.build.JarLinkUtil \
 	`for p in $JARS   ; do printf %s " -include $p"     ;done` \
 	`for p in $PLUGINS; do printf %s " -include $p/bin2";done` \
-	-file META-INF/services/org.spearce.jgit.pgm.TextBuiltin=org.spearce.jgit.pgm/src/META-INF/services/org.spearce.jgit.pgm.TextBuiltin \
+	-file $M_TB=org.spearce.jgit.pgm/src/$M_TB \
 	-file META-INF/MANIFEST.MF=$T_MF \
-	>>$O+ &&
-chmod 555 $O+ &&
-mv $O+ $O &&
-echo "Created $O." || die "Creating $O failed."
+	>>$O_CLI+ &&
+chmod 555 $O_CLI+ &&
+mv $O_CLI+ $O_CLI &&
+echo "Created $O_CLI." || die "Build failed."
 
 cleanup_bin
