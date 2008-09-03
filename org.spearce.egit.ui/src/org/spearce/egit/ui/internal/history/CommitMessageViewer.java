@@ -130,7 +130,7 @@ class CommitMessageViewer extends TextViewer {
 		final ArrayList<StyleRange> styles = new ArrayList<StyleRange>();
 
 		d.append("commit ");
-		d.append(commit.getId());
+		d.append(commit.getId().name());
 		d.append("\n");
 
 		if (author != null) {
@@ -221,7 +221,7 @@ class CommitMessageViewer extends TextViewer {
 		sr.foreground = sys_linkColor;
 		sr.underline = true;
 		sr.start = d.length();
-		d.append(to.getId().toString());
+		d.append(to.getId().name());
 		sr.length = d.length() - sr.start;
 		styles.add(sr);
 	}

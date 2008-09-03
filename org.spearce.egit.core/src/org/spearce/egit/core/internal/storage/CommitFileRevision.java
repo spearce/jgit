@@ -76,7 +76,7 @@ class CommitFileRevision extends GitFileRevision {
 	}
 
 	public String getContentIdentifier() {
-		return commit.getId().toString();
+		return commit.getId().name();
 	}
 
 	public String getAuthor() {

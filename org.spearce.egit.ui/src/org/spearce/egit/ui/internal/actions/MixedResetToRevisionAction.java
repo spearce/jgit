@@ -12,6 +12,7 @@ import java.util.List;
 import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.jface.action.IAction;
 import org.spearce.egit.core.op.ResetOperation;
+import org.spearce.jgit.lib.AnyObjectId;
 
 /**
  * Mixed reset to selected revision
@@ -20,7 +21,8 @@ public class MixedResetToRevisionAction extends AbstractRevObjectAction {
 
 	@Override
 	protected IWorkspaceRunnable createOperation(IAction act, List selection) {
-		return new ResetOperation(getActiveRepository(), selection.get(0)
-				.toString(), ResetOperation.ResetType.MIXED);
+		return new ResetOperation(getActiveRepository(),
+				((AnyObjectId) selection.get(0)).name(),
+				ResetOperation.ResetType.MIXED);
 	}
 }

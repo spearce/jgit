@@ -20,7 +20,7 @@ public class SetQuickdiffBaselineAction extends AbstractRevObjectAction {
 
 	@Override
 	protected IWorkspaceRunnable createOperation(IAction act, List selection) {
-		return new QuickdiffBaselineOperation(getActiveRepository(), ((RevObject)selection.get(0)).getId().toString());
+		return new QuickdiffBaselineOperation(getActiveRepository(), ((RevObject)selection.get(0)).getId().name());
 	}
 
 }

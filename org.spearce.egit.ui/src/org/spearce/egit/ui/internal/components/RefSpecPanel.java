@@ -1095,7 +1095,7 @@ public class RefSpecPanel {
 			@Override
 			protected void setValue(final Object element, final Object value) {
 				if (value == null || ((String) value).length() == 0
-						|| ObjectId.zeroId().toString().equals(value)) {
+						|| ObjectId.zeroId().name().equals(value)) {
 					// Ignore empty strings or null objects - do not set them in
 					// model.User won't loose any information if we just fall
 					// back to the old value.

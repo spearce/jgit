@@ -62,7 +62,7 @@ public class T0006_DeepSpeedTest extends SpeedTestBase {
 			commit = db.mapCommit(parentId);
 			TreeEntry m = commit.getTree().findBlobMember("net/netfilter/nf_queue.c");
 			if (m != null)
-				commit.getCommitId().toString();
+				commit.getCommitId().name();
 			++n;
 		}
 

@@ -146,7 +146,7 @@ class CommitGraphTable {
 			final PlotCommit d = itr.next();
 			if (r.length() > 0)
 				r.append("\n");
-			r.append(d.getId().toString());
+			r.append(d.getId().name());
 		}
 
 		clipboard.setContents(new Object[] { r.toString() },

@@ -60,7 +60,7 @@ public class T0005_ShallowSpeedTest extends SpeedTestBase {
 				break;
 			ObjectId parentId = parents[0];
 			commit = db.mapCommit(parentId);
-			commit.getCommitId().toString();
+			commit.getCommitId().name();
 			++n;
 		}
 		assertEquals(12275, n);

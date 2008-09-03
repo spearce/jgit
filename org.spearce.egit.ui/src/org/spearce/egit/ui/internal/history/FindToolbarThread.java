@@ -115,7 +115,7 @@ public class FindToolbarThread extends Thread {
 				SWTCommit revision = fileRevisions[i];
 
 				if (findInCommitId) {
-					String contentId = revision.getId().toString();
+					String contentId = revision.getId().name();
 					if (contentId != null) {
 						if (ignoreCase) {
 							contentId = contentId.toLowerCase();
