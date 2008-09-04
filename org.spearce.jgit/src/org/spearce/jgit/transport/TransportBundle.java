@@ -40,9 +40,6 @@
 package org.spearce.jgit.transport;
 
 import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -52,8 +49,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
-import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.MissingBundlePrerequisiteException;
+import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.errors.PackProtocolException;
 import org.spearce.jgit.errors.TransportException;
@@ -66,7 +63,6 @@ import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevFlag;
 import org.spearce.jgit.revwalk.RevObject;
 import org.spearce.jgit.revwalk.RevWalk;
-import org.spearce.jgit.util.FS;
 import org.spearce.jgit.util.RawParseUtils;
 
 /**
@@ -76,39 +72,11 @@ import org.spearce.jgit.util.RawParseUtils;
  * communicate with to decide what the peer already knows. So push is not
  * supported by the bundle transport.
  */
-class TransportBundle extends PackTransport {
+abstract class TransportBundle extends PackTransport {
 	static final String V2_BUNDLE_SIGNATURE = "# v2 git bundle";
-
-	static boolean canHandle(final URIish uri) {
-		if (uri.getHost() != null || uri.getPort() > 0 || uri.getUser() != null
-				|| uri.getPass() != null || uri.getPath() == null)
-			return false;
-
-		if ("file".equals(uri.getScheme()) || uri.getScheme() == null) {
-			final File f = FS.resolve(new File("."), uri.getPath());
-			return f.isFile() || f.getName().endsWith(".bundle");
-		}
-
-		return false;
-	}
-
-	private final File bundle;
 
 	TransportBundle(final Repository local, final URIish uri) {
 		super(local, uri);
-		bundle = FS.resolve(new File("."), uri.getPath()).getAbsoluteFile();
-	}
-
-	@Override
-	public FetchConnection openFetch() throws NotSupportedException,
-			TransportException {
-		final InputStream src;
-		try {
-			src = new FileInputStream(bundle);
-		} catch (FileNotFoundException err) {
-			throw new TransportException(uri, "not found");
-		}
-		return new BundleFetchConnection(src);
 	}
 
 	@Override

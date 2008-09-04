@@ -204,8 +204,8 @@ public abstract class Transport {
 		else if (TransportAmazonS3.canHandle(remote))
 			return new TransportAmazonS3(local, remote);
 
-		else if (TransportBundle.canHandle(remote))
-			return new TransportBundle(local, remote);
+		else if (TransportBundleFile.canHandle(remote))
+			return new TransportBundleFile(local, remote);
 
 		else if (TransportLocal.canHandle(remote))
 			return new TransportLocal(local, remote);
