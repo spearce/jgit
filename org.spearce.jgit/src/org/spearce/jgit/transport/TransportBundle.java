@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Google Inc.
  *
  * All rights reserved.
  *
@@ -44,11 +45,15 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Set;
 
+import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.errors.MissingBundlePrerequisiteException;
 import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.errors.PackProtocolException;
 import org.spearce.jgit.errors.TransportException;
@@ -57,6 +62,10 @@ import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.revwalk.RevFlag;
+import org.spearce.jgit.revwalk.RevObject;
+import org.spearce.jgit.revwalk.RevWalk;
 import org.spearce.jgit.util.FS;
 import org.spearce.jgit.util.RawParseUtils;
 
@@ -200,6 +209,7 @@ class TransportBundle extends PackTransport {
 		@Override
 		protected void doFetch(final ProgressMonitor monitor,
 				final Collection<Ref> want) throws TransportException {
+			verifyPrerequisites();
 			try {
 				final IndexPack ip = IndexPack.create(local, in);
 				ip.setFixThin(true);
@@ -211,6 +221,64 @@ class TransportBundle extends PackTransport {
 			} catch (RuntimeException err) {
 				close();
 				throw new TransportException(err.getMessage(), err);
+			}
+		}
+
+		private void verifyPrerequisites() throws TransportException {
+			if (prereqs.isEmpty())
+				return;
+
+			final RevWalk rw = new RevWalk(local);
+			final RevFlag PREREQ = rw.newFlag("PREREQ");
+			final RevFlag SEEN = rw.newFlag("SEEN");
+
+			final List<ObjectId> missing = new ArrayList<ObjectId>();
+			final List<RevObject> commits = new ArrayList<RevObject>();
+			for (final ObjectId p : prereqs) {
+				try {
+					final RevCommit c = rw.parseCommit(p);
+					if (!c.has(PREREQ)) {
+						c.add(PREREQ);
+						commits.add(c);
+					}
+				} catch (MissingObjectException notFound) {
+					missing.add(p);
+				} catch (IOException err) {
+					throw new TransportException(uri, "Cannot read commit "
+							+ p.name(), err);
+				}
+			}
+			if (!missing.isEmpty())
+				throw new MissingBundlePrerequisiteException(uri, missing);
+
+			for (final Ref r : local.getAllRefs().values()) {
+				try {
+					rw.markStart(rw.parseCommit(r.getObjectId()));
+				} catch (IOException readError) {
+					// If we cannot read the value of the ref skip it.
+				}
+			}
+
+			int remaining = commits.size();
+			try {
+				RevCommit c;
+				while ((c = rw.next()) != null) {
+					if (c.has(PREREQ)) {
+						c.add(SEEN);
+						if (--remaining == 0)
+							break;
+					}
+				}
+			} catch (IOException err) {
+				throw new TransportException(uri, "Cannot read object", err);
+			}
+
+			if (remaining > 0) {
+				for (final RevObject o : commits) {
+					if (!o.has(SEEN))
+						missing.add(o);
+				}
+				throw new MissingBundlePrerequisiteException(uri, missing);
 			}
 		}
 
