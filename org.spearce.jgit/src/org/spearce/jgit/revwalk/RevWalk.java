@@ -651,7 +651,10 @@ public class RevWalk implements Iterable<RevCommit> {
 
 		if ((t.flags & PARSED) != 0)
 			return t;
-		if (db.openObject(t).getType() != Constants.OBJ_TREE)
+		final ObjectLoader ldr = db.openObject(t);
+		if (ldr == null)
+			throw new MissingObjectException(t, Constants.TYPE_TREE);
+		if (ldr.getType() != Constants.OBJ_TREE)
 			throw new IncorrectObjectTypeException(t, Constants.TYPE_TREE);
 		t.flags |= PARSED;
 		return t;
