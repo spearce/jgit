@@ -408,7 +408,7 @@ public abstract class AnyObjectId implements Comparable {
 
 	@Override
 	public String toString() {
-		return name();
+		return "AnyObjectId[" + name() + "]";
 	}
 
 	/**
