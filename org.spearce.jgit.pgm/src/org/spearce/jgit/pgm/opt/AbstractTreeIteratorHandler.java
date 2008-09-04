@@ -112,8 +112,6 @@ public class AbstractTreeIteratorHandler extends
 		final CanonicalTreeParser p = new CanonicalTreeParser();
 		try {
 			p.reset(clp.getRepository(), clp.getRevWalk().parseTree(id));
-		} catch (ClassCastException e) {
-			throw new CmdLineException(name + " is not a tree");
 		} catch (MissingObjectException e) {
 			throw new CmdLineException(name + " is not a tree");
 		} catch (IncorrectObjectTypeException e) {

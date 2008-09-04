@@ -197,8 +197,6 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 				reachableCommits.add(o);
 			} catch (IOException readError) {
 				// If we cannot read the value of the ref skip it.
-			} catch (ClassCastException cce) {
-				// Not a commit type.
 			}
 		}
 

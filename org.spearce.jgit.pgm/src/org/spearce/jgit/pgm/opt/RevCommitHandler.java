@@ -115,8 +115,6 @@ public class RevCommitHandler extends OptionHandler<RevCommit> {
 		final RevCommit c;
 		try {
 			c = clp.getRevWalk().parseCommit(id);
-		} catch (ClassCastException e) {
-			throw new CmdLineException(name + " is not a commit");
 		} catch (MissingObjectException e) {
 			throw new CmdLineException(name + " is not a commit");
 		} catch (IncorrectObjectTypeException e) {

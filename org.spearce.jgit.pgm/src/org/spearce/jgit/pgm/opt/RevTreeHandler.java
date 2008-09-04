@@ -88,8 +88,6 @@ public class RevTreeHandler extends OptionHandler<RevTree> {
 		final RevTree c;
 		try {
 			c = clp.getRevWalk().parseTree(id);
-		} catch (ClassCastException e) {
-			throw new CmdLineException(name + " is not a tree");
 		} catch (MissingObjectException e) {
 			throw new CmdLineException(name + " is not a tree");
 		} catch (IncorrectObjectTypeException e) {
