@@ -128,7 +128,7 @@ class TransportBundle extends PackTransport {
 				in = new FileInputStream(bundle);
 				bin = new RewindBufferedInputStream(in);
 			} catch (FileNotFoundException err) {
-				throw new TransportException(bundle.getPath() + ": not found");
+				throw new TransportException(uri, "not found");
 			}
 
 			try {
@@ -137,8 +137,7 @@ class TransportBundle extends PackTransport {
 					readBundleV2();
 					break;
 				default:
-					throw new TransportException(bundle.getPath()
-							+ ": not a bundle");
+					throw new TransportException(uri, "not a bundle");
 				}
 
 				in.getChannel().position(
@@ -149,12 +148,10 @@ class TransportBundle extends PackTransport {
 				throw err;
 			} catch (IOException err) {
 				close();
-				throw new TransportException(bundle.getPath() + ": "
-						+ err.getMessage(), err);
+				throw new TransportException(uri, err.getMessage(), err);
 			} catch (RuntimeException err) {
 				close();
-				throw new TransportException(bundle.getPath() + ": "
-						+ err.getMessage(), err);
+				throw new TransportException(uri, err.getMessage(), err);
 			}
 		}
 
@@ -162,7 +159,7 @@ class TransportBundle extends PackTransport {
 			final String rev = readLine(new byte[1024]);
 			if (V2_BUNDLE_SIGNATURE.equals(rev))
 				return 2;
-			throw new TransportException(bundle.getPath() + ": not a bundle");
+			throw new TransportException(uri, "not a bundle");
 		}
 
 		private void readBundleV2() throws IOException {
@@ -189,8 +186,8 @@ class TransportBundle extends PackTransport {
 		}
 
 		private PackProtocolException duplicateAdvertisement(final String name) {
-			return new PackProtocolException("duplicate advertisements of "
-					+ name);
+			return new PackProtocolException(uri,
+					"duplicate advertisements of " + name);
 		}
 
 		private String readLine(final byte[] hdrbuf) throws IOException {
@@ -217,10 +214,10 @@ class TransportBundle extends PackTransport {
 				ip.renameAndOpenPack();
 			} catch (IOException err) {
 				close();
-				throw new TransportException(err.getMessage(), err);
+				throw new TransportException(uri, err.getMessage(), err);
 			} catch (RuntimeException err) {
 				close();
-				throw new TransportException(err.getMessage(), err);
+				throw new TransportException(uri, err.getMessage(), err);
 			}
 		}
 
