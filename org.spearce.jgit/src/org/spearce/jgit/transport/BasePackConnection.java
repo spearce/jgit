@@ -101,7 +101,7 @@ abstract class BasePackConnection extends BaseConnection {
 
 	protected void init(final InputStream myIn, final OutputStream myOut) {
 		in = myIn instanceof BufferedInputStream ? myIn
-				: new BufferedInputStream(myIn);
+				: new BufferedInputStream(myIn, IndexPack.BUFFER_SIZE);
 		out = myOut instanceof BufferedOutputStream ? myOut
 				: new BufferedOutputStream(myOut);
 

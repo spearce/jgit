@@ -102,7 +102,13 @@ class TransportBundle extends PackTransport {
 	@Override
 	public FetchConnection openFetch() throws NotSupportedException,
 			TransportException {
-		return new BundleFetchConnection();
+		final InputStream src;
+		try {
+			src = new FileInputStream(bundle);
+		} catch (FileNotFoundException err) {
+			throw new TransportException(uri, "not found");
+		}
+		return new BundleFetchConnection(src);
 	}
 
 	@Override
@@ -117,20 +123,12 @@ class TransportBundle extends PackTransport {
 	}
 
 	class BundleFetchConnection extends BaseFetchConnection {
-		FileInputStream in;
-
-		RewindBufferedInputStream bin;
+		InputStream bin;
 
 		final Set<ObjectId> prereqs = new HashSet<ObjectId>();
 
-		BundleFetchConnection() throws TransportException {
-			try {
-				in = new FileInputStream(bundle);
-				bin = new RewindBufferedInputStream(in);
-			} catch (FileNotFoundException err) {
-				throw new TransportException(uri, "not found");
-			}
-
+		BundleFetchConnection(final InputStream src) throws TransportException {
+			bin = new BufferedInputStream(src, IndexPack.BUFFER_SIZE);
 			try {
 				switch (readSignature()) {
 				case 2:
@@ -139,10 +137,6 @@ class TransportBundle extends PackTransport {
 				default:
 					throw new TransportException(uri, "not a bundle");
 				}
-
-				in.getChannel().position(
-						in.getChannel().position() - bin.buffered());
-				bin = null;
 			} catch (TransportException err) {
 				close();
 				throw err;
@@ -208,7 +202,7 @@ class TransportBundle extends PackTransport {
 				final Collection<Ref> want) throws TransportException {
 			verifyPrerequisites();
 			try {
-				final IndexPack ip = IndexPack.create(local, in);
+				final IndexPack ip = IndexPack.create(local, bin);
 				ip.setFixThin(true);
 				ip.index(monitor);
 				ip.renameAndOpenPack();
@@ -281,25 +275,14 @@ class TransportBundle extends PackTransport {
 
 		@Override
 		public void close() {
-			if (in != null) {
+			if (bin != null) {
 				try {
-					in.close();
+					bin.close();
 				} catch (IOException ie) {
 					// Ignore close failures.
 				} finally {
-					in = null;
 					bin = null;
 				}
-			}
-		}
-
-		class RewindBufferedInputStream extends BufferedInputStream {
-			RewindBufferedInputStream(final InputStream src) {
-				super(src);
-			}
-
-			int buffered() {
-				return (count - pos);
 			}
 		}
 	}
