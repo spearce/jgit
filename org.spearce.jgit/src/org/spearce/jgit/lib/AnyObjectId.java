@@ -406,7 +406,15 @@ public abstract class AnyObjectId implements Comparable {
 			dst[o--] = '0';
 	}
 
+	@Override
 	public String toString() {
+		return name();
+	}
+
+	/**
+	 * @return string form of the SHA-1, in lower case hexadecimal.
+	 */
+	public final String name() {
 		return new String(toHexCharArray());
 	}
 
