@@ -639,15 +639,21 @@ public class RevWalk implements Iterable<RevCommit> {
 			c = ((RevTag) c).getObject();
 			parse(c);
 		}
-		if (c instanceof RevCommit) {
-			c = ((RevCommit) c).getTree();
-			parse(c);
-		} else if (!(c instanceof RevTree))
+
+		final RevTree t;
+		if (c instanceof RevCommit)
+			t = ((RevCommit) c).getTree();
+		else if (!(c instanceof RevTree))
 			throw new IncorrectObjectTypeException(id.toObjectId(),
 					Constants.TYPE_TREE);
-		final RevTree t = (RevTree) c;
+		else
+			t = (RevTree) c;
+
+		if ((t.flags & PARSED) != 0)
+			return t;
 		if (db.openObject(t).getType() != Constants.OBJ_TREE)
 			throw new IncorrectObjectTypeException(t, Constants.TYPE_TREE);
+		t.flags |= PARSED;
 		return t;
 	}
 
@@ -685,10 +691,12 @@ public class RevWalk implements Iterable<RevCommit> {
 			}
 			case Constants.OBJ_TREE: {
 				r = new RevTree(ldr.getId());
+				r.flags |= PARSED;
 				break;
 			}
 			case Constants.OBJ_BLOB: {
 				r = new RevBlob(ldr.getId());
+				r.flags |= PARSED;
 				break;
 			}
 			case Constants.OBJ_TAG: {
