@@ -209,7 +209,7 @@ public class Repository {
 	 * @return suggested file name
 	 */
 	public File toFile(final AnyObjectId objectId) {
-		final String n = objectId.toString();
+		final String n = objectId.name();
 		String d=n.substring(0, 2);
 		String f=n.substring(2);
 		for (int i=0; i<objectsDirs.length; ++i) {

@@ -67,7 +67,7 @@ class LsTree extends TextBuiltin {
 			out.print(Constants.typeString(mode.getObjectType()));
 
 			out.print(' ');
-			out.print(walk.getObjectId(0));
+			out.print(walk.getObjectId(0).name());
 
 			out.print('\t');
 			out.print(walk.getPathString());

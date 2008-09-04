@@ -102,7 +102,7 @@ class MergeBaseGenerator extends Generator {
 			// commit admitted to the initial queue only once. If
 			// we see this marks aren't correctly erased.
 			//
-			throw new IllegalStateException("Stale RevFlags found on " + c);
+			throw new IllegalStateException("Stale RevFlags on " + c.name());
 		}
 		c.flags |= flag;
 		pending.add(c);

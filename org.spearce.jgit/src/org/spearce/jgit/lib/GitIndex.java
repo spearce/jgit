@@ -580,7 +580,7 @@ public class GitIndex {
 		}
 
 		public String toString() {
-			return new String(name) + "/SHA-1(" + sha1 + ")/M:"
+			return new String(name) + "/SHA-1(" + sha1.name() + ")/M:"
 					+ new Date(ctime / 1000000L) + "/C:"
 					+ new Date(mtime / 1000000L) + "/d" + dev + "/i" + ino
 					+ "/m" + Integer.toString(mode, 8) + "/u" + uid + "/g"

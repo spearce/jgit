@@ -430,7 +430,7 @@ public abstract class AnyObjectId implements Comparable {
 	 */
 	public String abbreviate(final Repository repo) {
 		// TODO implement checking for uniqueness
-		return toString().substring(0, 7);
+		return name().substring(0, 7);
 	}
 
 	/**

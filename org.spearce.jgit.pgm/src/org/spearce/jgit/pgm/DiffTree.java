@@ -87,7 +87,7 @@ class DiffTree extends TextBuiltin {
 			}
 
 			for (int i = 0; i < nTree; i++) {
-				out.print(walk.getObjectId(i));
+				out.print(walk.getObjectId(i).name());
 				out.print(' ');
 			}
 

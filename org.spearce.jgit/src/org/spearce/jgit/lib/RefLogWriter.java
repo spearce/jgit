@@ -88,7 +88,7 @@ public class RefLogWriter {
 			oldCommit = ObjectId.zeroId();
 			initial = " (initial)";
 		}
-		String s = oldCommit.toString() + " " + commit.toString() + " "
+		String s = oldCommit.name() + " " + commit.name() + " "
 				+ me.toExternalString() + "\t" + message + initial;
 		return s;
 	}

@@ -80,7 +80,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		final Tree t = new Tree(db);
 		t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
 		assertEquals("4b825dc642cb6eb9a060e54bf8d69288fbee4904", t.getId()
-				.toString());
+				.name());
 		final File o = new File(new File(new File(trash_git, "objects"), "4b"),
 				"825dc642cb6eb9a060e54bf8d69288fbee4904");
 		assertTrue("Exists " + o, o.isFile());
@@ -93,7 +93,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		final Tree t = new Tree(db);
 		t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
 		assertEquals("4b825dc642cb6eb9a060e54bf8d69288fbee4904", t.getId()
-				.toString());
+				.name());
 		final File o = new File(new File(new File(trash_git, "objects"), "4b"),
 				"825dc642cb6eb9a060e54bf8d69288fbee4904");
 		assertFalse("Exists " + o, o.isFile());
@@ -105,7 +105,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		t.addFile("should-be-empty").setId(emptyId);
 		t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
 		assertEquals("7bb943559a305bdd6bdee2cef6e5df2413c3d30a", t.getId()
-				.toString());
+				.name());
 
 		File o;
 		o = new File(new File(new File(trash_git, "objects"), "7b"),
@@ -264,13 +264,13 @@ public class T0003_Basic extends RepositoryTestCase {
 		t.setAuthor(new PersonIdent(jauthor, 1154236443000L, -4 * 60));
 		t.setMessage("test020 tagged\n");
 		t.tag();
-		assertEquals("6759556b09fbb4fd8ae5e315134481cc25d46954", t.getTagId().toString());
+		assertEquals("6759556b09fbb4fd8ae5e315134481cc25d46954", t.getTagId().name());
 
 		Tag mapTag = db.mapTag("test020");
 		assertEquals("blob", mapTag.getType());
 		assertEquals("test020 tagged\n", mapTag.getMessage());
 		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag.getAuthor());
-		assertEquals("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", mapTag.getObjId().toString());
+		assertEquals("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", mapTag.getObjId().name());
 	}
 
 	public void test020b_createBlobPlainTag() throws IOException {
@@ -281,7 +281,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		t.tag();
 		
 		Tag mapTag = db.mapTag("test020b");
-		assertEquals("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", mapTag.getObjId().toString());
+		assertEquals("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", mapTag.getObjId().name());
 		
 		// We do not repeat the plain tag test for other object types
 	}
@@ -298,13 +298,13 @@ public class T0003_Basic extends RepositoryTestCase {
 		t.setAuthor(new PersonIdent(jauthor, 1154236443000L, -4 * 60));
 		t.setMessage("test021 tagged\n");
 		t.tag();
-		assertEquals("b0517bc8dbe2096b419d42424cd7030733f4abe5", t.getTagId().toString());
+		assertEquals("b0517bc8dbe2096b419d42424cd7030733f4abe5", t.getTagId().name());
 
 		Tag mapTag = db.mapTag("test021");
 		assertEquals("tree", mapTag.getType());
 		assertEquals("test021 tagged\n", mapTag.getMessage());
 		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag.getAuthor());
-		assertEquals("417c01c8795a35b8e835113a85a5c0c1c77f67fb", mapTag.getObjId().toString());
+		assertEquals("417c01c8795a35b8e835113a85a5c0c1c77f67fb", mapTag.getObjId().name());
 	}
 
 	public void test022_createCommitTag() throws IOException {
@@ -325,13 +325,13 @@ public class T0003_Basic extends RepositoryTestCase {
 		t.setAuthor(new PersonIdent(jauthor, 1154236443000L, -4 * 60));
 		t.setMessage("test022 tagged\n");
 		t.tag();
-		assertEquals("0ce2ebdb36076ef0b38adbe077a07d43b43e3807", t.getTagId().toString());
+		assertEquals("0ce2ebdb36076ef0b38adbe077a07d43b43e3807", t.getTagId().name());
 
 		Tag mapTag = db.mapTag("test022");
 		assertEquals("commit", mapTag.getType());
 		assertEquals("test022 tagged\n", mapTag.getMessage());
 		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag.getAuthor());
-		assertEquals("b5d3b45a96b340441f5abb9080411705c51cc86c", mapTag.getObjId().toString());
+		assertEquals("b5d3b45a96b340441f5abb9080411705c51cc86c", mapTag.getObjId().name());
 	}
 	
 	public void test023_createCommitNonAnullii() throws IOException {
@@ -346,7 +346,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		commit.setEncoding("UTF-8");
 		commit.setMessage("\u00dcbergeeks");
 		ObjectId cid = new ObjectWriter(db).writeCommit(commit);
-		assertEquals("4680908112778718f37e686cbebcc912730b3154", cid.toString());
+		assertEquals("4680908112778718f37e686cbebcc912730b3154", cid.name());
 	}
 
 	public void test024_createCommitNonAscii() throws IOException {
@@ -361,7 +361,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		commit.setEncoding("ISO-8859-1");
 		commit.setMessage("\u00dcbergeeks");
 		ObjectId cid = new ObjectWriter(db).writeCommit(commit);
-		assertEquals("2979b39d385014b33287054b87f77bcb3ecb5ebf", cid.toString());
+		assertEquals("2979b39d385014b33287054b87f77bcb3ecb5ebf", cid.name());
 	}
 	
 	public void test025_packedRefs() throws IOException {
@@ -393,19 +393,19 @@ public class T0003_Basic extends RepositoryTestCase {
 		assertEquals("blob", mapTag20.getType());
 		assertEquals("test020 tagged\n", mapTag20.getMessage());
 		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag20.getAuthor());
-		assertEquals("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", mapTag20.getObjId().toString());
+		assertEquals("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", mapTag20.getObjId().name());
 
 		Tag mapTag21 = db.mapTag("test021");
 		assertEquals("tree", mapTag21.getType());
 		assertEquals("test021 tagged\n", mapTag21.getMessage());
 		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag21.getAuthor());
-		assertEquals("417c01c8795a35b8e835113a85a5c0c1c77f67fb", mapTag21.getObjId().toString());
+		assertEquals("417c01c8795a35b8e835113a85a5c0c1c77f67fb", mapTag21.getObjId().name());
 
 		Tag mapTag22 = db.mapTag("test022");
 		assertEquals("commit", mapTag22.getType());
 		assertEquals("test022 tagged\n", mapTag22.getMessage());
 		assertEquals(new PersonIdent(jauthor, 1154236443000L, -4 * 60), mapTag22.getAuthor());
-		assertEquals("b5d3b45a96b340441f5abb9080411705c51cc86c", mapTag22.getObjId().toString());
+		assertEquals("b5d3b45a96b340441f5abb9080411705c51cc86c", mapTag22.getObjId().name());
 	}
 
 	public void test025_computeSha1NoStore() throws IOException {
@@ -414,7 +414,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		// TODO: but we do not test legacy header writing
 		final ObjectId id = new ObjectWriter(db).computeBlobSha1(data.length,
 				new ByteArrayInputStream(data));
-		assertEquals("4f561df5ecf0dfbd53a0dc0f37262fef075d9dde", id.toString());
+		assertEquals("4f561df5ecf0dfbd53a0dc0f37262fef075d9dde", id.name());
 	}
 
 	public void test026_CreateCommitMultipleparents() throws IOException {
@@ -512,7 +512,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		writer.close();
 
 		ObjectId resolved = db.resolve("refs/heads/a");
-		assertEquals(unpackedId, resolved.toString());
+		assertEquals(unpackedId, resolved.name());
 	}
 
 	public void test028_LockPackedRef() throws IOException {
@@ -520,7 +520,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		writeTrashFile(".git/HEAD", "ref: refs/heads/foobar\n");
 
 		ObjectId resolve = db.resolve("HEAD");
-		assertEquals("7f822839a2fe9760f386cbbbcb3f92c5fe81def7", resolve.toString());
+		assertEquals("7f822839a2fe9760f386cbbbcb3f92c5fe81def7", resolve.name());
 
 		RefUpdate lockRef = db.updateRef("HEAD");
 		ObjectId newId = ObjectId.fromString("07f822839a2fe9760f386cbbbcb3f92c5fe81def");

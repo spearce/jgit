@@ -200,6 +200,6 @@ public class Ref {
 	}
 
 	public String toString() {
-		return "Ref[" + name + "=" + getObjectId() + "]";
+		return "Ref[" + name + "=" + ObjectId.toString(getObjectId()) + "]";
 	}
 }

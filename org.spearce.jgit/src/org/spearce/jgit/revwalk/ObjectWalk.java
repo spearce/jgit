@@ -277,7 +277,7 @@ public class ObjectWalk extends RevWalk {
 				if (FileMode.GITLINK.equals(mode))
 					continue;
 				throw new CorruptObjectException("Invalid mode " + mode
-						+ " for " + treeWalk.getObjectId(0) + " "
+						+ " for " + treeWalk.getObjectId(0).name() + " "
 						+ treeWalk.getPathString() + " in " + currentTree + ".");
 			}
 		}
@@ -407,7 +407,7 @@ public class ObjectWalk extends RevWalk {
 				if (FileMode.GITLINK.equals(mode))
 					continue;
 				throw new CorruptObjectException("Invalid mode " + mode
-						+ " for " + treeWalk.getObjectId(0) + " "
+						+ " for " + treeWalk.getObjectId(0).name() + " "
 						+ treeWalk.getPathString() + " in " + tree + ".");
 			}
 		}

@@ -56,6 +56,6 @@ public class MissingObjectException extends IOException {
 	 * @param type object type
 	 */
 	public MissingObjectException(final ObjectId id, final String type) {
-		super("Missing " + type + " " + id);
+		super("Missing " + type + " " + id.name());
 	}
 }

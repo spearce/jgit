@@ -224,7 +224,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 				if (inWorkQueue.add(id))
 					workQueue.add(id);
 			} catch (IOException e) {
-				throw new TransportException("Object read error " + id + ".", e);
+				throw new TransportException("Cannot read " + id.name(), e);
 			}
 		}
 	}
@@ -243,7 +243,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 					return;
 			}
 		} catch (IOException e) {
-			throw new TransportException("Object read error " + id + ".", e);
+			throw new TransportException("Cannot read " + id.name(), e);
 		}
 
 		// We only care about traversal; disposing an object throws its
@@ -266,7 +266,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 			processTag(obj);
 			break;
 		default:
-			throw new TransportException("Unknown object type " + obj.getId());
+			throw new TransportException("Unknown object type " + id.name());
 		}
 
 		// If we had any prior errors fetching this object they are
@@ -277,7 +277,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 
 	private void processBlob(final RevObject obj) throws TransportException {
 		if (!local.hasObject(obj))
-			throw new TransportException("Cannot read blob " + obj,
+			throw new TransportException("Cannot read blob " + obj.name(),
 					new MissingObjectException(obj, Constants.TYPE_BLOB));
 		obj.add(COMPLETE);
 	}
@@ -300,13 +300,13 @@ class WalkFetchConnection extends BaseFetchConnection {
 					if (FileMode.GITLINK.equals(mode))
 						continue;
 					throw new CorruptObjectException("Invalid mode " + mode
-							+ " for " + treeWalk.getObjectId(0) + " "
-							+ treeWalk.getPathString() + " in " + obj.getId()
-							+ ".");
+							+ " for " + treeWalk.getObjectId(0).name() + " "
+							+ treeWalk.getPathString() + " in "
+							+ obj.getId().name() + ".");
 				}
 			}
 		} catch (IOException ioe) {
-			throw new TransportException("Cannot read tree " + obj, ioe);
+			throw new TransportException("Cannot read tree " + obj.name(), ioe);
 		}
 		obj.add(COMPLETE);
 	}
@@ -351,7 +351,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 			// Search for a loose object over all alternates, starting
 			// from the one we last successfully located an object through.
 			//
-			final String idStr = id.toString();
+			final String idStr = id.name();
 			final String subdir = idStr.substring(0, 2);
 			final String file = idStr.substring(2);
 			final String looseName = subdir + "/" + file;
@@ -413,7 +413,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 			List<Throwable> failures = fetchErrors.get(id.copy());
 			final TransportException te;
 
-			te = new TransportException("Cannot get " + id + ".");
+			te = new TransportException("Cannot get " + id.name() + ".");
 			if (failures != null && !failures.isEmpty()) {
 				if (failures.size() == 1)
 					te.initCause(failures.get(0));
@@ -489,7 +489,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 				// the object, but after indexing we didn't
 				// actually find it in the pack.
 				//
-				recordError(id, new FileNotFoundException("Object " + id
+				recordError(id, new FileNotFoundException("Object " + id.name()
 						+ " not found in " + pack.packName + "."));
 				continue;
 			}
@@ -533,7 +533,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 			recordError(id, e);
 			return false;
 		} catch (IOException e) {
-			throw new TransportException("Cannot download " + id + ".", e);
+			throw new TransportException("Cannot download " + id.name(), e);
 		}
 	}
 
@@ -555,15 +555,15 @@ class WalkFetchConnection extends BaseFetchConnection {
 			// source.
 			//
 			final FileNotFoundException e;
-			e = new FileNotFoundException(id.toString());
+			e = new FileNotFoundException(id.name());
 			e.initCause(parsingError);
 			throw e;
 		}
 
 		if (!AnyObjectId.equals(id, uol.getId()))
-			throw new TransportException("Incorrect hash for " + id
-					+ "; computed " + uol.getId() + " as a " + uol.getType()
-					+ " from " + compressed.length + " bytes.");
+			throw new TransportException("Incorrect hash for " + id.name()
+					+ "; computed " + uol.getId().name() + " as a "
+					+ uol.getType() + " from " + compressed.length + " bytes.");
 	}
 
 	private void saveLooseObject(final AnyObjectId id, final byte[] compressed)
@@ -599,7 +599,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 		tmp.delete();
 		if (local.hasObject(id))
 			return;
-		throw new ObjectWritingException("Unable to store " + id + ".");
+		throw new ObjectWritingException("Unable to store " + id.name() + ".");
 	}
 
 	private Collection<WalkRemoteObjectDatabase> expandOneAlternate(
@@ -713,8 +713,8 @@ class WalkFetchConnection extends BaseFetchConnection {
 				if (FileMode.GITLINK.equals(mode))
 					continue;
 				throw new CorruptObjectException("Invalid mode " + mode
-						+ " for " + treeWalk.getObjectId(0) + " "
-						+ treeWalk.getPathString() + " in " + tree + ".");
+						+ " for " + treeWalk.getObjectId(0).name() + " "
+						+ treeWalk.getPathString() + " in " + tree.name() + ".");
 			}
 		}
 	}

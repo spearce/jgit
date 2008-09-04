@@ -60,6 +60,6 @@ public class IncorrectObjectTypeException extends IOException {
 	 * @param type object type
 	 */
 	public IncorrectObjectTypeException(final ObjectId id, final String type) {
-		super("Object " + id + " is not a " + type + ".");
+		super("Object " + id.name() + " is not a " + type + ".");
 	}
 }

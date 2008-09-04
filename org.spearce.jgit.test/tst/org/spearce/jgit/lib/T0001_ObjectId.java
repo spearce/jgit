@@ -43,13 +43,13 @@ public class T0001_ObjectId extends TestCase {
 	public void test001_toString() {
 		final String x = "def4c620bc3713bb1bb26b808ec9312548e73946";
 		final ObjectId oid = ObjectId.fromString(x);
-		assertEquals(x, oid.toString());
+		assertEquals(x, oid.name());
 	}
 
 	public void test002_toString() {
 		final String x = "ff00eedd003713bb1bb26b808ec9312548e73946";
 		final ObjectId oid = ObjectId.fromString(x);
-		assertEquals(x, oid.toString());
+		assertEquals(x, oid.name());
 	}
 
 	public void test003_equals() {

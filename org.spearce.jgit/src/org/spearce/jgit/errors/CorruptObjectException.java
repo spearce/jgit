@@ -56,7 +56,7 @@ public class CorruptObjectException extends IOException {
 	 * @param why
 	 */
 	public CorruptObjectException(final ObjectId id, final String why) {
-		super("Object " + id + " is corrupt: " + why);
+		super("Object " + id.name() + " is corrupt: " + why);
 	}
 
 	/**

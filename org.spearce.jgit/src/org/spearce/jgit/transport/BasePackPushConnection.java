@@ -154,9 +154,9 @@ class BasePackPushConnection extends BasePackConnection implements
 			final Ref advertisedRef = getRef(rru.getRemoteName());
 			final ObjectId oldId = (advertisedRef == null ? ObjectId.zeroId()
 					: advertisedRef.getObjectId());
-			sb.append(oldId);
+			sb.append(oldId.name());
 			sb.append(' ');
-			sb.append(rru.getNewObjectId());
+			sb.append(rru.getNewObjectId().name());
 			sb.append(' ');
 			sb.append(rru.getRemoteName());
 			if (!sentCommand) {

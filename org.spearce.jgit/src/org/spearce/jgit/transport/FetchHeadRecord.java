@@ -71,7 +71,7 @@ class FetchHeadRecord {
 			name = sourceName;
 		}
 
-		pw.print(newValue);
+		pw.print(newValue.name());
 		pw.print('\t');
 		if (notForMerge)
 			pw.print("not-for-merge");

@@ -244,7 +244,7 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 
 			final StringBuilder line = new StringBuilder(46);
 			line.append("want ");
-			line.append(r.getObjectId());
+			line.append(r.getObjectId().name());
 			if (first) {
 				line.append(enableCapabilities());
 				first = false;
@@ -288,7 +288,7 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 			if (c == null)
 				break;
 
-			pckOut.writeString("have " + c.getId() + "\n");
+			pckOut.writeString("have " + c.getId().name() + "\n");
 			havesSent++;
 			havesSinceLastContinue++;
 

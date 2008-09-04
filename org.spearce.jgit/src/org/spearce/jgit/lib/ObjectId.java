@@ -52,7 +52,7 @@ public class ObjectId extends AnyObjectId {
 
 	static {
 		ZEROID = new ObjectId(0, 0, 0, 0, 0);
-		ZEROID_STR = ZEROID.toString();
+		ZEROID_STR = ZEROID.name();
 	}
 
 	/**
@@ -94,7 +94,7 @@ public class ObjectId extends AnyObjectId {
 	 * @return the hex string conversion of this id's content.
 	 */
 	public static final String toString(final ObjectId i) {
-		return i != null ? i.toString() : ZEROID_STR;
+		return i != null ? i.name() : ZEROID_STR;
 	}
 
 	/**

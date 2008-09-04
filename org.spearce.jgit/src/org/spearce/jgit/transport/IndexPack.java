@@ -842,7 +842,7 @@ public class IndexPack {
 			d.update(oeBytes);
 		}
 
-		final ObjectId name = ObjectId.fromRaw(d.digest());
+		final String name = ObjectId.fromRaw(d.digest()).name();
 		final File packDir = new File(repo.getObjectsDirectory(), "pack");
 		final File finalPack = new File(packDir, "pack-" + name + ".pack");
 		final File finalIdx = new File(packDir, "pack-" + name + ".idx");

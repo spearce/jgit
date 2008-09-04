@@ -63,7 +63,7 @@ class ShowDirCache extends TextBuiltin {
 			out.print(' ');
 			out.print(fmt.format(mtime));
 			out.print(' ');
-			out.print(ent.getObjectId());
+			out.print(ent.getObjectId().name());
 			out.print('\t');
 			out.print(ent.getPathString());
 			out.println();

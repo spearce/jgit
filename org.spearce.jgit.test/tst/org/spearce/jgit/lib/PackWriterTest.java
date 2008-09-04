@@ -125,7 +125,7 @@ public class PackWriterTest extends RepositoryTestCase {
 		assertEquals(0, writer.getObjectsNumber());
 		assertEquals(0, pack.getObjectCount());
 		assertEquals("da39a3ee5e6b4b0d3255bfef95601890afd80709", writer
-				.computeName().toString());
+				.computeName().name());
 	}
 
 	/**
@@ -274,7 +274,7 @@ public class PackWriterTest extends RepositoryTestCase {
 		assertEquals(forcedOrder.length, writer.getObjectsNumber());
 		verifyObjectsOrder(forcedOrder);
 		assertEquals("ed3f96b8327c7c66b0f8f70056129f0769323d86", writer
-				.computeName().toString());
+				.computeName().name());
 	}
 
 	/**
@@ -372,7 +372,7 @@ public class PackWriterTest extends RepositoryTestCase {
 		assertEquals(expectedOrder.length, writer.getObjectsNumber());
 		verifyObjectsOrder(expectedOrder);
 		assertEquals("34be9032ac282b11fa9babdc2b2a93ca996c9c2f", writer
-				.computeName().toString());
+				.computeName().name());
 	}
 
 	private void writeVerifyPack2(boolean deltaReuse) throws IOException {
@@ -401,7 +401,7 @@ public class PackWriterTest extends RepositoryTestCase {
 		assertEquals(expectedOrder.length, writer.getObjectsNumber());
 		verifyObjectsOrder(expectedOrder);
 		assertEquals("ed3f96b8327c7c66b0f8f70056129f0769323d86", writer
-				.computeName().toString());
+				.computeName().name());
 	}
 
 	private void writeVerifyPack4(final boolean thin) throws IOException {
@@ -431,7 +431,7 @@ public class PackWriterTest extends RepositoryTestCase {
 		}
 		verifyObjectsOrder(expectedObjects);
 		assertEquals("cded4b74176b4456afa456768b2b5aafb41c44fc", writer
-				.computeName().toString());
+				.computeName().name());
 	}
 
 	private void createVerifyOpenPack(final Collection<ObjectId> interestings,

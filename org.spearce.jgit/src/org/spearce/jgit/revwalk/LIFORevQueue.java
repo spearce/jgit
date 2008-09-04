@@ -107,7 +107,7 @@ public class LIFORevQueue extends BlockRevQueue {
 		final StringBuffer s = new StringBuffer();
 		for (Block q = head; q != null; q = q.next) {
 			for (int i = q.headIndex; i < q.tailIndex; i++) {
-				s.append(q.commits[i]);
+				s.append(q.commits[i].name());
 				s.append(' ');
 				s.append(q.commits[i].commitTime);
 				s.append('\n');

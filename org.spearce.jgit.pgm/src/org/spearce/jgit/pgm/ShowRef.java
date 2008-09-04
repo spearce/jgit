@@ -53,7 +53,7 @@ class ShowRef extends TextBuiltin {
 	}
 
 	private void show(final AnyObjectId id, final String name) {
-		out.print(id);
+		out.print(id.name());
 		out.print('\t');
 		out.print(name);
 		out.println();

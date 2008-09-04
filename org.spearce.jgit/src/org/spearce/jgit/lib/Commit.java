@@ -332,7 +332,7 @@ public class Commit implements Treeish {
 	}
 
 	public String toString() {
-		return "Commit[" + getCommitId() + " " + getAuthor() + "]";
+		return "Commit[" + ObjectId.toString(getCommitId()) + " " + getAuthor() + "]";
 	}
 
 	/**

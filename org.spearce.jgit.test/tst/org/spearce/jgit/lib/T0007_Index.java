@@ -171,7 +171,7 @@ public class T0007_Index extends RepositoryTestCase {
 		index.write();
 
 		ObjectId id = index.writeTree();
-		assertEquals("c696abc3ab8e091c665f49d00eb8919690b3aec3", id.toString());
+		assertEquals("c696abc3ab8e091c665f49d00eb8919690b3aec3", id.name());
 		
 		writeTrashFile("a/b", "data:a/b");
 		index.add(trash, new File(trash, "a/b"));
@@ -193,7 +193,7 @@ public class T0007_Index extends RepositoryTestCase {
 
 		ObjectId id = index.writeTree();
 		System.out.println("wrote id " + id);
-		assertEquals("c696abc3ab8e091c665f49d00eb8919690b3aec3", id.toString());
+		assertEquals("c696abc3ab8e091c665f49d00eb8919690b3aec3", id.name());
 		GitIndex index2 = new GitIndex(db);
 
 		index2.readTree(db.mapTree(ObjectId.fromString(
@@ -236,7 +236,7 @@ public class T0007_Index extends RepositoryTestCase {
 		index.write();
 		ObjectId id = index.writeTree();
 		System.out.println("wrote id " + id);
-		assertEquals("ba78e065e2c261d4f7b8f42107588051e87e18e9", id.toString());
+		assertEquals("ba78e065e2c261d4f7b8f42107588051e87e18e9", id.name());
 		GitIndex index2 = new GitIndex(db);
 
 		index2.readTree(db.mapTree(ObjectId.fromString(
