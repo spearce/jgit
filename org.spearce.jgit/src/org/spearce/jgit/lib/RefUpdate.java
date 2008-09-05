@@ -459,13 +459,44 @@ public class RefUpdate {
 				return status;
 			if (storage.isPacked())
 				db.removePackedRef(ref.getName());
+
+			final int levels = count(ref.getName(), '/') - 2;
+
+			// Delete logs _before_ unlocking
+			final File gitDir = db.getRepository().getDirectory();
+			final File logDir = new File(gitDir, Constants.LOGS);
+			deleteFileAndEmptyDir(new File(logDir, ref.getName()), levels);
+
+			// We have to unlock before (maybe) deleting the parent directories
+			lock.unlock();
 			if (storage.isLoose())
-				if (!looseFile.delete())
-					throw new IOException("File cannot be deleted: "
-							+ looseFile);
-			new File(db.getRepository().getDirectory(), Constants.LOGS + "/"
-					+ ref.getName()).delete();
+				deleteFileAndEmptyDir(looseFile, levels);
 			return status;
 		}
+
+		private void deleteFileAndEmptyDir(final File file, final int depth)
+				throws IOException {
+			if (file.exists()) {
+				if (!file.delete())
+					throw new IOException("File cannot be deleted: " + file);
+				deleteEmptyDir(file.getParentFile(), depth);
+			}
+		}
+
+		private void deleteEmptyDir(File dir, int depth) {
+			for (; depth > 0 && dir != null; depth--) {
+				if (!dir.delete())
+					break;
+				dir = dir.getParentFile();
+			}
+		}
+	}
+
+	private static int count(final String s, final char c) {
+		int count = 0;
+		for (int p = s.indexOf(c); p >= 0; p = s.indexOf(c, p + 1)) {
+			count++;
+		}
+		return count;
 	}
 }

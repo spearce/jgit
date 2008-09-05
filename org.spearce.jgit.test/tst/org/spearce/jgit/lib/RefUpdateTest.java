@@ -76,14 +76,20 @@ public class RefUpdateTest extends RepositoryTestCase {
 	}
 
 	public void testLogDeleted() throws IOException {
-		final File log = new File(db.getDirectory(), Constants.LOGS
-				+ "/refs/heads/a");
-		log.getParentFile().mkdirs();
-		log.createNewFile();
+		String refName = "refs/heads/a";
+		final File log = createLog(refName);
 		assertTrue(log.exists());
-		final RefUpdate ref = updateRef("refs/heads/a");
+		final RefUpdate ref = updateRef(refName);
 		delete(ref, Result.FAST_FORWARD);
 		assertFalse(log.exists());
+	}
+
+	private File createLog(String name) throws IOException {
+		final File log = new File(db.getDirectory(), Constants.LOGS + "/"
+				+ name);
+		log.getParentFile().mkdirs();
+		log.createNewFile();
+		return log;
 	}
 
 	public void testDeleteNotFound() throws IOException {
@@ -102,5 +108,23 @@ public class RefUpdateTest extends RepositoryTestCase {
 		delete(ref, Result.REJECTED, true, false);
 		ref.setForceUpdate(true);
 		delete(ref, Result.FORCED);
+	}
+
+	public void testDeleteEmptyDirs() throws IOException {
+		final String top = "refs/heads/a";
+		final String newRef = top + "/b/c";
+		final String newRef2 = top + "/d";
+		updateRef(newRef).update();
+		updateRef(newRef2).update();
+		delete(updateRef(newRef2), Result.NO_CHANGE);
+		assertExists(true, top);
+		createLog(newRef);
+		delete(updateRef(newRef), Result.NO_CHANGE);
+		assertExists(false, top);
+		assertExists(false, Constants.LOGS + "/" + top);
+	}
+
+	private void assertExists(final boolean expected, final String name) {
+		assertEquals(expected, new File(db.getDirectory(), name).exists());
 	}
 }
