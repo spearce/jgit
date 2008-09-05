@@ -260,6 +260,14 @@ public class PersonIdent {
 		return TimeZone.getTimeZone(ids[0]);
 	}
 
+	/**
+	 * @return this person's preferred time zone as minutes east of UTC. If the
+	 *         timezone is to the west of UTC it is negative.
+	 */
+	public int getTimeZoneOffset() {
+		return tzOffset;
+	}
+
 	public int hashCode() {
 		return getEmailAddress().hashCode() ^ (int) when;
 	}
