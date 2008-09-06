@@ -13,12 +13,12 @@ import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.jface.action.IAction;
 
 /**
- * Changes the reference for the quickdiff to HEAD
+ * Changes the reference for the quickdiff to the (first) parent of HEAD
  */
-public class ResetQuickdiffBaselineAction extends AbstractRevObjectAction {
+public class ResetQuickdiffBaselineHeadParentAction extends AbstractRevObjectAction {
 
 	@Override
 	protected IWorkspaceRunnable createOperation(IAction act, List selection) {
-		return new QuickdiffBaselineOperation(getActiveRepository(), "HEAD");
+		return new QuickdiffBaselineOperation(getActiveRepository(), "HEAD^1");
 	}
 }

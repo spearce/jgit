@@ -150,6 +150,13 @@
 	       label="Reset quickdiff baseline to HEAD"
 	       menubarPath="additions">
 	 </action>
+	 <action
+	       class="org.spearce.egit.ui.internal.actions.ResetQuickdiffBaselineHeadParentAction"
+	       enablesFor="*"
+	       id="org.spearce.egit.ui.resetquickdiffheadparentbaseline"
+	       label="Reset quickdiff baseline to first parent of HEAD"
+	       menubarPath="additions">
+	 </action>
 	  </objectContribution>
    </extension>
 
