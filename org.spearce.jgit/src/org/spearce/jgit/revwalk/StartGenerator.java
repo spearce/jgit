@@ -144,7 +144,7 @@ class StartGenerator extends Generator {
 				&& (g.outputType() & SORT_TOPO) == 0)
 			g = new TopoSortGenerator(g);
 		if (walker.hasRevSort(RevSort.REVERSE))
-			g = new LIFORevQueue(q);
+			g = new LIFORevQueue(g);
 		if (boundary)
 			g = new BoundaryGenerator(w, g);
 
