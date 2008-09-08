@@ -41,10 +41,12 @@ package org.spearce.jgit.lib;
 import java.io.File;
 import java.io.IOException;
 
+import org.spearce.jgit.util.JGitTestUtil;
+
 public class T0004_PackReader extends RepositoryTestCase {
 	private static final String PACK_NAME = "pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f";
-	private static final File TEST_PACK = new File(new File("tst"), PACK_NAME + ".pack");
-	private static final File TEST_IDX = new File(TEST_PACK.getParentFile(), PACK_NAME + ".idx");
+	private static final File TEST_PACK = JGitTestUtil.getTestResourceFile(PACK_NAME + ".pack");
+	private static final File TEST_IDX = JGitTestUtil.getTestResourceFile(PACK_NAME + ".idx");
 
 	public void test003_lookupCompressedObject() throws IOException {
 		final PackFile pr;
@@ -77,7 +79,7 @@ public class T0004_PackReader extends RepositoryTestCase {
 	}
 
 	public void test005_todopack() throws IOException {
-		final File todopack = new File(new File("tst"), "todopack");
+		final File todopack = JGitTestUtil.getTestResourceFile("todopack");
 		if (!todopack.isDirectory()) {
 			System.err.println("Skipping " + getName() + ": no " + todopack);
 			return;

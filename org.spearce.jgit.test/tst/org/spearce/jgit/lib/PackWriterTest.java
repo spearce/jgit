@@ -57,6 +57,7 @@ import org.spearce.jgit.revwalk.RevObject;
 import org.spearce.jgit.revwalk.RevWalk;
 import org.spearce.jgit.transport.IndexPack;
 import org.spearce.jgit.util.CountingOutputStream;
+import org.spearce.jgit.util.JGitTestUtil;
 
 public class PackWriterTest extends RepositoryTestCase {
 
@@ -239,7 +240,7 @@ public class PackWriterTest extends RepositoryTestCase {
 				"pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.pack");
 		final File crc32Idx = new File(packDir,
 				"pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.idx");
-		copyFile(new File(new File("tst"),
+		copyFile(JGitTestUtil.getTestResourceFile(
 				"pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.idxV2"),
 				crc32Idx);
 		db.openPack(crc32Pack, crc32Idx);

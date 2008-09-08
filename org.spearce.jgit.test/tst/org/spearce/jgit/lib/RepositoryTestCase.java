@@ -47,6 +47,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 
 import junit.framework.TestCase;
+import org.spearce.jgit.util.JGitTestUtil;
 
 public abstract class RepositoryTestCase extends TestCase {
 
@@ -142,16 +143,15 @@ public abstract class RepositoryTestCase extends TestCase {
 				"pack-9fb5b411fe6dfa89cc2e6b89d2bd8e5de02b5745",
 				"pack-e6d07037cbcf13376308a0a995d1fa48f8f76aaa"
 		};
-		final File tst = new File("tst");
 		final File packDir = new File(db.getObjectsDirectory(), "pack");
 		for (int k = 0; k < packs.length; k++) {
-			copyFile(new File(tst, packs[k] + ".pack"), new File(packDir,
+			copyFile(JGitTestUtil.getTestResourceFile(packs[k] + ".pack"), new File(packDir,
 					packs[k] + ".pack"));
-			copyFile(new File(tst, packs[k] + ".idx"), new File(packDir,
+			copyFile(JGitTestUtil.getTestResourceFile(packs[k] + ".idx"), new File(packDir,
 					packs[k] + ".idx"));
 		}
 
-		copyFile(new File(tst, "packed-refs"), new File(trash_git,"packed-refs"));
+		copyFile(JGitTestUtil.getTestResourceFile("packed-refs"), new File(trash_git,"packed-refs"));
 
 		db.scanForPacks();
 	}

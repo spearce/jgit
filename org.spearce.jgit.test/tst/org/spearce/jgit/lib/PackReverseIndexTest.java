@@ -37,10 +37,9 @@
 
 package org.spearce.jgit.lib;
 
-import java.io.File;
-
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.lib.PackIndex.MutableEntry;
+import org.spearce.jgit.util.JGitTestUtil;
 
 public class PackReverseIndexTest extends RepositoryTestCase {
 
@@ -54,7 +53,7 @@ public class PackReverseIndexTest extends RepositoryTestCase {
 	public void setUp() throws Exception {
 		super.setUp();
 		// index with both small (< 2^31) and big offsets
-		idx = PackIndex.open(new File(new File("tst"),
+		idx = PackIndex.open(JGitTestUtil.getTestResourceFile(
 				"pack-huge.idx"));
 		reverseIdx = new PackReverseIndex(idx);
 	}

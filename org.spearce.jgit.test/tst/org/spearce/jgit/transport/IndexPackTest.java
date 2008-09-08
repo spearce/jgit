@@ -47,7 +47,7 @@ import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.PackFile;
 import org.spearce.jgit.lib.RepositoryTestCase;
 import org.spearce.jgit.lib.TextProgressMonitor;
-import org.spearce.jgit.transport.IndexPack;
+import org.spearce.jgit.util.JGitTestUtil;
 
 /**
  * Test indexing of git packs. A pack is read from a stream, copied
@@ -63,7 +63,7 @@ public class IndexPackTest extends RepositoryTestCase {
 	 * @throws IOException
 	 */
 	public void test1() throws  IOException {
-		File packFile = new File("tst/pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.pack");
+		File packFile = JGitTestUtil.getTestResourceFile("pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.pack");
 		final InputStream is = new FileInputStream(packFile);
 		try {
 			IndexPack pack = new IndexPack(db, is, new File(trash, "tmp_pack1"));
@@ -89,7 +89,7 @@ public class IndexPackTest extends RepositoryTestCase {
 	 * @throws IOException
 	 */
 	public void test2() throws  IOException {
-		File packFile = new File("tst/pack-df2982f284bbabb6bdb59ee3fcc6eb0983e20371.pack");
+		File packFile = JGitTestUtil.getTestResourceFile("pack-df2982f284bbabb6bdb59ee3fcc6eb0983e20371.pack");
 		final InputStream is = new FileInputStream(packFile);
 		try {
 			IndexPack pack = new IndexPack(db, is, new File(trash, "tmp_pack2"));

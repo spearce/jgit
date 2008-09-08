@@ -40,17 +40,18 @@ package org.spearce.jgit.lib;
 import java.io.File;
 
 import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.util.JGitTestUtil;
 
 public class PackIndexV2Test extends PackIndexTest {
 	@Override
 	public File getFileForPack34be9032() {
-		return new File(new File("tst"),
+		return JGitTestUtil.getTestResourceFile(
 				"pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.idxV2");
 	}
 
 	@Override
 	public File getFileForPackdf2982f28() {
-		return new File(new File("tst"),
+		return JGitTestUtil.getTestResourceFile(
 				"pack-df2982f284bbabb6bdb59ee3fcc6eb0983e20371.idxV2");
 	}
 

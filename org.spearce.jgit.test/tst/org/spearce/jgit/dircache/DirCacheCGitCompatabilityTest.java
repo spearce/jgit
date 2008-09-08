@@ -50,6 +50,7 @@ import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.RepositoryTestCase;
 import org.spearce.jgit.treewalk.TreeWalk;
+import org.spearce.jgit.util.JGitTestUtil;
 
 public class DirCacheCGitCompatabilityTest extends RepositoryTestCase {
 	private final File index = pathOf("gitgit.index");
@@ -138,7 +139,7 @@ public class DirCacheCGitCompatabilityTest extends RepositoryTestCase {
 	}
 
 	private File pathOf(final String name) {
-		return new File("tst", name);
+		return JGitTestUtil.getTestResourceFile(name);
 	}
 
 	private Map<String, CGitIndexRecord> readLsFiles() throws Exception {
