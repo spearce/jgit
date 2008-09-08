@@ -38,8 +38,11 @@
 package org.spearce.jgit.util;
 
 import java.io.File;
+import java.net.URL;
 
 public abstract class JGitTestUtil {
+	public static final String CLASSPATH_TO_RESOURCES = "org/spearce/jgit/test/resources/";
+
 	private JGitTestUtil() {
 		throw new UnsupportedOperationException();
 	}
@@ -48,6 +51,16 @@ public abstract class JGitTestUtil {
 		if (fileName == null || fileName.length() <= 0) {
 			return null;
 		}
-		return new File("tst", fileName);
+		final URL url = cl().getResource(CLASSPATH_TO_RESOURCES + fileName);
+		if (url == null) {
+			// If URL is null then try to load it as it was being
+			// loaded previously
+			return new File("tst", fileName);
+		}
+		return new File(url.getPath());
+	}
+
+	private static ClassLoader cl() {
+		return JGitTestUtil.class.getClassLoader();
 	}
 }
