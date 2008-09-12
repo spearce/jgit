@@ -628,7 +628,7 @@ public class Repository {
 									ref = mapObject(refId, null);
 								}
 								if (!(ref instanceof byte[]))
-									throw new IncorrectObjectTypeException(refId,  Constants.TYPE_COMMIT);
+									throw new IncorrectObjectTypeException(refId,  Constants.TYPE_BLOB);
 							}
 							else if (item.equals("")) {
 								ref = mapObject(refId, null);
