@@ -158,6 +158,17 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.4.2</version>
+                <configuration>
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*TestCase.java</include>
+                        <include>**/T000*.java</include>
+                    </includes>
+                </configuration>
+           </plugin>
         </plugins>
     </build>
     <dependencies>
