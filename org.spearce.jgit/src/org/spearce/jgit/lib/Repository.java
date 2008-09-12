@@ -562,6 +562,11 @@ public class Repository {
 					case '9':
 						int j;
 						ref = mapObject(refId, null);
+						while (ref instanceof Tag) {
+							Tag tag = (Tag)ref;
+							refId = tag.getObjId();
+							ref = mapObject(refId, null);
+						}
 						if (!(ref instanceof Commit))
 							throw new IncorrectObjectTypeException(refId, Constants.TYPE_COMMIT);
 						for (j=i+1; j<rev.length; ++j) {
@@ -632,10 +637,10 @@ public class Repository {
 							}
 							else if (item.equals("")) {
 								ref = mapObject(refId, null);
-								if (ref instanceof Tag)
-									refId = ((Tag)ref).getObjId();
-								else {
-									// self
+								while (ref instanceof Tag) {
+									Tag t = (Tag)ref;
+									refId = t.getObjId();
+									ref = mapObject(refId, null);
 								}
 							}
 							else
@@ -658,6 +663,11 @@ public class Repository {
 					}
 				} else {
 					ref = mapObject(refId, null);
+					while (ref instanceof Tag) {
+						Tag tag = (Tag)ref;
+						refId = tag.getObjId();
+						ref = mapObject(refId, null);
+					}
 					if (ref instanceof Commit) {
 						final ObjectId parents[] = ((Commit) ref)
 								.getParentIds();
@@ -673,8 +683,17 @@ public class Repository {
 				if (ref == null) {
 					String refstr = new String(rev,0,i);
 					refId = resolveSimple(refstr);
-					ref = mapCommit(refId);
+					if (refId == null)
+						return null;
+					ref = mapObject(refId, null);
 				}
+				while (ref instanceof Tag) {
+					Tag tag = (Tag)ref;
+					refId = tag.getObjId();
+					ref = mapObject(refId, null);
+				}
+				if (!(ref instanceof Commit))
+					throw new IncorrectObjectTypeException(refId, Constants.TYPE_COMMIT);
 				int l;
 				for (l = i + 1; l < rev.length; ++l) {
 					if (!Character.isDigit(rev[l]))

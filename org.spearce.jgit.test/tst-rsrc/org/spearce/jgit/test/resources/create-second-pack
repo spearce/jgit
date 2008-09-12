@@ -130,6 +130,14 @@ git tag -a -m "An annotated tag" B a^
 
 git repack -d
 
+Bnth=B
+for nth in 2nd 3rd 4th 5th 6th 7th 8th 9th 10th; do
+	git tag -a -m "An $nth level annotated tag" "B$nth" "$Bnth"
+	Bnth="B$nth"
+done
+
+git repack -d
+
 git pack-refs --all
 
 
