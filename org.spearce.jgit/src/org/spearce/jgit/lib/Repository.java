@@ -688,7 +688,7 @@ public class Repository {
 					throw new RevisionSyntaxException(
 							"Invalid ancestry length", revstr);
 				}
-				while (dist >= 0) {
+				while (dist > 0) {
 					final ObjectId[] parents = ((Commit) ref).getParentIds();
 					if (parents.length == 0) {
 						refId = null;
