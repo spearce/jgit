@@ -887,10 +887,11 @@ public class RevWalk implements Iterable<RevCommit> {
 	protected void reset(int retainFlags) {
 		finishDelayedFreeFlags();
 		retainFlags |= PARSED;
+		final int clearFlags = ~retainFlags;
 
 		final FIFORevQueue q = new FIFORevQueue();
 		for (final RevCommit c : roots) {
-			if ((c.flags & SEEN) == 0)
+			if ((c.flags & clearFlags) == 0)
 				continue;
 			c.flags &= retainFlags;
 			c.reset();
@@ -901,10 +902,13 @@ public class RevWalk implements Iterable<RevCommit> {
 			final RevCommit c = q.next();
 			if (c == null)
 				break;
+			if (c.parents == null)
+				continue;
 			for (final RevCommit p : c.parents) {
-				if ((p.flags & SEEN) == 0)
+				if ((p.flags & clearFlags) == 0)
 					continue;
 				p.flags &= retainFlags;
+				p.reset();
 				q.add(p);
 			}
 		}
