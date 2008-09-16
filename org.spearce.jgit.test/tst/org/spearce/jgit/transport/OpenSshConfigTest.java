@@ -148,4 +148,25 @@ public class OpenSshConfigTest extends RepositoryTestCase {
 		assertNotNull(h);
 		assertEquals("publickey,hostbased", h.getPreferredAuthentications());
 	}
+
+	public void testAlias_BatchModeDefault() throws Exception {
+		final Host h = osc.lookup("orcz");
+		assertNotNull(h);
+		assertEquals(false, h.isBatchMode());
+	}
+
+	public void testAlias_BatchModeYes() throws Exception {
+		config("Host orcz\n" + "\tBatchMode yes\n");
+		final Host h = osc.lookup("orcz");
+		assertNotNull(h);
+		assertEquals(true, h.isBatchMode());
+	}
+
+	public void testAlias_InheritBatchMode() throws Exception {
+		config("Host orcz\n" + "\tHostName repo.or.cz\n" + "\n" + "Host *\n"
+				+ "\tBatchMode yes\n");
+		final Host h = osc.lookup("orcz");
+		assertNotNull(h);
+		assertEquals(true, h.isBatchMode());
+	}
 }

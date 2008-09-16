@@ -224,6 +224,10 @@ public class OpenSshConfig {
 				for (final Host c : current)
 					if (c.preferredAuthentications == null)
 						c.preferredAuthentications = nows(dequote(argValue));
+			} else if ("BatchMode".equalsIgnoreCase(keyword)) {
+				for (final Host c : current)
+					if (c.batchMode == null)
+						c.batchMode = yesno(dequote(argValue));
 			}
 		}
 
@@ -260,6 +264,12 @@ public class OpenSshConfig {
 		return b.toString();
 	}
 
+	private static Boolean yesno(final String value) {
+		if ("yes".equalsIgnoreCase(value))
+			return Boolean.TRUE;
+		return Boolean.FALSE;
+	}
+
 	private File toFile(final String path) {
 		if (path.startsWith("~/"))
 			return new File(home, path.substring(2));
@@ -293,6 +303,8 @@ public class OpenSshConfig {
 
 		String preferredAuthentications;
 
+		Boolean batchMode;
+
 		void copyFrom(final Host src) {
 			if (hostName == null)
 				hostName = src.hostName;
@@ -304,6 +316,8 @@ public class OpenSshConfig {
 				user = src.user;
 			if (preferredAuthentications == null)
 				preferredAuthentications = src.preferredAuthentications;
+			if (batchMode == null)
+				batchMode = src.batchMode;
 		}
 
 		/**
@@ -341,6 +355,14 @@ public class OpenSshConfig {
 		 */
 		public String getPreferredAuthentications() {
 			return preferredAuthentications;
+		}
+
+		/**
+		 * @return true if batch (non-interactive) mode is preferred for this
+		 *         host connection.
+		 */
+		public boolean isBatchMode() {
+			return batchMode != null && batchMode.booleanValue();
 		}
 	}
 }

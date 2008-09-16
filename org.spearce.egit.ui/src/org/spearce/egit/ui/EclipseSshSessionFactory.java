@@ -48,7 +48,7 @@ class EclipseSshSessionFactory extends SshSessionFactory {
 			addIdentity(hc.getIdentityFile());
 		if (pass != null)
 			session.setPassword(pass);
-		else
+		else if (!hc.isBatchMode())
 			new UserInfoPrompter(session);
 
 		final String pauth = hc.getPreferredAuthentications();

@@ -101,7 +101,7 @@ class DefaultSshSessionFactory extends SshSessionFactory {
 			addIdentity(hc.getIdentityFile());
 		if (pass != null)
 			session.setPassword(pass);
-		else
+		else if (!hc.isBatchMode())
 			session.setUserInfo(new AWT_UserInfo());
 
 		final String pauth = hc.getPreferredAuthentications();
