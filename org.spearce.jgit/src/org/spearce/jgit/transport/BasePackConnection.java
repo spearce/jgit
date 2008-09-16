@@ -147,18 +147,18 @@ abstract class BasePackConnection extends BaseConnection {
 						remoteCapablities.add(c);
 					line = line.substring(0, nul);
 				}
-
-				if (line.equals("capabilities^{}")) {
-					// special line from git-receive-pack to show
-					// capabilities when there are no refs to advertise
-					continue;
-				}
 			}
 
 			if (line.length() == 0)
 				break;
 
 			String name = line.substring(41, line.length());
+			if (avail.isEmpty() && name.equals("capabilities^{}")) {
+				// special line from git-receive-pack to show
+				// capabilities when there are no refs to advertise
+				continue;
+			}
+
 			final ObjectId id = ObjectId.fromString(line.substring(0, 40));
 			if (name.endsWith("^{}")) {
 				name = name.substring(0, name.length() - 3);
