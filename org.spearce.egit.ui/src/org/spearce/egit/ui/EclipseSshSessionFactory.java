@@ -50,6 +50,10 @@ class EclipseSshSessionFactory extends SshSessionFactory {
 			session.setPassword(pass);
 		else
 			new UserInfoPrompter(session);
+
+		final String pauth = hc.getPreferredAuthentications();
+		if (pauth != null)
+			session.setConfig("PreferredAuthentications", pauth);
 		return session;
 	}
 

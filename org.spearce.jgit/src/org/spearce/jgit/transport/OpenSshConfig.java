@@ -220,6 +220,10 @@ public class OpenSshConfig {
 				for (final Host c : current)
 					if (c.identityFile == null)
 						c.identityFile = toFile(dequote(argValue));
+			} else if ("PreferredAuthentications".equalsIgnoreCase(keyword)) {
+				for (final Host c : current)
+					if (c.preferredAuthentications == null)
+						c.preferredAuthentications = nows(dequote(argValue));
 			}
 		}
 
@@ -245,6 +249,15 @@ public class OpenSshConfig {
 		if (value.startsWith("\"") && value.endsWith("\""))
 			return value.substring(1, value.length() - 2);
 		return value;
+	}
+
+	private static String nows(final String value) {
+		final StringBuilder b = new StringBuilder();
+		for (int i = 0; i < value.length(); i++) {
+			if (!Character.isSpaceChar(value.charAt(i)))
+				b.append(value.charAt(i));
+		}
+		return b.toString();
 	}
 
 	private File toFile(final String path) {
@@ -278,6 +291,8 @@ public class OpenSshConfig {
 
 		String user;
 
+		String preferredAuthentications;
+
 		void copyFrom(final Host src) {
 			if (hostName == null)
 				hostName = src.hostName;
@@ -287,6 +302,8 @@ public class OpenSshConfig {
 				identityFile = src.identityFile;
 			if (user == null)
 				user = src.user;
+			if (preferredAuthentications == null)
+				preferredAuthentications = src.preferredAuthentications;
 		}
 
 		/**
@@ -316,6 +333,14 @@ public class OpenSshConfig {
 		 */
 		public String getUser() {
 			return user;
+		}
+
+		/**
+		 * @return the preferred authentication methods, separated by commas if
+		 *         more than one authentication method is preferred.
+		 */
+		public String getPreferredAuthentications() {
+			return preferredAuthentications;
 		}
 	}
 }

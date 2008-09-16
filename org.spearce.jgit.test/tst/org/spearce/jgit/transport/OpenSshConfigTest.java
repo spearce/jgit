@@ -103,7 +103,6 @@ public class OpenSshConfigTest extends RepositoryTestCase {
 		assertEquals(new File(home, ".ssh/id_jex"), h.getIdentityFile());
 	}
 
-
 	public void testAlias_OptionsKeywordCaseInsensitive() throws Exception {
 		config("hOsT orcz\n" + "\thOsTnAmE repo.or.cz\n" + "\tPORT 2222\n"
 				+ "\tuser jex\n" + "\tidentityfile .ssh/id_jex\n"
@@ -127,5 +126,26 @@ public class OpenSshConfigTest extends RepositoryTestCase {
 		assertEquals("jex", h.getUser());
 		assertEquals(2222, h.getPort());
 		assertEquals(new File(home, ".ssh/id_jex"), h.getIdentityFile());
+	}
+
+	public void testAlias_PreferredAuthenticationsDefault() throws Exception {
+		final Host h = osc.lookup("orcz");
+		assertNotNull(h);
+		assertNull(h.getPreferredAuthentications());
+	}
+
+	public void testAlias_PreferredAuthentications() throws Exception {
+		config("Host orcz\n" + "\tPreferredAuthentications publickey\n");
+		final Host h = osc.lookup("orcz");
+		assertNotNull(h);
+		assertEquals("publickey", h.getPreferredAuthentications());
+	}
+
+	public void testAlias_InheritPreferredAuthentications() throws Exception {
+		config("Host orcz\n" + "\tHostName repo.or.cz\n" + "\n" + "Host *\n"
+				+ "\tPreferredAuthentications publickey, hostbased\n");
+		final Host h = osc.lookup("orcz");
+		assertNotNull(h);
+		assertEquals("publickey,hostbased", h.getPreferredAuthentications());
 	}
 }

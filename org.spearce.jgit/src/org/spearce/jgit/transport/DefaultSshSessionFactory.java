@@ -103,6 +103,10 @@ class DefaultSshSessionFactory extends SshSessionFactory {
 			session.setPassword(pass);
 		else
 			session.setUserInfo(new AWT_UserInfo());
+
+		final String pauth = hc.getPreferredAuthentications();
+		if (pauth != null)
+			session.setConfig("PreferredAuthentications", pauth);
 		return session;
 	}
 
