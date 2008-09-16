@@ -824,7 +824,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	private void finishDelayedFreeFlags() {
 		if (delayFreeFlags != 0) {
 			freeFlags |= delayFreeFlags;
-			carryFlags &= delayFreeFlags;
+			carryFlags &= ~delayFreeFlags;
 			delayFreeFlags = 0;
 		}
 	}
