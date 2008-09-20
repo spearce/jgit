@@ -167,17 +167,9 @@ public class OpenSshConfig {
 			if (line.length() == 0 || line.startsWith("#"))
 				continue;
 
-			final int sp = line.indexOf(' ');
-			final int eq = line.indexOf('=');
-			final int splitAt;
-			if (sp >= 0 && eq >= 0)
-				splitAt = Math.min(sp, eq);
-			else if (sp < 0)
-				splitAt = eq;
-			else
-				splitAt = sp;
-			final String keyword = line.substring(0, splitAt).trim();
-			final String argValue = line.substring(splitAt + 1).trim();
+			final String[] parts = line.split("[ \t=]", 2);
+			final String keyword = parts[0].trim();
+			final String argValue = parts[1].trim();
 
 			if ("Host".equalsIgnoreCase(keyword)) {
 				current.clear();
