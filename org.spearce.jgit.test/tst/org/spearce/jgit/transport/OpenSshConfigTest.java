@@ -81,6 +81,28 @@ public class OpenSshConfigTest extends RepositoryTestCase {
 		assertNull(h.getIdentityFile());
 	}
 
+	public void testSeparatorParsing() throws Exception {
+		config("Host\tfirst\n" +
+		       "\tHostName\tfirst.tld\n" +
+		       "\n" +
+		       "Host second\n" +
+		       " HostName\tsecond.tld\n" +
+		       "Host=third\n" +
+		       "HostName=third.tld\n\n\n" +
+		       "\t Host = fourth\n\n\n" +
+		       " \t HostName\t=fourth.tld\n" +
+		       "Host\t =     last\n" +
+		       "HostName  \t    last.tld");
+		assertNotNull(osc.lookup("first"));
+		assertEquals("first.tld", osc.lookup("first").getHostName());
+		assertNotNull(osc.lookup("second"));
+		assertEquals("second.tld", osc.lookup("second").getHostName());
+		assertNotNull(osc.lookup("third"));
+		assertEquals("third.tld", osc.lookup("third").getHostName());
+		assertNotNull(osc.lookup("last"));
+		assertEquals("last.tld", osc.lookup("last").getHostName());
+	}
+
 	public void testAlias_DoesNotMatch() throws Exception {
 		config("Host orcz\n" + "\tHostName repo.or.cz\n");
 		final Host h = osc.lookup("repo.or.cz");
