@@ -167,7 +167,7 @@ public class OpenSshConfig {
 			if (line.length() == 0 || line.startsWith("#"))
 				continue;
 
-			final String[] parts = line.split("[ \t=]", 2);
+			final String[] parts = line.split("[ \t]*[= \t]", 2);
 			final String keyword = parts[0].trim();
 			final String argValue = parts[1].trim();
 

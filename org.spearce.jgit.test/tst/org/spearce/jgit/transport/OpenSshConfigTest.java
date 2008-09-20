@@ -99,6 +99,8 @@ public class OpenSshConfigTest extends RepositoryTestCase {
 		assertEquals("second.tld", osc.lookup("second").getHostName());
 		assertNotNull(osc.lookup("third"));
 		assertEquals("third.tld", osc.lookup("third").getHostName());
+		assertNotNull(osc.lookup("fourth"));
+		assertEquals("fourth.tld", osc.lookup("fourth").getHostName());
 		assertNotNull(osc.lookup("last"));
 		assertEquals("last.tld", osc.lookup("last").getHostName());
 	}
