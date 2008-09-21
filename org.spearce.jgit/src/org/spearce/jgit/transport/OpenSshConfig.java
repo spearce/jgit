@@ -173,7 +173,8 @@ public class OpenSshConfig {
 
 			if ("Host".equalsIgnoreCase(keyword)) {
 				current.clear();
-				for (final String name : argValue.split("[ \t]")) {
+				for (final String pattern : argValue.split("[ \t]")) {
+					final String name = dequote(pattern);
 					Host c = m.get(name);
 					if (c == null) {
 						c = new Host();
@@ -243,7 +244,7 @@ public class OpenSshConfig {
 
 	private static String dequote(final String value) {
 		if (value.startsWith("\"") && value.endsWith("\""))
-			return value.substring(1, value.length() - 2);
+			return value.substring(1, value.length() - 1);
 		return value;
 	}
 
