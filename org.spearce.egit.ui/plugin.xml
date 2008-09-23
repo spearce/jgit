@@ -272,22 +272,26 @@
         </separator>
 	    </menu>
 		<action
-		       class="org.spearce.egit.ui.internal.actions.FetchAction"
-		       id="org.spearce.egit.ui.actionfetch"
-		       label="%FetchAction_label"
-		       style="push"
-		       menubarPath="org.spearce.egit.ui.gitmenu/repo"
-		       toolbarPath="org.spearce.egit.ui"
-		       tooltip="%FetchAction_tooltip">
+        class="org.spearce.egit.ui.internal.actions.FetchAction"
+        disabledIcon="icons/toolbar/fetchd.png"
+        icon="icons/toolbar/fetche.png"
+        id="org.spearce.egit.ui.actionfetch"
+        label="%FetchAction_label"
+        menubarPath="org.spearce.egit.ui.gitmenu/repo"
+        style="push"
+        toolbarPath="org.spearce.egit.ui"
+        tooltip="%FetchAction_tooltip">
 		</action>
 		<action
-		       class="org.spearce.egit.ui.internal.actions.PushAction"
-		       id="org.spearce.egit.ui.actionpush"
-		       label="%PushAction_label"
-		       style="push"
-		       menubarPath="org.spearce.egit.ui.gitmenu/repo"
-		       toolbarPath="org.spearce.egit.ui"
-		       tooltip="%PushAction_tooltip">
+        class="org.spearce.egit.ui.internal.actions.PushAction"
+        disabledIcon="icons/toolbar/pushd.png"
+        icon="icons/toolbar/pushe.png"
+        id="org.spearce.egit.ui.actionpush"
+        label="%PushAction_label"
+        menubarPath="org.spearce.egit.ui.gitmenu/repo"
+        style="push"
+        toolbarPath="org.spearce.egit.ui"
+        tooltip="%PushAction_tooltip">
 		</action>
 		<action
 		       class="org.spearce.egit.ui.internal.actions.BranchAction"
