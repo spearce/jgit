@@ -17,14 +17,21 @@ import java.util.List;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.jface.dialogs.IInputValidator;
+import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
+import org.eclipse.jface.resource.JFaceResources;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -35,6 +42,10 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 import org.spearce.egit.core.op.ResetOperation.ResetType;
+import org.spearce.egit.ui.Activator;
+import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.Repository;
 
 /**
@@ -81,9 +92,9 @@ public class BranchSelectionDialog extends Dialog {
 		}
 		
 		try {
-			fillTreeWithBranches();
+			fillTreeWithBranches(null);
 		} catch (IOException e) {
-			e.printStackTrace();
+			Activator.logError("Could not refresh list of branches", e);
 		}
 		
 		return parent;
@@ -121,7 +132,7 @@ public class BranchSelectionDialog extends Dialog {
 		});
 	}
 
-	private void fillTreeWithBranches() throws IOException {
+	private void fillTreeWithBranches(String select) throws IOException {
 		String branch = repo.getFullBranch();
 		List<String> branches = new ArrayList<String>(repo.getAllRefs()
 				.keySet());
@@ -197,6 +208,8 @@ public class BranchSelectionDialog extends Dialog {
 				branchTree.showItem(item);
 			}
 			else item.setText(shortName);
+			if (ref.equals(select))
+				branchTree.select(item);
 		}
 	}
 	
@@ -220,12 +233,7 @@ public class BranchSelectionDialog extends Dialog {
 	
 	@Override
 	protected void okPressed() {
-		TreeItem[] selection = branchTree.getSelection();
-		refName = null;
-		if (selection != null && selection.length > 0) {
-			TreeItem item = selection[0];
-			refName = (String) item.getData();
-		}
+		refNameFromDialog();
 		if (refName == null) {
 			MessageDialog.openWarning(getShell(), "No branch/tag selected", "You must select a valid ref.");
 			return;
@@ -244,9 +252,79 @@ public class BranchSelectionDialog extends Dialog {
 		super.okPressed();
 	}
 
+	private void refNameFromDialog() {
+		TreeItem[] selection = branchTree.getSelection();
+		refName = null;
+		if (selection != null && selection.length > 0) {
+			TreeItem item = selection[0];
+			refName = (String) item.getData();
+		}
+	}
+
 	@Override
 	protected void createButtonsForButtonBar(Composite parent) {
-		createButton(parent, IDialogConstants.OK_ID, IDialogConstants.OK_LABEL, true);
+		if (!showResetType) {
+			Button newButton = new Button(parent, SWT.PUSH);
+			newButton.setFont(JFaceResources.getDialogFont());
+			newButton.setText("New branch");
+			((GridLayout)parent.getLayout()).numColumns++;
+			newButton.addSelectionListener(new SelectionListener() {
+
+				public void widgetSelected(SelectionEvent e) {
+					// check what ref name the user selected, if any.
+					refNameFromDialog();
+
+					InputDialog labelDialog = new InputDialog(
+							getShell(),
+							"New branch",
+							"Enter name of new branch. It will branch from the selected branch. refs/heads/ will be prepended to the name you type",
+							null, new IInputValidator() {
+								public String isValid(String newText) {
+									String testFor = Constants.R_HEADS + newText;
+									try {
+										if (repo.resolve(testFor) != null)
+											return "Already exists";
+									} catch (IOException e1) {
+										Activator.logError(String.format(
+												"Could not attempt to resolve %s", testFor), e1);
+									}
+									if (!Repository.isValidRefName(testFor))
+										return "Invalid ref name";
+									return null;
+								}
+							});
+					labelDialog.setBlockOnOpen(true);
+					if (labelDialog.open() == Window.OK) {
+						String newRefName = Constants.R_HEADS + labelDialog.getValue();
+						RefUpdate updateRef;
+						try {
+							updateRef = repo.updateRef(newRefName);
+							ObjectId startAt;
+							if (refName == null)
+								startAt = repo.resolve(Constants.HEAD);
+							else
+								startAt = repo.resolve(refName);
+							updateRef.setNewObjectId(startAt);
+							updateRef.update();
+						} catch (IOException e1) {
+							Activator.logError(String.format(
+									"Could not create new ref %s", newRefName), e1);
+						}
+						try {
+							branchTree.removeAll();
+							fillTreeWithBranches(newRefName);
+						} catch (IOException e1) {
+							Activator.logError("Could not refresh list of branches",e1);
+						}
+					}
+				}
+
+				public void widgetDefaultSelected(SelectionEvent e) {
+					widgetSelected(e);
+				}
+			});
+		}
+		createButton(parent, IDialogConstants.OK_ID, showResetType ? "Reset" : "Checkout", true);
 		createButton(parent, IDialogConstants.CANCEL_ID, IDialogConstants.CANCEL_LABEL, false);
 	}
 
