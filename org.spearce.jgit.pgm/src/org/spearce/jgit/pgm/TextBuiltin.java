@@ -131,19 +131,39 @@ public abstract class TextBuiltin {
 		}
 
 		if (help) {
-			System.err.print("jgit ");
-			System.err.print(commandName);
-			clp.printSingleLineUsage(System.err);
-			System.err.println();
-
-			System.err.println();
-			clp.printUsage(System.err);
-			System.err.println();
-
-			System.exit(1);
+			printUsageAndExit(clp);
 		}
 
 		argWalk = clp.getRevWalkGently();
+	}
+
+	/**
+	 * Print the usage line
+	 *
+	 * @param clp
+	 */
+	public void printUsageAndExit(final CmdLineParser clp) {
+		printUsageAndExit("", clp);
+	}
+
+	/**
+	 * Print an error message and the usage line
+	 *
+	 * @param message
+	 * @param clp
+	 */
+	public void printUsageAndExit(final String message, final CmdLineParser clp) {
+		System.err.println(message);
+		System.err.print("jgit ");
+		System.err.print(commandName);
+		clp.printSingleLineUsage(System.err);
+		System.err.println();
+
+		System.err.println();
+		clp.printUsage(System.err);
+		System.err.println();
+
+		System.exit(1);
 	}
 
 	/**
