@@ -93,6 +93,9 @@ abstract class BasePackConnection extends BaseConnection {
 	/** Capability tokens advertised by the remote side. */
 	private final Set<String> remoteCapablities = new HashSet<String>();
 
+	/** Extra objects the remote has, but which aren't offered as refs. */
+	protected final Set<ObjectId> additionalHaves = new HashSet<ObjectId>();
+
 	BasePackConnection(final PackTransport packTransport) {
 		local = packTransport.local;
 		uri = packTransport.uri;
@@ -160,7 +163,9 @@ abstract class BasePackConnection extends BaseConnection {
 			}
 
 			final ObjectId id = ObjectId.fromString(line.substring(0, 40));
-			if (name.endsWith("^{}")) {
+			if (name.equals(".have")) {
+				additionalHaves.add(id);
+			} else if (name.endsWith("^{}")) {
 				name = name.substring(0, name.length() - 3);
 				final Ref prior = avail.get(name);
 				if (prior == null)
