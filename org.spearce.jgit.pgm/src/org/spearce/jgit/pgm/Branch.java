@@ -45,13 +45,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.ExampleMode;
 import org.kohsuke.args4j.Option;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.RefComparator;
 import org.spearce.jgit.lib.RefUpdate;
+import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.RefUpdate.Result;
+import org.spearce.jgit.pgm.opt.CmdLineParser;
 import org.spearce.jgit.revwalk.RevWalk;
 
 @Command(common = true, usage = "List, create, or delete branches")
@@ -68,6 +71,9 @@ class Branch extends TextBuiltin {
 
 	@Option(name = "--delete-force", aliases = { "-D" }, usage = "delete branch (even if not merged)")
 	private boolean deleteForce = false;
+
+	@Option(name = "--create-force", aliases = { "-f" }, usage = "force create branch even exists")
+	private boolean createForce = false;
 
 	@Option(name = "--verbose", aliases = { "-v" }, usage = "be verbose")
 	private boolean verbose = false;
@@ -87,9 +93,35 @@ class Branch extends TextBuiltin {
 		if (delete || deleteForce)
 			delete(deleteForce);
 		else {
-			if (verbose)
-				rw = new RevWalk(db);
-			list();
+			if (branches.size() > 2)
+				throw die("Too many refs given\n" + new CmdLineParser(this).printExample(ExampleMode.ALL));
+
+			if (branches.size() > 0) {
+				String newHead = branches.get(0);
+				ObjectId startAt;
+				if (branches.size() == 2)
+					startAt = db.resolve(branches.get(1) + "^0");
+				else
+					startAt = db.resolve(Constants.HEAD + "^0");
+
+				String newRefName = newHead;
+				if (!newRefName.startsWith(Constants.R_HEADS))
+					newRefName = Constants.R_HEADS + newRefName;
+				if (!Repository.isValidRefName(newRefName))
+					throw die(String.format("%s is not a valid ref name", newRefName));
+				if (!createForce && db.resolve(newRefName) != null)
+					throw die(String.format("branch %s already exists", newHead));
+				RefUpdate updateRef = db.updateRef(newRefName);
+				updateRef.setNewObjectId(startAt);
+				updateRef.setForceUpdate(createForce);
+				Result update = updateRef.update();
+				if (update == Result.REJECTED)
+					throw die(String.format("Could not create branch %s: %s", newHead, update.toString()));
+			} else {
+				if (verbose)
+					rw = new RevWalk(db);
+				list();
+			}
 		}
 	}
 
