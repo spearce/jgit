@@ -52,6 +52,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
@@ -83,8 +84,18 @@ public class CommitGraphPane extends JTable {
 		allCommits = new SwingCommitList();
 		configureHeader();
 		setShowHorizontalLines(false);
-		setRowMargin(0);
 		setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		configureRowHeight();
+	}
+
+	private void configureRowHeight() {
+		int h = 0;
+		for (int i = 0; i<getColumnCount(); ++i) {
+			TableCellRenderer renderer = getDefaultRenderer(getColumnClass(i));
+			Component c = renderer.getTableCellRendererComponent(this, "ÅOj", false, false, 0, i);
+			h = Math.max(h, c.getPreferredSize().height);
+		}
+		setRowHeight(h + getRowMargin());
 	}
 
 	/**
