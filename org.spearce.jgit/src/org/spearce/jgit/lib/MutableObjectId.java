@@ -161,6 +161,8 @@ public class MutableObjectId extends AnyObjectId {
 				throw new IllegalArgumentException("Invalid id: " + str);
 			} catch (UnsupportedEncodingException e2) {
 				throw new IllegalArgumentException("Invalid id");
+			} catch (StringIndexOutOfBoundsException e2) {
+				throw new IllegalArgumentException("Invalid id");
 			}
 		}
 	}
