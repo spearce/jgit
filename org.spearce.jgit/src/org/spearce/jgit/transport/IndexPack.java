@@ -375,6 +375,7 @@ public class IndexPack {
 			objectDigest.update(data);
 			tempObjectId.fromRaw(objectDigest.digest(), 0);
 
+			verifyNoCollision(type, data);
 			oe = new PackedObjectInfo(pos, crc32, tempObjectId);
 			entries[entryCount++] = oe;
 		}
@@ -622,7 +623,7 @@ public class IndexPack {
 				r = new ArrayList<UnresolvedDelta>(8);
 				baseByPos.put(base, r);
 			}
-			inflateFromInput(false);
+			skipInflateFromInput(sz);
 			r.add(new UnresolvedDelta(pos, (int) crc.getValue()));
 			deltaCount++;
 			break;
@@ -637,7 +638,7 @@ public class IndexPack {
 				r = new ArrayList<UnresolvedDelta>(8);
 				baseById.put(base, r);
 			}
-			inflateFromInput(false);
+			skipInflateFromInput(sz);
 			r.add(new UnresolvedDelta(pos, (int) crc.getValue()));
 			deltaCount++;
 			break;
@@ -649,15 +650,28 @@ public class IndexPack {
 
 	private void whole(final int type, final long pos, final long sz)
 			throws IOException {
+		final byte[] data = inflateFromInput(sz);
 		objectDigest.update(Constants.encodedTypeString(type));
 		objectDigest.update((byte) ' ');
 		objectDigest.update(Constants.encodeASCII(sz));
 		objectDigest.update((byte) 0);
-		inflateFromInput(true);
+		objectDigest.update(data);
 		tempObjectId.fromRaw(objectDigest.digest(), 0);
 
+		verifyNoCollision(type, data);
 		final int crc32 = (int) crc.getValue();
 		entries[entryCount++] = new PackedObjectInfo(pos, crc32, tempObjectId);
+	}
+
+	private void verifyNoCollision(final int type, final byte[] data)
+			throws IOException {
+		final ObjectLoader ldr = repo.openObject(tempObjectId);
+		if (ldr != null) {
+			final byte[] existingData = ldr.getCachedBytes();
+			if (ldr.getType() != type || !Arrays.equals(data, existingData)) {
+				throw new IOException("collision in " + tempObjectId.name());
+			}
+		}
 	}
 
 	// Current position of {@link #bOffset} within the entire file.
@@ -747,7 +761,7 @@ public class IndexPack {
 		bOffset = 0;
 	}
 
-	private void inflateFromInput(final boolean digest) throws IOException {
+	private void skipInflateFromInput(long sz) throws IOException {
 		final Inflater inf = inflater;
 		try {
 			final byte[] dst = objectData;
@@ -765,21 +779,52 @@ public class IndexPack {
 
 				int free = dst.length - n;
 				if (free < 8) {
-					if (digest)
-						objectDigest.update(dst, 0, n);
+					sz -= n;
 					n = 0;
 					free = dst.length;
 				}
-
 				n += inf.inflate(dst, n, free);
 			}
-			if (digest)
-				objectDigest.update(dst, 0, n);
+			if (n != sz)
+				throw new DataFormatException("wrong decompressed length");
 			n = bAvail - inf.getRemaining();
 			if (n > 0) {
 				crc.update(buf, p, n);
 				use(n);
 			}
+		} catch (DataFormatException dfe) {
+			throw corrupt(dfe);
+		} finally {
+			inf.reset();
+		}
+	}
+
+	private byte[] inflateFromInput(final long sz) throws IOException {
+		final byte[] dst = new byte[(int) sz];
+		final Inflater inf = inflater;
+		try {
+			int n = 0;
+			int p = -1;
+			while (!inf.finished()) {
+				if (inf.needsInput()) {
+					if (p >= 0) {
+						crc.update(buf, p, bAvail);
+						use(bAvail);
+					}
+					p = fillFromInput(1);
+					inf.setInput(buf, p, bAvail);
+				}
+
+				n += inf.inflate(dst, n, dst.length - n);
+			}
+			if (n != sz)
+				throw new DataFormatException("wrong decompressed length");
+			n = bAvail - inf.getRemaining();
+			if (n > 0) {
+				crc.update(buf, p, n);
+				use(n);
+			}
+			return dst;
 		} catch (DataFormatException dfe) {
 			throw corrupt(dfe);
 		} finally {
