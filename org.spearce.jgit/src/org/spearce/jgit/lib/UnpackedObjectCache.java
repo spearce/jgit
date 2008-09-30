@@ -48,9 +48,9 @@ class UnpackedObjectCache {
 
 	private static int hash(final WindowedFile pack, final long position) {
 		int h = pack.hash + (int) position;
-		h += h >> 16;
-		h += h >> 8;
-		return h % CACHE_SZ;
+		h += h >>> 16;
+		h += h >>> 8;
+		return h & (CACHE_SZ - 1);
 	}
 
 	private static int maxByteCount;
