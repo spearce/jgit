@@ -170,8 +170,7 @@ abstract class TransportBundle extends PackTransport {
 				final Collection<Ref> want) throws TransportException {
 			verifyPrerequisites();
 			try {
-				final IndexPack ip = IndexPack.create(local, bin);
-				ip.setFixThin(true);
+				final IndexPack ip = newIndexPack();
 				ip.index(monitor);
 				ip.renameAndOpenPack();
 			} catch (IOException err) {
@@ -181,6 +180,13 @@ abstract class TransportBundle extends PackTransport {
 				close();
 				throw new TransportException(uri, err.getMessage(), err);
 			}
+		}
+
+		private IndexPack newIndexPack() throws IOException {
+			final IndexPack ip = IndexPack.create(local, bin);
+			ip.setFixThin(true);
+			ip.setObjectChecking(TransportBundle.this.isCheckFetchedObjects());
+			return ip;
 		}
 
 		private void verifyPrerequisites() throws TransportException {

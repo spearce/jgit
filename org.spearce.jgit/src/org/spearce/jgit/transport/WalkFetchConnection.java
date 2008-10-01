@@ -59,6 +59,7 @@ import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
+import org.spearce.jgit.lib.ObjectChecker;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.PackIndex;
 import org.spearce.jgit.lib.ProgressMonitor;
@@ -98,6 +99,9 @@ import org.spearce.jgit.treewalk.TreeWalk;
 class WalkFetchConnection extends BaseFetchConnection {
 	/** The repository this transport fetches into, or pushes out of. */
 	private final Repository local;
+
+	/** If not null the validator for received objects. */
+	private final ObjectChecker objCheck;
 
 	/**
 	 * List of all remote repositories we may need to get objects out of.
@@ -157,9 +161,9 @@ class WalkFetchConnection extends BaseFetchConnection {
 	 */
 	private final HashMap<ObjectId, List<Throwable>> fetchErrors;
 
-	WalkFetchConnection(final WalkTransport walkTransport,
-			final WalkRemoteObjectDatabase w) {
-		local = walkTransport.local;
+	WalkFetchConnection(final WalkTransport wt, final WalkRemoteObjectDatabase w) {
+		local = wt.local;
+		objCheck = wt.isCheckFetchedObjects() ? new ObjectChecker() : null;
 
 		remotes = new ArrayList<WalkRemoteObjectDatabase>();
 		remotes.add(w);
@@ -560,10 +564,21 @@ class WalkFetchConnection extends BaseFetchConnection {
 			throw e;
 		}
 
-		if (!AnyObjectId.equals(id, uol.getId()))
+		if (!AnyObjectId.equals(id, uol.getId())) {
 			throw new TransportException("Incorrect hash for " + id.name()
 					+ "; computed " + uol.getId().name() + " as a "
-					+ uol.getType() + " from " + compressed.length + " bytes.");
+					+ Constants.encodedTypeString(uol.getType()) + " from "
+					+ compressed.length + " bytes.");
+		}
+		if (objCheck != null) {
+			try {
+				objCheck.check(uol.getType(), uol.getCachedBytes());
+			} catch (CorruptObjectException e) {
+				throw new TransportException("Invalid "
+						+ Constants.encodedTypeString(uol.getType()) + " "
+						+ id.name() + ":" + e.getMessage());
+			}
+		}
 	}
 
 	private void saveLooseObject(final AnyObjectId id, final byte[] compressed)
@@ -811,6 +826,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 			s = connection.open("pack/" + packName);
 			ip = IndexPack.create(local, s.in);
 			ip.setFixThin(false);
+			ip.setObjectChecker(objCheck);
 			ip.index(monitor);
 			ip.renameAndOpenPack();
 		}

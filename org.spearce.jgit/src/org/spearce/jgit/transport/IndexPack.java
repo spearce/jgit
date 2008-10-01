@@ -56,10 +56,12 @@ import java.util.zip.Inflater;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.BinaryDelta;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.InflaterCache;
 import org.spearce.jgit.lib.MutableObjectId;
+import org.spearce.jgit.lib.ObjectChecker;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectIdMap;
 import org.spearce.jgit.lib.ObjectLoader;
@@ -135,6 +137,8 @@ public class IndexPack {
 	private int bOffset;
 
 	private int bAvail;
+
+	private ObjectChecker objCheck;
 
 	private boolean fixThin;
 
@@ -228,6 +232,40 @@ public class IndexPack {
 	 */
 	public void setFixThin(final boolean fix) {
 		fixThin = fix;
+	}
+
+	/**
+	 * Configure the checker used to validate received objects.
+	 * <p>
+	 * Usually object checking isn't necessary, as Git implementations only
+	 * create valid objects in pack files. However, additional checking may be
+	 * useful if processing data from an untrusted source.
+	 *
+	 * @param oc
+	 *            the checker instance; null to disable object checking.
+	 */
+	public void setObjectChecker(final ObjectChecker oc) {
+		objCheck = oc;
+	}
+
+	/**
+	 * Configure the checker used to validate received objects.
+	 * <p>
+	 * Usually object checking isn't necessary, as Git implementations only
+	 * create valid objects in pack files. However, additional checking may be
+	 * useful if processing data from an untrusted source.
+	 * <p>
+	 * This is shorthand for:
+	 *
+	 * <pre>
+	 * setObjectChecker(on ? new ObjectChecker() : null);
+	 * </pre>
+	 *
+	 * @param on
+	 *            true to enable the default checker; false to disable it.
+	 */
+	public void setObjectChecking(final boolean on) {
+		setObjectChecker(on ? new ObjectChecker() : null);
 	}
 
 	/**
@@ -375,7 +413,7 @@ public class IndexPack {
 			objectDigest.update(data);
 			tempObjectId.fromRaw(objectDigest.digest(), 0);
 
-			verifyNoCollision(type, data);
+			verifySafeObject(tempObjectId, type, data);
 			oe = new PackedObjectInfo(pos, crc32, tempObjectId);
 			entries[entryCount++] = oe;
 		}
@@ -658,18 +696,28 @@ public class IndexPack {
 		objectDigest.update(data);
 		tempObjectId.fromRaw(objectDigest.digest(), 0);
 
-		verifyNoCollision(type, data);
+		verifySafeObject(tempObjectId, type, data);
 		final int crc32 = (int) crc.getValue();
 		entries[entryCount++] = new PackedObjectInfo(pos, crc32, tempObjectId);
 	}
 
-	private void verifyNoCollision(final int type, final byte[] data)
-			throws IOException {
-		final ObjectLoader ldr = repo.openObject(tempObjectId);
+	private void verifySafeObject(final AnyObjectId id, final int type,
+			final byte[] data) throws IOException {
+		if (objCheck != null) {
+			try {
+				objCheck.check(type, data);
+			} catch (CorruptObjectException e) {
+				throw new IOException("Invalid "
+						+ Constants.encodedTypeString(type) + " " + id.name()
+						+ ":" + e.getMessage());
+			}
+		}
+
+		final ObjectLoader ldr = repo.openObject(id);
 		if (ldr != null) {
 			final byte[] existingData = ldr.getCachedBytes();
 			if (ldr.getType() != type || !Arrays.equals(data, existingData)) {
-				throw new IOException("collision in " + tempObjectId.name());
+				throw new IOException("Collision on " + id.name());
 			}
 		}
 	}

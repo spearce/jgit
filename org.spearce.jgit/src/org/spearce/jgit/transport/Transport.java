@@ -55,6 +55,7 @@ import org.spearce.jgit.lib.NullProgressMonitor;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.TransferConfig;
 
 /**
  * Connects two Git repositories together and copies objects between them.
@@ -351,6 +352,9 @@ public abstract class Transport {
 	/** Should push just check for operation result, not really push. */
 	private boolean dryRun;
 
+	/** Should an incoming (fetch) transfer validate objects? */
+	private boolean checkFetchedObjects;
+
 	/**
 	 * Create a new transport instance.
 	 * 
@@ -363,8 +367,10 @@ public abstract class Transport {
 	 *            URI passed to {@link #open(Repository, URIish)}.
 	 */
 	protected Transport(final Repository local, final URIish uri) {
+		final TransferConfig tc = local.getConfig().getTransfer();
 		this.local = local;
 		this.uri = uri;
+		this.checkFetchedObjects = tc.isFsckObjects();
 	}
 
 	/**
@@ -441,6 +447,24 @@ public abstract class Transport {
 	 */
 	public void setFetchThin(final boolean fetchThin) {
 		this.fetchThin = fetchThin;
+	}
+
+	/**
+	 * @return true if fetch will verify received objects are formatted
+	 *         correctly. Validating objects requires more CPU time on the
+	 *         client side of the connection.
+	 */
+	public boolean isCheckFetchedObjects() {
+		return checkFetchedObjects;
+	}
+
+	/**
+	 * @param check
+	 *            true to enable checking received objects; false to assume all
+	 *            received objects are valid.
+	 */
+	public void setCheckFetchedObjects(final boolean check) {
+		checkFetchedObjects = check;
 	}
 
 	/**

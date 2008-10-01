@@ -452,6 +452,7 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 
 		ip = IndexPack.create(local, sideband ? pckIn.sideband(monitor) : in);
 		ip.setFixThin(thinPack);
+		ip.setObjectChecking(transport.isCheckFetchedObjects());
 		ip.index(monitor);
 		ip.renameAndOpenPack();
 	}
