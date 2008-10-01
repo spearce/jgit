@@ -37,6 +37,10 @@
 
 package org.spearce.jgit.util;
 
+import static org.spearce.jgit.lib.ObjectChecker.author;
+import static org.spearce.jgit.lib.ObjectChecker.committer;
+import static org.spearce.jgit.lib.ObjectChecker.encoding;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -46,12 +50,6 @@ import org.spearce.jgit.lib.PersonIdent;
 
 /** Handy utility functions to parse raw object contents. */
 public final class RawParseUtils {
-	private static final byte[] author = Constants.encodeASCII("author ");
-
-	private static final byte[] committer = Constants.encodeASCII("committer ");
-
-	private static final byte[] encoding = Constants.encodeASCII("encoding ");
-
 	private static final byte[] digits;
 
 	static {
