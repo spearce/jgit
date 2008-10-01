@@ -92,6 +92,8 @@ public class RepositoryConfig {
 
 	private CoreConfig core;
 
+	private TransferConfig transfer;
+
 	private List<Entry> entries;
 
 	private Map<String, Object> byName;
@@ -123,6 +125,13 @@ public class RepositoryConfig {
 	 */
 	public CoreConfig getCore() {
 		return core;
+	}
+
+	/**
+	 * @return transfer, fetch and receive configuration values
+	 */
+	public TransferConfig getTransfer() {
+		return transfer;
 	}
 
 	/**
@@ -525,6 +534,7 @@ public class RepositoryConfig {
 		add(e);
 
 		core = new CoreConfig(this);
+		transfer = new TransferConfig(this);
 	}
 
 	/**
@@ -667,6 +677,7 @@ public class RepositoryConfig {
 		}
 
 		core = new CoreConfig(this);
+		transfer = new TransferConfig(this);
 	}
 
 	private void clear() {
