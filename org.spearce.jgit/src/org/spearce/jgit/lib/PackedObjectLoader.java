@@ -80,13 +80,6 @@ abstract class PackedObjectLoader extends ObjectLoader {
 		return dataOffset;
 	}
 
-	public final byte[] getBytes() throws IOException {
-		final byte[] data = getCachedBytes();
-		final byte[] copy = new byte[data.length];
-		System.arraycopy(data, 0, copy, 0, data.length);
-		return data;
-	}
-
 	/**
 	 * Copy raw object representation from storage to provided output stream.
 	 * <p>

@@ -105,7 +105,12 @@ public abstract class ObjectLoader {
 	 * @throws IOException
 	 *             the object cannot be read.
 	 */
-	public abstract byte[] getBytes() throws IOException;
+	public final byte[] getBytes() throws IOException {
+		final byte[] data = getCachedBytes();
+		final byte[] copy = new byte[data.length];
+		System.arraycopy(data, 0, copy, 0, data.length);
+		return data;
+	}
 
 	/**
 	 * Obtain a reference to the (possibly cached) bytes of this object.
