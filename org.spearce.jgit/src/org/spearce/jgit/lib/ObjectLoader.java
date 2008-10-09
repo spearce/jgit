@@ -109,7 +109,7 @@ public abstract class ObjectLoader {
 		final byte[] data = getCachedBytes();
 		final byte[] copy = new byte[data.length];
 		System.arraycopy(data, 0, copy, 0, data.length);
-		return data;
+		return copy;
 	}
 
 	/**
