@@ -40,6 +40,7 @@ package org.spearce.jgit.pgm;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Locale;
 import java.util.TimeZone;
 
 import org.spearce.jgit.lib.PersonIdent;
@@ -52,7 +53,7 @@ class Log extends RevWalkTextBuiltin {
 	private final DateFormat fmt;
 
 	Log() {
-		fmt = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy ZZZZZ");
+		fmt = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy ZZZZZ", Locale.US);
 	}
 
 	@Override
