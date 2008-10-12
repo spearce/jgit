@@ -86,8 +86,14 @@ public abstract class TextBuiltin {
 
 	void init(final Repository repo) {
 		try {
-			out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(
-					System.out, "UTF-8")));
+			String outputEncoding = repo.getConfig().getString("i18n", null,
+					"logOutputEncoding");
+			if (outputEncoding != null)
+				out = new PrintWriter(new BufferedWriter(
+						new OutputStreamWriter(System.out, outputEncoding)));
+			else
+				out = new PrintWriter(new BufferedWriter(
+						new OutputStreamWriter(System.out)));
 		} catch (IOException e) {
 			throw die("cannot create output stream");
 		}
