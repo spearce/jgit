@@ -109,4 +109,11 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 				.getStringList("my", null, "somename")));
 		checkFile(cfgFile, "[my]\n\tsomename = value1\n\tsomename = value2\n");
 	}
+
+	public void test006_readCaseInsensitive() throws IOException {
+		final File path = writeTrashFile("config_001", "[Foo]\nBar\n");
+		RepositoryConfig repositoryConfig = new RepositoryConfig(null, path);
+		assertEquals(true, repositoryConfig.getBoolean("foo", null, "bar", false));
+		assertEquals("", repositoryConfig.getString("foo", null, "bar"));
+	}
 }

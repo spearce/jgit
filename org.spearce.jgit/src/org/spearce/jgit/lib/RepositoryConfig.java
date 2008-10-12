@@ -236,9 +236,9 @@ public class RepositoryConfig {
 			return defaultValue;
 
 		n = n.toLowerCase();
-		if (MAGIC_EMPTY_VALUE.equals(n) || "yes".equals(n) || "true".equals(n) || "1".equals(n)) {
+		if (MAGIC_EMPTY_VALUE.equals(n) || "yes".equalsIgnoreCase(n) || "true".equalsIgnoreCase(n) || "1".equals(n)) {
 			return true;
-		} else if ("no".equals(n) || "false".equals(n) || "0".equals(n)) {
+		} else if ("no".equalsIgnoreCase(n) || "false".equalsIgnoreCase(n) || "0".equalsIgnoreCase(n)) {
 			return false;
 		} else {
 			throw new IllegalArgumentException("Invalid boolean value: "
@@ -300,7 +300,7 @@ public class RepositoryConfig {
 		final Set<String> result = new HashSet<String>();
 
 		for (final Entry e : entries) {
-			if (section.equals(e.base) && e.extendedBase != null)
+			if (section.equalsIgnoreCase(e.base) && e.extendedBase != null)
 				result.add(e.extendedBase);
 		}
 		if (baseConfig != null)
@@ -954,7 +954,7 @@ public class RepositoryConfig {
 				return true;
 			if (a == null || b == null)
 				return false;
-			return a.equals(b);
+			return a.equalsIgnoreCase(b);
 		}
 	}
 }
