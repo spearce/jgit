@@ -42,7 +42,10 @@ import static org.spearce.jgit.lib.ObjectChecker.committer;
 import static org.spearce.jgit.lib.ObjectChecker.encoding;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.util.Arrays;
 
 import org.spearce.jgit.lib.Constants;
@@ -376,7 +379,10 @@ public final class RawParseUtils {
 	}
 
 	/**
-	 * Decode a region of the buffer under the specified character set.
+	 * Decode a region of the buffer under the specified character set if possible.
+	 *
+	 * If the byte stream cannot be decoded that way, the platform default is tried
+	 * and if that too fails, the fail-safe ISO-8859-1 encoding is tried.
 	 * 
 	 * @param cs
 	 *            character set to use when decoding the buffer.
@@ -393,7 +399,56 @@ public final class RawParseUtils {
 	public static String decode(final Charset cs, final byte[] buffer,
 			final int start, final int end) {
 		final ByteBuffer b = ByteBuffer.wrap(buffer, start, end - start);
-		return cs.decode(b).toString();
+		b.mark();
+
+		// Try our built-in favorite. The assumption here is that
+		// decoding will fail if the data is not actually encoded
+		// using that encoder.
+		//
+		try {
+			return decode(b, Constants.CHARSET);
+		} catch (CharacterCodingException e) {
+			b.reset();
+		}
+
+		if (!cs.equals(Constants.CHARSET)) {
+			// Try the suggested encoding, it might be right since it was
+			// provided by the caller.
+			//
+			try {
+				return decode(b, cs);
+			} catch (CharacterCodingException e) {
+				b.reset();
+			}
+		}
+
+		// Try the default character set. A small group of people
+		// might actually use the same (or very similar) locale.
+		//
+		final Charset defcs = Charset.defaultCharset();
+		if (!defcs.equals(cs) && !defcs.equals(Constants.CHARSET)) {
+			try {
+				return decode(b, defcs);
+			} catch (CharacterCodingException e) {
+				b.reset();
+			}
+		}
+
+		// Fall back to an ISO-8859-1 style encoding. At least all of
+		// the bytes will be present in the output.
+		//
+		final StringBuilder r = new StringBuilder(end - start);
+		for (int i = start; i < end; i++)
+			r.append((char) (buffer[i] & 0xff));
+		return r.toString();
+	}
+
+	private static String decode(final ByteBuffer b, final Charset charset)
+			throws CharacterCodingException {
+		final CharsetDecoder d = charset.newDecoder();
+		d.onMalformedInput(CodingErrorAction.REPORT);
+		d.onUnmappableCharacter(CodingErrorAction.REPORT);
+		return d.decode(b).toString();
 	}
 
 	/**
