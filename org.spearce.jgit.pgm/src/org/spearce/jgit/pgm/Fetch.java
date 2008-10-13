@@ -54,6 +54,22 @@ class Fetch extends TextBuiltin {
 	@Option(name = "--verbose", aliases = { "-v" }, usage = "be more verbose")
 	private boolean verbose;
 
+	@Option(name = "--fsck", usage = "perform fsck style checks on receive")
+	private Boolean fsck;
+
+	@Option(name = "--no-fsck")
+	void nofsck(final boolean ignored) {
+		fsck = Boolean.FALSE;
+	}
+
+	@Option(name = "--thin", usage = "fetch thin pack")
+	private Boolean thin;
+
+	@Option(name = "--no-thin")
+	void nothin(final boolean ignored) {
+		thin = Boolean.FALSE;
+	}
+
 	@Argument(index = 0, metaVar = "uri-ish")
 	private String remote = "origin";
 
@@ -63,6 +79,10 @@ class Fetch extends TextBuiltin {
 	@Override
 	protected void run() throws Exception {
 		final Transport tn = Transport.open(db, remote);
+		if (fsck != null)
+			tn.setCheckFetchedObjects(fsck.booleanValue());
+		if (thin != null)
+			tn.setFetchThin(thin.booleanValue());
 		final FetchResult r;
 		try {
 			r = tn.fetch(new TextProgressMonitor(), toget);
