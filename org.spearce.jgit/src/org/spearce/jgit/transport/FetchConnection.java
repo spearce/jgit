@@ -111,4 +111,26 @@ public interface FetchConnection extends Connection {
 	 *         false if tags were not implicitly obtained.
 	 */
 	public boolean didFetchIncludeTags();
+
+	/**
+	 * Did the last {@link #fetch(ProgressMonitor, Collection)} validate graph?
+	 * <p>
+	 * Some transports walk the object graph on the client side, with the client
+	 * looking for what objects it is missing and requesting them individually
+	 * from the remote peer. By virtue of completing the fetch call the client
+	 * implicitly tested the object connectivity, as every object in the graph
+	 * was either already local or was requested successfully from the peer. In
+	 * such transports this method returns true.
+	 * <p>
+	 * Some transports assume the remote peer knows the Git object graph and is
+	 * able to supply a fully connected graph to the client (although it may
+	 * only be transferring the parts the client does not yet have). Its faster
+	 * to assume such remote peers are well behaved and send the correct
+	 * response to the client. In such tranports this method returns false.
+	 *
+	 * @return true if the last fetch had to perform a connectivity check on the
+	 *         client side in order to succeed; false if the last fetch assumed
+	 *         the remote peer supplied a complete graph.
+	 */
+	public boolean didFetchTestConnectivity();
 }

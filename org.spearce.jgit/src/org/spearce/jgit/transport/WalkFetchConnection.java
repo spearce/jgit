@@ -189,6 +189,10 @@ class WalkFetchConnection extends BaseFetchConnection {
 		workQueue = new LinkedList<ObjectId>();
 	}
 
+	public boolean didFetchTestConnectivity() {
+		return true;
+	}
+
 	@Override
 	protected void doFetch(final ProgressMonitor monitor,
 			final Collection<Ref> want) throws TransportException {

@@ -146,6 +146,10 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 		return false;
 	}
 
+	public boolean didFetchTestConnectivity() {
+		return false;
+	}
+
 	protected void doFetch(final ProgressMonitor monitor,
 			final Collection<Ref> want) throws TransportException {
 		try {

@@ -118,7 +118,7 @@ class FetchProcess {
 
 			final boolean includedTags;
 			if (!askFor.isEmpty() && !askForIsComplete()) {
-				conn.fetch(monitor, askFor.values());
+				fetchObjects(monitor);
 				includedTags = conn.didFetchIncludeTags();
 
 				// Connection was used for object transfer. If we
@@ -143,7 +143,7 @@ class FetchProcess {
 				if (!askFor.isEmpty() && (!includedTags || !askForIsComplete())) {
 					reopenConnection();
 					if (!askFor.isEmpty())
-						conn.fetch(monitor, askFor.values());
+						fetchObjects(monitor);
 				}
 			}
 		} finally {
@@ -169,6 +169,15 @@ class FetchProcess {
 						+ err.getMessage(), err);
 			}
 		}
+	}
+
+	private void fetchObjects(final ProgressMonitor monitor)
+			throws TransportException {
+		conn.fetch(monitor, askFor.values());
+		if (transport.isCheckFetchedObjects()
+				&& !conn.didFetchTestConnectivity() && !askForIsComplete())
+			throw new TransportException(transport.getURI(),
+					"peer did not supply a complete object graph");
 	}
 
 	private void closeConnection() {

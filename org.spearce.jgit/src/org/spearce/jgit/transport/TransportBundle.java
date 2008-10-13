@@ -165,6 +165,10 @@ abstract class TransportBundle extends PackTransport {
 			return RawParseUtils.decode(Constants.CHARSET, hdrbuf, 0, lf);
 		}
 
+		public boolean didFetchTestConnectivity() {
+			return false;
+		}
+
 		@Override
 		protected void doFetch(final ProgressMonitor monitor,
 				final Collection<Ref> want) throws TransportException {
