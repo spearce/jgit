@@ -95,7 +95,6 @@ java org.spearce.jgit.pgm.build.JarLinkUtil \
 	-include org.spearce.jgit/bin2 \
 	-file META-INF/MANIFEST.MF=$T_MF \
 	>$O_JAR+ &&
-chmod 555 $O_JAR+ &&
 mv $O_JAR+ $O_JAR &&
 echo "Created $O_JAR." &&
 
@@ -103,7 +102,6 @@ java org.spearce.jgit.pgm.build.JarLinkUtil \
 	-include org.spearce.jgit/src \
 	-file META-INF/MANIFEST.MF=$T_MF \
 	>$O_SRC+ &&
-chmod 555 $O_SRC+ &&
 mv $O_SRC+ $O_SRC &&
 echo "Created $O_SRC." &&
 
