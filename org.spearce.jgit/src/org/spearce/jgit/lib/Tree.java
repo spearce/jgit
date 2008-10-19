@@ -44,6 +44,7 @@ import java.io.IOException;
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.EntryExistsException;
 import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.util.RawParseUtils;
 
 /**
  * A representation of a Git tree entry. A Tree is a directory in Git.
@@ -251,7 +252,7 @@ public class Tree extends TreeEntry implements Treeish {
 	 * @throws IOException
 	 */
 	public FileTreeEntry addFile(final String name) throws IOException {
-		return addFile(Repository.gitInternalSlash(name.getBytes(Constants.CHARACTER_ENCODING)), 0);
+		return addFile(Repository.gitInternalSlash(Constants.encode(name)), 0);
 	}
 
 	/**
@@ -281,8 +282,7 @@ public class Tree extends TreeEntry implements Treeish {
 
 		final byte[] newName = substring(s, offset, slash);
 		if (p >= 0)
-			throw new EntryExistsException(new String(newName,
-					Constants.CHARACTER_ENCODING));
+			throw new EntryExistsException(RawParseUtils.decode(newName));
 		else if (slash < s.length) {
 			final Tree t = new Tree(this, newName);
 			insertEntry(p, t);
@@ -304,7 +304,7 @@ public class Tree extends TreeEntry implements Treeish {
 	 * @throws IOException
 	 */
 	public Tree addTree(final String name) throws IOException {
-		return addTree(Repository.gitInternalSlash(name.getBytes(Constants.CHARACTER_ENCODING)), 0);
+		return addTree(Repository.gitInternalSlash(Constants.encode(name)), 0);
 	}
 
 	/**
@@ -332,8 +332,7 @@ public class Tree extends TreeEntry implements Treeish {
 
 		final byte[] newName = substring(s, offset, slash);
 		if (p >= 0)
-			throw new EntryExistsException(new String(newName,
-					Constants.CHARACTER_ENCODING));
+			throw new EntryExistsException(RawParseUtils.decode(newName));
 
 		final Tree t = new Tree(this, newName);
 		insertEntry(p, t);
@@ -355,8 +354,7 @@ public class Tree extends TreeEntry implements Treeish {
 			e.attachParent(this);
 			insertEntry(p, e);
 		} else {
-			throw new EntryExistsException(new String(e.getNameUTF8(),
-					Constants.CHARACTER_ENCODING));
+			throw new EntryExistsException(e.getName());
 		}
 	}
 
@@ -450,7 +448,7 @@ public class Tree extends TreeEntry implements Treeish {
 	}
 
 	private TreeEntry findMember(final String s, byte slast) throws IOException {
-		return findMember(Repository.gitInternalSlash(s.getBytes(Constants.CHARACTER_ENCODING)), slast, 0);
+		return findMember(Repository.gitInternalSlash(Constants.encode(s)), slast, 0);
 	}
 
 	private TreeEntry findMember(final byte[] s, final byte slast, final int offset)

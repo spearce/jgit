@@ -63,6 +63,7 @@ import java.util.TreeMap;
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.util.FS;
+import org.spearce.jgit.util.RawParseUtils;
 
 /**
  * A representation of the Git index.
@@ -178,8 +179,9 @@ public class GitIndex {
 	 * @param f
 	 *            the file whose path shall be removed.
 	 * @return true if such a path was found (and thus removed)
+	 * @throws IOException 
 	 */
-	public boolean remove(File wd, File f) {
+	public boolean remove(File wd, File f) throws IOException {
 		byte[] key = makeKey(wd, f);
 		return entries.remove(key) != null;
 	}
@@ -300,11 +302,11 @@ public class GitIndex {
 		return FS.INSTANCE.supportsExecute();
 	}
 
-	static byte[] makeKey(File wd, File f) {
+	static byte[] makeKey(File wd, File f) throws IOException {
 		if (!f.getPath().startsWith(wd.getPath()))
 			throw new Error("Path is not in working dir");
 		String relName = Repository.stripWorkDir(wd, f);
-		return relName.getBytes();
+		return Constants.encode(relName);
 	}
 
 	Boolean filemode;
@@ -376,7 +378,7 @@ public class GitIndex {
 				size = -1;
 			}
 			sha1 = f.getId();
-			name = f.getFullName().getBytes("UTF-8");
+			name = Constants.encode(f.getFullName());
 			flags = (short) ((stage << 12) | name.length); // TODO: fix flags
 		}
 
@@ -580,7 +582,7 @@ public class GitIndex {
 		}
 
 		public String toString() {
-			return new String(name) + "/SHA-1(" + sha1.name() + ")/M:"
+			return getName() + "/SHA-1(" + sha1.name() + ")/M:"
 					+ new Date(ctime / 1000000L) + "/C:"
 					+ new Date(mtime / 1000000L) + "/d" + dev + "/i" + ino
 					+ "/m" + Integer.toString(mode, 8) + "/u" + uid + "/g"
@@ -591,7 +593,7 @@ public class GitIndex {
 		 * @return path name for this entry
 		 */
 		public String getName() {
-			return new String(name);
+			return RawParseUtils.decode(name);
 		}
 
 		/**
@@ -731,7 +733,7 @@ public class GitIndex {
 				readTree(name, (Tree) te);
 			} else {
 				Entry e = new Entry(te, 0);
-				entries.put(name.getBytes("UTF-8"), e);
+				entries.put(Constants.encode(name), e);
 			}
 		}
 	}
@@ -743,7 +745,7 @@ public class GitIndex {
 	 * @throws IOException
 	 */
 	public Entry addEntry(TreeEntry te) throws IOException {
-		byte[] key = te.getFullName().getBytes("UTF-8");
+		byte[] key = Constants.encode(te.getFullName());
 		Entry e = new Entry(te, 0);
 		entries.put(key, e);
 		return e;
@@ -824,8 +826,7 @@ public class GitIndex {
 			}
 			while (trees.size() < newName.length) {
 				if (!current.existsTree(newName[trees.size() - 1])) {
-					current = new Tree(current, newName[trees.size() - 1]
-							.getBytes());
+					current = new Tree(current, Constants.encode(newName[trees.size() - 1]));
 					current.getParent().addEntry(current);
 					trees.push(current);
 				} else {
@@ -835,7 +836,7 @@ public class GitIndex {
 				}
 			}
 			FileTreeEntry ne = new FileTreeEntry(current, e.sha1,
-					newName[newName.length - 1].getBytes(),
+					Constants.encode(newName[newName.length - 1]),
 					(e.mode & FileMode.EXECUTABLE_FILE.getBits()) == FileMode.EXECUTABLE_FILE.getBits());
 			current.addEntry(ne);
 		}
@@ -880,7 +881,7 @@ public class GitIndex {
 	 * Small beware: Unaccounted for are unmerged entries. You may want
 	 * to abort if members with stage != 0 are found if you are doing
 	 * any updating operations. All stages will be found after one another
-	 * here later. Currently only one stage per name is returned.
+	 * here later. Currently only one stage per name is returned.	
 	 *
 	 * @return The index entries sorted
 	 */
@@ -896,7 +897,7 @@ public class GitIndex {
 	 * @throws UnsupportedEncodingException
 	 */
 	public Entry getEntry(String path) throws UnsupportedEncodingException {
-		return (Entry) entries.get(Repository.gitInternalSlash(path.getBytes("ISO-8859-1")));
+		return (Entry) entries.get(Repository.gitInternalSlash(Constants.encode(path)));
 	}
 
 	/**

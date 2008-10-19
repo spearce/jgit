@@ -379,6 +379,38 @@ public final class RawParseUtils {
 	}
 
 	/**
+	 * Decode a buffer under UTF-8, if possible.
+	 *
+	 * If the byte stream cannot be decoded that way, the platform default is tried
+	 * and if that too fails, the fail-safe ISO-8859-1 encoding is tried.
+	 * 
+	 * @param buffer
+	 *            buffer to pull raw bytes from.
+	 * @return a string representation of the range <code>[start,end)</code>,
+	 *         after decoding the region through the specified character set.
+	 */
+	public static String decode(final byte[] buffer) {
+		return decode(Constants.CHARSET, buffer, 0, buffer.length);
+	}
+
+	/**
+	 * Decode a buffer under the specified character set if possible.
+	 *
+	 * If the byte stream cannot be decoded that way, the platform default is tried
+	 * and if that too fails, the fail-safe ISO-8859-1 encoding is tried.
+	 * 
+	 * @param cs
+	 *            character set to use when decoding the buffer.
+	 * @param buffer
+	 *            buffer to pull raw bytes from.
+	 * @return a string representation of the range <code>[start,end)</code>,
+	 *         after decoding the region through the specified character set.
+	 */
+	public static String decode(final Charset cs, final byte[] buffer) {
+		return decode(cs, buffer, 0, buffer.length);
+	}
+
+	/**
 	 * Decode a region of the buffer under the specified character set if possible.
 	 *
 	 * If the byte stream cannot be decoded that way, the platform default is tried

@@ -39,9 +39,9 @@
 package org.spearce.jgit.lib;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
 import org.spearce.jgit.lib.GitIndex.Entry;
+import org.spearce.jgit.util.RawParseUtils;
 
 /**
  * This class represents an entry in a tree, like a blob or another tree.
@@ -126,13 +126,9 @@ public abstract class TreeEntry implements Comparable {
 	 * @return the name of this entry.
 	 */
 	public String getName() {
-		try {
-			return nameUTF8 != null ? new String(nameUTF8,
-					Constants.CHARACTER_ENCODING) : null;
-		} catch (UnsupportedEncodingException uee) {
-			throw new RuntimeException("JVM doesn't support "
-					+ Constants.CHARACTER_ENCODING, uee);
-		}
+		if (nameUTF8 != null)
+			return RawParseUtils.decode(nameUTF8);
+		return null;
 	}
 
 	/**
@@ -142,7 +138,7 @@ public abstract class TreeEntry implements Comparable {
 	 * @throws IOException
 	 */
 	public void rename(final String n) throws IOException {
-		rename(n.getBytes(Constants.CHARACTER_ENCODING));
+		rename(Constants.encode(n));
 	}
 
 	/**
