@@ -194,6 +194,19 @@
             id="org.spearce.egit.ui.internal.preferences.WindowCachePreferencePage" />
    </extension>
 
+   <extension point="org.eclipse.ui.propertyPages">
+      <page
+            objectClass="org.eclipse.core.resources.IProject"
+            adaptable="true"
+            name="%Git"
+            class="org.spearce.egit.ui.internal.preferences.GitProjectPropertyPage"
+            id="org.spearce.egit.ui.preferences.GitProjectPropertyPage">
+         <filter
+               name="projectPersistentProperty"
+               value="org.eclipse.team.core.repository=org.spearce.egit.core.GitProvider">
+         </filter>
+      </page>
+   </extension>
    <extension point="org.eclipse.ui.decorators">
       <decorator
             lightweight="true"
