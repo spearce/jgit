@@ -1017,14 +1017,31 @@ public class Repository {
 	 * @return an important state
 	 */
 	public RepositoryState getRepositoryState() {
+		// Pre Git-1.6 logic
 		if (new File(getWorkDir(), ".dotest").exists())
 			return RepositoryState.REBASING;
 		if (new File(gitDir,".dotest-merge").exists())
 			return RepositoryState.REBASING_INTERACTIVE;
+
+		// From 1.6 onwards
+		if (new File(getDirectory(),"rebase-apply/rebasing").exists())
+			return RepositoryState.REBASING_REBASING;
+		if (new File(getDirectory(),"rebase-apply/applying").exists())
+			return RepositoryState.APPLY;
+		if (new File(getDirectory(),"rebase-apply").exists())
+			return RepositoryState.REBASING;
+
+		if (new File(getDirectory(),"rebase-merge/interactive").exists())
+			return RepositoryState.REBASING_INTERACTIVE;
+		if (new File(getDirectory(),"rebase-merge").exists())
+			return RepositoryState.REBASING_MERGE;
+
+		// Both versions
 		if (new File(gitDir,"MERGE_HEAD").exists())
 			return RepositoryState.MERGING;
 		if (new File(gitDir,"BISECT_LOG").exists())
 			return RepositoryState.BISECTING;
+
 		return RepositoryState.SAFE;
 	}
 

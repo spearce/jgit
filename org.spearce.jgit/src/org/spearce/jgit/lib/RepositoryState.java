@@ -40,6 +40,9 @@ package org.spearce.jgit.lib;
 /**
  * Important state of the repository that affects what can and cannot bed
  * done. This is things like unhandled conflicted merges and unfinished rebase.
+ *
+ * The granularity and set of states are somewhat arbitrary. The methods
+ * on the state are the only supported means of deciding what to do.
  */
 public enum RepositoryState {
 	/**
@@ -62,13 +65,33 @@ public enum RepositoryState {
 	},
 
 	/**
-	 * An unfinished rebase. Must resolve, skip or abort before normal work can take place
+	 * An unfinished rebase or am. Must resolve, skip or abort before normal work can take place
 	 */
 	REBASING {
 		public boolean canCheckout() { return false; }
 		public boolean canResetHead() { return false; }
 		public boolean canCommit() { return true; }
 		public String getDescription() { return "Rebase/Apply mailbox"; }
+	},
+
+	/**
+	 * An unfinished rebase. Must resolve, skip or abort before normal work can take place
+	 */
+	REBASING_REBASING {
+		public boolean canCheckout() { return false; }
+		public boolean canResetHead() { return false; }
+		public boolean canCommit() { return true; }
+		public String getDescription() { return "Rebase"; }
+	},
+
+	/**
+	 * An unfinished apply. Must resolve, skip or abort before normal work can take place
+	 */
+	APPLY {
+		public boolean canCheckout() { return false; }
+		public boolean canResetHead() { return false; }
+		public boolean canCommit() { return true; }
+		public String getDescription() { return "Apply mailbox"; }
 	},
 
 	/**
