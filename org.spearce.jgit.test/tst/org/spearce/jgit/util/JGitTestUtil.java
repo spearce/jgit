@@ -38,6 +38,7 @@
 package org.spearce.jgit.util;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 public abstract class JGitTestUtil {
@@ -57,7 +58,11 @@ public abstract class JGitTestUtil {
 			// loaded previously
 			return new File("tst", fileName);
 		}
-		return new File(url.getPath());
+		try {
+			return new File(url.toURI());
+		} catch(URISyntaxException e) {
+			return new File(url.getPath());
+		}
 	}
 
 	private static ClassLoader cl() {
