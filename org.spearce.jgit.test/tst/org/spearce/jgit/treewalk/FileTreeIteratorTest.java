@@ -47,7 +47,7 @@ import org.spearce.jgit.lib.RepositoryTestCase;
 import org.spearce.jgit.util.RawParseUtils;
 
 public class FileTreeIteratorTest extends RepositoryTestCase {
-	private final String[] paths = { "a.", "a.b", "a/b", "a0b" };
+	private final String[] paths = { "a,", "a,b", "a/b", "a0b" };
 
 	private long[] mtime;
 
