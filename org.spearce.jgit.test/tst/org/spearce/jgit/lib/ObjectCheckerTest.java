@@ -980,6 +980,13 @@ public class ObjectCheckerTest extends TestCase {
 		checker.checkTree(data);
 	}
 
+	public void testValidTree6() throws CorruptObjectException {
+		final StringBuilder b = new StringBuilder();
+		entry(b, "100644 .a");
+		final byte[] data = Constants.encodeASCII(b.toString());
+		checker.checkTree(data);
+	}
+
 	public void testValidTreeSorting1() throws CorruptObjectException {
 		final StringBuilder b = new StringBuilder();
 		entry(b, "100644 fooaaa");
@@ -1163,6 +1170,30 @@ public class ObjectCheckerTest extends TestCase {
 			fail("incorrectly accepted an invalid tree");
 		} catch (CorruptObjectException e) {
 			assertEquals("zero length name", e.getMessage());
+		}
+	}
+
+	public void testInvalidTreeNameIsDot() {
+		final StringBuilder b = new StringBuilder();
+		entry(b, "100644 .");
+		final byte[] data = Constants.encodeASCII(b.toString());
+		try {
+			checker.checkTree(data);
+			fail("incorrectly accepted an invalid tree");
+		} catch (CorruptObjectException e) {
+			assertEquals("invalid name '.'", e.getMessage());
+		}
+	}
+
+	public void testInvalidTreeNameIsDotDot() {
+		final StringBuilder b = new StringBuilder();
+		entry(b, "100644 ..");
+		final byte[] data = Constants.encodeASCII(b.toString());
+		try {
+			checker.checkTree(data);
+			fail("incorrectly accepted an invalid tree");
+		} catch (CorruptObjectException e) {
+			assertEquals("invalid name '..'", e.getMessage());
 		}
 	}
 
