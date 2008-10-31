@@ -37,11 +37,13 @@
 
 package org.spearce.jgit.transport;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Collections;
+import java.util.Set;
 
 import org.spearce.jgit.errors.MissingBundlePrerequisiteException;
 import org.spearce.jgit.errors.NotSupportedException;
@@ -58,15 +60,14 @@ public class BundleWriterTest extends RepositoryTestCase {
 
 	public void testWrite0() throws Exception {
 		// Create a tiny bundle, (well one of) the first commits only
-		URIish bundleURI = new URIish("file:///home/me/tmp/foo");
-		makeBundle("refs/heads/firstcommit",
-				"42e4e7c5e507e113ebbb7801b16b52cf867b7ce1", bundleURI, null);
+		final byte[] bundle = makeBundle("refs/heads/firstcommit",
+				"42e4e7c5e507e113ebbb7801b16b52cf867b7ce1", null);
 
 		// Then we clone a new repo from that bundle and do a simple test. This
 		// makes sure
 		// we could read the bundle we created.
 		Repository newRepo = createNewEmptyRepo();
-		FetchResult fetchResult = fetchFromBundle(newRepo, bundleURI);
+		FetchResult fetchResult = fetchFromBundle(newRepo, bundle);
 		Ref advertisedRef = fetchResult
 				.getAdvertisedRef("refs/heads/firstcommit");
 
@@ -80,19 +81,20 @@ public class BundleWriterTest extends RepositoryTestCase {
 
 	/**
 	 * Incremental bundle test
-	 *
+	 * 
 	 * @throws Exception
 	 */
 	public void testWrite1() throws Exception {
+		byte[] bundle;
+
 		// Create a small bundle, an early commit
-		URIish bundleURI = new URIish("file:///home/me/tmp/foo");
-		makeBundle("refs/heads/aa", db.resolve("a").name(), bundleURI, null);
+		bundle = makeBundle("refs/heads/aa", db.resolve("a").name(), null);
 
 		// Then we clone a new repo from that bundle and do a simple test. This
 		// makes sure
 		// we could read the bundle we created.
 		Repository newRepo = createNewEmptyRepo();
-		FetchResult fetchResult = fetchFromBundle(newRepo, bundleURI);
+		FetchResult fetchResult = fetchFromBundle(newRepo, bundle);
 		Ref advertisedRef = fetchResult.getAdvertisedRef("refs/heads/aa");
 
 		assertEquals(db.resolve("a").name(), advertisedRef.getObjectId().name());
@@ -101,9 +103,9 @@ public class BundleWriterTest extends RepositoryTestCase {
 		assertNull(newRepo.resolve("refs/heads/a"));
 
 		// Next an incremental bundle
-		makeBundle("refs/heads/cc", db.resolve("c").name(), bundleURI,
+		bundle = makeBundle("refs/heads/cc", db.resolve("c").name(),
 				new RevWalk(db).parseCommit(db.resolve("a").toObjectId()));
-		fetchResult = fetchFromBundle(newRepo, bundleURI);
+		fetchResult = fetchFromBundle(newRepo, bundle);
 		advertisedRef = fetchResult.getAdvertisedRef("refs/heads/cc");
 		assertEquals(db.resolve("c").name(), advertisedRef.getObjectId().name());
 		assertEquals(db.resolve("c").name(), newRepo.resolve("refs/heads/cc")
@@ -114,7 +116,7 @@ public class BundleWriterTest extends RepositoryTestCase {
 		try {
 			// Check that we actually needed the first bundle
 			Repository newRepo2 = createNewEmptyRepo();
-			fetchResult = fetchFromBundle(newRepo2, bundleURI);
+			fetchResult = fetchFromBundle(newRepo2, bundle);
 			fail("We should not be able to fetch from bundle with prerequisistes that are not fulfilled");
 		} catch (MissingBundlePrerequisiteException e) {
 			assertTrue(e.getMessage()
@@ -122,31 +124,29 @@ public class BundleWriterTest extends RepositoryTestCase {
 		}
 	}
 
-	private FetchResult fetchFromBundle(Repository newRepo, URIish uriish)
-			throws URISyntaxException, NotSupportedException,
-			TransportException {
-		RemoteConfig remoteConfig = new RemoteConfig(newRepo.getConfig(),
-				"origin");
-		remoteConfig.addURI(uriish);
-		RefSpec theRefSpec = new RefSpec("refs/heads/*:refs/heads/*");
-		remoteConfig.addFetchRefSpec(theRefSpec);
-		Transport transport = Transport.open(newRepo, remoteConfig);
-		FetchResult fetch = transport.fetch(new NullProgressMonitor(),
-				Collections.singleton(theRefSpec));
-		return fetch;
+	private FetchResult fetchFromBundle(final Repository newRepo,
+			final byte[] bundle) throws URISyntaxException,
+			NotSupportedException, TransportException {
+		final URIish uri = new URIish("in-memory://");
+		final ByteArrayInputStream in = new ByteArrayInputStream(bundle);
+		final RefSpec rs = new RefSpec("refs/heads/*:refs/heads/*");
+		final Set<RefSpec> refs = Collections.singleton(rs);
+		return new TransportBundleStream(newRepo, uri, in).fetch(
+				NullProgressMonitor.INSTANCE, refs);
 	}
 
-	private void makeBundle(String name, String anObjectToInclude,
-			URIish bundleName, RevCommit assume) throws FileNotFoundException,
-			IOException {
-		BundleWriter bundleWriter = new BundleWriter(db,
-				new NullProgressMonitor());
-		bundleWriter.include(name, ObjectId.fromString(anObjectToInclude));
+	private byte[] makeBundle(final String name,
+			final String anObjectToInclude, final RevCommit assume)
+			throws FileNotFoundException, IOException {
+		final BundleWriter bw;
+
+		bw = new BundleWriter(db, NullProgressMonitor.INSTANCE);
+		bw.include(name, ObjectId.fromString(anObjectToInclude));
 		if (assume != null)
-			bundleWriter.assume(assume);
-		FileOutputStream os = new FileOutputStream(bundleName.getPath());
-		bundleWriter.writeBundle(os);
-		os.close();
+			bw.assume(assume);
+		final ByteArrayOutputStream out = new ByteArrayOutputStream();
+		bw.writeBundle(out);
+		return out.toByteArray();
 	}
 
 }
