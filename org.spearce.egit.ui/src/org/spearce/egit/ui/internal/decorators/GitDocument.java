@@ -21,6 +21,7 @@ import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.RefsChangedEvent;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.RepositoryListener;
+import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 
 class GitDocument extends Document implements RepositoryListener {
@@ -52,7 +53,14 @@ class GitDocument extends Document implements RepositoryListener {
 		String baseline = GitQuickDiffProvider.baseline.get(repository);
 		if (baseline == null)
 			baseline = "HEAD";
-		TreeEntry blobEnry = repository.mapTree(baseline).findBlobMember(gitPath);
+		Tree baselineTree = repository.mapTree(baseline);
+		if (baselineTree == null) {
+			Activator.logError("Could not resolve quickdiff baseline "
+					+ baseline + " corresponding to " + resource + " in "
+					+ repository, new Throwable());
+			return;
+		}
+		TreeEntry blobEnry = baselineTree.findBlobMember(gitPath);
 		if (blobEnry != null) {
 			Activator.trace("(GitQuickDiffProvider) compareTo: " + baseline);
 			ObjectLoader loader = repository.openBlob(blobEnry.getId());
