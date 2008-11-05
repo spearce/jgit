@@ -89,7 +89,7 @@ class SWTPlotRenderer extends AbstractPlotRenderer<SWTLane, Color> {
 		final int texty = (y * 2 - textsz.y) / 2;
 		g.setForeground(cellFG);
 		g.setBackground(cellBG);
-		g.drawString(msg, cellX + x, cellY + texty);
+		g.drawString(msg, cellX + x, cellY + texty, true);
 	}
 
 	protected Color laneColor(final SWTLane myLane) {

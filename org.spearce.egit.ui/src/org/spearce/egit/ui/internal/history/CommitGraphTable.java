@@ -224,7 +224,7 @@ class CommitGraphTable {
 
 		final Point textsz = event.gc.textExtent(txt);
 		final int texty = (event.height - textsz.y) / 2;
-		event.gc.drawString(txt, event.x, event.y + texty);
+		event.gc.drawString(txt, event.x, event.y + texty, true);
 	}
 
 	/**
