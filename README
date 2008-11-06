@@ -79,9 +79,13 @@ three for packaging.
   have no information about other vendors. Please report your findings
   if you try.
 
+- CRLF conversion is never performed. On Windows you should thereforc
+  make sure your projects and workspaces are configured to save files
+  with Unix (LF) line endings.
+
             == COMPATIBILITY                   ==
 
-- Eclipse 3.3.1 is the minimum Eclipse version, 3.4 is preferred.
+- Eclipse 3.4 is the minimum Eclipse version.
 
 - Newer version of EGit/JGit may implement new functionality, remove
   existing functions and change others without other notice than what
@@ -120,6 +124,16 @@ three for packaging.
     * Walk the history from a given set of commits looking for commits
       introducing changes in files under a specified path.
 
+    * Object transport
+      Fetch via ssh, git, http, Amazon s3 and bundles.
+      Push via ssh, git and Amazon s3. Jgit does not yet deltify the pushed
+      packes to they may be a lot larger than C Git packs.
+
+  org.spearce.jgit.pgm
+
+    * Assorted set of command line utilities. Mostly for ad-hoc testing of jgit
+      log, glog, fetch etc.
+
   org.spearce.egit.core/
 
     * Supplies an Eclipse team provider.
@@ -156,6 +170,8 @@ three for packaging.
 
     * Graphical history viewer with the ability to compare versions
       using eclipse built-in compare editor.
+
+     * Clone, push, fetch
 
             == Missing Features                ==
 
