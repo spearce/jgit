@@ -40,11 +40,19 @@ package org.spearce.jgit.pgm;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
+import org.kohsuke.args4j.Option;
+import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.PersonIdent;
+import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.revwalk.RevWalk;
 
 @Command(common = true, usage = "View commit history")
 class Log extends RevWalkTextBuiltin {
@@ -52,14 +60,39 @@ class Log extends RevWalkTextBuiltin {
 
 	private final DateFormat fmt;
 
+	private Map<AnyObjectId, Set<Ref>> allRefsByPeeledObjectId;
+
+	@Option(name="--decorate", usage="Show ref names matching commits")
+	private boolean decorate;
+
 	Log() {
 		fmt = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy ZZZZZ", Locale.US);
+	}
+
+	@Override
+	protected RevWalk createWalk() {
+		RevWalk ret = super.createWalk();
+		if (decorate)
+			allRefsByPeeledObjectId = getRepository().getAllRefsByPeeledObjectId();
+		return ret;
 	}
 
 	@Override
 	protected void show(final RevCommit c) throws Exception {
 		out.print("commit ");
 		c.getId().copyTo(outbuffer, out);
+		if (decorate) {
+			Collection<Ref> list = allRefsByPeeledObjectId.get(c.copy());
+			if (list != null) {
+				out.print(" (");
+				for (Iterator<Ref> i = list.iterator(); i.hasNext(); ) {
+					out.print(i.next().getOrigName());
+					if (i.hasNext())
+						out.print(" ");
+				}
+				out.print(")");
+			}
+		}
 		out.println();
 
 		final PersonIdent author = c.getAuthorIdent();
