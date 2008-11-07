@@ -37,6 +37,7 @@
 
 package org.spearce.jgit.revplot;
 
+import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.revwalk.RevFlag;
 
 /**
@@ -140,10 +141,28 @@ public abstract class AbstractPlotRenderer<TLane extends PlotLane, TColor> {
 		else
 			drawCommitDot(dotX, dotY, dotSize, dotSize);
 
+		int textx = Math.max(maxCenter + LANE_WIDTH / 2, dotX + dotSize) + 8;
+		int n = commit.refs == null ? 0 : commit.refs.length;
+		for (int i = 0; i < n; ++i) {
+			textx += drawLabel(textx + dotSize, h/2, commit.refs[i]);
+		}
+
 		final String msg = commit.getShortMessage();
-		final int textx = Math.max(maxCenter + LANE_WIDTH / 2, dotX + dotSize) + 8;
-		drawText(msg, textx, h / 2);
+		drawText(msg, textx + dotSize + n*2, h / 2);
 	}
+
+	/**
+	 * Draw a decoration for the Ref ref at x,y
+	 *
+	 * @param x
+	 *            left
+	 * @param y
+	 *            top
+	 * @param ref
+	 *            A peeled ref
+	 * @return width of label in pixels
+	 */
+	protected abstract int drawLabel(int x, int y, Ref ref);
 
 	private int computeDotSize(final int h) {
 		int d = (int) (Math.min(h, LANE_WIDTH) * 0.50f);

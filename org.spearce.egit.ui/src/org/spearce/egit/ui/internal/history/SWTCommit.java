@@ -10,12 +10,13 @@ package org.spearce.egit.ui.internal.history;
 import org.eclipse.swt.widgets.Widget;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.revplot.PlotCommit;
+import org.spearce.jgit.lib.Ref;
 
 class SWTCommit extends PlotCommit<SWTCommitList.SWTLane> {
 	Widget widget;
 
-	SWTCommit(final AnyObjectId id) {
-		super(id);
+	SWTCommit(final AnyObjectId id, final Ref[] tags) {
+		super(id, tags);
 	}
 
 	@Override

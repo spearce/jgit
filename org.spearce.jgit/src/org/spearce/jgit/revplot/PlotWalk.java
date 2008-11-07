@@ -37,14 +37,33 @@
 
 package org.spearce.jgit.revplot;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Set;
+
 import org.spearce.jgit.lib.AnyObjectId;
+import org.spearce.jgit.lib.Commit;
+import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.Tag;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevSort;
 import org.spearce.jgit.revwalk.RevWalk;
 
 /** Specialized RevWalk for visualization of a commit graph. */
 public class PlotWalk extends RevWalk {
+
+	private Map<AnyObjectId, Set<Ref>> reverseRefMap;
+
+	@Override
+	public void dispose() {
+		super.dispose();
+		reverseRefMap.clear();
+	}
+
 	/**
 	 * Create a new revision walker for a given repository.
 	 * 
@@ -54,6 +73,7 @@ public class PlotWalk extends RevWalk {
 	public PlotWalk(final Repository repo) {
 		super(repo);
 		super.sort(RevSort.TOPO, true);
+		reverseRefMap = repo.getAllRefsByPeeledObjectId();
 	}
 
 	@Override
@@ -65,6 +85,44 @@ public class PlotWalk extends RevWalk {
 
 	@Override
 	protected RevCommit createCommit(final AnyObjectId id) {
-		return new PlotCommit(id);
+		return new PlotCommit(id, getTags(id));
+	}
+
+	protected Ref[] getTags(final AnyObjectId commitId) {
+		Collection<Ref> list = reverseRefMap.get(commitId);
+		Ref[] tags;
+		if (list == null)
+			tags = null;
+		else {
+			tags = list.toArray(new Ref[list.size()]);
+			Arrays.sort(tags, new PlotRefComparator());
+		}
+		return tags;
+	}
+
+	class PlotRefComparator implements Comparator<Ref> {
+		public int compare(Ref o1, Ref o2) {
+			try {
+				Object obj1 = getRepository().mapObject(o1.getObjectId(), o1.getName());
+				Object obj2 = getRepository().mapObject(o2.getObjectId(), o2.getName());
+				long t1 = timeof(obj1);
+				long t2 = timeof(obj2);
+				if (t1 > t2)
+					return -1;
+				if (t1 < t2)
+					return 1;
+				return 0;
+			} catch (IOException e) {
+				// ignore
+				return 0;
+			}
+		}
+		long timeof(Object o) {
+			if (o instanceof Commit)
+				return ((Commit)o).getCommitter().getWhen().getTime();
+			if (o instanceof Tag)
+				return ((Tag)o).getTagger().getWhen().getTime();
+			return 0;
+		}
 	}
 }
