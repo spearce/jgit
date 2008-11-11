@@ -185,4 +185,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <scope>compile</scope>
         </dependency>
     </dependencies>
+    <distributionManagement>
+        <snapshotRepository>
+            <id>jgit-maven-snapshot-repository</id>
+            <name>JGit Maven Snapshot Repository</name>
+            <url>dav:https://egit.googlecode.com/svn/maven/snapshot-repository/</url>
+            <uniqueVersion>true</uniqueVersion>
+        </snapshotRepository>
+    </distributionManagement>
 </project>
