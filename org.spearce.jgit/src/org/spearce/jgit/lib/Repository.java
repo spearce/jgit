@@ -47,10 +47,13 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
@@ -949,6 +952,33 @@ public class Repository {
 	 */
 	public Ref peel(final Ref ref) {
 		return refs.peel(ref);
+	}
+
+	/**
+	 * @return a map with all objects referenced by a peeled ref.
+	 */
+	public Map<AnyObjectId, Set<Ref>> getAllRefsByPeeledObjectId() {
+		Map<String, Ref> allRefs = getAllRefs();
+		Map<AnyObjectId, Set<Ref>> ret = new HashMap<AnyObjectId, Set<Ref>>(allRefs.size());
+		for (Ref ref : allRefs.values()) {
+			if (!ref.isPeeled())
+				ref = peel(ref);
+			AnyObjectId target = ref.getPeeledObjectId();
+			if (target == null)
+				target = ref.getObjectId();
+			// We assume most Sets here are singletons
+			Set<Ref> oset = ret.put(target, Collections.singleton(ref));
+			if (oset != null) {
+				// that was not the case (rare)
+				if (oset.size() == 1) {
+					// Was a read-only singleton, we must copy to a new Set
+					oset = new HashSet<Ref>(oset);
+				}
+				ret.put(target, oset);
+				oset.add(ref);
+			}
+		}
+		return ret;
 	}
 
 	/**
