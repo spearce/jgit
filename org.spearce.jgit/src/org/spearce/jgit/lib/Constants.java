@@ -216,6 +216,9 @@ public final class Constants {
 	/** Prefix for tag refs */
 	public static final String R_TAGS = "refs/tags/";
 
+	/** Prefix for any ref */
+	public static final String R_REFS = "refs/";
+
 	/** Logs folder name */
 	public static final String LOGS = "logs";
 
