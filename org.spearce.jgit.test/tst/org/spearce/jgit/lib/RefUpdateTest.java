@@ -39,6 +39,8 @@ package org.spearce.jgit.lib;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.spearce.jgit.lib.RefUpdate.Result;
 
@@ -126,5 +128,13 @@ public class RefUpdateTest extends RepositoryTestCase {
 
 	private void assertExists(final boolean expected, final String name) {
 		assertEquals(expected, new File(db.getDirectory(), name).exists());
+	}
+
+	public void testRefKeySameAsOrigName() {
+		Map<String, Ref> allRefs = db.getAllRefs();
+		for (Entry<String, Ref> e : allRefs.entrySet()) {
+			assertEquals(e.getKey(), e.getValue().getOrigName());
+
+		}
 	}
 }
