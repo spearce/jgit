@@ -300,7 +300,7 @@ class TransportAmazonS3 extends WalkTransport {
 				if (r == null)
 					return null;
 				r = new Ref(r.getStorage(), rn, r.getObjectId(), r
-						.getPeeledObjectId());
+						.getPeeledObjectId(), r.isPeeled());
 				avail.put(r.getName(), r);
 				return r;
 			}

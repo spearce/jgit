@@ -237,7 +237,7 @@ class TransportHttp extends WalkTransport {
 						throw duplicateAdvertisement(name + "^{}");
 
 					avail.put(name, new Ref(Ref.Storage.NETWORK, name, prior
-							.getObjectId(), id));
+							.getObjectId(), id, true));
 				} else {
 					final Ref prior = avail.put(name, new Ref(
 							Ref.Storage.NETWORK, name, id));

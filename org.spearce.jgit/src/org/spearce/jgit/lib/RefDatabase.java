@@ -271,7 +271,8 @@ class RefDatabase {
 					return;
 				}
 
-				ref = new Ref(Ref.Storage.LOOSE, origName, refName, id);
+				ref = new Ref(Ref.Storage.LOOSE, origName, refName, id, null, false); // unpeeled
+
 				looseRefs.put(ref.getName(), ref);
 				looseRefsMTime.put(ref.getName(), ent.lastModified());
 				avail.put(ref.getName(), ref);
@@ -286,6 +287,28 @@ class RefDatabase {
 			//
 			throw new RuntimeException("Cannot read ref " + ent, err);
 		}
+	}
+
+	Ref peel(final Ref ref) {
+		if (ref.isPeeled())
+			return ref;
+		ObjectId peeled = null;
+		try {
+			Object target = db.mapObject(ref.getObjectId(), ref.getName());
+			while (target instanceof Tag) {
+				final Tag tag = (Tag)target;
+				peeled = tag.getObjId();
+				if (Constants.TYPE_TAG.equals(tag.getType()))
+					target = db.mapObject(tag.getObjId(), ref.getName());
+				else
+					break;
+			}
+		} catch (IOException e) {
+			// Ignore a read error.  Callers will also get the same error
+			// if they try to use the result of getPeeledObjectId.
+		}
+		return new Ref(ref.getStorage(), ref.getName(), ref.getObjectId(), peeled, true);
+
 	}
 
 	private File fileForRef(final String name) {
@@ -350,7 +373,7 @@ class RefDatabase {
 			if (r == null)
 				return new Ref(Ref.Storage.LOOSE, origName, target, null);
 			if (!origName.equals(r.getName()))
-				r = new Ref(Ref.Storage.LOOSE_PACKED, origName, r.getName(), r.getObjectId(), r.getPeeledObjectId());
+				r = new Ref(Ref.Storage.LOOSE_PACKED, origName, r.getName(), r.getObjectId(), r.getPeeledObjectId(), true);
 			return r; 
 		}
 
@@ -364,6 +387,9 @@ class RefDatabase {
 		}
 
 		ref = new Ref(Ref.Storage.LOOSE, origName, name, id);
+
+		looseRefs.put(origName, ref);
+		ref = new Ref(Ref.Storage.LOOSE, origName, id);
 		looseRefs.put(name, ref);
 		looseRefsMTime.put(name, mtime);
 		return ref;
@@ -397,7 +423,7 @@ class RefDatabase {
 
 						final ObjectId id = ObjectId.fromString(p.substring(1));
 						last = new Ref(Ref.Storage.PACKED, last.getName(), last
-								.getName(), last.getObjectId(), id);
+								.getName(), last.getObjectId(), id, true);
 						newPackedRefs.put(last.getName(), last);
 						continue;
 					}

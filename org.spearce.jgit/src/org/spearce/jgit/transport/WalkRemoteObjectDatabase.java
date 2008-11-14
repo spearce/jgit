@@ -438,7 +438,7 @@ abstract class WalkRemoteObjectDatabase {
 					throw new TransportException("Peeled line before ref.");
 				final ObjectId id = ObjectId.fromString(line + 1);
 				last = new Ref(Ref.Storage.PACKED, last.getName(), last
-						.getObjectId(), id);
+						.getObjectId(), id, true);
 				avail.put(last.getName(), last);
 				continue;
 			}

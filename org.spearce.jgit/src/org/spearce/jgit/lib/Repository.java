@@ -939,6 +939,19 @@ public class Repository {
 	}
 
 	/**
+	 * Peel a possibly unpeeled ref and updates it. If the ref cannot be peeled
+	 * the peeled id is set to {@link ObjectId#zeroId()}
+	 * 
+	 * @param ref
+	 *            The ref to peel
+	 * @return The same, an updated ref with peeled info or a new instance with
+	 *         more information
+	 */
+	public Ref peel(final Ref ref) {
+		return refs.peel(ref);
+	}
+
+	/**
 	 * @return true if HEAD points to a StGit patch.
 	 */
 	public boolean isStGitMode() {

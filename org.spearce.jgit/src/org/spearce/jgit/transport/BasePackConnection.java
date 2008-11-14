@@ -176,7 +176,7 @@ abstract class BasePackConnection extends BaseConnection {
 					throw duplicateAdvertisement(name + "^{}");
 
 				avail.put(name, new Ref(Ref.Storage.NETWORK, name, prior
-						.getObjectId(), id));
+						.getObjectId(), id, true));
 			} else {
 				final Ref prior;
 				prior = avail.put(name, new Ref(Ref.Storage.NETWORK, name, id));

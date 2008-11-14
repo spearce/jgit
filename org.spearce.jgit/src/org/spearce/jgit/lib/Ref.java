@@ -126,6 +126,8 @@ public class Ref {
 
 	private final String origName;
 
+	private final boolean peeled;
+
 	/**
 	 * Create a new ref pairing.
 	 * 
@@ -140,10 +142,7 @@ public class Ref {
 	 *            does not exist yet.
 	 */
 	public Ref(final Storage st, final String origName, final String refName, final ObjectId id) {
-		storage = st;
-		this.origName = origName;
-		name = refName;
-		objectId = id;
+		this(st, origName, refName, id, null, false);
 	}
 
 	/**
@@ -158,7 +157,7 @@ public class Ref {
 	 *            does not exist yet.
 	 */
 	public Ref(final Storage st, final String refName, final ObjectId id) {
-		this(st, refName, refName, id);
+		this(st, refName, refName, id, null, false);
 	}
 
 	/**
@@ -175,15 +174,18 @@ public class Ref {
 	 *            does not exist yet.
 	 * @param peel
 	 *            peeled value of the ref's tag. May be null if this is not a
-	 *            tag or the peeled value is not known.
+	 *            tag or not yet peeled (in which case the next parameter should be null)
+	 * @param peeled
+	 * 			  true if peel represents a the peeled value of the object
 	 */
 	public Ref(final Storage st, final String origName, final String refName, final ObjectId id,
-			final ObjectId peel) {
+			final ObjectId peel, final boolean peeled) {
 		storage = st;
 		this.origName = origName;
 		name = refName;
 		objectId = id;
 		peeledObjectId = peel;
+		this.peeled = peeled;
 	}
 
 	/**
@@ -199,10 +201,12 @@ public class Ref {
 	 * @param peel
 	 *            peeled value of the ref's tag. May be null if this is not a
 	 *            tag or the peeled value is not known.
+	 * @param peeled
+	 * 			  true if peel represents a the peeled value of the object
 	 */
 	public Ref(final Storage st, final String refName, final ObjectId id,
-			final ObjectId peel) {
-		this(st, refName, refName, id, peel);
+			final ObjectId peel, boolean peeled) {
+		this(st, refName, refName, id, peel, peeled);
 	}
 
 	/**
@@ -238,7 +242,16 @@ public class Ref {
 	 *         refer to an annotated tag.
 	 */
 	public ObjectId getPeeledObjectId() {
+		if (!peeled)
+			return null;
 		return peeledObjectId;
+	}
+
+	/**
+	 * @return whether the Ref represents a peeled tag
+	 */
+	public boolean isPeeled() {
+		return peeled;
 	}
 
 	/**
@@ -258,5 +271,9 @@ public class Ref {
 		if (!origName.equals(name))
 			o = "(" + origName + ")";
 		return "Ref[" + o + name + "=" + ObjectId.toString(getObjectId()) + "]";
+	}
+
+	void setPeeledObjectId(final ObjectId id) {
+		peeledObjectId = id;
 	}
 }
