@@ -131,9 +131,6 @@ public class RefUpdate {
 	/** Repository the ref is stored in. */
 	private final RefDatabase db;
 
-	/** Name of the ref. */
-	private final String name;
-
 	/** Location of the loose file holding the value of this ref. */
 	private final File looseFile;
 
@@ -160,7 +157,6 @@ public class RefUpdate {
 	RefUpdate(final RefDatabase r, final Ref ref, final File f) {
 		db = r;
 		this.ref = ref;
-		name = ref.getName();
 		oldValue = ref.getObjectId();
 		looseFile = f;
 	}
@@ -171,7 +167,7 @@ public class RefUpdate {
 	 * @return name of this ref.
 	 */
 	public String getName() {
-		return name;
+		return ref.getName();
 	}
 
 	/**
@@ -349,9 +345,9 @@ public class RefUpdate {
 	 * @throws IOException
 	 */
 	public Result delete(final RevWalk walk) throws IOException {
-		if (name.startsWith(Constants.R_HEADS)) {
+		if (getName().startsWith(Constants.R_HEADS)) {
 			final Ref head = db.readRef(Constants.HEAD);
-			if (head != null && name.equals(head.getName()))
+			if (head != null && getName().equals(head.getName()))
 				return Result.REJECTED_CURRENT_BRANCH;
 		}
 
@@ -373,7 +369,7 @@ public class RefUpdate {
 		if (!lock.lock())
 			return Result.LOCK_FAILURE;
 		try {
-			oldValue = db.idOf(name);
+			oldValue = db.idOf(getName());
 			if (oldValue == null)
 				return store.store(lock, Result.NEW);
 
@@ -428,7 +424,7 @@ public class RefUpdate {
 				getName());
 		if (!lock.commit())
 			return Result.LOCK_FAILURE;
-		db.stored(name, newValue, lock.getCommitLastModified());
+		db.stored(this.ref.getOrigName(),  ref.getName(), newValue, lock.getCommitLastModified());
 		return status;
 	}
 

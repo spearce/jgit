@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.spearce.jgit.errors.ObjectWritingException;
+import org.spearce.jgit.lib.Ref.Storage;
 import org.spearce.jgit.util.FS;
 import org.spearce.jgit.util.NB;
 
@@ -135,8 +136,8 @@ class RefDatabase {
 		return new RefUpdate(this, r, fileForRef(r.getName()));
 	}
 
-	void stored(final String name, final ObjectId id, final long time) {
-		looseRefs.put(name, new Ref(Ref.Storage.LOOSE, name, id));
+	void stored(final String origName, final String name, final ObjectId id, final long time) {
+		looseRefs.put(name, new Ref(Ref.Storage.LOOSE, origName, name, id));
 		looseRefsMTime.put(name, time);
 		setModified();
 		db.fireRefsMaybeChanged();
@@ -222,12 +223,12 @@ class RefDatabase {
 			final String entName = ent.getName();
 			if (".".equals(entName) || "..".equals(entName))
 				continue;
-			readOneLooseRef(avail, prefix + entName, ent);
+			readOneLooseRef(avail, prefix + entName, prefix + entName, ent);
 		}
 	}
 
 	private void readOneLooseRef(final Map<String, Ref> avail,
-			final String refName, final File ent) {
+			final String origName, final String refName, final File ent) {
 		// Unchanged and cached? Don't read it again.
 		//
 		Ref ref = looseRefs.get(refName);
@@ -270,7 +271,7 @@ class RefDatabase {
 					return;
 				}
 
-				ref = new Ref(Ref.Storage.LOOSE, refName, id);
+				ref = new Ref(Ref.Storage.LOOSE, origName, refName, id);
 				looseRefs.put(ref.getName(), ref);
 				looseRefsMTime.put(ref.getName(), ent.lastModified());
 				avail.put(ref.getName(), ref);
@@ -293,27 +294,35 @@ class RefDatabase {
 		return new File(gitDir, name);
 	}
 
-	private Ref readRefBasic(final String name, final int depth)
+	private Ref readRefBasic(final String name, final int depth) throws IOException {
+		return readRefBasic(name, name, depth);
+	}
+
+	private Ref readRefBasic(final String origName, final String name, final int depth)
 			throws IOException {
 		// Prefer loose ref to packed ref as the loose
 		// file can be more up-to-date than a packed one.
 		//
-		Ref ref = looseRefs.get(name);
+		Ref ref = looseRefs.get(origName);
 		final File loose = fileForRef(name);
 		final long mtime = loose.lastModified();
 		if (ref != null) {
 			Long cachedlastModified = looseRefsMTime.get(name);
 			if (cachedlastModified != null && cachedlastModified == mtime)
 				return ref;
-			looseRefs.remove(name);
-			looseRefsMTime.remove(name);
+			looseRefs.remove(origName);
+			looseRefsMTime.remove(origName);
 		}
 
 		if (mtime == 0) {
 			// If last modified is 0 the file does not exist.
 			// Try packed cache.
 			//
-			return packedRefs.get(name);
+			ref = packedRefs.get(name);
+			if (ref != null)
+				if (!ref.getOrigName().equals(origName))
+					ref = new Ref(Storage.LOOSE_PACKED, origName, name, ref.getObjectId());
+			return ref;
 		}
 
 		final String line;
@@ -324,7 +333,7 @@ class RefDatabase {
 		}
 
 		if (line == null || line.length() == 0)
-			return new Ref(Ref.Storage.LOOSE, name, null);
+			return new Ref(Ref.Storage.LOOSE, origName, name, null);
 
 		if (line.startsWith("ref: ")) {
 			if (depth >= 5) {
@@ -333,12 +342,16 @@ class RefDatabase {
 			}
 
 			final String target = line.substring("ref: ".length());
-			final Ref r = readRefBasic(target, depth + 1);
+			Ref r = readRefBasic(target, target, depth + 1);
 			Long cachedMtime = looseRefsMTime.get(name);
 			if (cachedMtime != null && cachedMtime != mtime)
 				setModified();
 			looseRefsMTime.put(name, mtime);
-			return r != null ? r : new Ref(Ref.Storage.LOOSE, target, null);
+			if (r == null)
+				return new Ref(Ref.Storage.LOOSE, origName, target, null);
+			if (!origName.equals(r.getName()))
+				r = new Ref(Ref.Storage.LOOSE_PACKED, origName, r.getName(), r.getObjectId(), r.getPeeledObjectId());
+			return r; 
 		}
 
 		setModified();
@@ -350,7 +363,7 @@ class RefDatabase {
 			throw new IOException("Not a ref: " + name + ": " + line);
 		}
 
-		ref = new Ref(Ref.Storage.LOOSE, name, id);
+		ref = new Ref(Ref.Storage.LOOSE, origName, name, id);
 		looseRefs.put(name, ref);
 		looseRefsMTime.put(name, mtime);
 		return ref;
@@ -384,7 +397,7 @@ class RefDatabase {
 
 						final ObjectId id = ObjectId.fromString(p.substring(1));
 						last = new Ref(Ref.Storage.PACKED, last.getName(), last
-								.getObjectId(), id);
+								.getName(), last.getObjectId(), id);
 						newPackedRefs.put(last.getName(), last);
 						continue;
 					}
@@ -392,7 +405,7 @@ class RefDatabase {
 					final int sp = p.indexOf(' ');
 					final ObjectId id = ObjectId.fromString(p.substring(0, sp));
 					final String name = new String(p.substring(sp + 1));
-					last = new Ref(Ref.Storage.PACKED, name, id);
+					last = new Ref(Ref.Storage.PACKED, name, name, id);
 					newPackedRefs.put(last.getName(), last);
 				}
 			} finally {

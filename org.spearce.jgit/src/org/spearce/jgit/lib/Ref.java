@@ -43,6 +43,11 @@ package org.spearce.jgit.lib;
  * A ref in Git is (more or less) a variable that holds a single object
  * identifier. The object identifier can be any valid Git object (blob, tree,
  * commit, annotated tag, ...).
+ * <p>
+ * The ref name has the attributes of the ref that was asked for as well as
+ * the ref it was resolved to for symbolic refs plus the object id it points
+ * to and (for tags) the peeled target object id, i.e. the tag resolved
+ * recursively until a non-tag object is referenced.
  */
 public class Ref {
 	/** Location where a {@link Ref} is stored. */
@@ -119,6 +124,28 @@ public class Ref {
 
 	private ObjectId peeledObjectId;
 
+	private final String origName;
+
+	/**
+	 * Create a new ref pairing.
+	 * 
+	 * @param st
+	 *            method used to store this ref.
+	 * @param origName
+	 *            The name used to resolve this ref
+	 * @param refName
+	 *            name of this ref.
+	 * @param id
+	 *            current value of the ref. May be null to indicate a ref that
+	 *            does not exist yet.
+	 */
+	public Ref(final Storage st, final String origName, final String refName, final ObjectId id) {
+		storage = st;
+		this.origName = origName;
+		name = refName;
+		objectId = id;
+	}
+
 	/**
 	 * Create a new ref pairing.
 	 * 
@@ -131,9 +158,32 @@ public class Ref {
 	 *            does not exist yet.
 	 */
 	public Ref(final Storage st, final String refName, final ObjectId id) {
+		this(st, refName, refName, id);
+	}
+
+	/**
+	 * Create a new ref pairing.
+	 * 
+	 * @param st
+	 *            method used to store this ref.
+	 * @param origName
+	 *            The name used to resolve this ref
+	 * @param refName
+	 *            name of this ref.
+	 * @param id
+	 *            current value of the ref. May be null to indicate a ref that
+	 *            does not exist yet.
+	 * @param peel
+	 *            peeled value of the ref's tag. May be null if this is not a
+	 *            tag or the peeled value is not known.
+	 */
+	public Ref(final Storage st, final String origName, final String refName, final ObjectId id,
+			final ObjectId peel) {
 		storage = st;
+		this.origName = origName;
 		name = refName;
 		objectId = id;
+		peeledObjectId = peel;
 	}
 
 	/**
@@ -152,10 +202,7 @@ public class Ref {
 	 */
 	public Ref(final Storage st, final String refName, final ObjectId id,
 			final ObjectId peel) {
-		storage = st;
-		name = refName;
-		objectId = id;
-		peeledObjectId = peel;
+		this(st, refName, refName, id, peel);
 	}
 
 	/**
@@ -165,6 +212,13 @@ public class Ref {
 	 */
 	public String getName() {
 		return name;
+	}
+
+	/**
+	 * @return the originally resolved name
+	 */
+	public String getOrigName() {
+		return origName;
 	}
 
 	/**
@@ -200,6 +254,9 @@ public class Ref {
 	}
 
 	public String toString() {
-		return "Ref[" + name + "=" + ObjectId.toString(getObjectId()) + "]";
+		String o = "";
+		if (!origName.equals(name))
+			o = "(" + origName + ")";
+		return "Ref[" + o + name + "=" + ObjectId.toString(getObjectId()) + "]";
 	}
 }
