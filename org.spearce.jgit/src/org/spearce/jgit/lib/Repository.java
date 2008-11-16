@@ -942,13 +942,17 @@ public class Repository {
 	}
 
 	/**
-	 * Peel a possibly unpeeled ref and updates it. If the ref cannot be peeled
-	 * the peeled id is set to {@link ObjectId#zeroId()}
+	 * Peel a possibly unpeeled ref and updates it.
+	 * <p>
+	 * If the ref cannot be peeled (as it does not refer to an annotated tag)
+	 * the peeled id stays null, but {@link Ref#isPeeled()} will be true.
 	 * 
 	 * @param ref
 	 *            The ref to peel
-	 * @return The same, an updated ref with peeled info or a new instance with
-	 *         more information
+	 * @return <code>ref</code> if <code>ref.isPeeled()</code> is true; else a
+	 *         new Ref object representing the same data as Ref, but isPeeled()
+	 *         will be true and getPeeledObjectId will contain the peeled object
+	 *         (or null).
 	 */
 	public Ref peel(final Ref ref) {
 		return refs.peel(ref);
