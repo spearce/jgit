@@ -118,13 +118,6 @@ class RewriteTreeFilter extends RevFilter {
 				//
 				c.flags |= REWRITE;
 				return false;
-			} else if (chgs == adds) {
-				// We added everything, so the parent may as well just
-				// be an empty tree. Kill our parent, we can assume
-				// it did not supply interesting changes.
-				//
-				c.parents = RevCommit.NO_PARENTS;
-				return true;
 			} else {
 				// We have interesting items, but neither of the special
 				// cases denoted above.
