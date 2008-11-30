@@ -165,10 +165,14 @@ public abstract class RepositoryTestCase extends TestCase {
 	protected static void checkFile(File f, final String checkData)
 			throws IOException {
 		Reader r = new InputStreamReader(new FileInputStream(f), "ISO-8859-1");
-		char[] data = new char[(int) f.length()];
-		if (f.length() !=  r.read(data))
-			throw new IOException("Internal error reading file data from "+f);
-		assertEquals(checkData, new String(data));
+		try {
+			char[] data = new char[(int) f.length()];
+			if (f.length() !=  r.read(data))
+				throw new IOException("Internal error reading file data from "+f);
+			assertEquals(checkData, new String(data));
+		} finally {
+			r.close();
+		}
 	}
 
 	protected Repository db;

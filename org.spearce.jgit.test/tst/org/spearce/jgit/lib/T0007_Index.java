@@ -424,9 +424,13 @@ public class T0007_Index extends RepositoryTestCase {
 	private String content(File f) throws IOException {
 		byte[] buf = new byte[(int) f.length()];
 		FileInputStream is = new FileInputStream(f);
-		int read = is.read(buf);
-		assertEquals(f.length(), read);
-		return new String(buf, 0);
+		try {
+			int read = is.read(buf);
+			assertEquals(f.length(), read);
+			return new String(buf, 0);
+		} finally {
+			is.close();
+		}
 	}
 
 	private void delete(File f) throws IOException {
