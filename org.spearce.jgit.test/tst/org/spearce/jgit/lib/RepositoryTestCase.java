@@ -49,6 +49,19 @@ import java.io.Reader;
 import junit.framework.TestCase;
 import org.spearce.jgit.util.JGitTestUtil;
 
+/**
+ * Base class for most JGit unit tests.
+ *
+ * Sets up a predefined test repository and has support for creating additional
+ * repositories and destroying them when the tests are finished.
+ *
+ * A system property <em>jgit.junit.usemmmap</em> defines whether memory mapping
+ * is used. Memory mapping has an effect on the file system, in that memory
+ * mapped files in java cannot be deleted as long as they mapped arrays have not
+ * been reclaimed by the garbage collector. The programmer cannot control this
+ * with precision, though hinting using <em>{@link java.lang.System#gc}</em>
+ * often helps.
+ */
 public abstract class RepositoryTestCase extends TestCase {
 
 	protected final File trashParent = new File("trash");
@@ -66,6 +79,22 @@ public abstract class RepositoryTestCase extends TestCase {
 		jcommitter = new PersonIdent("J. Committer", "jcommitter@example.com");
 	}
 
+	protected boolean packedGitMMAP;
+
+	/**
+	 * Configure JGit before setting up test repositories.
+	 */
+	protected void configure() {
+		packedGitMMAP = "true".equals(System.getProperty("jgit.junit.usemmmap"));
+		WindowCache.reconfigure(128*1024, 8192, packedGitMMAP, 8192);
+	}
+
+	/**
+	 * Utility method to delete a directory recursively. It is
+	 * also used internally.
+	 *
+	 * @param dir
+	 */
 	protected static void recursiveDelete(final File dir) {
 		final File[] ls = dir.listFiles();
 		if (ls != null) {
@@ -123,6 +152,7 @@ public abstract class RepositoryTestCase extends TestCase {
 
 	public void setUp() throws Exception {
 		super.setUp();
+		configure();
 		recursiveDelete(trashParent);
 		trash = new File(trashParent,"trash"+System.currentTimeMillis());
 		trash_git = new File(trash, ".git");
