@@ -45,6 +45,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.util.ArrayList;
+import java.util.List;
 
 import junit.framework.TestCase;
 import org.spearce.jgit.util.JGitTestUtil;
@@ -95,8 +97,8 @@ public abstract class RepositoryTestCase extends TestCase {
 	 *
 	 * @param dir
 	 */
-	protected static void recursiveDelete(final File dir) {
-		recursiveDelete(dir, false, null);
+	protected void recursiveDelete(final File dir) {
+		recursiveDelete(dir, false, getClass().getName() + "." + getName());
 	}
 
 	protected static boolean recursiveDelete(final File dir, boolean silent,
@@ -170,8 +172,11 @@ public abstract class RepositoryTestCase extends TestCase {
 	}
 
 	protected Repository db;
-
+	private static Thread shutdownhook;
+	private static List<Runnable> shutDownCleanups = new ArrayList<Runnable>();
 	private static int testcount;
+
+	private ArrayList<Repository> repositoriesToClose = new ArrayList<Repository>();
 
 	public void setUp() throws Exception {
 		super.setUp();
@@ -180,14 +185,23 @@ public abstract class RepositoryTestCase extends TestCase {
 		recursiveDelete(trashParent, true, name);
 		trash = new File(trashParent,"trash"+System.currentTimeMillis()+"."+(testcount++));
 		trash_git = new File(trash, ".git");
-
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			@Override
-			public void run() {
-				recursiveDelete(trashParent, false, name);
-			}
-		});
-
+		if (shutdownhook == null) {
+			shutdownhook = new Thread() {
+				@Override
+				public void run() {
+					// This may look superfluous, but is an extra attempt
+					// to clean up. First GC to release as many resources
+					// as possible and then try to clean up one test repo
+					// at a time (to record problems) and finally to drop
+					// the directory containing all test repositories.
+					System.gc();
+					for (Runnable r : shutDownCleanups)
+						r.run();
+					recursiveDelete(trashParent, false, null);
+				}
+			};
+			Runtime.getRuntime().addShutdownHook(shutdownhook);
+		}
 		db = new Repository(trash_git);
 		db.create();
 
@@ -213,6 +227,22 @@ public abstract class RepositoryTestCase extends TestCase {
 
 	protected void tearDown() throws Exception {
 		db.close();
+		for (Repository r : repositoriesToClose)
+			r.close();
+
+		// Since memory mapping is controlled by the GC we need to
+		// tell it this is a good time to clean up and unlock
+		// memory mapped files.
+		if (packedGitMMAP)
+			System.gc();
+
+		final String name = getClass().getName() + "." + getName();
+		recursiveDelete(trash, false, name);
+		for (Repository r : repositoriesToClose)
+			recursiveDelete(r.getWorkDir(), false, name);
+
+		repositoriesToClose.clear();
+
 		super.tearDown();
 	}
 
@@ -224,10 +254,18 @@ public abstract class RepositoryTestCase extends TestCase {
 	 * @throws IOException
 	 */
 	protected Repository createNewEmptyRepo() throws IOException {
-		File newTestRepo = new File(trashParent, "new"+System.currentTimeMillis()+"."+(testcount++)+"/.git");
+		final File newTestRepo = new File(trashParent, "new"
+				+ System.currentTimeMillis() + "." + (testcount++) + "/.git");
 		assertFalse(newTestRepo.exists());
 		final Repository newRepo = new Repository(newTestRepo);
 		newRepo.create();
+		final String name = getClass().getName() + "." + getName();
+		shutDownCleanups.add(new Runnable() {
+			public void run() {
+				recursiveDelete(newTestRepo, false, name);
+			}
+		});
+		repositoriesToClose.add(newRepo);
 		return newRepo;
 	}
 
