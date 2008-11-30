@@ -150,11 +150,13 @@ public abstract class RepositoryTestCase extends TestCase {
 
 	protected Repository db;
 
+	private static int testcount;
+
 	public void setUp() throws Exception {
 		super.setUp();
 		configure();
 		recursiveDelete(trashParent);
-		trash = new File(trashParent,"trash"+System.currentTimeMillis());
+		trash = new File(trashParent,"trash"+System.currentTimeMillis()+"."+(testcount++));
 		trash_git = new File(trash, ".git");
 
 		Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -200,7 +202,7 @@ public abstract class RepositoryTestCase extends TestCase {
 	 * @throws IOException
 	 */
 	protected Repository createNewEmptyRepo() throws IOException {
-		File newTestRepo = new File(trashParent, "new"+System.currentTimeMillis()+"/.git");
+		File newTestRepo = new File(trashParent, "new"+System.currentTimeMillis()+"."+(testcount++)+"/.git");
 		assertFalse(newTestRepo.exists());
 		final Repository newRepo = new Repository(newTestRepo);
 		newRepo.create();
