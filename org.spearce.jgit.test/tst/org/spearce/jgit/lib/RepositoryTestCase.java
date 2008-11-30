@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import junit.framework.TestCase;
+
 import org.spearce.jgit.util.JGitTestUtil;
 
 /**
@@ -93,16 +94,18 @@ public abstract class RepositoryTestCase extends TestCase {
 
 	/**
 	 * Utility method to delete a directory recursively. It is
-	 * also used internally.
+	 * also used internally. If a file or directory cannote be removed
+	 * it throws an AssertionFailure.
 	 *
 	 * @param dir
 	 */
 	protected void recursiveDelete(final File dir) {
-		recursiveDelete(dir, false, getClass().getName() + "." + getName());
+		recursiveDelete(dir, false, getClass().getName() + "." + getName(), true);
 	}
 
 	protected static boolean recursiveDelete(final File dir, boolean silent,
-			final String name) {
+			final String name, boolean failOnError) {
+		assert !(silent && failOnError);
 		if (!dir.exists())
 			return silent;
 		final File[] ls = dir.listFiles();
@@ -110,30 +113,40 @@ public abstract class RepositoryTestCase extends TestCase {
 			for (int k = 0; k < ls.length; k++) {
 				final File e = ls[k];
 				if (e.isDirectory()) {
-					silent = recursiveDelete(e, silent, name);
+					silent = recursiveDelete(e, silent, name, failOnError);
 				} else {
 					if (!e.delete()) {
 						if (!silent) {
-							String msg = "Warning: Failed to delete " + e;
-							if (name != null)
-								msg += " in " + name;
-							System.out.println(msg);
+							reportDeleteFailure(name, failOnError, e);
 						}
-						silent = true;
+						silent = !failOnError;
 					}
 				}
 			}
 		}
 		if (!dir.delete()) {
 			if (!silent) {
-				String msg = "Warning: Failed to delete " + dir;
-				if (name != null)
-					msg += " in " + name;
-				System.out.println(msg);
+				reportDeleteFailure(name, failOnError, dir);
 			}
-			silent = true;
+			silent = !failOnError;
 		}
 		return silent;
+	}
+
+	private static void reportDeleteFailure(final String name,
+			boolean failOnError, final File e) {
+		String severity;
+		if (failOnError)
+			severity = "Error";
+		else
+			severity = "Warning";
+		String msg = severity + ": Failed to delete " + e;
+		if (name != null)
+			msg += " in " + name;
+		if (failOnError)
+			fail(msg);
+		else
+			System.out.println(msg);
 	}
 
 	protected static void copyFile(final File src, final File dst)
@@ -186,7 +199,7 @@ public abstract class RepositoryTestCase extends TestCase {
 		super.setUp();
 		configure();
 		final String name = getClass().getName() + "." + getName();
-		recursiveDelete(trashParent, true, name);
+		recursiveDelete(trashParent, true, name, false); // Cleanup old failed stuff
 		trash = new File(trashParent,"trash"+System.currentTimeMillis()+"."+(testcount++));
 		trash_git = new File(trash, ".git");
 		if (shutdownhook == null) {
@@ -201,7 +214,7 @@ public abstract class RepositoryTestCase extends TestCase {
 					System.gc();
 					for (Runnable r : shutDownCleanups)
 						r.run();
-					recursiveDelete(trashParent, false, null);
+					recursiveDelete(trashParent, false, null, false);
 				}
 			};
 			Runtime.getRuntime().addShutdownHook(shutdownhook);
@@ -241,10 +254,9 @@ public abstract class RepositoryTestCase extends TestCase {
 			System.gc();
 
 		final String name = getClass().getName() + "." + getName();
-		recursiveDelete(trash, false, name);
+		recursiveDelete(trash, false, name, true);
 		for (Repository r : repositoriesToClose)
-			recursiveDelete(r.getWorkDir(), false, name);
-
+			recursiveDelete(r.getWorkDir(), false, name, true);
 		repositoriesToClose.clear();
 
 		super.tearDown();
@@ -266,7 +278,7 @@ public abstract class RepositoryTestCase extends TestCase {
 		final String name = getClass().getName() + "." + getName();
 		shutDownCleanups.add(new Runnable() {
 			public void run() {
-				recursiveDelete(newTestRepo, false, name);
+				recursiveDelete(newTestRepo, false, name, false);
 			}
 		});
 		repositoriesToClose.add(newRepo);
