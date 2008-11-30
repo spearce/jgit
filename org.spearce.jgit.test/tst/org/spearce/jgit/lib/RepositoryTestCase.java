@@ -172,8 +172,6 @@ public abstract class RepositoryTestCase extends TestCase {
 	protected Repository createNewEmptyRepo() throws IOException {
 		File newTestRepo = new File(trashParent, "new"+System.currentTimeMillis()+"/.git");
 		assertFalse(newTestRepo.exists());
-		File unusedDir = new File(trashParent, "tmp"+System.currentTimeMillis());
-		assertTrue(unusedDir.mkdirs());
 		final Repository newRepo = new Repository(newTestRepo);
 		newRepo.create();
 		return newRepo;
