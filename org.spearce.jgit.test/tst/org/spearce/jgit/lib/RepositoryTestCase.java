@@ -96,21 +96,42 @@ public abstract class RepositoryTestCase extends TestCase {
 	 * @param dir
 	 */
 	protected static void recursiveDelete(final File dir) {
+		recursiveDelete(dir, false, null);
+	}
+
+	protected static boolean recursiveDelete(final File dir, boolean silent,
+			final String name) {
+		if (!dir.exists())
+			return silent;
 		final File[] ls = dir.listFiles();
 		if (ls != null) {
 			for (int k = 0; k < ls.length; k++) {
 				final File e = ls[k];
 				if (e.isDirectory()) {
-					recursiveDelete(e);
+					silent = recursiveDelete(e, silent, name);
 				} else {
-					e.delete();
+					if (!e.delete()) {
+						if (!silent) {
+							String msg = "Warning: Failed to delete " + e;
+							if (name != null)
+								msg += " in " + name;
+							System.out.println(msg);
+						}
+						silent = true;
+					}
 				}
 			}
 		}
-		dir.delete();
-		if (dir.exists()) {
-			System.out.println("Warning: Failed to delete " + dir);
+		if (!dir.delete()) {
+			if (!silent) {
+				String msg = "Warning: Failed to delete " + dir;
+				if (name != null)
+					msg += " in " + name;
+				System.out.println(msg);
+			}
+			silent = true;
 		}
+		return silent;
 	}
 
 	protected static void copyFile(final File src, final File dst)
@@ -155,14 +176,15 @@ public abstract class RepositoryTestCase extends TestCase {
 	public void setUp() throws Exception {
 		super.setUp();
 		configure();
-		recursiveDelete(trashParent);
+		final String name = getClass().getName() + "." + getName();
+		recursiveDelete(trashParent, true, name);
 		trash = new File(trashParent,"trash"+System.currentTimeMillis()+"."+(testcount++));
 		trash_git = new File(trash, ".git");
 
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
-				recursiveDelete(trashParent);
+				recursiveDelete(trashParent, false, name);
 			}
 		});
 
