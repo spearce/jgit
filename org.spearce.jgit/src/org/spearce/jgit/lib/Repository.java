@@ -989,9 +989,10 @@ public class Repository {
 	 * @return true if HEAD points to a StGit patch.
 	 */
 	public boolean isStGitMode() {
+		File file = new File(getDirectory(), "HEAD");
+		BufferedReader reader = null;
 		try {
-			File file = new File(getDirectory(), "HEAD");
-			BufferedReader reader = new BufferedReader(new FileReader(file));
+			reader = new BufferedReader(new FileReader(file));
 			String string = reader.readLine();
 			if (!string.startsWith("ref: refs/heads/"))
 				return false;
@@ -1007,6 +1008,13 @@ public class Repository {
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;
+		} finally {
+			try {
+				if (reader != null)
+					reader.close();
+			} catch (IOException e1) {
+				// nothing to do here
+			}
 		}
 	}
 
