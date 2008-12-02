@@ -72,10 +72,14 @@ public abstract class SpeedTestBase extends TestCase {
 	protected void prepare(String[] refcmd) throws Exception {
 		try {
 			BufferedReader bufferedReader = new BufferedReader(new FileReader("kernel.ref"));
-			kernelrepo = bufferedReader.readLine();
-			bufferedReader.close();
-			timeNativeGit(kernelrepo, refcmd);
-			nativeTime = timeNativeGit(kernelrepo, refcmd);
+			try {
+				kernelrepo = bufferedReader.readLine();
+				bufferedReader.close();
+				timeNativeGit(kernelrepo, refcmd);
+				nativeTime = timeNativeGit(kernelrepo, refcmd);
+			} finally {
+				bufferedReader.close();
+			}
 		} catch (Exception e) {
 			System.out.println("Create a file named kernel.ref and put the path to the Linux kernels repository there");
 			throw e;

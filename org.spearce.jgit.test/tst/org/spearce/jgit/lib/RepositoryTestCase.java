@@ -152,14 +152,20 @@ public abstract class RepositoryTestCase extends TestCase {
 	protected static void copyFile(final File src, final File dst)
 			throws IOException {
 		final FileInputStream fis = new FileInputStream(src);
-		final FileOutputStream fos = new FileOutputStream(dst);
-		final byte[] buf = new byte[4096];
-		int r;
-		while ((r = fis.read(buf)) > 0) {
-			fos.write(buf, 0, r);
+		try {
+			final FileOutputStream fos = new FileOutputStream(dst);
+			try {
+				final byte[] buf = new byte[4096];
+				int r;
+				while ((r = fis.read(buf)) > 0) {
+					fos.write(buf, 0, r);
+				}
+			} finally {
+				fos.close();
+			}
+		} finally {
+			fis.close();
 		}
-		fis.close();
-		fos.close();
 	}
 
 	protected File writeTrashFile(final String name, final String data)
@@ -170,8 +176,11 @@ public abstract class RepositoryTestCase extends TestCase {
 			throw new Error("Could not create directory " + tf.getParentFile());
 		final OutputStreamWriter fw = new OutputStreamWriter(
 				new FileOutputStream(tf), "UTF-8");
-		fw.write(data);
-		fw.close();
+		try {
+			fw.write(data);
+		} finally {
+			fw.close();
+		}
 		return tf;
 	}
 

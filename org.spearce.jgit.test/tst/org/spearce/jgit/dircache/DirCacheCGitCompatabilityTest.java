@@ -146,10 +146,14 @@ public class DirCacheCGitCompatabilityTest extends RepositoryTestCase {
 		final LinkedHashMap<String, CGitIndexRecord> r = new LinkedHashMap<String, CGitIndexRecord>();
 		final BufferedReader br = new BufferedReader(new InputStreamReader(
 				new FileInputStream(pathOf("gitgit.lsfiles")), "UTF-8"));
-		String line;
-		while ((line = br.readLine()) != null) {
-			final CGitIndexRecord cr = new CGitIndexRecord(line);
-			r.put(cr.path, cr);
+		try {
+			String line;
+			while ((line = br.readLine()) != null) {
+				final CGitIndexRecord cr = new CGitIndexRecord(line);
+				r.put(cr.path, cr);
+			}
+		} finally {
+			br.close();
 		}
 		return r;
 	}
@@ -158,10 +162,14 @@ public class DirCacheCGitCompatabilityTest extends RepositoryTestCase {
 		final LinkedHashMap<String, CGitLsTreeRecord> r = new LinkedHashMap<String, CGitLsTreeRecord>();
 		final BufferedReader br = new BufferedReader(new InputStreamReader(
 				new FileInputStream(pathOf("gitgit.lstree")), "UTF-8"));
-		String line;
-		while ((line = br.readLine()) != null) {
-			final CGitLsTreeRecord cr = new CGitLsTreeRecord(line);
-			r.put(cr.path, cr);
+		try {
+			String line;
+			while ((line = br.readLine()) != null) {
+				final CGitLsTreeRecord cr = new CGitLsTreeRecord(line);
+				r.put(cr.path, cr);
+			}
+		} finally {
+			br.close();
 		}
 		return r;
 	}

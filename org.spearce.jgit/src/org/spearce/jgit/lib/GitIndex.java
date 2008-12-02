@@ -547,8 +547,8 @@ public class GitIndex {
 
 				try {
 					InputStream is = new FileInputStream(file);
-					ObjectWriter objectWriter = new ObjectWriter(db);
 					try {
+						ObjectWriter objectWriter = new ObjectWriter(db);
 						ObjectId newId = objectWriter.computeBlobSha1(file
 								.length(), is);
 						boolean ret = !newId.equals(sha1);

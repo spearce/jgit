@@ -144,10 +144,13 @@ public class Repository {
 		final File altFile = FS.resolve(objectsDir, "info/alternates");
 		if (altFile.exists()) {
 			BufferedReader ar = new BufferedReader(new FileReader(altFile));
-			for (String alt=ar.readLine(); alt!=null; alt=ar.readLine()) {
-				readObjectsDirs(FS.resolve(objectsDir, alt), ret);
+			try {
+				for (String alt=ar.readLine(); alt!=null; alt=ar.readLine()) {
+					readObjectsDirs(FS.resolve(objectsDir, alt), ret);
+				}
+			} catch (Exception e) {
+				ar.close();
 			}
-			ar.close();
 		}
 		return ret;
 	}
@@ -1027,15 +1030,21 @@ public class Repository {
 		if (isStGitMode()) {
 			File patchDir = new File(new File(getDirectory(),"patches"),getBranch());
 			BufferedReader apr = new BufferedReader(new FileReader(new File(patchDir,"applied")));
-			for (String patchName=apr.readLine(); patchName!=null; patchName=apr.readLine()) {
-				File topFile = new File(new File(new File(patchDir,"patches"), patchName), "top");
-				BufferedReader tfr = new BufferedReader(new FileReader(topFile));
-				String objectId = tfr.readLine();
-				ObjectId id = ObjectId.fromString(objectId);
-				ret.put(id, new StGitPatch(patchName, id));
-				tfr.close();
+			try {
+				for (String patchName=apr.readLine(); patchName!=null; patchName=apr.readLine()) {
+					File topFile = new File(new File(new File(patchDir,"patches"), patchName), "top");
+					BufferedReader tfr = new BufferedReader(new FileReader(topFile));
+					try {
+						String objectId = tfr.readLine();
+						ObjectId id = ObjectId.fromString(objectId);
+						ret.put(id, new StGitPatch(patchName, id));
+					} finally {
+						tfr.close();
+					}
+				}
+			} finally {
+				apr.close();
 			}
-			apr.close();
 		}
 		return ret;
 	}
