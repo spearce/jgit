@@ -322,19 +322,13 @@ public class GitResourceDecorator extends LabelProvider implements
 								Repository repo = mapped.getRepository();
 								try {
 									String branch = repo.getBranch();
-									if (repo.isStGitMode()) {
-										String patch = repo.getPatch();
-										decoration.addSuffix(" [StGit " + patch + "@" + branch
-												+ "]");
-									} else {
-										RepositoryState repositoryState = repo.getRepositoryState();
-										String statename;
-										if (repositoryState.equals(RepositoryState.SAFE))
-											statename = "";
-										else
-											statename = repositoryState.getDescription() + " ";
-										decoration.addSuffix(" [Git " + statename + "@ " + branch + "]");
-									}
+									RepositoryState repositoryState = repo.getRepositoryState();
+									String statename;
+									if (repositoryState.equals(RepositoryState.SAFE))
+										statename = "";
+									else
+										statename = repositoryState.getDescription() + " ";
+									decoration.addSuffix(" [Git " + statename + "@ " + branch + "]");
 								} catch (IOException e) {
 									e.printStackTrace();
 									decoration.addSuffix(" [Git ?]");

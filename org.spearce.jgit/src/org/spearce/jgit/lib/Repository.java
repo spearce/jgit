@@ -58,7 +58,6 @@ import java.util.Vector;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.RevisionSyntaxException;
-import org.spearce.jgit.stgit.StGitPatch;
 import org.spearce.jgit.util.FS;
 
 /**
@@ -988,67 +987,6 @@ public class Repository {
 		return ret;
 	}
 
-	/**
-	 * @return true if HEAD points to a StGit patch.
-	 */
-	public boolean isStGitMode() {
-		File file = new File(getDirectory(), "HEAD");
-		BufferedReader reader = null;
-		try {
-			reader = new BufferedReader(new FileReader(file));
-			String string = reader.readLine();
-			if (!string.startsWith("ref: refs/heads/"))
-				return false;
-			String branch = string.substring("ref: refs/heads/".length());
-			File currentPatches = new File(new File(new File(getDirectory(),
-					"patches"), branch), "applied");
-			if (!currentPatches.exists())
-				return false;
-			if (currentPatches.length() == 0)
-				return false;
-			return true;
-
-		} catch (IOException e) {
-			e.printStackTrace();
-			return false;
-		} finally {
-			try {
-				if (reader != null)
-					reader.close();
-			} catch (IOException e1) {
-				// nothing to do here
-			}
-		}
-	}
-
-	/**
-	 * @return applied patches in a map indexed on current commit id
-	 * @throws IOException
-	 */
-	public Map<ObjectId,StGitPatch> getAppliedPatches() throws IOException {
-		Map<ObjectId,StGitPatch> ret = new HashMap<ObjectId,StGitPatch>();
-		if (isStGitMode()) {
-			File patchDir = new File(new File(getDirectory(),"patches"),getBranch());
-			BufferedReader apr = new BufferedReader(new FileReader(new File(patchDir,"applied")));
-			try {
-				for (String patchName=apr.readLine(); patchName!=null; patchName=apr.readLine()) {
-					File topFile = new File(new File(new File(patchDir,"patches"), patchName), "top");
-					BufferedReader tfr = new BufferedReader(new FileReader(topFile));
-					try {
-						String objectId = tfr.readLine();
-						ObjectId id = ObjectId.fromString(objectId);
-						ret.put(id, new StGitPatch(patchName, id));
-					} finally {
-						tfr.close();
-					}
-				}
-			} finally {
-				apr.close();
-			}
-		}
-		return ret;
-	}
-	
 	/** Clean up stale caches */
 	public void refreshFromDisk() {
 		refs.clearCache();
