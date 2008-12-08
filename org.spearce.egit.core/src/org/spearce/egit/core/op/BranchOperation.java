@@ -21,6 +21,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.team.core.TeamException;
 import org.spearce.jgit.errors.CheckoutConflictException;
 import org.spearce.jgit.lib.Commit;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.RefLogWriter;
 import org.spearce.jgit.lib.Repository;
@@ -105,7 +106,7 @@ public class BranchOperation implements IWorkspaceRunnable {
 		try {
 			RefLogWriter.writeReflog(repository, oldCommit.getCommitId(),
 					newCommit.getCommitId(), "checkout: moving to " + refName,
-					"HEAD");
+					Constants.HEAD);
 		} catch (IOException e) {
 			throw new TeamException("Writing HEAD's reflog", e);
 		}
@@ -113,7 +114,7 @@ public class BranchOperation implements IWorkspaceRunnable {
 
 	private void updateHeadRef() throws TeamException {
 		try {
-			repository.writeSymref("HEAD", refName);
+			repository.writeSymref(Constants.HEAD, refName);
 		} catch (IOException e) {
 			throw new TeamException("Updating HEAD to ref: " + refName, e);
 		}
@@ -157,7 +158,7 @@ public class BranchOperation implements IWorkspaceRunnable {
 		}
 
 		try {
-			oldCommit = repository.mapCommit("HEAD");
+			oldCommit = repository.mapCommit(Constants.HEAD);
 		} catch (IOException e) {
 			throw new TeamException("Mapping commit HEAD commit", e);
 		}

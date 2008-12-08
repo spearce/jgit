@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.spearce.jgit.errors.TransportException;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
@@ -372,7 +373,7 @@ class TransportSftp extends WalkTransport {
 		Map<String, Ref> readAdvertisedRefs() throws TransportException {
 			final TreeMap<String, Ref> avail = new TreeMap<String, Ref>();
 			readPackedRefs(avail);
-			readRef(avail, ROOT_DIR + "HEAD", "HEAD");
+			readRef(avail, ROOT_DIR + Constants.HEAD, Constants.HEAD);
 			readLooseRefs(avail, ROOT_DIR + "refs", "refs/");
 			return avail;
 		}

@@ -16,6 +16,7 @@ import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.GitProvider;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.Activator;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.IndexChangedEvent;
 import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.RefsChangedEvent;
@@ -52,7 +53,7 @@ class GitDocument extends Document implements RepositoryListener {
 		repository.addRepositoryChangedListener(this);
 		String baseline = GitQuickDiffProvider.baseline.get(repository);
 		if (baseline == null)
-			baseline = "HEAD";
+			baseline = Constants.HEAD;
 		Tree baselineTree = repository.mapTree(baseline);
 		if (baselineTree == null) {
 			Activator.logError("Could not resolve quickdiff baseline "

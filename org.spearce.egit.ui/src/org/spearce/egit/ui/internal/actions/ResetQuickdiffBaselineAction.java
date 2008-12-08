@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.jface.action.IAction;
+import org.spearce.jgit.lib.Constants;
 
 /**
  * Changes the reference for the quickdiff to HEAD
@@ -19,6 +20,6 @@ public class ResetQuickdiffBaselineAction extends AbstractRevObjectAction {
 
 	@Override
 	protected IWorkspaceRunnable createOperation(IAction act, List selection) {
-		return new QuickdiffBaselineOperation(getActiveRepository(), "HEAD");
+		return new QuickdiffBaselineOperation(getActiveRepository(), Constants.HEAD);
 	}
 }

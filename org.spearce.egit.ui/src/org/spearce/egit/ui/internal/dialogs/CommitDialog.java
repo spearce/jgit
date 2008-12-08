@@ -49,6 +49,7 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
 import org.spearce.egit.core.project.RepositoryMapping;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Repository;
@@ -78,7 +79,7 @@ public class CommitDialog extends Dialog {
 
 					Repository repo = repositoryMapping.getRepository();
 					GitIndex index = repo.getIndex();
-					Tree headTree = repo.mapTree("HEAD");
+					Tree headTree = repo.mapTree(Constants.HEAD);
 
 					String repoPath = repositoryMapping
 							.getRepoRelativePath(file);

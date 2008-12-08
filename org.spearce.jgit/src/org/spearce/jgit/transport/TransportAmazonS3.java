@@ -53,6 +53,7 @@ import java.util.TreeMap;
 
 import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.errors.TransportException;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
@@ -257,7 +258,7 @@ class TransportAmazonS3 extends WalkTransport {
 			final TreeMap<String, Ref> avail = new TreeMap<String, Ref>();
 			readPackedRefs(avail);
 			readLooseRefs(avail);
-			readRef(avail, "HEAD");
+			readRef(avail, Constants.HEAD);
 			return avail;
 		}
 

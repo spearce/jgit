@@ -161,7 +161,7 @@ public class ResetOperation implements IWorkspaceRunnable {
 		}
 		
 		try {
-			previousCommit = repository.mapCommit(repository.resolve("HEAD"));
+			previousCommit = repository.mapCommit(repository.resolve(Constants.HEAD));
 		} catch (IOException e) {
 			throw new TeamException("looking up HEAD commit", e);
 		}
@@ -233,7 +233,7 @@ public class ResetOperation implements IWorkspaceRunnable {
 
 	private void writeReflogs() throws TeamException {
 		try {
-			writeReflog("HEAD");
+			writeReflog(Constants.HEAD);
 			writeReflog(repository.getFullBranch());
 		} catch (IOException e) {
 			throw new TeamException("Writing reflogs", e);

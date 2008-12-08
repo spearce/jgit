@@ -336,7 +336,7 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 		try {
 			final String ref = "ref: " + pickHEAD(updates) + "\n";
 			final byte[] bytes = Constants.encode(ref);
-			dest.writeFile(ROOT_DIR + "HEAD", bytes);
+			dest.writeFile(ROOT_DIR + Constants.HEAD, bytes);
 		} catch (IOException e) {
 			throw new TransportException(uri, "cannot create HEAD", e);
 		}

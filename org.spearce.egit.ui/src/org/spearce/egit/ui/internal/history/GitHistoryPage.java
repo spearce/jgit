@@ -61,6 +61,7 @@ import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIPreferences;
 import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.AnyObjectId;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.IndexChangedEvent;
 import org.spearce.jgit.lib.RefsChangedEvent;
 import org.spearce.jgit.lib.Repository;
@@ -575,7 +576,7 @@ public class GitHistoryPage extends HistoryPage implements RepositoryListener {
 
 		final AnyObjectId headId;
 		try {
-			headId = db.resolve("HEAD");
+			headId = db.resolve(Constants.HEAD);
 		} catch (IOException e) {
 			Activator.logError("Cannot parse HEAD in: "
 					+ db.getDirectory().getAbsolutePath(), e);

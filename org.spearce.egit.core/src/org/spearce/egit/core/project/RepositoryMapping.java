@@ -24,6 +24,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.GitProvider;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.Tree;
@@ -182,7 +183,7 @@ public class RepositoryMapping {
 		Repository repository = getRepository();
 		GitIndex index = repository.getIndex();
 		String repoRelativePath = getRepoRelativePath(rsrc);
-		Tree headTree = repository.mapTree("HEAD");
+		Tree headTree = repository.mapTree(Constants.HEAD);
 		TreeEntry blob = headTree!=null ? headTree.findBlobMember(repoRelativePath) : null;
 		Entry entry = index.getEntry(repoRelativePath);
 		if (rsrc instanceof IFile && entry == null && blob == null)

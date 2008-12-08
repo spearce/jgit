@@ -33,6 +33,7 @@ import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.internal.dialogs.CommitDialog;
 import org.spearce.jgit.lib.Commit;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.IndexDiff;
 import org.spearce.jgit.lib.ObjectId;
@@ -128,7 +129,7 @@ public class CommitAction extends RepositoryAction {
 
 		Repository repo = RepositoryMapping.getMapping(project).getRepository();
 		try {
-			ObjectId parentId = repo.resolve("HEAD");
+			ObjectId parentId = repo.resolve(Constants.HEAD);
 			if (parentId != null)
 				previousCommit = repo.mapCommit(parentId);
 		} catch (IOException e) {
@@ -165,7 +166,7 @@ public class CommitAction extends RepositoryAction {
 			Repository repo = tree.getRepository();
 			writeTreeWithSubTrees(tree);
 
-			ObjectId currentHeadId = repo.resolve("HEAD");
+			ObjectId currentHeadId = repo.resolve(Constants.HEAD);
 			ObjectId[] parentIds;
 			if (amending) {
 				parentIds = previousCommit.getParentIds();
@@ -202,7 +203,7 @@ public class CommitAction extends RepositoryAction {
 			ObjectWriter writer = new ObjectWriter(repo);
 			commit.setCommitId(writer.writeCommit(commit));
 
-			final RefUpdate ru = repo.updateRef("HEAD");
+			final RefUpdate ru = repo.updateRef(Constants.HEAD);
 			ru.setNewObjectId(commit.getCommitId());
 			ru.setRefLogMessage(buildReflogMessage(commitMessage), false);
 			if (ru.forceUpdate() == RefUpdate.Result.LOCK_FAILURE) {
@@ -221,7 +222,7 @@ public class CommitAction extends RepositoryAction {
 			for (IProject proj : getSelectedProjects()) {
 				Repository repo = RepositoryMapping.getMapping(proj).getRepository();
 				if (!treeMap.containsKey(repo))
-					treeMap.put(repo, repo.mapTree("HEAD"));
+					treeMap.put(repo, repo.mapTree(Constants.HEAD));
 			}
 		}
 
@@ -233,7 +234,7 @@ public class CommitAction extends RepositoryAction {
 			Repository repository = repositoryMapping.getRepository();
 			Tree projTree = treeMap.get(repository);
 			if (projTree == null) {
-				projTree = repository.mapTree("HEAD");
+				projTree = repository.mapTree(Constants.HEAD);
 				if (projTree == null)
 					projTree = new Tree(repository);
 				treeMap.put(repository, projTree);
@@ -317,7 +318,7 @@ public class CommitAction extends RepositoryAction {
 			RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(project);
 			assert repositoryMapping != null;
 			Repository repository = repositoryMapping.getRepository();
-			Tree head = repository.mapTree("HEAD");
+			Tree head = repository.mapTree(Constants.HEAD);
 			GitIndex index = repository.getIndex();
 			IndexDiff indexDiff = new IndexDiff(head, index);
 			indexDiff.diff();

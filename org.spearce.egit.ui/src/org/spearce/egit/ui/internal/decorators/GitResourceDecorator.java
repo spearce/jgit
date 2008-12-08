@@ -47,6 +47,7 @@ import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIText;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.IndexChangedEvent;
 import org.spearce.jgit.lib.RefsChangedEvent;
@@ -295,7 +296,7 @@ public class GitResourceDecorator extends LabelProvider implements
 				Repository repository = mapped.getRepository();
 				GitIndex index = repository.getIndex();
 				String repoRelativePath = mapped.getRepoRelativePath(rsrc);
-				Tree headTree = repository.mapTree("HEAD");
+				Tree headTree = repository.mapTree(Constants.HEAD);
 				TreeEntry blob = headTree!=null ? headTree.findBlobMember(repoRelativePath) : null;
 				Entry entry = index.getEntry(repoRelativePath);
 				if (entry == null) {

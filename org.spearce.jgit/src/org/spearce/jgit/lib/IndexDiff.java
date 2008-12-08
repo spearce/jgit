@@ -59,7 +59,7 @@ public class IndexDiff {
 	 * @throws IOException
 	 */
 	public IndexDiff(Repository repository) throws IOException {
-		this.tree = repository.mapTree("HEAD");
+		this.tree = repository.mapTree(Constants.HEAD);
 		this.index = repository.getIndex();
 	}
 

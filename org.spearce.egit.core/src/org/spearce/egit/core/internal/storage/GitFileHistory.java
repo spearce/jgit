@@ -20,6 +20,7 @@ import org.eclipse.team.core.history.provider.FileHistory;
 import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.lib.AnyObjectId;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.revwalk.RevCommit;
@@ -78,7 +79,7 @@ class GitFileHistory extends FileHistory implements IAdaptable {
 		final Repository db = walk.getRepository();
 		final RevCommit root;
 		try {
-			final AnyObjectId headId = db.resolve("HEAD");
+			final AnyObjectId headId = db.resolve(Constants.HEAD);
 			if (headId == null) {
 				Activator.logError("No HEAD revision available from Git"
 						+ " for project " + resource.getProject().getName()

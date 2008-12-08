@@ -883,7 +883,7 @@ public class Repository {
 	 * @throws IOException
 	 */
 	public String getFullBranch() throws IOException {
-		final File ptr = new File(getDirectory(),"HEAD");
+		final File ptr = new File(getDirectory(),Constants.HEAD);
 		final BufferedReader br = new BufferedReader(new FileReader(ptr));
 		String ref;
 		try {
