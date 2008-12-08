@@ -69,6 +69,7 @@ class RefDatabase {
 
 	private Map<String, Ref> looseRefs;
 	private Map<String, Long> looseRefsMTime;
+	private Map<String, String> looseSymRefs;
 
 	private final File packedRefsFile;
 
@@ -96,6 +97,7 @@ class RefDatabase {
 		looseRefs = new HashMap<String, Ref>();
 		looseRefsMTime = new HashMap<String, Long>();
 		packedRefs = new HashMap<String, Ref>();
+		looseSymRefs = new HashMap<String, String>();
 		packedRefsLastModified = 0;
 		packedRefsLength = 0;
 	}
@@ -348,15 +350,26 @@ class RefDatabase {
 			return ref;
 		}
 
-		final String line;
+		String line = null;
 		try {
-			line = readLine(loose);
+			Long cachedlastModified = looseRefsMTime.get(name);
+			if (cachedlastModified != null && cachedlastModified == mtime) {
+				line = looseSymRefs.get(name);
+			}
+			if (line == null) {
+				line = readLine(loose);
+				looseRefsMTime.put(name, mtime);
+				looseSymRefs.put(name, line);
+			}
 		} catch (FileNotFoundException notLoose) {
 			return packedRefs.get(name);
 		}
 
-		if (line == null || line.length() == 0)
+		if (line == null || line.length() == 0) {
+			looseRefs.remove(origName);
+			looseRefsMTime.remove(origName);
 			return new Ref(Ref.Storage.LOOSE, origName, name, null);
+		}
 
 		if (line.startsWith("ref: ")) {
 			if (depth >= 5) {
