@@ -213,10 +213,10 @@ public final class RawParseUtils {
 	 * @param b
 	 *            buffer to scan.
 	 * @param ptr
-	 *            position within buffer to start looking for LF at.
+	 *            position within buffer to start looking for chrA at.
 	 * @param chrA
 	 *            character to find.
-	 * @return new position just after chr.
+	 * @return new position just after chrA.
 	 */
 	public static final int next(final byte[] b, int ptr, final char chrA) {
 		final int sz = b.length;
@@ -250,10 +250,10 @@ public final class RawParseUtils {
 	 * @param b
 	 *            buffer to scan.
 	 * @param ptr
-	 *            position within buffer to start looking for LF at.
+	 *            position within buffer to start looking for chrA or LF at.
 	 * @param chrA
 	 *            character to find.
-	 * @return new position just after the first chrA or chrB to be found.
+	 * @return new position just after the first chrA or LF to be found.
 	 */
 	public static final int nextLF(final byte[] b, int ptr, final char chrA) {
 		final int sz = b.length;
