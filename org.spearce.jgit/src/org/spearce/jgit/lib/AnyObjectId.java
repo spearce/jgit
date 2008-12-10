@@ -226,6 +226,17 @@ public abstract class AnyObjectId implements Comparable {
 		return NB.compareUInt32(w5, bs[p + 4]);
 	}
 
+	/**
+	 * Tests if this ObjectId starts with the given abbreviation.
+	 *
+	 * @param abbr
+	 *            the abbreviation.
+	 * @return true if this ObjectId begins with the abbreviation; else false.
+	 */
+	public boolean startsWith(final AbbreviatedObjectId abbr) {
+		return abbr.prefixCompare(this) == 0;
+	}
+
 	public int hashCode() {
 		return w2;
 	}

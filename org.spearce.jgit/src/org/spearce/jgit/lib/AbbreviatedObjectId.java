@@ -39,6 +39,8 @@ package org.spearce.jgit.lib;
 
 import java.io.UnsupportedEncodingException;
 
+import org.spearce.jgit.util.NB;
+
 /**
  * A prefix abbreviation of an {@link ObjectId}.
  * <p>
@@ -119,6 +121,24 @@ public class AbbreviatedObjectId {
 		return r << (8 - n) * 4;
 	}
 
+	static int mask(final int nibbles, final int word, final int v) {
+		final int b = (word - 1) * 8;
+		if (b + 8 <= nibbles) {
+			// We have all of the bits required for this word.
+			//
+			return v;
+		}
+
+		if (nibbles < b) {
+			// We have none of the bits required for this word.
+			//
+			return 0;
+		}
+
+		final int s = 32 - (nibbles - b) * 4;
+		return (v >>> s) << s;
+	}
+
 	/** Number of half-bytes used by this id. */
 	final int nibbles;
 
@@ -155,6 +175,43 @@ public class AbbreviatedObjectId {
 	/** @return a complete ObjectId; null if {@link #isComplete()} is false */
 	public ObjectId toObjectId() {
 		return isComplete() ? new ObjectId(w1, w2, w3, w4, w5) : null;
+	}
+
+	/**
+	 * Compares this abbreviation to a full object id.
+	 *
+	 * @param other
+	 *            the other object id.
+	 * @return &lt;0 if this abbreviation names an object that is less than
+	 *         <code>other</code>; 0 if this abbreviation exactly matches the
+	 *         first {@link #length()} digits of <code>other.name()</code>;
+	 *         &gt;0 if this abbreviation names an object that is after
+	 *         <code>other</code>.
+	 */
+	public int prefixCompare(final AnyObjectId other) {
+		int cmp;
+
+		cmp = NB.compareUInt32(w1, mask(1, other.w1));
+		if (cmp != 0)
+			return cmp;
+
+		cmp = NB.compareUInt32(w2, mask(2, other.w2));
+		if (cmp != 0)
+			return cmp;
+
+		cmp = NB.compareUInt32(w3, mask(3, other.w3));
+		if (cmp != 0)
+			return cmp;
+
+		cmp = NB.compareUInt32(w4, mask(4, other.w4));
+		if (cmp != 0)
+			return cmp;
+
+		return NB.compareUInt32(w5, mask(5, other.w5));
+	}
+
+	private int mask(final int word, final int v) {
+		return mask(nibbles, word, v);
 	}
 
 	@Override
