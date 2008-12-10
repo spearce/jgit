@@ -47,6 +47,15 @@ public abstract class QuotedString {
 	public static final GitPathStyle GIT_PATH = new GitPathStyle();
 
 	/**
+	 * Quoting style used by the Bourne shell.
+	 * <p>
+	 * Quotes are unconditionally inserted during {@link #quote(String)}. This
+	 * protects shell meta-characters like <code>$</code> or <code>~</code> from
+	 * being recognized as special.
+	 */
+	public static final BourneStyle BOURNE = new BourneStyle();
+
+	/**
 	 * Quote an input string by the quoting rules.
 	 * <p>
 	 * If the input string does not require any quoting, the same String
@@ -107,6 +116,63 @@ public abstract class QuotedString {
 	 * @return the cleaned string.
 	 */
 	public abstract String dequote(byte[] in, int offset, int end);
+
+	/**
+	 * Quoting style used by the Bourne shell.
+	 * <p>
+	 * Quotes are unconditionally inserted during {@link #quote(String)}. This
+	 * protects shell meta-characters like <code>$</code> or <code>~</code> from
+	 * being recognized as special.
+	 */
+	public static class BourneStyle extends QuotedString {
+		@Override
+		public String quote(final String in) {
+			final StringBuilder r = new StringBuilder();
+			r.append('\'');
+			int start = 0, i = 0;
+			for (; i < in.length(); i++) {
+				switch (in.charAt(i)) {
+				case '\'':
+				case '!':
+					r.append(in, start, i);
+					r.append('\'');
+					r.append('\\');
+					r.append(in.charAt(i));
+					r.append('\'');
+					start = i + 1;
+					break;
+				}
+			}
+			r.append(in, start, i);
+			r.append('\'');
+			return r.toString();
+		}
+
+		@Override
+		public String dequote(final byte[] in, int ip, final int ie) {
+			boolean inquote = false;
+			final byte[] r = new byte[ie - ip];
+			int rPtr = 0;
+			while (ip < ie) {
+				final byte b = in[ip++];
+				switch (b) {
+				case '\'':
+					inquote = !inquote;
+					continue;
+				case '\\':
+					if (inquote || ip == ie)
+						r[rPtr++] = b; // literal within a quote
+					else
+						r[rPtr++] = in[ip++];
+					continue;
+				default:
+					r[rPtr++] = b;
+					continue;
+				}
+			}
+			return RawParseUtils.decode(Constants.CHARSET, r, 0, rPtr);
+		}
+	}
 
 	/** Quoting style that obeys the rules Git applies to file names */
 	public static final class GitPathStyle extends QuotedString {

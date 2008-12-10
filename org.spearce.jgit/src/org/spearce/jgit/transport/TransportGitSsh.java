@@ -47,6 +47,7 @@ import java.net.UnknownHostException;
 import org.spearce.jgit.errors.NoRemoteRepositoryException;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.util.QuotedString;
 
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
@@ -154,17 +155,7 @@ class TransportGitSsh extends PackTransport {
 				return;
 		}
 
-		cmd.append('\'');
-		for (; i < val.length(); i++) {
-			final char c = val.charAt(i);
-			if (c == '\'')
-				cmd.append("'\\''");
-			else if (c == '!')
-				cmd.append("'\\!'");
-			else
-				cmd.append(c);
-		}
-		cmd.append('\'');
+		cmd.append(QuotedString.BOURNE.quote(val.substring(i)));
 	}
 
 	private void initSession() throws TransportException {
