@@ -221,10 +221,8 @@ public final class RawParseUtils {
 	public static final int next(final byte[] b, int ptr, final char chrA) {
 		final int sz = b.length;
 		while (ptr < sz) {
-			if (b[ptr] == chrA)
-				return ptr + 1;
-			else
-				ptr++;
+			if (b[ptr++] == chrA)
+				return ptr;
 		}
 		return ptr;
 	}
@@ -260,11 +258,9 @@ public final class RawParseUtils {
 	public static final int nextLF(final byte[] b, int ptr, final char chrA) {
 		final int sz = b.length;
 		while (ptr < sz) {
-			final byte c = b[ptr];
+			final byte c = b[ptr++];
 			if (c == chrA || c == '\n')
-				return ptr + 1;
-			else
-				ptr++;
+				return ptr;
 		}
 		return ptr;
 	}
