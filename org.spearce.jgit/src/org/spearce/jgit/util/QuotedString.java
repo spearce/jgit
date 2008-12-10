@@ -55,6 +55,9 @@ public abstract class QuotedString {
 	 */
 	public static final BourneStyle BOURNE = new BourneStyle();
 
+	/** Bourne style, but permits <code>~user</code> at the start of the string. */
+	public static final BourneUserPathStyle BOURNE_USER_PATH = new BourneUserPathStyle();
+
 	/**
 	 * Quote an input string by the quoting rules.
 	 * <p>
@@ -171,6 +174,31 @@ public abstract class QuotedString {
 				}
 			}
 			return RawParseUtils.decode(Constants.CHARSET, r, 0, rPtr);
+		}
+	}
+
+	/** Bourne style, but permits <code>~user</code> at the start of the string. */
+	public static class BourneUserPathStyle extends BourneStyle {
+		@Override
+		public String quote(final String in) {
+			if (in.matches("^~[A-Za-z0-9_-]+$")) {
+				// If the string is just "~user" we can assume they
+				// mean "~user/".
+				//
+				return in + "/";
+			}
+
+			if (in.matches("^~[A-Za-z0-9_-]*/.*$")) {
+				// If the string is of "~/path" or "~user/path"
+				// we must not escape ~/ or ~user/ from the shell.
+				//
+				final int i = in.indexOf('/') + 1;
+				if (i == in.length())
+					return in;
+				return in.substring(0, i) + super.quote(in.substring(i));
+			}
+
+			return super.quote(in);
 		}
 	}
 

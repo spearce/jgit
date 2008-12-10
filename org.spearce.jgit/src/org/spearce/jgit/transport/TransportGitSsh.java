@@ -131,31 +131,8 @@ class TransportGitSsh extends PackTransport {
 	}
 
 	private static void sq(final StringBuilder cmd, final String val) {
-		int i = 0;
-
-		if (val.length() == 0)
-			return;
-		if (val.matches("^~[A-Za-z0-9_-]+$")) {
-			// If the string is just "~user" we can assume they
-			// mean "~user/" and evaluate it within the shell.
-			//
-			cmd.append(val);
-			cmd.append('/');
-			return;
-		}
-
-		if (val.matches("^~[A-Za-z0-9_-]*/.*$")) {
-			// If the string is of "~/path" or "~user/path"
-			// we must not escape ~/ or ~user/ from the shell
-			// as we need that portion to be evaluated.
-			//
-			i = val.indexOf('/') + 1;
-			cmd.append(val.substring(0, i));
-			if (i == val.length())
-				return;
-		}
-
-		cmd.append(QuotedString.BOURNE.quote(val.substring(i)));
+		if (val.length() > 0)
+			cmd.append(QuotedString.BOURNE.quote(val));
 	}
 
 	private void initSession() throws TransportException {
