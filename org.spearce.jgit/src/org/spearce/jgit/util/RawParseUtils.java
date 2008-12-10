@@ -230,6 +230,21 @@ public final class RawParseUtils {
 	}
 
 	/**
+	 * Locate the first position after the next LF.
+	 * <p>
+	 * This method stops on the first '\n' it finds.
+	 *
+	 * @param b
+	 *            buffer to scan.
+	 * @param ptr
+	 *            position within buffer to start looking for LF at.
+	 * @return new position just after the first LF found.
+	 */
+	public static final int nextLF(final byte[] b, int ptr) {
+		return next(b, ptr, '\n');
+	}
+
+	/**
 	 * Locate the first position after either the given character or LF.
 	 * <p>
 	 * This method stops on the first match it finds from either chrA or '\n'.
@@ -296,7 +311,7 @@ public final class RawParseUtils {
 		while (ptr < sz && b[ptr] == 'p')
 			ptr += 48; // skip this parent.
 		if (ptr < sz && b[ptr] == 'a')
-			ptr = next(b, ptr, '\n');
+			ptr = nextLF(b, ptr);
 		return match(b, ptr, committer);
 	}
 
@@ -320,7 +335,7 @@ public final class RawParseUtils {
 				return -1;
 			if (b[ptr] == 'e')
 				break;
-			ptr = next(b, ptr, '\n');
+			ptr = nextLF(b, ptr);
 		}
 		return match(b, ptr, encoding);
 	}
@@ -342,7 +357,7 @@ public final class RawParseUtils {
 		final int enc = encoding(b, 0);
 		if (enc < 0)
 			return Constants.CHARSET;
-		final int lf = next(b, enc, '\n');
+		final int lf = nextLF(b, enc);
 		return Charset.forName(decode(Constants.CHARSET, b, enc, lf - 1));
 	}
 
@@ -505,7 +520,7 @@ public final class RawParseUtils {
 		// header line type is.
 		//
 		while (ptr < sz && b[ptr] != '\n')
-			ptr = next(b, ptr, '\n');
+			ptr = nextLF(b, ptr);
 		if (ptr < sz && b[ptr] == '\n')
 			return ptr + 1;
 		return -1;
@@ -529,7 +544,7 @@ public final class RawParseUtils {
 		int ptr = start;
 		final int sz = b.length;
 		while (ptr < sz && b[ptr] != '\n')
-			ptr = next(b, ptr, '\n');
+			ptr = nextLF(b, ptr);
 		while (0 < ptr && start < ptr && b[ptr - 1] == '\n')
 			ptr--;
 		return ptr;

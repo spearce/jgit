@@ -205,11 +205,11 @@ public class ObjectChecker {
 
 		if ((ptr = match(raw, ptr, type)) < 0)
 			throw new CorruptObjectException("no type header");
-		ptr = nextLF(raw, ptr, '\n');
+		ptr = nextLF(raw, ptr);
 
 		if ((ptr = match(raw, ptr, tag)) < 0)
 			throw new CorruptObjectException("no tag header");
-		ptr = nextLF(raw, ptr, '\n');
+		ptr = nextLF(raw, ptr);
 
 		if ((ptr = match(raw, ptr, tagger)) < 0)
 			throw new CorruptObjectException("no tagger header");

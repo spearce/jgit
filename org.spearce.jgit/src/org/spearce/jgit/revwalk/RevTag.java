@@ -90,7 +90,7 @@ public class RevTag extends RevObject {
 		object = walk.lookupAny(walk.idBuffer, oType);
 
 		int p = pos.value += 4; // "tag "
-		final int nameEnd = RawParseUtils.next(rawTag, p, '\n') - 1;
+		final int nameEnd = RawParseUtils.nextLF(rawTag, p) - 1;
 		name = RawParseUtils.decode(Constants.CHARSET, rawTag, p, nameEnd);
 		buffer = rawTag;
 		flags |= PARSED;
