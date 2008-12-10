@@ -52,7 +52,7 @@ import org.spearce.jgit.util.NB;
  * This class converts the hex string into a binary form, to make it more
  * efficient for matching against an object.
  */
-public class AbbreviatedObjectId {
+public final class AbbreviatedObjectId {
 	/**
 	 * Convert an AbbreviatedObjectId from hex characters (US-ASCII).
 	 *
@@ -152,7 +152,7 @@ public class AbbreviatedObjectId {
 
 	final int w5;
 
-	private AbbreviatedObjectId(final int n, final int new_1, final int new_2,
+	AbbreviatedObjectId(final int n, final int new_1, final int new_2,
 			final int new_3, final int new_4, final int new_5) {
 		nibbles = n;
 		w1 = new_1;

@@ -137,15 +137,15 @@ class FetchResultTable {
 				}
 
 				if (r == RefUpdate.Result.FORCED) {
-					final String aOld = tru.getOldObjectId().abbreviate(db);
-					final String aNew = tru.getNewObjectId().abbreviate(db);
-					return aOld + "..." + aNew; //$NON-NLS-1$
+					final String o = tru.getOldObjectId().abbreviate(db).name();
+					final String n = tru.getNewObjectId().abbreviate(db).name();
+					return o + "..." + n; //$NON-NLS-1$
 				}
 
 				if (r == RefUpdate.Result.FAST_FORWARD) {
-					final String aOld = tru.getOldObjectId().abbreviate(db);
-					final String aNew = tru.getNewObjectId().abbreviate(db);
-					return aOld + ".." + aNew; //$NON-NLS-1$
+					final String o = tru.getOldObjectId().abbreviate(db).name();
+					final String n = tru.getNewObjectId().abbreviate(db).name();
+					return o + ".." + n; //$NON-NLS-1$
 				}
 
 				if (r == RefUpdate.Result.REJECTED)

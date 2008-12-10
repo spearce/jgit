@@ -131,14 +131,14 @@ class Fetch extends TextBuiltin {
 		}
 
 		if (r == RefUpdate.Result.FORCED) {
-			final String aOld = u.getOldObjectId().abbreviate(db);
-			final String aNew = u.getNewObjectId().abbreviate(db);
+			final String aOld = u.getOldObjectId().abbreviate(db).name();
+			final String aNew = u.getNewObjectId().abbreviate(db).name();
 			return aOld + "..." + aNew;
 		}
 
 		if (r == RefUpdate.Result.FAST_FORWARD) {
-			final String aOld = u.getOldObjectId().abbreviate(db);
-			final String aNew = u.getNewObjectId().abbreviate(db);
+			final String aOld = u.getOldObjectId().abbreviate(db).name();
+			final String aNew = u.getNewObjectId().abbreviate(db).name();
 			return aOld + ".." + aNew;
 		}
 

@@ -111,7 +111,7 @@ public class RefContentProposal implements IContentProposal {
 		final StringBuilder sb = new StringBuilder();
 		sb.append(refName);
 		sb.append('\n');
-		sb.append(objectId.abbreviate(db));
+		sb.append(objectId.abbreviate(db).name());
 		sb.append(" - ");
 		if (obj instanceof Commit) {
 			final Commit c = ((Commit) obj);

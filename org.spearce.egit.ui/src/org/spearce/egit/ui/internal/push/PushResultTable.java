@@ -233,9 +233,9 @@ class PushResultTable {
 					return UIText.PushResultTable_statusOkNewBranch;
 				}
 
-				return oldRef.getObjectId().abbreviate(localDb)
+				return oldRef.getObjectId().abbreviate(localDb).name()
 						+ (rru.isFastForward() ? ".." : "...")
-						+ rru.getNewObjectId().abbreviate(localDb);
+						+ rru.getNewObjectId().abbreviate(localDb).name();
 			case UP_TO_DATE:
 				return UIText.PushResultTable_statusUpToDate;
 			case NON_EXISTING:
@@ -289,7 +289,7 @@ class PushResultTable {
 			case OK:
 				if (rru.isDelete())
 					return NLS.bind(UIText.PushResultTable_statusDetailDeleted,
-							oldRef.getObjectId().abbreviate(localDb));
+							oldRef.getObjectId().abbreviate(localDb).name());
 				if (oldRef == null)
 					return null;
 				if (rru.isFastForward())
@@ -305,20 +305,21 @@ class PushResultTable {
 				return UIText.PushResultTable_statusDetailNonFastForward;
 			case REJECTED_REMOTE_CHANGED:
 				final Ref remoteRef = oldRef;
-				final String currentValue;
+				final String curVal;
 				if (remoteRef == null)
-					currentValue = UIText.PushResultTable_refNonExisting;
+					curVal = UIText.PushResultTable_refNonExisting;
 				else
-					currentValue = remoteRef.getObjectId().abbreviate(localDb);
+					curVal = remoteRef.getObjectId().abbreviate(localDb).name();
+
 				final ObjectId expectedOldObjectId = rru
 						.getExpectedOldObjectId();
-				final String expectedValue;
+				final String expVal;
 				if (expectedOldObjectId.equals(ObjectId.zeroId()))
-					expectedValue = UIText.PushResultTable_refNonExisting;
+					expVal = UIText.PushResultTable_refNonExisting;
 				else
-					expectedValue = expectedOldObjectId.abbreviate(localDb);
+					expVal = expectedOldObjectId.abbreviate(localDb).name();
 				return NLS.bind(UIText.PushResultTable_statusDetailChanged,
-						currentValue, expectedValue);
+						curVal, expVal);
 			case REJECTED_OTHER_REASON:
 				return rru.getMessage();
 			default:

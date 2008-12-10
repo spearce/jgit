@@ -432,16 +432,36 @@ public abstract class AnyObjectId implements Comparable {
 	/**
 	 * Return unique abbreviation (prefix) of this object SHA-1.
 	 * <p>
-	 * Current implementation is not guaranteeing uniqueness, it just returns
-	 * fixed-length prefix of SHA-1 string.
+	 * This method is a utility for <code>abbreviate(repo, 8)</code>.
 	 *
 	 * @param repo
 	 *            repository for checking uniqueness within.
 	 * @return SHA-1 abbreviation.
 	 */
-	public String abbreviate(final Repository repo) {
+	public AbbreviatedObjectId abbreviate(final Repository repo) {
+		return abbreviate(repo, 8);
+	}
+
+	/**
+	 * Return unique abbreviation (prefix) of this object SHA-1.
+	 * <p>
+	 * Current implementation is not guaranteeing uniqueness, it just returns
+	 * fixed-length prefix of SHA-1 string.
+	 *
+	 * @param repo
+	 *            repository for checking uniqueness within.
+	 * @param len
+	 *            minimum length of the abbreviated string.
+	 * @return SHA-1 abbreviation.
+	 */
+	public AbbreviatedObjectId abbreviate(final Repository repo, final int len) {
 		// TODO implement checking for uniqueness
-		return name().substring(0, 7);
+		final int a = AbbreviatedObjectId.mask(len, 1, w1);
+		final int b = AbbreviatedObjectId.mask(len, 2, w2);
+		final int c = AbbreviatedObjectId.mask(len, 3, w3);
+		final int d = AbbreviatedObjectId.mask(len, 4, w4);
+		final int e = AbbreviatedObjectId.mask(len, 5, w5);
+		return new AbbreviatedObjectId(len, a, b, c, d, e);
 	}
 
 	/**
