@@ -44,7 +44,10 @@ import org.spearce.jgit.lib.ObjectId;
 
 public class FileHeaderTest extends TestCase {
 	public void testParseGitFileName_Empty() {
-		assertEquals(-1, data("").parseGitFileName(0));
+		final FileHeader fh = data("");
+		assertEquals(-1, fh.parseGitFileName(0));
+		assertNotNull(fh.getHunks());
+		assertTrue(fh.getHunks().isEmpty());
 	}
 
 	public void testParseGitFileName_NoLF() {
@@ -233,6 +236,7 @@ public class FileHeaderTest extends TestCase {
 
 		assertEquals(100, fh.getScore());
 	}
+
 	public void testParseCopy100() {
 		final FileHeader fh = data("diff --git a/a b/ c/\\303\\205ngstr\\303\\266m\n"
 				+ "similarity index 100%\n"

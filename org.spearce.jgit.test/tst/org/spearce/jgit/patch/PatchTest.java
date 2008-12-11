@@ -72,11 +72,69 @@ public class PatchTest extends TestCase {
 		assertEquals("34ce04a", fRepositoryConfigTest.getNewId().name());
 		assertSame(FileMode.REGULAR_FILE, fRepositoryConfigTest.getOldMode());
 		assertSame(FileMode.REGULAR_FILE, fRepositoryConfigTest.getNewMode());
+		assertEquals(1, fRepositoryConfigTest.getHunks().size());
+		{
+			final HunkHeader h = fRepositoryConfigTest.getHunks().get(0);
+			assertEquals(921, h.startOffset);
+			assertEquals(109, h.getOldStartLine());
+			assertEquals(4, h.getOldLineCount());
+			assertEquals(109, h.getNewStartLine());
+			assertEquals(11, h.getNewLineCount());
+
+			assertEquals(4, h.getLinesContext());
+			assertEquals(7, h.getLinesAdded());
+			assertEquals(0, h.getLinesDeleted());
+
+			assertEquals(1490, h.endOffset);
+		}
 
 		assertEquals("45c2f8a", fRepositoryConfig.getOldId().name());
 		assertEquals("3291bba", fRepositoryConfig.getNewId().name());
 		assertSame(FileMode.REGULAR_FILE, fRepositoryConfig.getOldMode());
 		assertSame(FileMode.REGULAR_FILE, fRepositoryConfig.getNewMode());
+		assertEquals(3, fRepositoryConfig.getHunks().size());
+		{
+			final HunkHeader h = fRepositoryConfig.getHunks().get(0);
+			assertEquals(1803, h.startOffset);
+			assertEquals(236, h.getOldStartLine());
+			assertEquals(9, h.getOldLineCount());
+			assertEquals(236, h.getNewStartLine());
+			assertEquals(9, h.getNewLineCount());
+
+			assertEquals(7, h.getLinesContext());
+			assertEquals(2, h.getLinesAdded());
+			assertEquals(2, h.getLinesDeleted());
+
+			assertEquals(2434, h.endOffset);
+		}
+		{
+			final HunkHeader h = fRepositoryConfig.getHunks().get(1);
+			assertEquals(2434, h.startOffset);
+			assertEquals(300, h.getOldStartLine());
+			assertEquals(7, h.getOldLineCount());
+			assertEquals(300, h.getNewStartLine());
+			assertEquals(7, h.getNewLineCount());
+
+			assertEquals(6, h.getLinesContext());
+			assertEquals(1, h.getLinesAdded());
+			assertEquals(1, h.getLinesDeleted());
+
+			assertEquals(2816, h.endOffset);
+		}
+		{
+			final HunkHeader h = fRepositoryConfig.getHunks().get(2);
+			assertEquals(2816, h.startOffset);
+			assertEquals(954, h.getOldStartLine());
+			assertEquals(7, h.getOldLineCount());
+			assertEquals(954, h.getNewStartLine());
+			assertEquals(7, h.getNewLineCount());
+
+			assertEquals(6, h.getLinesContext());
+			assertEquals(1, h.getLinesAdded());
+			assertEquals(1, h.getLinesDeleted());
+
+			assertEquals(3035, h.endOffset);
+		}
 	}
 
 	private Patch parseTestPatchFile() throws IOException {

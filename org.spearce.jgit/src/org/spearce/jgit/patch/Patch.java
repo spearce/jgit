@@ -57,6 +57,8 @@ public class Patch {
 
 	private static final byte[] DIFF_CC = encodeASCII("diff --cc ");
 
+	static final byte[] SIG_FOOTER = encodeASCII("-- \n");
+
 	/** The files, in the order they were parsed out of the input. */
 	private final List<FileHeader> files;
 
@@ -131,6 +133,17 @@ public class Patch {
 	private int parseFile(final byte[] buf, int c) {
 		final int sz = buf.length;
 		while (c < sz) {
+			if (match(buf, c, HUNK_HDR) >= 0) {
+				// If we find a disconnected hunk header we might
+				// have missed a file header previously. The hunk
+				// isn't valid without knowing where it comes from.
+				//
+
+				// TODO handle a disconnected hunk fragment
+				c = nextLF(buf, c);
+				continue;
+			}
+
 			// Valid git style patch?
 			//
 			if (match(buf, c, DIFF_GIT) >= 0)
@@ -180,7 +193,7 @@ public class Patch {
 			return skipFile(buf, startOffset);
 
 		ptr = fh.parseGitHeaders(ptr);
-		// TODO parse hunks
+		ptr = parseHunks(fh, buf, ptr);
 		fh.endOffset = ptr;
 		addFile(fh);
 		return ptr;
@@ -202,7 +215,7 @@ public class Patch {
 	private int parseTraditionalPatch(final byte[] buf, final int startOffset) {
 		final FileHeader fh = new FileHeader(buf, startOffset);
 		int ptr = fh.parseTraditionalHeaders(startOffset);
-		// TODO parse hunks
+		ptr = parseHunks(fh, buf, ptr);
 		fh.endOffset = ptr;
 		addFile(fh);
 		return ptr;
@@ -213,5 +226,42 @@ public class Patch {
 		if (match(buf, ptr, OLD_NAME) >= 0)
 			ptr = nextLF(buf, ptr);
 		return ptr;
+	}
+
+	private int parseHunks(final FileHeader fh, final byte[] buf, int c) {
+		final int sz = buf.length;
+		while (c < sz) {
+			// If we see a file header at this point, we have all of the
+			// hunks for our current file. We should stop and report back
+			// with this position so it can be parsed again later.
+			//
+			if (match(buf, c, DIFF_GIT) >= 0)
+				return c;
+			if (match(buf, c, DIFF_CC) >= 0)
+				return c;
+			if (match(buf, c, OLD_NAME) >= 0)
+				return c;
+			if (match(buf, c, NEW_NAME) >= 0)
+				return c;
+
+			if (match(buf, c, HUNK_HDR) >= 0) {
+				final HunkHeader h = new HunkHeader(fh, c);
+				h.parseHeader();
+				c = h.parseBody();
+				h.endOffset = c;
+				fh.addHunk(h);
+				if (c < sz && buf[c] != '@' && buf[c] != 'd'
+						&& match(buf, c, SIG_FOOTER) < 0) {
+					// TODO report on noise between hunks, might be an error
+				}
+				continue;
+			}
+
+			// Skip this line and move to the next. Its probably garbage
+			// after the last hunk of a file.
+			//
+			c = nextLF(buf, c);
+		}
+		return c;
 	}
 }
