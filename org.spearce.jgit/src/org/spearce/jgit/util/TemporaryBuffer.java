@@ -182,6 +182,40 @@ public class TemporaryBuffer extends OutputStream {
 	}
 
 	/**
+	 * Convert this buffer's contents into a contiguous byte array.
+	 * <p>
+	 * The buffer is only complete after {@link #close()} has been invoked.
+	 *
+	 * @return the complete byte array; length matches {@link #length()}.
+	 * @throws IOException
+	 *             an error occurred reading from a local temporary file
+	 * @throws OutOfMemoryError
+	 *             the buffer cannot fit in memory
+	 */
+	public byte[] toByteArray() throws IOException {
+		final long len = length();
+		if (Integer.MAX_VALUE < len)
+			throw new OutOfMemoryError("Length exceeds maximum array size");
+
+		final byte[] out = new byte[(int) len];
+		if (blocks != null) {
+			int outPtr = 0;
+			for (final Block b : blocks) {
+				System.arraycopy(b.buffer, 0, out, outPtr, b.count);
+				outPtr += b.count;
+			}
+		} else {
+			final FileInputStream in = new FileInputStream(onDiskFile);
+			try {
+				NB.readFully(in, out, 0, (int) len);
+			} finally {
+				in.close();
+			}
+		}
+		return out;
+	}
+
+	/**
 	 * Send this buffer to an output stream.
 	 * <p>
 	 * This method may only be invoked after {@link #close()} has completed
