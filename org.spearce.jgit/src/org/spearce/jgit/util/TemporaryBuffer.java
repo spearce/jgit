@@ -42,6 +42,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
@@ -133,6 +134,39 @@ public class TemporaryBuffer extends OutputStream {
 
 		if (len > 0)
 			diskOut.write(b, off, len);
+	}
+
+	/**
+	 * Copy all bytes remaining on the input stream into this buffer.
+	 *
+	 * @param in
+	 *            the stream to read from, until EOF is reached.
+	 * @throws IOException
+	 *             an error occurred reading from the input stream, or while
+	 *             writing to a local temporary file.
+	 */
+	public void copy(final InputStream in) throws IOException {
+		if (blocks != null) {
+			for (;;) {
+				Block s = last();
+				if (s.isFull()) {
+					if (reachedInCoreLimit())
+						break;
+					s = new Block();
+					blocks.add(s);
+				}
+
+				final int n = in.read(s.buffer, s.count, Block.SZ - s.count);
+				if (n < 1)
+					return;
+				s.count += n;
+			}
+		}
+
+		final byte[] tmp = new byte[Block.SZ];
+		int n;
+		while ((n = in.read(tmp)) > 0)
+			diskOut.write(tmp, 0, n);
 	}
 
 	private Block last() {
