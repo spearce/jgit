@@ -90,6 +90,8 @@ public class PatchTest extends TestCase {
 			assertEquals(4, h.getLinesContext());
 			assertEquals(7, h.getOldImage().getLinesAdded());
 			assertEquals(0, h.getOldImage().getLinesDeleted());
+			assertSame(fRepositoryConfigTest.getOldId(), h.getOldImage()
+					.getId());
 
 			assertEquals(1490, h.endOffset);
 		}
@@ -113,6 +115,7 @@ public class PatchTest extends TestCase {
 			assertEquals(7, h.getLinesContext());
 			assertEquals(2, h.getOldImage().getLinesAdded());
 			assertEquals(2, h.getOldImage().getLinesDeleted());
+			assertSame(fRepositoryConfig.getOldId(), h.getOldImage().getId());
 
 			assertEquals(2434, h.endOffset);
 		}
