@@ -202,7 +202,7 @@ public class Patch {
 			return skipFile(buf, startOffset);
 
 		ptr = fh.parseGitHeaders(ptr);
-		ptr = parseHunks(fh, buf, ptr);
+		ptr = parseHunks(fh, ptr);
 		fh.endOffset = ptr;
 		addFile(fh);
 		return ptr;
@@ -224,7 +224,7 @@ public class Patch {
 	private int parseTraditionalPatch(final byte[] buf, final int startOffset) {
 		final FileHeader fh = new FileHeader(buf, startOffset);
 		int ptr = fh.parseTraditionalHeaders(startOffset);
-		ptr = parseHunks(fh, buf, ptr);
+		ptr = parseHunks(fh, ptr);
 		fh.endOffset = ptr;
 		addFile(fh);
 		return ptr;
@@ -237,7 +237,8 @@ public class Patch {
 		return ptr;
 	}
 
-	private int parseHunks(final FileHeader fh, final byte[] buf, int c) {
+	private int parseHunks(final FileHeader fh, int c) {
+		final byte[] buf = fh.buf;
 		final int sz = buf.length;
 		while (c < sz) {
 			// If we see a file header at this point, we have all of the
