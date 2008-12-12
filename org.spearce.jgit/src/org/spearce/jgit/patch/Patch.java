@@ -38,7 +38,7 @@
 package org.spearce.jgit.patch;
 
 import static org.spearce.jgit.lib.Constants.encodeASCII;
-import static org.spearce.jgit.patch.FileHeader.HUNK_HDR;
+import static org.spearce.jgit.patch.FileHeader.isHunkHdr;
 import static org.spearce.jgit.patch.FileHeader.NEW_NAME;
 import static org.spearce.jgit.patch.FileHeader.OLD_NAME;
 import static org.spearce.jgit.util.RawParseUtils.match;
@@ -162,7 +162,7 @@ public class Patch {
 
 	private int parseFile(final byte[] buf, int c, final int end) {
 		while (c < end) {
-			if (match(buf, c, HUNK_HDR) >= 0) {
+			if (isHunkHdr(buf, c, end) >= 1) {
 				// If we find a disconnected hunk header we might
 				// have missed a file header previously. The hunk
 				// isn't valid without knowing where it comes from.
@@ -205,7 +205,7 @@ public class Patch {
 				final int f = nextLF(buf, n);
 				if (f >= end)
 					return end;
-				if (match(buf, f, HUNK_HDR) >= 0)
+				if (isHunkHdr(buf, f, end) == 1)
 					return parseTraditionalPatch(buf, c, end);
 			}
 
@@ -274,7 +274,7 @@ public class Patch {
 			if (match(buf, c, NEW_NAME) >= 0)
 				break;
 
-			if (match(buf, c, HUNK_HDR) >= 0) {
+			if (isHunkHdr(buf, c, end) == 1) {
 				final HunkHeader h = new HunkHeader(fh, c);
 				h.parseHeader(end);
 				c = h.parseBody(this, end);

@@ -87,8 +87,6 @@ public class FileHeader {
 
 	static final byte[] NEW_NAME = encodeASCII("+++ ");
 
-	static final byte[] HUNK_HDR = encodeASCII("@@ -");
-
 	/** General type of change a single file-level patch describes. */
 	public static enum ChangeType {
 		/** Add a new file to the project */
@@ -358,7 +356,7 @@ public class FileHeader {
 	int parseGitHeaders(int ptr, final int end) {
 		while (ptr < end) {
 			final int eol = nextLF(buf, ptr);
-			if (match(buf, ptr, HUNK_HDR) >= 0) {
+			if (isHunkHdr(buf, ptr, eol) >= 1) {
 				// First hunk header; break out and parse them later.
 				break;
 
@@ -432,7 +430,7 @@ public class FileHeader {
 	int parseTraditionalHeaders(int ptr, final int end) {
 		while (ptr < end) {
 			final int eol = nextLF(buf, ptr);
-			if (match(buf, ptr, HUNK_HDR) >= 0) {
+			if (isHunkHdr(buf, ptr, eol) >= 1) {
 				// First hunk header; break out and parse them later.
 				break;
 
@@ -518,5 +516,35 @@ public class FileHeader {
 				return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Determine if this is a patch hunk header.
+	 *
+	 * @param buf
+	 *            the buffer to scan
+	 * @param start
+	 *            first position in the buffer to evaluate
+	 * @param end
+	 *            last position to consider; usually the end of the buffer (
+	 *            <code>buf.length</code>) or the first position on the next
+	 *            line. This is only used to avoid very long runs of '@' from
+	 *            killing the scan loop.
+	 * @return the number of "ancestor revisions" in the hunk header. A
+	 *         traditional two-way diff ("@@ -...") returns 1; a combined diff
+	 *         for a 3 way-merge returns 3. If this is not a hunk header, 0 is
+	 *         returned instead.
+	 */
+	static int isHunkHdr(final byte[] buf, final int start, final int end) {
+		int ptr = start;
+		while (ptr < end && buf[ptr] == '@')
+			ptr++;
+		if (ptr - start < 2)
+			return 0;
+		if (ptr == end || buf[ptr++] != ' ')
+			return 0;
+		if (ptr == end || buf[ptr++] != '-')
+			return 0;
+		return (ptr - 3) - start;
 	}
 }
