@@ -199,10 +199,18 @@ public class PatchTest extends TestCase {
 			assertTrue(fh.getHunks().isEmpty());
 			assertTrue(fh.hasMetaDataChanges());
 
-			assertNotNull(fh.getForwardBinaryHunk());
-			assertNotNull(fh.getReverseBinaryHunk());
-			assertEquals(binsizes[i], fh.getForwardBinaryHunk().getSize());
-			assertEquals(0, fh.getReverseBinaryHunk().getSize());
+			final BinaryHunk fwd = fh.getForwardBinaryHunk();
+			final BinaryHunk rev = fh.getReverseBinaryHunk();
+			assertNotNull(fwd);
+			assertNotNull(rev);
+			assertEquals(binsizes[i], fwd.getSize());
+			assertEquals(0, rev.getSize());
+
+			assertSame(fh, fwd.getFileHeader());
+			assertSame(fh, rev.getFileHeader());
+
+			assertSame(BinaryHunk.Type.LITERAL_DEFLATED, fwd.getType());
+			assertSame(BinaryHunk.Type.LITERAL_DEFLATED, rev.getType());
 		}
 
 		final FileHeader fh = p.getFiles().get(4);
