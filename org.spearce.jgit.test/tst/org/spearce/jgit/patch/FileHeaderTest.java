@@ -153,7 +153,7 @@ public class FileHeaderTest extends TestCase {
 		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
 		assertTrue(fh.hasMetaDataChanges());
 
-		assertNull(fh.getOldMode());
+		assertSame(FileMode.MISSING, fh.getOldMode());
 		assertSame(FileMode.REGULAR_FILE, fh.getNewMode());
 
 		assertEquals("0000000", fh.getOldId().name());
@@ -179,7 +179,7 @@ public class FileHeaderTest extends TestCase {
 		assertTrue(fh.hasMetaDataChanges());
 
 		assertSame(FileMode.REGULAR_FILE, fh.getOldMode());
-		assertNull(fh.getNewMode());
+		assertSame(FileMode.MISSING, fh.getNewMode());
 
 		assertEquals("7898192", fh.getOldId().name());
 		assertEquals("0000000", fh.getNewId().name());

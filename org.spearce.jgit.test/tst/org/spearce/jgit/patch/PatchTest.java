@@ -160,6 +160,7 @@ public class PatchTest extends TestCase {
 			assertNotNull(fh.getOldId());
 			assertNotNull(fh.getNewId());
 			assertEquals("0000000", fh.getOldId().name());
+			assertSame(FileMode.MISSING, fh.getOldMode());
 			assertSame(FileMode.REGULAR_FILE, fh.getNewMode());
 			assertTrue(fh.getNewName().startsWith(
 					"org.spearce.egit.ui/icons/toolbar/"));

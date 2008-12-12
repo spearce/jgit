@@ -386,9 +386,11 @@ public class FileHeader {
 
 			} else if (match(buf, ptr, DELETED_FILE_MODE) >= 0) {
 				oldMode = parseFileMode(ptr + DELETED_FILE_MODE.length, eol);
+				newMode = FileMode.MISSING;
 				changeType = ChangeType.DELETE;
 
 			} else if (match(buf, ptr, NEW_FILE_MODE) >= 0) {
+				oldMode = FileMode.MISSING;
 				newMode = parseFileMode(ptr + NEW_FILE_MODE.length, eol);
 				changeType = ChangeType.ADD;
 
