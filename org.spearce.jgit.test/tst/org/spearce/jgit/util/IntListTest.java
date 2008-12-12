@@ -103,6 +103,30 @@ public class IntListTest extends TestCase {
 		}
 	}
 
+	public void testFillTo0() {
+		final IntList i = new IntList();
+		i.fillTo(0, Integer.MIN_VALUE);
+		assertEquals(0, i.size());
+	}
+
+	public void testFillTo1() {
+		final IntList i = new IntList();
+		i.fillTo(1, Integer.MIN_VALUE);
+		assertEquals(1, i.size());
+		i.add(0);
+		assertEquals(Integer.MIN_VALUE, i.get(0));
+		assertEquals(0, i.get(1));
+	}
+
+	public void testFillTo100() {
+		final IntList i = new IntList();
+		i.fillTo(100, Integer.MIN_VALUE);
+		assertEquals(100, i.size());
+		i.add(3);
+		assertEquals(Integer.MIN_VALUE, i.get(99));
+		assertEquals(3, i.get(100));
+	}
+
 	public void testClear() {
 		final IntList i = new IntList();
 		final int n = 5;

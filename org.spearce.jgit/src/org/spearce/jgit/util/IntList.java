@@ -93,6 +93,21 @@ public class IntList {
 		entries[count++] = n;
 	}
 
+	/**
+	 * Pad the list with entries.
+	 *
+	 * @param toIndex
+	 *            index position to stop filling at. 0 inserts no filler. 1
+	 *            ensures the list has a size of 1, adding <code>val</code> if
+	 *            the list is currently empty.
+	 * @param val
+	 *            value to insert into padded positions.
+	 */
+	public void fillTo(int toIndex, final int val) {
+		while (count < toIndex)
+			add(val);
+	}
+
 	private void grow() {
 		final int[] n = new int[(entries.length + 16) * 3 / 2];
 		System.arraycopy(entries, 0, n, 0, count);

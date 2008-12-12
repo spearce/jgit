@@ -266,6 +266,37 @@ public final class RawParseUtils {
 	}
 
 	/**
+	 * Index the region between <code>[ptr, end)</code> to find line starts.
+	 * <p>
+	 * The returned list is 1 indexed. Index 0 contains
+	 * {@link Integer#MIN_VALUE} to pad the list out.
+	 * <p>
+	 * Using a 1 indexed list means that line numbers can be directly accessed
+	 * from the list, so <code>list.get(1)</code> (aka get line 1) returns
+	 * <code>ptr</code>.
+	 *
+	 * @param buf
+	 *            buffer to scan.
+	 * @param ptr
+	 *            position within the buffer corresponding to the first byte of
+	 *            line 1.
+	 * @param end
+	 *            1 past the end of the content within <code>buf</code>.
+	 * @return a line map indexing the start position of each line.
+	 */
+	public static final IntList lineMap(final byte[] buf, int ptr, int end) {
+		// Experimentally derived from multiple source repositories
+		// the average number of bytes/line is 36. Its a rough guess
+		// to initially size our map close to the target.
+		//
+		final IntList map = new IntList((end - ptr) / 36);
+		map.fillTo(1, Integer.MIN_VALUE);
+		for (; ptr < end; ptr = nextLF(buf, ptr))
+			map.add(ptr);
+		return map;
+	}
+
+	/**
 	 * Locate the "author " header line data.
 	 * 
 	 * @param b
