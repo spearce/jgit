@@ -107,6 +107,18 @@ public class FileHeader {
 		COPY;
 	}
 
+	/** Type of patch used by this file. */
+	public static enum PatchType {
+		/** A traditional unified diff style patch of a text file. */
+		UNIFIED,
+
+		/** An empty patch with a message "Binary files ... differ" */
+		BINARY,
+
+		/** A Git binary patch, holding pre and post image deltas */
+		GIT_BINARY;
+	}
+
 	/** Buffer holding the patch data for this file. */
 	final byte[] buf;
 
@@ -140,6 +152,9 @@ public class FileHeader {
 	/** ObjectId listed on the index line for the new (post-image) */
 	private AbbreviatedObjectId newId;
 
+	/** Type of patch used to modify this file */
+	private PatchType patchType;
+
 	/** The hunks of this file */
 	private List<HunkHeader> hunks;
 
@@ -147,6 +162,7 @@ public class FileHeader {
 		buf = b;
 		startOffset = offset;
 		changeType = ChangeType.MODIFY; // unless otherwise designated
+		patchType = PatchType.UNIFIED;
 	}
 
 	/**
@@ -227,6 +243,11 @@ public class FileHeader {
 	 */
 	public AbbreviatedObjectId getNewId() {
 		return newId;
+	}
+
+	/** @return style of patch used to modify this file */
+	public PatchType getPatchType() {
+		return patchType;
 	}
 
 	/** @return hunks altering this file; in order of appearance in patch */

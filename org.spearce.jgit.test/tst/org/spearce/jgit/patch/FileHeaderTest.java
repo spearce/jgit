@@ -134,6 +134,7 @@ public class FileHeaderTest extends TestCase {
 		assertEquals("\u00c5ngstr\u00f6m", fh.getNewName());
 
 		assertSame(FileHeader.ChangeType.ADD, fh.getChangeType());
+		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
 
 		assertNull(fh.getOldMode());
 		assertSame(FileMode.REGULAR_FILE, fh.getNewMode());
@@ -157,6 +158,7 @@ public class FileHeaderTest extends TestCase {
 		assertSame(FileHeader.DEV_NULL, fh.getNewName());
 
 		assertSame(FileHeader.ChangeType.DELETE, fh.getChangeType());
+		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
 
 		assertSame(FileMode.REGULAR_FILE, fh.getOldMode());
 		assertNull(fh.getNewMode());
@@ -174,6 +176,7 @@ public class FileHeaderTest extends TestCase {
 		assertEquals("a b", fh.getNewName());
 
 		assertSame(FileHeader.ChangeType.MODIFY, fh.getChangeType());
+		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
 
 		assertNull(fh.getOldId());
 		assertNull(fh.getNewId());
@@ -200,6 +203,7 @@ public class FileHeaderTest extends TestCase {
 		assertEquals(" c/\u00c5ngstr\u00f6m", fh.getNewName());
 
 		assertSame(FileHeader.ChangeType.RENAME, fh.getChangeType());
+		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
 
 		assertNull(fh.getOldId());
 		assertNull(fh.getNewId());
@@ -227,6 +231,7 @@ public class FileHeaderTest extends TestCase {
 		assertEquals(" c/\u00c5ngstr\u00f6m", fh.getNewName());
 
 		assertSame(FileHeader.ChangeType.RENAME, fh.getChangeType());
+		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
 
 		assertNull(fh.getOldId());
 		assertNull(fh.getNewId());
@@ -254,6 +259,7 @@ public class FileHeaderTest extends TestCase {
 		assertEquals(" c/\u00c5ngstr\u00f6m", fh.getNewName());
 
 		assertSame(FileHeader.ChangeType.COPY, fh.getChangeType());
+		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
 
 		assertNull(fh.getOldId());
 		assertNull(fh.getNewId());

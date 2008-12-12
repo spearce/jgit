@@ -70,6 +70,8 @@ public class PatchTest extends TestCase {
 
 		assertEquals("da7e704", fRepositoryConfigTest.getOldId().name());
 		assertEquals("34ce04a", fRepositoryConfigTest.getNewId().name());
+		assertSame(FileHeader.PatchType.UNIFIED, fRepositoryConfigTest
+				.getPatchType());
 		assertSame(FileMode.REGULAR_FILE, fRepositoryConfigTest.getOldMode());
 		assertSame(FileMode.REGULAR_FILE, fRepositoryConfigTest.getNewMode());
 		assertEquals(1, fRepositoryConfigTest.getHunks().size());
@@ -90,6 +92,8 @@ public class PatchTest extends TestCase {
 
 		assertEquals("45c2f8a", fRepositoryConfig.getOldId().name());
 		assertEquals("3291bba", fRepositoryConfig.getNewId().name());
+		assertSame(FileHeader.PatchType.UNIFIED, fRepositoryConfig
+				.getPatchType());
 		assertSame(FileMode.REGULAR_FILE, fRepositoryConfig.getOldMode());
 		assertSame(FileMode.REGULAR_FILE, fRepositoryConfig.getNewMode());
 		assertEquals(3, fRepositoryConfig.getHunks().size());
