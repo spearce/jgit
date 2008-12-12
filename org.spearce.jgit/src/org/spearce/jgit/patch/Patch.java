@@ -62,6 +62,8 @@ public class Patch {
 
 	private static final byte[] BIN_TRAILER = encodeASCII(" differ\n");
 
+	private static final byte[] GIT_BINARY = encodeASCII("GIT binary patch\n");
+
 	static final byte[] SIG_FOOTER = encodeASCII("-- \n");
 
 	/** The files, in the order they were parsed out of the input. */
@@ -268,6 +270,11 @@ public class Patch {
 			}
 
 			final int eol = nextLF(buf, c);
+			if (fh.getHunks().isEmpty() && match(buf, c, GIT_BINARY) >= 0) {
+				fh.patchType = FileHeader.PatchType.GIT_BINARY;
+				return parseGitBinary(fh, eol);
+			}
+
 			if (fh.getHunks().isEmpty() && BIN_TRAILER.length < eol - c
 					&& match(buf, eol - BIN_TRAILER.length, BIN_TRAILER) >= 0
 					&& matchAny(buf, c, BIN_HEADERS)) {
@@ -290,6 +297,31 @@ public class Patch {
 			// really have a binary patch that we didn't notice above.
 			//
 			fh.patchType = FileHeader.PatchType.BINARY;
+		}
+
+		return c;
+	}
+
+	private int parseGitBinary(final FileHeader fh, int c) {
+		final BinaryHunk postImage = new BinaryHunk(fh, c);
+		final int nEnd = postImage.parseHunk(c);
+		if (nEnd < 0) {
+			// Not a binary hunk.
+			//
+
+			// TODO handle invalid binary hunks
+			return c;
+		}
+		c = nEnd;
+		postImage.endOffset = c;
+		fh.forwardBinaryHunk = postImage;
+
+		final BinaryHunk preImage = new BinaryHunk(fh, c);
+		final int oEnd = preImage.parseHunk(c);
+		if (oEnd >= 0) {
+			c = oEnd;
+			preImage.endOffset = c;
+			fh.reverseBinaryHunk = preImage;
 		}
 
 		return c;

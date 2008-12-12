@@ -158,6 +158,12 @@ public class FileHeader {
 	/** The hunks of this file */
 	private List<HunkHeader> hunks;
 
+	/** If {@link #patchType} is {@link PatchType#GIT_BINARY}, the new image */
+	BinaryHunk forwardBinaryHunk;
+
+	/** If {@link #patchType} is {@link PatchType#GIT_BINARY}, the old image */
+	BinaryHunk reverseBinaryHunk;
+
 	FileHeader(final byte[] b, final int offset) {
 		buf = b;
 		startOffset = offset;
@@ -268,6 +274,16 @@ public class FileHeader {
 		if (hunks == null)
 			hunks = new ArrayList<HunkHeader>();
 		hunks.add(h);
+	}
+
+	/** @return if a {@link PatchType#GIT_BINARY}, the new-image delta/literal */
+	public BinaryHunk getForwardBinaryHunk() {
+		return forwardBinaryHunk;
+	}
+
+	/** @return if a {@link PatchType#GIT_BINARY}, the old-image delta/literal */
+	public BinaryHunk getReverseBinaryHunk() {
+		return reverseBinaryHunk;
 	}
 
 	/**

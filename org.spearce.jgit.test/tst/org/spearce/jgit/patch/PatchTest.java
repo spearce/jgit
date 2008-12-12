@@ -43,6 +43,7 @@ import java.io.InputStream;
 import junit.framework.TestCase;
 
 import org.spearce.jgit.lib.FileMode;
+import org.spearce.jgit.lib.ObjectId;
 
 public class PatchTest extends TestCase {
 	public void testEmpty() {
@@ -157,6 +158,9 @@ public class PatchTest extends TestCase {
 			assertSame(FileHeader.PatchType.BINARY, fh.getPatchType());
 			assertTrue(fh.getHunks().isEmpty());
 			assertTrue(fh.hasMetaDataChanges());
+
+			assertNull(fh.getForwardBinaryHunk());
+			assertNull(fh.getReverseBinaryHunk());
 		}
 
 		final FileHeader fh = p.getFiles().get(4);
@@ -165,6 +169,44 @@ public class PatchTest extends TestCase {
 		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
 		assertFalse(fh.hasMetaDataChanges());
 		assertEquals("ee8a5a0", fh.getNewId().name());
+		assertNull(fh.getForwardBinaryHunk());
+		assertNull(fh.getReverseBinaryHunk());
+		assertEquals(1, fh.getHunks().size());
+		assertEquals(272, fh.getHunks().get(0).getOldStartLine());
+	}
+
+	public void testParse_GitBinary() throws IOException {
+		final Patch p = parseTestPatchFile();
+		final int[] binsizes = { 359, 393, 372, 404 };
+		assertEquals(5, p.getFiles().size());
+
+		for (int i = 0; i < 4; i++) {
+			final FileHeader fh = p.getFiles().get(i);
+			assertSame(FileHeader.ChangeType.ADD, fh.getChangeType());
+			assertNotNull(fh.getOldId());
+			assertNotNull(fh.getNewId());
+			assertEquals(ObjectId.zeroId().name(), fh.getOldId().name());
+			assertSame(FileMode.REGULAR_FILE, fh.getNewMode());
+			assertTrue(fh.getNewName().startsWith(
+					"org.spearce.egit.ui/icons/toolbar/"));
+			assertSame(FileHeader.PatchType.GIT_BINARY, fh.getPatchType());
+			assertTrue(fh.getHunks().isEmpty());
+			assertTrue(fh.hasMetaDataChanges());
+
+			assertNotNull(fh.getForwardBinaryHunk());
+			assertNotNull(fh.getReverseBinaryHunk());
+			assertEquals(binsizes[i], fh.getForwardBinaryHunk().getSize());
+			assertEquals(0, fh.getReverseBinaryHunk().getSize());
+		}
+
+		final FileHeader fh = p.getFiles().get(4);
+		assertEquals("org.spearce.egit.ui/plugin.xml", fh.getNewName());
+		assertSame(FileHeader.ChangeType.MODIFY, fh.getChangeType());
+		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
+		assertFalse(fh.hasMetaDataChanges());
+		assertEquals("ee8a5a0", fh.getNewId().name());
+		assertNull(fh.getForwardBinaryHunk());
+		assertNull(fh.getReverseBinaryHunk());
 		assertEquals(1, fh.getHunks().size());
 		assertEquals(272, fh.getHunks().get(0).getOldStartLine());
 	}
