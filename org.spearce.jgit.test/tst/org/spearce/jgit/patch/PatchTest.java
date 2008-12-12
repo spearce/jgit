@@ -80,6 +80,7 @@ public class PatchTest extends TestCase {
 		assertEquals(1, fRepositoryConfigTest.getHunks().size());
 		{
 			final HunkHeader h = fRepositoryConfigTest.getHunks().get(0);
+			assertSame(fRepositoryConfigTest, h.getFileHeader());
 			assertEquals(921, h.startOffset);
 			assertEquals(109, h.getOldStartLine());
 			assertEquals(4, h.getOldLineCount());
@@ -102,6 +103,7 @@ public class PatchTest extends TestCase {
 		assertEquals(3, fRepositoryConfig.getHunks().size());
 		{
 			final HunkHeader h = fRepositoryConfig.getHunks().get(0);
+			assertSame(fRepositoryConfig, h.getFileHeader());
 			assertEquals(1803, h.startOffset);
 			assertEquals(236, h.getOldStartLine());
 			assertEquals(9, h.getOldLineCount());
