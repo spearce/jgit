@@ -287,9 +287,16 @@ public class Patch {
 				c = h.parseBody(this, end);
 				h.endOffset = c;
 				fh.addHunk(h);
-				if (c < end && buf[c] != '@' && buf[c] != 'd'
-						&& match(buf, c, SIG_FOOTER) < 0) {
-					warn(buf, c, "Unexpected hunk trailer");
+				if (c < end) {
+					switch (buf[c]) {
+					case '@':
+					case 'd':
+					case '\n':
+						break;
+					default:
+						if (match(buf, c, SIG_FOOTER) < 0)
+							warn(buf, c, "Unexpected hunk trailer");
+					}
 				}
 				continue;
 			}
