@@ -152,18 +152,14 @@ public class HunkHeader {
 		old.startLine = -parseBase10(buf, ptr.value, ptr);
 		if (buf[ptr.value] == ',')
 			old.lineCount = parseBase10(buf, ptr.value + 1, ptr);
-		else {
-			old.lineCount = old.startLine;
-			old.startLine = 0;
-		}
+		else
+			old.lineCount = 1;
 
 		newStartLine = parseBase10(buf, ptr.value + 1, ptr);
 		if (buf[ptr.value] == ',')
 			newLineCount = parseBase10(buf, ptr.value + 1, ptr);
-		else {
-			newLineCount = newStartLine;
-			newStartLine = 0;
-		}
+		else
+			newLineCount = 1;
 	}
 
 	int parseBody(final Patch script, final int end) {
