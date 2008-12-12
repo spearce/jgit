@@ -57,6 +57,11 @@ public class Patch {
 
 	private static final byte[] DIFF_CC = encodeASCII("diff --cc ");
 
+	private static final byte[][] BIN_HEADERS = new byte[][] {
+			encodeASCII("Binary files "), encodeASCII("Files "), };
+
+	private static final byte[] BIN_TRAILER = encodeASCII(" differ\n");
+
 	static final byte[] SIG_FOOTER = encodeASCII("-- \n");
 
 	/** The files, in the order they were parsed out of the input. */
@@ -261,11 +266,30 @@ public class Patch {
 				continue;
 			}
 
+			final int eol = nextLF(buf, c);
+			if (fh.getHunks().isEmpty() && BIN_TRAILER.length < eol - c
+					&& match(buf, eol - BIN_TRAILER.length, BIN_TRAILER) >= 0
+					&& matchAny(buf, c, BIN_HEADERS)) {
+				// The patch is a binary file diff, with no deltas.
+				//
+				fh.patchType = FileHeader.PatchType.BINARY;
+				return eol;
+			}
+
 			// Skip this line and move to the next. Its probably garbage
 			// after the last hunk of a file.
 			//
-			c = nextLF(buf, c);
+			c = eol;
 		}
 		return c;
+	}
+
+	private static boolean matchAny(final byte[] buf, final int c,
+			final byte[][] srcs) {
+		for (final byte[] s : srcs) {
+			if (match(buf, c, s) >= 0)
+				return true;
+		}
+		return false;
 	}
 }

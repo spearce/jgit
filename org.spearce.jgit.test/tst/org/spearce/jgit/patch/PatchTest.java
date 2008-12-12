@@ -141,6 +141,32 @@ public class PatchTest extends TestCase {
 		}
 	}
 
+	public void testParse_NoBinary() throws IOException {
+		final Patch p = parseTestPatchFile();
+		assertEquals(5, p.getFiles().size());
+
+		for (int i = 0; i < 4; i++) {
+			final FileHeader fh = p.getFiles().get(i);
+			assertSame(FileHeader.ChangeType.ADD, fh.getChangeType());
+			assertNotNull(fh.getOldId());
+			assertNotNull(fh.getNewId());
+			assertEquals("0000000", fh.getOldId().name());
+			assertSame(FileMode.REGULAR_FILE, fh.getNewMode());
+			assertTrue(fh.getNewName().startsWith(
+					"org.spearce.egit.ui/icons/toolbar/"));
+			assertSame(FileHeader.PatchType.BINARY, fh.getPatchType());
+			assertTrue(fh.getHunks().isEmpty());
+		}
+
+		final FileHeader fh = p.getFiles().get(4);
+		assertEquals("org.spearce.egit.ui/plugin.xml", fh.getNewName());
+		assertSame(FileHeader.ChangeType.MODIFY, fh.getChangeType());
+		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
+		assertEquals("ee8a5a0", fh.getNewId().name());
+		assertEquals(1, fh.getHunks().size());
+		assertEquals(272, fh.getHunks().get(0).getOldStartLine());
+	}
+
 	private Patch parseTestPatchFile() throws IOException {
 		final String patchFile = getName() + ".patch";
 		final InputStream in = getClass().getResourceAsStream(patchFile);

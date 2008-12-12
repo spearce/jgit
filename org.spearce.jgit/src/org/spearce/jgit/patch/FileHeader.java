@@ -153,7 +153,7 @@ public class FileHeader {
 	private AbbreviatedObjectId newId;
 
 	/** Type of patch used to modify this file */
-	private PatchType patchType;
+	PatchType patchType;
 
 	/** The hunks of this file */
 	private List<HunkHeader> hunks;
