@@ -92,4 +92,18 @@ public class FormatError {
 		final int eol = RawParseUtils.nextLF(buf, offset);
 		return RawParseUtils.decode(Constants.CHARSET, buf, offset, eol);
 	}
+
+	@Override
+	public String toString() {
+		final StringBuilder r = new StringBuilder();
+		r.append(getSeverity().name().toLowerCase());
+		r.append(": at offset ");
+		r.append(getOffset());
+		r.append(": ");
+		r.append(getMessage());
+		r.append("\n");
+		r.append("  in ");
+		r.append(getLineText());
+		return r.toString();
+	}
 }
