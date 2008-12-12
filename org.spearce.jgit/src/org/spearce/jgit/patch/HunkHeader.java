@@ -126,10 +126,20 @@ public class HunkHeader {
 		final MutableInteger ptr = new MutableInteger();
 		ptr.value = nextLF(buf, startOffset, ' ');
 		oldStartLine = -parseBase10(buf, ptr.value, ptr);
-		oldLineCount = parseBase10(buf, ptr.value + 1, ptr);
+		if (buf[ptr.value] == ',')
+			oldLineCount = parseBase10(buf, ptr.value + 1, ptr);
+		else {
+			oldLineCount = oldStartLine;
+			oldStartLine = 0;
+		}
 
 		newStartLine = parseBase10(buf, ptr.value + 1, ptr);
-		newLineCount = parseBase10(buf, ptr.value + 1, ptr);
+		if (buf[ptr.value] == ',')
+			newLineCount = parseBase10(buf, ptr.value + 1, ptr);
+		else {
+			newLineCount = newStartLine;
+			newStartLine = 0;
+		}
 	}
 
 	int parseBody(final Patch script, final int end) {
