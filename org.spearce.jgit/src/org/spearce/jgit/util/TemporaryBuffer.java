@@ -60,7 +60,7 @@ import org.spearce.jgit.lib.ProgressMonitor;
  * after this stream has been properly closed by {@link #close()}.
  */
 public class TemporaryBuffer extends OutputStream {
-	private static final int DEFAULT_IN_CORE_LIMIT = 1024 * 1024;
+	static final int DEFAULT_IN_CORE_LIMIT = 1024 * 1024;
 
 	/** Chain of data, if we are still completely in-core; otherwise null. */
 	private ArrayList<Block> blocks;
@@ -314,7 +314,7 @@ public class TemporaryBuffer extends OutputStream {
 		}
 	}
 
-	private static class Block {
+	static class Block {
 		static final int SZ = 8 * 1024;
 
 		final byte[] buffer = new byte[SZ];
