@@ -110,8 +110,8 @@ public class EGitPatchHistoryTest extends TestCase {
 				assertNotNull("No " + nid, s);
 				int added = 0, deleted = 0;
 				for (final HunkHeader h : fh.getHunks()) {
-					added += h.getLinesAdded();
-					deleted += h.getLinesDeleted();
+					added += h.getOldImage().getLinesAdded();
+					deleted += h.getOldImage().getLinesDeleted();
 				}
 
 				if (s.added == added) {

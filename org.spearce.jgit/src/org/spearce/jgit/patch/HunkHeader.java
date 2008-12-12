@@ -41,10 +41,49 @@ import static org.spearce.jgit.util.RawParseUtils.match;
 import static org.spearce.jgit.util.RawParseUtils.nextLF;
 import static org.spearce.jgit.util.RawParseUtils.parseBase10;
 
+import org.spearce.jgit.lib.AbbreviatedObjectId;
 import org.spearce.jgit.util.MutableInteger;
 
 /** Hunk header describing the layout of a single block of lines */
 public class HunkHeader {
+	/** Details about an old image of the file. */
+	public abstract static class OldImage {
+		/** First line number the hunk starts on in this file. */
+		int startLine;
+
+		/** Total number of lines this hunk covers in this file. */
+		int lineCount;
+
+		/** Number of lines deleted by the post-image from this file. */
+		int nDeleted;
+
+		/** Number of lines added by the post-image not in this file. */
+		int nAdded;
+
+		/** @return first line number the hunk starts on in this file. */
+		public int getStartLine() {
+			return startLine;
+		}
+
+		/** @return total number of lines this hunk covers in this file. */
+		public int getLineCount() {
+			return lineCount;
+		}
+
+		/** @return number of lines deleted by the post-image from this file. */
+		public int getLinesDeleted() {
+			return nDeleted;
+		}
+
+		/** @return number of lines added by the post-image not in this file. */
+		public int getLinesAdded() {
+			return nAdded;
+		}
+
+		/** @return object id of the pre-image file. */
+		public abstract AbbreviatedObjectId getId();
+	}
+
 	private final FileHeader file;
 
 	/** Offset within {@link #file}.buf to the "@@ -" line. */
@@ -53,11 +92,7 @@ public class HunkHeader {
 	/** Position 1 past the end of this hunk within {@link #file}'s buf. */
 	int endOffset;
 
-	/** First line number in the pre-image file where the hunk starts */
-	int oldStartLine;
-
-	/** Total number of pre-image lines this hunk covers (context + deleted) */
-	int oldLineCount;
+	private final OldImage old;
 
 	/** First line number in the post-image file where the hunk starts */
 	int newStartLine;
@@ -68,15 +103,19 @@ public class HunkHeader {
 	/** Total number of lines of context appearing in this hunk */
 	int nContext;
 
-	/** Number of lines removed by this hunk */
-	int nDeleted;
-
-	/** Number of lines added by this hunk */
-	int nAdded;
-
 	HunkHeader(final FileHeader fh, final int offset) {
+		this(fh, offset, new OldImage() {
+			@Override
+			public AbbreviatedObjectId getId() {
+				return fh.getOldId();
+			}
+		});
+	}
+
+	HunkHeader(final FileHeader fh, final int offset, final OldImage oi) {
 		file = fh;
 		startOffset = offset;
+		old = oi;
 	}
 
 	/** @return header for the file this hunk applies to */
@@ -84,14 +123,9 @@ public class HunkHeader {
 		return file;
 	}
 
-	/** @return first line number in the pre-image file where the hunk starts */
-	public int getOldStartLine() {
-		return oldStartLine;
-	}
-
-	/** @return total number of pre-image lines this hunk covers */
-	public int getOldLineCount() {
-		return oldLineCount;
+	/** @return information about the old image mentioned in this hunk. */
+	public OldImage getOldImage() {
+		return old;
 	}
 
 	/** @return first line number in the post-image file where the hunk starts */
@@ -109,28 +143,18 @@ public class HunkHeader {
 		return nContext;
 	}
 
-	/** @return number of lines removed by this hunk */
-	public int getLinesDeleted() {
-		return nDeleted;
-	}
-
-	/** @return number of lines added by this hunk */
-	public int getLinesAdded() {
-		return nAdded;
-	}
-
 	void parseHeader(final int end) {
 		// Parse "@@ -236,9 +236,9 @@ protected boolean"
 		//
 		final byte[] buf = file.buf;
 		final MutableInteger ptr = new MutableInteger();
 		ptr.value = nextLF(buf, startOffset, ' ');
-		oldStartLine = -parseBase10(buf, ptr.value, ptr);
+		old.startLine = -parseBase10(buf, ptr.value, ptr);
 		if (buf[ptr.value] == ',')
-			oldLineCount = parseBase10(buf, ptr.value + 1, ptr);
+			old.lineCount = parseBase10(buf, ptr.value + 1, ptr);
 		else {
-			oldLineCount = oldStartLine;
-			oldStartLine = 0;
+			old.lineCount = old.startLine;
+			old.startLine = 0;
 		}
 
 		newStartLine = parseBase10(buf, ptr.value + 1, ptr);
@@ -146,8 +170,8 @@ public class HunkHeader {
 		final byte[] buf = file.buf;
 		int c = nextLF(buf, startOffset), last = c;
 
-		nDeleted = 0;
-		nAdded = 0;
+		old.nDeleted = 0;
+		old.nAdded = 0;
 
 		SCAN: for (; c < end; last = c, c = nextLF(buf, c)) {
 			switch (buf[c]) {
@@ -157,11 +181,11 @@ public class HunkHeader {
 				continue;
 
 			case '-':
-				nDeleted++;
+				old.nDeleted++;
 				continue;
 
 			case '+':
-				nAdded++;
+				old.nAdded++;
 				continue;
 
 			case '\\': // Matches "\ No newline at end of file"
@@ -172,33 +196,35 @@ public class HunkHeader {
 			}
 		}
 
-		if (last < end && nContext + nDeleted - 1 == oldLineCount
-				&& nContext + nAdded == newLineCount
+		if (last < end && nContext + old.nDeleted - 1 == old.lineCount
+				&& nContext + old.nAdded == newLineCount
 				&& match(buf, last, Patch.SIG_FOOTER) >= 0) {
 			// This is an extremely common occurrence of "corruption".
 			// Users add footers with their signatures after this mark,
 			// and git diff adds the git executable version number.
 			// Let it slide; the hunk otherwise looked sound.
 			//
-			nDeleted--;
+			old.nDeleted--;
 			return last;
 		}
 
-		if (nContext + nDeleted < oldLineCount) {
-			final int missingCount = oldLineCount - (nContext + nDeleted);
+		if (nContext + old.nDeleted < old.lineCount) {
+			final int missingCount = old.lineCount - (nContext + old.nDeleted);
 			script.error(buf, startOffset, "Truncated hunk, at least "
 					+ missingCount + " old lines is missing");
 
-		} else if (nContext + nAdded < newLineCount) {
-			final int missingCount = newLineCount - (nContext + nAdded);
+		} else if (nContext + old.nAdded < newLineCount) {
+			final int missingCount = newLineCount - (nContext + old.nAdded);
 			script.error(buf, startOffset, "Truncated hunk, at least "
 					+ missingCount + " new lines is missing");
 
-		} else if (nContext + nDeleted > oldLineCount
-				|| nContext + nAdded > newLineCount) {
-			script.warn(buf, startOffset, "Hunk header " + oldLineCount + ":"
-					+ newLineCount + " does not match body line count of "
-					+ (nContext + nDeleted) + ":" + (nContext + nAdded));
+		} else if (nContext + old.nDeleted > old.lineCount
+				|| nContext + old.nAdded > newLineCount) {
+			final String oldcnt = old.lineCount + ":" + newLineCount;
+			final String newcnt = (nContext + old.nDeleted) + ":"
+					+ (nContext + old.nAdded);
+			script.warn(buf, startOffset, "Hunk header " + oldcnt
+					+ " does not match body line count of " + newcnt);
 		}
 
 		return c;

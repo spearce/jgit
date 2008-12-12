@@ -82,14 +82,14 @@ public class PatchTest extends TestCase {
 			final HunkHeader h = fRepositoryConfigTest.getHunks().get(0);
 			assertSame(fRepositoryConfigTest, h.getFileHeader());
 			assertEquals(921, h.startOffset);
-			assertEquals(109, h.getOldStartLine());
-			assertEquals(4, h.getOldLineCount());
+			assertEquals(109, h.getOldImage().getStartLine());
+			assertEquals(4, h.getOldImage().getLineCount());
 			assertEquals(109, h.getNewStartLine());
 			assertEquals(11, h.getNewLineCount());
 
 			assertEquals(4, h.getLinesContext());
-			assertEquals(7, h.getLinesAdded());
-			assertEquals(0, h.getLinesDeleted());
+			assertEquals(7, h.getOldImage().getLinesAdded());
+			assertEquals(0, h.getOldImage().getLinesDeleted());
 
 			assertEquals(1490, h.endOffset);
 		}
@@ -105,42 +105,42 @@ public class PatchTest extends TestCase {
 			final HunkHeader h = fRepositoryConfig.getHunks().get(0);
 			assertSame(fRepositoryConfig, h.getFileHeader());
 			assertEquals(1803, h.startOffset);
-			assertEquals(236, h.getOldStartLine());
-			assertEquals(9, h.getOldLineCount());
+			assertEquals(236, h.getOldImage().getStartLine());
+			assertEquals(9, h.getOldImage().getLineCount());
 			assertEquals(236, h.getNewStartLine());
 			assertEquals(9, h.getNewLineCount());
 
 			assertEquals(7, h.getLinesContext());
-			assertEquals(2, h.getLinesAdded());
-			assertEquals(2, h.getLinesDeleted());
+			assertEquals(2, h.getOldImage().getLinesAdded());
+			assertEquals(2, h.getOldImage().getLinesDeleted());
 
 			assertEquals(2434, h.endOffset);
 		}
 		{
 			final HunkHeader h = fRepositoryConfig.getHunks().get(1);
 			assertEquals(2434, h.startOffset);
-			assertEquals(300, h.getOldStartLine());
-			assertEquals(7, h.getOldLineCount());
+			assertEquals(300, h.getOldImage().getStartLine());
+			assertEquals(7, h.getOldImage().getLineCount());
 			assertEquals(300, h.getNewStartLine());
 			assertEquals(7, h.getNewLineCount());
 
 			assertEquals(6, h.getLinesContext());
-			assertEquals(1, h.getLinesAdded());
-			assertEquals(1, h.getLinesDeleted());
+			assertEquals(1, h.getOldImage().getLinesAdded());
+			assertEquals(1, h.getOldImage().getLinesDeleted());
 
 			assertEquals(2816, h.endOffset);
 		}
 		{
 			final HunkHeader h = fRepositoryConfig.getHunks().get(2);
 			assertEquals(2816, h.startOffset);
-			assertEquals(954, h.getOldStartLine());
-			assertEquals(7, h.getOldLineCount());
+			assertEquals(954, h.getOldImage().getStartLine());
+			assertEquals(7, h.getOldImage().getLineCount());
 			assertEquals(954, h.getNewStartLine());
 			assertEquals(7, h.getNewLineCount());
 
 			assertEquals(6, h.getLinesContext());
-			assertEquals(1, h.getLinesAdded());
-			assertEquals(1, h.getLinesDeleted());
+			assertEquals(1, h.getOldImage().getLinesAdded());
+			assertEquals(1, h.getOldImage().getLinesDeleted());
 
 			assertEquals(3035, h.endOffset);
 		}
@@ -177,7 +177,7 @@ public class PatchTest extends TestCase {
 		assertNull(fh.getForwardBinaryHunk());
 		assertNull(fh.getReverseBinaryHunk());
 		assertEquals(1, fh.getHunks().size());
-		assertEquals(272, fh.getHunks().get(0).getOldStartLine());
+		assertEquals(272, fh.getHunks().get(0).getOldImage().getStartLine());
 	}
 
 	public void testParse_GitBinary() throws IOException {
@@ -222,7 +222,7 @@ public class PatchTest extends TestCase {
 		assertNull(fh.getForwardBinaryHunk());
 		assertNull(fh.getReverseBinaryHunk());
 		assertEquals(1, fh.getHunks().size());
-		assertEquals(272, fh.getHunks().get(0).getOldStartLine());
+		assertEquals(272, fh.getHunks().get(0).getOldImage().getStartLine());
 	}
 
 	private Patch parseTestPatchFile() throws IOException {
