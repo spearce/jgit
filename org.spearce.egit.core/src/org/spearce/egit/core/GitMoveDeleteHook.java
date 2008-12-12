@@ -122,7 +122,7 @@ class GitMoveDeleteHook implements IMoveDeleteHook {
 			final IFolder destination, final int updateFlags,
 			final IProgressMonitor monitor) {
 		// TODO: Implement this. Should be relatively easy, but consider that
-		// Eclipse thinks folders are real thinsgs, while Git does not care.
+		// Eclipse thinks folders are real things, while Git does not care.
 		return FINISH_FOR_ME;
 	}
 

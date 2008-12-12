@@ -94,7 +94,7 @@ public abstract class RepositoryTestCase extends TestCase {
 
 	/**
 	 * Utility method to delete a directory recursively. It is
-	 * also used internally. If a file or directory cannote be removed
+	 * also used internally. If a file or directory cannot be removed
 	 * it throws an AssertionFailure.
 	 *
 	 * @param dir

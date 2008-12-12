@@ -117,7 +117,7 @@ public class BundleWriterTest extends RepositoryTestCase {
 			// Check that we actually needed the first bundle
 			Repository newRepo2 = createNewEmptyRepo();
 			fetchResult = fetchFromBundle(newRepo2, bundle);
-			fail("We should not be able to fetch from bundle with prerequisistes that are not fulfilled");
+			fail("We should not be able to fetch from bundle with prerequisites that are not fulfilled");
 		} catch (MissingBundlePrerequisiteException e) {
 			assertTrue(e.getMessage()
 					.indexOf(db.resolve("refs/heads/a").name()) >= 0);

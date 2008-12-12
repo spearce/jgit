@@ -126,7 +126,7 @@ public interface FetchConnection extends Connection {
 	 * able to supply a fully connected graph to the client (although it may
 	 * only be transferring the parts the client does not yet have). Its faster
 	 * to assume such remote peers are well behaved and send the correct
-	 * response to the client. In such tranports this method returns false.
+	 * response to the client. In such transports this method returns false.
 	 *
 	 * @return true if the last fetch had to perform a connectivity check on the
 	 *         client side in order to succeed; false if the last fetch assumed

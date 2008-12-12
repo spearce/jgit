@@ -226,7 +226,7 @@ public class RevCommitParseTest extends RepositoryTestCase {
 	 *
 	 * What happens here is that an encoding us given, but data is not encoded
 	 * that way (and we can detect it), so we try other encodings. Here data could
-	 * actually be decoded in the stated encoding, but we overide using UTF-8.
+	 * actually be decoded in the stated encoding, but we override using UTF-8.
 	 *
 	 * @throws Exception
 	 */
