@@ -57,6 +57,8 @@ public class Patch {
 
 	private static final byte[] DIFF_CC = encodeASCII("diff --cc ");
 
+	private static final byte[] DIFF_COMBINED = encodeASCII("diff --combined ");
+
 	private static final byte[][] BIN_HEADERS = new byte[][] {
 			encodeASCII("Binary files "), encodeASCII("Files "), };
 
@@ -177,7 +179,9 @@ public class Patch {
 			if (match(buf, c, DIFF_GIT) >= 0)
 				return parseDiffGit(buf, c, end);
 			if (match(buf, c, DIFF_CC) >= 0)
-				return parseDiffCC(buf, c, end);
+				return parseDiffCombined(DIFF_CC, buf, c, end);
+			if (match(buf, c, DIFF_COMBINED) >= 0)
+				return parseDiffCombined(DIFF_COMBINED, buf, c, end);
 
 			// Junk between files? Leading junk? Traditional
 			// (non-git generated) patch?
@@ -227,9 +231,10 @@ public class Patch {
 		return ptr;
 	}
 
-	private int parseDiffCC(final byte[] buf, final int start, final int end) {
+	private int parseDiffCombined(final byte[] hdr, final byte[] buf,
+			final int start, final int end) {
 		final FileHeader fh = new FileHeader(buf, start);
-		int ptr = fh.parseGitFileName(start + DIFF_CC.length, end);
+		int ptr = fh.parseGitFileName(start + hdr.length, end);
 		if (ptr < 0)
 			return skipFile(buf, start, end);
 
@@ -268,6 +273,8 @@ public class Patch {
 			if (match(buf, c, DIFF_GIT) >= 0)
 				break;
 			if (match(buf, c, DIFF_CC) >= 0)
+				break;
+			if (match(buf, c, DIFF_COMBINED) >= 0)
 				break;
 			if (match(buf, c, OLD_NAME) >= 0)
 				break;
