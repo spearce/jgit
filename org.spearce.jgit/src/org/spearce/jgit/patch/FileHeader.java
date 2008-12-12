@@ -61,9 +61,9 @@ public class FileHeader {
 
 	private static final byte[] NEW_MODE = encodeASCII("new mode ");
 
-	private static final byte[] DELETED_FILE_MODE = encodeASCII("deleted file mode ");
+	protected static final byte[] DELETED_FILE_MODE = encodeASCII("deleted file mode ");
 
-	private static final byte[] NEW_FILE_MODE = encodeASCII("new file mode ");
+	protected static final byte[] NEW_FILE_MODE = encodeASCII("new file mode ");
 
 	private static final byte[] COPY_FROM = encodeASCII("copy from ");
 
@@ -81,7 +81,7 @@ public class FileHeader {
 
 	private static final byte[] DISSIMILARITY_INDEX = encodeASCII("dissimilarity index ");
 
-	private static final byte[] INDEX = encodeASCII("index ");
+	protected static final byte[] INDEX = encodeASCII("index ");
 
 	static final byte[] OLD_NAME = encodeASCII("--- ");
 
@@ -136,10 +136,10 @@ public class FileHeader {
 	private FileMode oldMode;
 
 	/** New mode of the file, if described by the patch, else null. */
-	private FileMode newMode;
+	protected FileMode newMode;
 
 	/** General type of change indicated by the patch. */
-	private ChangeType changeType;
+	protected ChangeType changeType;
 
 	/** Similarity score if {@link #changeType} is a copy or rename. */
 	private int score;
@@ -148,7 +148,7 @@ public class FileHeader {
 	private AbbreviatedObjectId oldId;
 
 	/** ObjectId listed on the index line for the new (post-image) */
-	private AbbreviatedObjectId newId;
+	protected AbbreviatedObjectId newId;
 
 	/** Type of patch used to modify this file */
 	PatchType patchType;
@@ -264,7 +264,7 @@ public class FileHeader {
 	}
 
 	/** @return hunks altering this file; in order of appearance in patch */
-	public List<HunkHeader> getHunks() {
+	public List<? extends HunkHeader> getHunks() {
 		if (hunks == null)
 			return Collections.emptyList();
 		return hunks;
@@ -369,14 +369,10 @@ public class FileHeader {
 				break;
 
 			} else if (match(buf, ptr, OLD_NAME) >= 0) {
-				oldName = p1(parseName(oldName, ptr + OLD_NAME.length, eol));
-				if (oldName == DEV_NULL)
-					changeType = ChangeType.ADD;
+				parseOldName(ptr, eol);
 
 			} else if (match(buf, ptr, NEW_NAME) >= 0) {
-				newName = p1(parseName(newName, ptr + NEW_NAME.length, eol));
-				if (newName == DEV_NULL)
-					changeType = ChangeType.DELETE;
+				parseNewName(ptr, eol);
 
 			} else if (match(buf, ptr, OLD_MODE) >= 0) {
 				oldMode = parseFileMode(ptr + OLD_MODE.length, eol);
@@ -390,9 +386,7 @@ public class FileHeader {
 				changeType = ChangeType.DELETE;
 
 			} else if (match(buf, ptr, NEW_FILE_MODE) >= 0) {
-				oldMode = FileMode.MISSING;
-				newMode = parseFileMode(ptr + NEW_FILE_MODE.length, eol);
-				changeType = ChangeType.ADD;
+				parseNewFileMode(ptr, eol);
 
 			} else if (match(buf, ptr, COPY_FROM) >= 0) {
 				oldName = parseName(oldName, ptr + COPY_FROM.length, eol);
@@ -437,6 +431,24 @@ public class FileHeader {
 		return ptr;
 	}
 
+	protected void parseOldName(int ptr, final int eol) {
+		oldName = p1(parseName(oldName, ptr + OLD_NAME.length, eol));
+		if (oldName == DEV_NULL)
+			changeType = ChangeType.ADD;
+	}
+
+	protected void parseNewName(int ptr, final int eol) {
+		newName = p1(parseName(newName, ptr + NEW_NAME.length, eol));
+		if (newName == DEV_NULL)
+			changeType = ChangeType.DELETE;
+	}
+
+	protected void parseNewFileMode(int ptr, final int eol) {
+		oldMode = FileMode.MISSING;
+		newMode = parseFileMode(ptr + NEW_FILE_MODE.length, eol);
+		changeType = ChangeType.ADD;
+	}
+
 	int parseTraditionalHeaders(int ptr, final int end) {
 		while (ptr < end) {
 			final int eol = nextLF(buf, ptr);
@@ -445,14 +457,10 @@ public class FileHeader {
 				break;
 
 			} else if (match(buf, ptr, OLD_NAME) >= 0) {
-				oldName = p1(parseName(oldName, ptr + OLD_NAME.length, eol));
-				if (oldName == DEV_NULL)
-					changeType = ChangeType.ADD;
+				parseOldName(ptr, eol);
 
 			} else if (match(buf, ptr, NEW_NAME) >= 0) {
-				newName = p1(parseName(newName, ptr + NEW_NAME.length, eol));
-				if (newName == DEV_NULL)
-					changeType = ChangeType.DELETE;
+				parseNewName(ptr, eol);
 
 			} else {
 				// Possibly an empty patch.
@@ -494,7 +502,7 @@ public class FileHeader {
 		return s > 0 ? r.substring(s + 1) : r;
 	}
 
-	private FileMode parseFileMode(int ptr, final int end) {
+	protected FileMode parseFileMode(int ptr, final int end) {
 		int tmp = 0;
 		while (ptr < end - 1) {
 			tmp <<= 3;
@@ -503,7 +511,7 @@ public class FileHeader {
 		return FileMode.fromBits(tmp);
 	}
 
-	private void parseIndexLine(int ptr, final int end) {
+	protected void parseIndexLine(int ptr, final int end) {
 		// "index $asha1..$bsha1[ $mode]" where $asha1 and $bsha1
 		// can be unique abbreviations
 		//

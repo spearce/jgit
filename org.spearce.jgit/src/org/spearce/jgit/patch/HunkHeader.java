@@ -84,7 +84,7 @@ public class HunkHeader {
 		public abstract AbbreviatedObjectId getId();
 	}
 
-	private final FileHeader file;
+	final FileHeader file;
 
 	/** Offset within {@link #file}.buf to the "@@ -" line. */
 	final int startOffset;

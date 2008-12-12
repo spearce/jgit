@@ -94,7 +94,7 @@ public class Patch {
 	}
 
 	/** @return list of files described in the patch, in occurrence order. */
-	public List<FileHeader> getFiles() {
+	public List<? extends FileHeader> getFiles() {
 		return files;
 	}
 
@@ -233,14 +233,13 @@ public class Patch {
 
 	private int parseDiffCombined(final byte[] hdr, final byte[] buf,
 			final int start, final int end) {
-		final FileHeader fh = new FileHeader(buf, start);
+		final CombinedFileHeader fh = new CombinedFileHeader(buf, start);
 		int ptr = fh.parseGitFileName(start + hdr.length, end);
 		if (ptr < 0)
 			return skipFile(buf, start, end);
 
-		// TODO Support parsing diff --cc headers
-		// TODO parse diff --cc hunks
-		warn(buf, start, "diff --cc format not supported");
+		ptr = fh.parseGitHeaders(ptr, end);
+		ptr = parseHunks(fh, ptr, end);
 		fh.endOffset = ptr;
 		addFile(fh);
 		return ptr;
