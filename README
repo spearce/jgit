@@ -125,9 +125,9 @@ three for packaging.
       introducing changes in files under a specified path.
 
     * Object transport
-      Fetch via ssh, git, http, Amazon s3 and bundles.
-      Push via ssh, git and Amazon s3. Jgit does not yet deltify the pushed
-      packes to they may be a lot larger than C Git packs.
+      Fetch via ssh, git, http, Amazon S3 and bundles.
+      Push via ssh, git and Amazon S3. JGit does not yet deltify
+      the pushed packs so they may be a lot larger than C Git packs.
 
   org.spearce.jgit.pgm
 
