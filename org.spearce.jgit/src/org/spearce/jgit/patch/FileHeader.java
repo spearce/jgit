@@ -169,6 +169,10 @@ public class FileHeader {
 		patchType = PatchType.UNIFIED;
 	}
 
+	int getParentCount() {
+		return 1;
+	}
+
 	/**
 	 * Get the old name associated with this file.
 	 * <p>
@@ -272,6 +276,10 @@ public class FileHeader {
 		if (hunks == null)
 			hunks = new ArrayList<HunkHeader>();
 		hunks.add(h);
+	}
+
+	HunkHeader newHunkHeader(final int offset) {
+		return new HunkHeader(this, offset);
 	}
 
 	/** @return if a {@link PatchType#GIT_BINARY}, the new-image delta/literal */

@@ -281,8 +281,8 @@ public class Patch {
 			if (match(buf, c, NEW_NAME) >= 0)
 				break;
 
-			if (isHunkHdr(buf, c, end) == 1) {
-				final HunkHeader h = new HunkHeader(fh, c);
+			if (isHunkHdr(buf, c, end) == fh.getParentCount()) {
+				final HunkHeader h = fh.newHunkHeader(c);
 				h.parseHeader(end);
 				c = h.parseBody(this, end);
 				h.endOffset = c;
