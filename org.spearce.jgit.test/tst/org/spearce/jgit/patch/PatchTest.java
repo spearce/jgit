@@ -156,12 +156,14 @@ public class PatchTest extends TestCase {
 					"org.spearce.egit.ui/icons/toolbar/"));
 			assertSame(FileHeader.PatchType.BINARY, fh.getPatchType());
 			assertTrue(fh.getHunks().isEmpty());
+			assertTrue(fh.hasMetaDataChanges());
 		}
 
 		final FileHeader fh = p.getFiles().get(4);
 		assertEquals("org.spearce.egit.ui/plugin.xml", fh.getNewName());
 		assertSame(FileHeader.ChangeType.MODIFY, fh.getChangeType());
 		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
+		assertFalse(fh.hasMetaDataChanges());
 		assertEquals("ee8a5a0", fh.getNewId().name());
 		assertEquals(1, fh.getHunks().size());
 		assertEquals(272, fh.getHunks().get(0).getOldStartLine());

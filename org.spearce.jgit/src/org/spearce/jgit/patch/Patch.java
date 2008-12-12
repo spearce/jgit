@@ -245,13 +245,13 @@ public class Patch {
 			// with this position so it can be parsed again later.
 			//
 			if (match(buf, c, DIFF_GIT) >= 0)
-				return c;
+				break;
 			if (match(buf, c, DIFF_CC) >= 0)
-				return c;
+				break;
 			if (match(buf, c, OLD_NAME) >= 0)
-				return c;
+				break;
 			if (match(buf, c, NEW_NAME) >= 0)
-				return c;
+				break;
 
 			if (match(buf, c, HUNK_HDR) >= 0) {
 				final HunkHeader h = new HunkHeader(fh, c);
@@ -281,6 +281,16 @@ public class Patch {
 			//
 			c = eol;
 		}
+
+		if (fh.getHunks().isEmpty()
+				&& fh.getPatchType() == FileHeader.PatchType.UNIFIED
+				&& !fh.hasMetaDataChanges()) {
+			// Hmm, an empty patch? If there is no metadata here we
+			// really have a binary patch that we didn't notice above.
+			//
+			fh.patchType = FileHeader.PatchType.BINARY;
+		}
+
 		return c;
 	}
 

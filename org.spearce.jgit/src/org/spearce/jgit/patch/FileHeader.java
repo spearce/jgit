@@ -250,6 +250,11 @@ public class FileHeader {
 		return patchType;
 	}
 
+	/** @return true if this patch modifies metadata about a file */
+	public boolean hasMetaDataChanges() {
+		return changeType != ChangeType.MODIFY || newMode != oldMode;
+	}
+
 	/** @return hunks altering this file; in order of appearance in patch */
 	public List<HunkHeader> getHunks() {
 		if (hunks == null)

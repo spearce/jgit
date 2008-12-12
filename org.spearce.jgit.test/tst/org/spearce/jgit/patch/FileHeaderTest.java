@@ -48,6 +48,7 @@ public class FileHeaderTest extends TestCase {
 		assertEquals(-1, fh.parseGitFileName(0));
 		assertNotNull(fh.getHunks());
 		assertTrue(fh.getHunks().isEmpty());
+		assertFalse(fh.hasMetaDataChanges());
 	}
 
 	public void testParseGitFileName_NoLF() {
@@ -68,6 +69,7 @@ public class FileHeaderTest extends TestCase {
 		assertEquals(gitLine(name).length(), fh.parseGitFileName(0));
 		assertEquals(name, fh.getOldName());
 		assertSame(fh.getOldName(), fh.getNewName());
+		assertFalse(fh.hasMetaDataChanges());
 	}
 
 	public void testParseGitFileName_FailFooBar() {
@@ -75,6 +77,7 @@ public class FileHeaderTest extends TestCase {
 		assertTrue(fh.parseGitFileName(0) > 0);
 		assertNull(fh.getOldName());
 		assertNull(fh.getNewName());
+		assertFalse(fh.hasMetaDataChanges());
 	}
 
 	public void testParseGitFileName_FooSpBar() {
@@ -83,6 +86,7 @@ public class FileHeaderTest extends TestCase {
 		assertEquals(gitLine(name).length(), fh.parseGitFileName(0));
 		assertEquals(name, fh.getOldName());
 		assertSame(fh.getOldName(), fh.getNewName());
+		assertFalse(fh.hasMetaDataChanges());
 	}
 
 	public void testParseGitFileName_DqFooTabBar() {
@@ -92,6 +96,7 @@ public class FileHeaderTest extends TestCase {
 		assertEquals(dqGitLine(dqName).length(), fh.parseGitFileName(0));
 		assertEquals(name, fh.getOldName());
 		assertSame(fh.getOldName(), fh.getNewName());
+		assertFalse(fh.hasMetaDataChanges());
 	}
 
 	public void testParseGitFileName_DqFooSpLfNulBar() {
@@ -101,6 +106,7 @@ public class FileHeaderTest extends TestCase {
 		assertEquals(dqGitLine(dqName).length(), fh.parseGitFileName(0));
 		assertEquals(name, fh.getOldName());
 		assertSame(fh.getOldName(), fh.getNewName());
+		assertFalse(fh.hasMetaDataChanges());
 	}
 
 	public void testParseGitFileName_SrcFooC() {
@@ -109,6 +115,7 @@ public class FileHeaderTest extends TestCase {
 		assertEquals(gitLine(name).length(), fh.parseGitFileName(0));
 		assertEquals(name, fh.getOldName());
 		assertSame(fh.getOldName(), fh.getNewName());
+		assertFalse(fh.hasMetaDataChanges());
 	}
 
 	public void testParseGitFileName_SrcFooCNonStandardPrefix() {
@@ -118,6 +125,7 @@ public class FileHeaderTest extends TestCase {
 		assertEquals(header.length(), fh.parseGitFileName(0));
 		assertEquals(name, fh.getOldName());
 		assertSame(fh.getOldName(), fh.getNewName());
+		assertFalse(fh.hasMetaDataChanges());
 	}
 
 	public void testParseUnicodeName_NewFile() {
@@ -135,6 +143,7 @@ public class FileHeaderTest extends TestCase {
 
 		assertSame(FileHeader.ChangeType.ADD, fh.getChangeType());
 		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
+		assertTrue(fh.hasMetaDataChanges());
 
 		assertNull(fh.getOldMode());
 		assertSame(FileMode.REGULAR_FILE, fh.getNewMode());
@@ -159,6 +168,7 @@ public class FileHeaderTest extends TestCase {
 
 		assertSame(FileHeader.ChangeType.DELETE, fh.getChangeType());
 		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
+		assertTrue(fh.hasMetaDataChanges());
 
 		assertSame(FileMode.REGULAR_FILE, fh.getOldMode());
 		assertNull(fh.getNewMode());
@@ -177,6 +187,7 @@ public class FileHeaderTest extends TestCase {
 
 		assertSame(FileHeader.ChangeType.MODIFY, fh.getChangeType());
 		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
+		assertTrue(fh.hasMetaDataChanges());
 
 		assertNull(fh.getOldId());
 		assertNull(fh.getNewId());
@@ -204,6 +215,7 @@ public class FileHeaderTest extends TestCase {
 
 		assertSame(FileHeader.ChangeType.RENAME, fh.getChangeType());
 		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
+		assertTrue(fh.hasMetaDataChanges());
 
 		assertNull(fh.getOldId());
 		assertNull(fh.getNewId());
@@ -232,6 +244,7 @@ public class FileHeaderTest extends TestCase {
 
 		assertSame(FileHeader.ChangeType.RENAME, fh.getChangeType());
 		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
+		assertTrue(fh.hasMetaDataChanges());
 
 		assertNull(fh.getOldId());
 		assertNull(fh.getNewId());
@@ -260,6 +273,7 @@ public class FileHeaderTest extends TestCase {
 
 		assertSame(FileHeader.ChangeType.COPY, fh.getChangeType());
 		assertSame(FileHeader.PatchType.UNIFIED, fh.getPatchType());
+		assertTrue(fh.hasMetaDataChanges());
 
 		assertNull(fh.getOldId());
 		assertNull(fh.getNewId());
@@ -282,6 +296,7 @@ public class FileHeaderTest extends TestCase {
 
 		assertSame(FileMode.REGULAR_FILE, fh.getOldMode());
 		assertSame(FileMode.REGULAR_FILE, fh.getNewMode());
+		assertFalse(fh.hasMetaDataChanges());
 
 		assertNotNull(fh.getOldId());
 		assertNotNull(fh.getNewId());
@@ -302,6 +317,7 @@ public class FileHeaderTest extends TestCase {
 
 		assertEquals("a", fh.getOldName());
 		assertEquals("a", fh.getNewName());
+		assertFalse(fh.hasMetaDataChanges());
 
 		assertNull(fh.getOldMode());
 		assertNull(fh.getNewMode());
@@ -330,6 +346,7 @@ public class FileHeaderTest extends TestCase {
 
 		assertSame(FileMode.REGULAR_FILE, fh.getOldMode());
 		assertSame(FileMode.REGULAR_FILE, fh.getNewMode());
+		assertFalse(fh.hasMetaDataChanges());
 
 		assertNotNull(fh.getOldId());
 		assertNotNull(fh.getNewId());
@@ -358,6 +375,7 @@ public class FileHeaderTest extends TestCase {
 
 		assertNull(fh.getOldMode());
 		assertNull(fh.getNewMode());
+		assertFalse(fh.hasMetaDataChanges());
 
 		assertNotNull(fh.getOldId());
 		assertNotNull(fh.getNewId());
