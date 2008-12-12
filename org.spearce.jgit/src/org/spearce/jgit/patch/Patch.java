@@ -69,9 +69,13 @@ public class Patch {
 	/** The files, in the order they were parsed out of the input. */
 	private final List<FileHeader> files;
 
+	/** Formatting errors, if any were identified. */
+	private final List<FormatError> errors;
+
 	/** Create an empty patch. */
 	public Patch() {
 		files = new ArrayList<FileHeader>();
+		errors = new ArrayList<FormatError>(0);
 	}
 
 	/**
@@ -90,6 +94,21 @@ public class Patch {
 	/** @return list of files described in the patch, in occurrence order. */
 	public List<FileHeader> getFiles() {
 		return files;
+	}
+
+	/**
+	 * Add a formatting error to this patch script.
+	 *
+	 * @param err
+	 *            the error description.
+	 */
+	public void addError(final FormatError err) {
+		errors.add(err);
+	}
+
+	/** @return collection of formatting errors, if any. */
+	public List<FormatError> getErrors() {
+		return errors;
 	}
 
 	/**
@@ -149,8 +168,7 @@ public class Patch {
 				// have missed a file header previously. The hunk
 				// isn't valid without knowing where it comes from.
 				//
-
-				// TODO handle a disconnected hunk fragment
+				error(buf, c, "Hunk disconnected from file");
 				c = nextLF(buf, c);
 				continue;
 			}
@@ -218,6 +236,7 @@ public class Patch {
 
 		// TODO Support parsing diff --cc headers
 		// TODO parse diff --cc hunks
+		warn(buf, startOffset, "diff --cc format not supported");
 		fh.endOffset = ptr;
 		addFile(fh);
 		return ptr;
@@ -259,12 +278,12 @@ public class Patch {
 			if (match(buf, c, HUNK_HDR) >= 0) {
 				final HunkHeader h = new HunkHeader(fh, c);
 				h.parseHeader();
-				c = h.parseBody();
+				c = h.parseBody(this);
 				h.endOffset = c;
 				fh.addHunk(h);
 				if (c < sz && buf[c] != '@' && buf[c] != 'd'
 						&& match(buf, c, SIG_FOOTER) < 0) {
-					// TODO report on noise between hunks, might be an error
+					warn(buf, c, "Unexpected hunk trailer");
 				}
 				continue;
 			}
@@ -308,8 +327,7 @@ public class Patch {
 		if (nEnd < 0) {
 			// Not a binary hunk.
 			//
-
-			// TODO handle invalid binary hunks
+			error(fh.buf, c, "Missing forward-image in GIT binary patch");
 			return c;
 		}
 		c = nEnd;
@@ -325,6 +343,14 @@ public class Patch {
 		}
 
 		return c;
+	}
+
+	void warn(final byte[] buf, final int ptr, final String msg) {
+		addError(new FormatError(buf, ptr, FormatError.Severity.WARNING, msg));
+	}
+
+	void error(final byte[] buf, final int ptr, final String msg) {
+		addError(new FormatError(buf, ptr, FormatError.Severity.ERROR, msg));
 	}
 
 	private static boolean matchAny(final byte[] buf, final int c,

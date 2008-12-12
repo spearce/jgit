@@ -49,11 +49,13 @@ public class PatchTest extends TestCase {
 	public void testEmpty() {
 		final Patch p = new Patch();
 		assertTrue(p.getFiles().isEmpty());
+		assertTrue(p.getErrors().isEmpty());
 	}
 
 	public void testParse_ConfigCaseInsensitive() throws IOException {
 		final Patch p = parseTestPatchFile();
 		assertEquals(2, p.getFiles().size());
+		assertTrue(p.getErrors().isEmpty());
 
 		final FileHeader fRepositoryConfigTest = p.getFiles().get(0);
 		final FileHeader fRepositoryConfig = p.getFiles().get(1);
@@ -145,6 +147,7 @@ public class PatchTest extends TestCase {
 	public void testParse_NoBinary() throws IOException {
 		final Patch p = parseTestPatchFile();
 		assertEquals(5, p.getFiles().size());
+		assertTrue(p.getErrors().isEmpty());
 
 		for (int i = 0; i < 4; i++) {
 			final FileHeader fh = p.getFiles().get(i);
@@ -179,6 +182,7 @@ public class PatchTest extends TestCase {
 		final Patch p = parseTestPatchFile();
 		final int[] binsizes = { 359, 393, 372, 404 };
 		assertEquals(5, p.getFiles().size());
+		assertTrue(p.getErrors().isEmpty());
 
 		for (int i = 0; i < 4; i++) {
 			final FileHeader fh = p.getFiles().get(i);

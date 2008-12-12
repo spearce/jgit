@@ -132,7 +132,7 @@ public class HunkHeader {
 		newLineCount = parseBase10(buf, ptr.value + 1, ptr);
 	}
 
-	int parseBody() {
+	int parseBody(final Patch script) {
 		final byte[] buf = file.buf;
 		final int sz = buf.length;
 		int c = nextLF(buf, startOffset), last = c;
@@ -175,9 +175,21 @@ public class HunkHeader {
 			return last;
 		}
 
-		if (nContext + nDeleted != oldLineCount
-				|| nContext + nAdded != newLineCount) {
-			// TODO report on truncated hunk
+		if (nContext + nDeleted < oldLineCount) {
+			final int missingCount = oldLineCount - (nContext + nDeleted);
+			script.error(buf, startOffset, "Truncated hunk, at least "
+					+ missingCount + " old lines is missing");
+
+		} else if (nContext + nAdded < newLineCount) {
+			final int missingCount = newLineCount - (nContext + nAdded);
+			script.error(buf, startOffset, "Truncated hunk, at least "
+					+ missingCount + " new lines is missing");
+
+		} else if (nContext + nDeleted > oldLineCount
+				|| nContext + nAdded > newLineCount) {
+			script.warn(buf, startOffset, "Hunk header " + oldLineCount + ":"
+					+ newLineCount + " does not match body line count of "
+					+ (nContext + nDeleted) + ":" + (nContext + nAdded));
 		}
 
 		return c;
