@@ -45,28 +45,32 @@ import org.spearce.jgit.lib.ObjectId;
 public class FileHeaderTest extends TestCase {
 	public void testParseGitFileName_Empty() {
 		final FileHeader fh = data("");
-		assertEquals(-1, fh.parseGitFileName(0));
+		assertEquals(-1, fh.parseGitFileName(0, fh.buf.length));
 		assertNotNull(fh.getHunks());
 		assertTrue(fh.getHunks().isEmpty());
 		assertFalse(fh.hasMetaDataChanges());
 	}
 
 	public void testParseGitFileName_NoLF() {
-		assertEquals(-1, data("a/ b/").parseGitFileName(0));
+		final FileHeader fh = data("a/ b/");
+		assertEquals(-1, fh.parseGitFileName(0, fh.buf.length));
 	}
 
 	public void testParseGitFileName_NoSecondLine() {
-		assertEquals(-1, data("\n").parseGitFileName(0));
+		final FileHeader fh = data("\n");
+		assertEquals(-1, fh.parseGitFileName(0, fh.buf.length));
 	}
 
 	public void testParseGitFileName_EmptyHeader() {
-		assertEquals(1, data("\n\n").parseGitFileName(0));
+		final FileHeader fh = data("\n\n");
+		assertEquals(1, fh.parseGitFileName(0, fh.buf.length));
 	}
 
 	public void testParseGitFileName_Foo() {
 		final String name = "foo";
 		final FileHeader fh = header(name);
-		assertEquals(gitLine(name).length(), fh.parseGitFileName(0));
+		assertEquals(gitLine(name).length(), fh.parseGitFileName(0,
+				fh.buf.length));
 		assertEquals(name, fh.getOldName());
 		assertSame(fh.getOldName(), fh.getNewName());
 		assertFalse(fh.hasMetaDataChanges());
@@ -74,7 +78,7 @@ public class FileHeaderTest extends TestCase {
 
 	public void testParseGitFileName_FailFooBar() {
 		final FileHeader fh = data("a/foo b/bar\n-");
-		assertTrue(fh.parseGitFileName(0) > 0);
+		assertTrue(fh.parseGitFileName(0, fh.buf.length) > 0);
 		assertNull(fh.getOldName());
 		assertNull(fh.getNewName());
 		assertFalse(fh.hasMetaDataChanges());
@@ -83,7 +87,8 @@ public class FileHeaderTest extends TestCase {
 	public void testParseGitFileName_FooSpBar() {
 		final String name = "foo bar";
 		final FileHeader fh = header(name);
-		assertEquals(gitLine(name).length(), fh.parseGitFileName(0));
+		assertEquals(gitLine(name).length(), fh.parseGitFileName(0,
+				fh.buf.length));
 		assertEquals(name, fh.getOldName());
 		assertSame(fh.getOldName(), fh.getNewName());
 		assertFalse(fh.hasMetaDataChanges());
@@ -93,7 +98,8 @@ public class FileHeaderTest extends TestCase {
 		final String name = "foo\tbar";
 		final String dqName = "foo\\tbar";
 		final FileHeader fh = dqHeader(dqName);
-		assertEquals(dqGitLine(dqName).length(), fh.parseGitFileName(0));
+		assertEquals(dqGitLine(dqName).length(), fh.parseGitFileName(0,
+				fh.buf.length));
 		assertEquals(name, fh.getOldName());
 		assertSame(fh.getOldName(), fh.getNewName());
 		assertFalse(fh.hasMetaDataChanges());
@@ -103,7 +109,8 @@ public class FileHeaderTest extends TestCase {
 		final String name = "foo \n\0bar";
 		final String dqName = "foo \\n\\0bar";
 		final FileHeader fh = dqHeader(dqName);
-		assertEquals(dqGitLine(dqName).length(), fh.parseGitFileName(0));
+		assertEquals(dqGitLine(dqName).length(), fh.parseGitFileName(0,
+				fh.buf.length));
 		assertEquals(name, fh.getOldName());
 		assertSame(fh.getOldName(), fh.getNewName());
 		assertFalse(fh.hasMetaDataChanges());
@@ -112,7 +119,8 @@ public class FileHeaderTest extends TestCase {
 	public void testParseGitFileName_SrcFooC() {
 		final String name = "src/foo/bar/argh/code.c";
 		final FileHeader fh = header(name);
-		assertEquals(gitLine(name).length(), fh.parseGitFileName(0));
+		assertEquals(gitLine(name).length(), fh.parseGitFileName(0,
+				fh.buf.length));
 		assertEquals(name, fh.getOldName());
 		assertSame(fh.getOldName(), fh.getNewName());
 		assertFalse(fh.hasMetaDataChanges());
@@ -122,7 +130,7 @@ public class FileHeaderTest extends TestCase {
 		final String name = "src/foo/bar/argh/code.c";
 		final String header = "project-v-1.0/" + name + " mydev/" + name + "\n";
 		final FileHeader fh = data(header + "-");
-		assertEquals(header.length(), fh.parseGitFileName(0));
+		assertEquals(header.length(), fh.parseGitFileName(0, fh.buf.length));
 		assertEquals(name, fh.getOldName());
 		assertSame(fh.getOldName(), fh.getNewName());
 		assertFalse(fh.hasMetaDataChanges());
@@ -202,12 +210,12 @@ public class FileHeaderTest extends TestCase {
 				+ "similarity index 100%\n"
 				+ "rename from a\n"
 				+ "rename to \" c/\\303\\205ngstr\\303\\266m\"\n");
-		int ptr = fh.parseGitFileName(0);
+		int ptr = fh.parseGitFileName(0, fh.buf.length);
 		assertTrue(ptr > 0);
 		assertNull(fh.getOldName()); // can't parse names on a rename
 		assertNull(fh.getNewName());
 
-		ptr = fh.parseGitHeaders(ptr);
+		ptr = fh.parseGitHeaders(ptr, fh.buf.length);
 		assertTrue(ptr > 0);
 
 		assertEquals("a", fh.getOldName());
@@ -231,12 +239,12 @@ public class FileHeaderTest extends TestCase {
 				+ "similarity index 100%\n"
 				+ "rename old a\n"
 				+ "rename new \" c/\\303\\205ngstr\\303\\266m\"\n");
-		int ptr = fh.parseGitFileName(0);
+		int ptr = fh.parseGitFileName(0, fh.buf.length);
 		assertTrue(ptr > 0);
 		assertNull(fh.getOldName()); // can't parse names on a rename
 		assertNull(fh.getNewName());
 
-		ptr = fh.parseGitHeaders(ptr);
+		ptr = fh.parseGitHeaders(ptr, fh.buf.length);
 		assertTrue(ptr > 0);
 
 		assertEquals("a", fh.getOldName());
@@ -260,12 +268,12 @@ public class FileHeaderTest extends TestCase {
 				+ "similarity index 100%\n"
 				+ "copy from a\n"
 				+ "copy to \" c/\\303\\205ngstr\\303\\266m\"\n");
-		int ptr = fh.parseGitFileName(0);
+		int ptr = fh.parseGitFileName(0, fh.buf.length);
 		assertTrue(ptr > 0);
 		assertNull(fh.getOldName()); // can't parse names on a copy
 		assertNull(fh.getNewName());
 
-		ptr = fh.parseGitHeaders(ptr);
+		ptr = fh.parseGitHeaders(ptr, fh.buf.length);
 		assertTrue(ptr > 0);
 
 		assertEquals("a", fh.getOldName());
@@ -391,9 +399,9 @@ public class FileHeaderTest extends TestCase {
 	}
 
 	private static void assertParse(final FileHeader fh) {
-		int ptr = fh.parseGitFileName(0);
+		int ptr = fh.parseGitFileName(0, fh.buf.length);
 		assertTrue(ptr > 0);
-		ptr = fh.parseGitHeaders(ptr);
+		ptr = fh.parseGitHeaders(ptr, fh.buf.length);
 		assertTrue(ptr > 0);
 	}
 

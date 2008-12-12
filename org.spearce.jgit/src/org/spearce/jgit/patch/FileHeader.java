@@ -291,12 +291,14 @@ public class FileHeader {
 	 *
 	 * @param ptr
 	 *            first character after the "diff --git " or "diff --cc " part.
+	 * @param end
+	 *            one past the last position to parse.
 	 * @return first character after the LF at the end of the line; -1 on error.
 	 */
-	int parseGitFileName(int ptr) {
+	int parseGitFileName(int ptr, final int end) {
 		final int eol = nextLF(buf, ptr);
 		final int bol = ptr;
-		if (eol >= buf.length) {
+		if (eol >= end) {
 			return -1;
 		}
 
@@ -353,9 +355,8 @@ public class FileHeader {
 		return eol;
 	}
 
-	int parseGitHeaders(int ptr) {
-		final int sz = buf.length;
-		while (ptr < sz) {
+	int parseGitHeaders(int ptr, final int end) {
+		while (ptr < end) {
 			final int eol = nextLF(buf, ptr);
 			if (match(buf, ptr, HUNK_HDR) >= 0) {
 				// First hunk header; break out and parse them later.
@@ -428,9 +429,8 @@ public class FileHeader {
 		return ptr;
 	}
 
-	int parseTraditionalHeaders(int ptr) {
-		final int sz = buf.length;
-		while (ptr < sz) {
+	int parseTraditionalHeaders(int ptr, final int end) {
+		while (ptr < end) {
 			final int eol = nextLF(buf, ptr);
 			if (match(buf, ptr, HUNK_HDR) >= 0) {
 				// First hunk header; break out and parse them later.

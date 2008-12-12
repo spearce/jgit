@@ -119,7 +119,7 @@ public class HunkHeader {
 		return nAdded;
 	}
 
-	void parseHeader() {
+	void parseHeader(final int end) {
 		// Parse "@@ -236,9 +236,9 @@ protected boolean"
 		//
 		final byte[] buf = file.buf;
@@ -132,15 +132,14 @@ public class HunkHeader {
 		newLineCount = parseBase10(buf, ptr.value + 1, ptr);
 	}
 
-	int parseBody(final Patch script) {
+	int parseBody(final Patch script, final int end) {
 		final byte[] buf = file.buf;
-		final int sz = buf.length;
 		int c = nextLF(buf, startOffset), last = c;
 
 		nDeleted = 0;
 		nAdded = 0;
 
-		SCAN: for (; c < sz; last = c, c = nextLF(buf, c)) {
+		SCAN: for (; c < end; last = c, c = nextLF(buf, c)) {
 			switch (buf[c]) {
 			case ' ':
 			case '\n':
@@ -163,7 +162,7 @@ public class HunkHeader {
 			}
 		}
 
-		if (last < sz && nContext + nDeleted - 1 == oldLineCount
+		if (last < end && nContext + nDeleted - 1 == oldLineCount
 				&& nContext + nAdded == newLineCount
 				&& match(buf, last, Patch.SIG_FOOTER) >= 0) {
 			// This is an extremely common occurrence of "corruption".

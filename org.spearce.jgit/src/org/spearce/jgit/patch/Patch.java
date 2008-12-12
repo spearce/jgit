@@ -157,12 +157,11 @@ public class Patch {
 	 */
 	public void parse(final byte[] buf, int ptr, final int end) {
 		while (ptr < end)
-			ptr = parseFile(buf, ptr);
+			ptr = parseFile(buf, ptr, end);
 	}
 
-	private int parseFile(final byte[] buf, int c) {
-		final int sz = buf.length;
-		while (c < sz) {
+	private int parseFile(final byte[] buf, int c, final int end) {
+		while (c < end) {
 			if (match(buf, c, HUNK_HDR) >= 0) {
 				// If we find a disconnected hunk header we might
 				// have missed a file header previously. The hunk
@@ -176,19 +175,19 @@ public class Patch {
 			// Valid git style patch?
 			//
 			if (match(buf, c, DIFF_GIT) >= 0)
-				return parseDiffGit(buf, c);
+				return parseDiffGit(buf, c, end);
 			if (match(buf, c, DIFF_CC) >= 0)
-				return parseDiffCC(buf, c);
+				return parseDiffCC(buf, c, end);
 
 			// Junk between files? Leading junk? Traditional
 			// (non-git generated) patch?
 			//
 			final int n = nextLF(buf, c);
-			if (n >= sz) {
+			if (n >= end) {
 				// Patches cannot be only one line long. This must be
 				// trailing junk that we should ignore.
 				//
-				return sz;
+				return end;
 			}
 
 			if (n - c < 6) {
@@ -204,10 +203,10 @@ public class Patch {
 				// a "@@ -0,0" smelling line next. We only check the "@@ -".
 				//
 				final int f = nextLF(buf, n);
-				if (f >= sz)
-					return sz;
+				if (f >= end)
+					return end;
 				if (match(buf, f, HUNK_HDR) >= 0)
-					return parseTraditionalPatch(buf, c);
+					return parseTraditionalPatch(buf, c, end);
 			}
 
 			c = n;
@@ -215,53 +214,53 @@ public class Patch {
 		return c;
 	}
 
-	private int parseDiffGit(final byte[] buf, final int startOffset) {
-		final FileHeader fh = new FileHeader(buf, startOffset);
-		int ptr = fh.parseGitFileName(startOffset + DIFF_GIT.length);
+	private int parseDiffGit(final byte[] buf, final int start, final int end) {
+		final FileHeader fh = new FileHeader(buf, start);
+		int ptr = fh.parseGitFileName(start + DIFF_GIT.length, end);
 		if (ptr < 0)
-			return skipFile(buf, startOffset);
+			return skipFile(buf, start, end);
 
-		ptr = fh.parseGitHeaders(ptr);
-		ptr = parseHunks(fh, ptr);
+		ptr = fh.parseGitHeaders(ptr, end);
+		ptr = parseHunks(fh, ptr, end);
 		fh.endOffset = ptr;
 		addFile(fh);
 		return ptr;
 	}
 
-	private int parseDiffCC(final byte[] buf, final int startOffset) {
-		final FileHeader fh = new FileHeader(buf, startOffset);
-		int ptr = fh.parseGitFileName(startOffset + DIFF_CC.length);
+	private int parseDiffCC(final byte[] buf, final int start, final int end) {
+		final FileHeader fh = new FileHeader(buf, start);
+		int ptr = fh.parseGitFileName(start + DIFF_CC.length, end);
 		if (ptr < 0)
-			return skipFile(buf, startOffset);
+			return skipFile(buf, start, end);
 
 		// TODO Support parsing diff --cc headers
 		// TODO parse diff --cc hunks
-		warn(buf, startOffset, "diff --cc format not supported");
+		warn(buf, start, "diff --cc format not supported");
 		fh.endOffset = ptr;
 		addFile(fh);
 		return ptr;
 	}
 
-	private int parseTraditionalPatch(final byte[] buf, final int startOffset) {
-		final FileHeader fh = new FileHeader(buf, startOffset);
-		int ptr = fh.parseTraditionalHeaders(startOffset);
-		ptr = parseHunks(fh, ptr);
+	private int parseTraditionalPatch(final byte[] buf, final int start,
+			final int end) {
+		final FileHeader fh = new FileHeader(buf, start);
+		int ptr = fh.parseTraditionalHeaders(start, end);
+		ptr = parseHunks(fh, ptr, end);
 		fh.endOffset = ptr;
 		addFile(fh);
 		return ptr;
 	}
 
-	private static int skipFile(final byte[] buf, int ptr) {
+	private static int skipFile(final byte[] buf, int ptr, final int end) {
 		ptr = nextLF(buf, ptr);
 		if (match(buf, ptr, OLD_NAME) >= 0)
 			ptr = nextLF(buf, ptr);
 		return ptr;
 	}
 
-	private int parseHunks(final FileHeader fh, int c) {
+	private int parseHunks(final FileHeader fh, int c, final int end) {
 		final byte[] buf = fh.buf;
-		final int sz = buf.length;
-		while (c < sz) {
+		while (c < end) {
 			// If we see a file header at this point, we have all of the
 			// hunks for our current file. We should stop and report back
 			// with this position so it can be parsed again later.
@@ -277,11 +276,11 @@ public class Patch {
 
 			if (match(buf, c, HUNK_HDR) >= 0) {
 				final HunkHeader h = new HunkHeader(fh, c);
-				h.parseHeader();
-				c = h.parseBody(this);
+				h.parseHeader(end);
+				c = h.parseBody(this, end);
 				h.endOffset = c;
 				fh.addHunk(h);
-				if (c < sz && buf[c] != '@' && buf[c] != 'd'
+				if (c < end && buf[c] != '@' && buf[c] != 'd'
 						&& match(buf, c, SIG_FOOTER) < 0) {
 					warn(buf, c, "Unexpected hunk trailer");
 				}
@@ -291,7 +290,7 @@ public class Patch {
 			final int eol = nextLF(buf, c);
 			if (fh.getHunks().isEmpty() && match(buf, c, GIT_BINARY) >= 0) {
 				fh.patchType = FileHeader.PatchType.GIT_BINARY;
-				return parseGitBinary(fh, eol);
+				return parseGitBinary(fh, eol, end);
 			}
 
 			if (fh.getHunks().isEmpty() && BIN_TRAILER.length < eol - c
@@ -321,9 +320,9 @@ public class Patch {
 		return c;
 	}
 
-	private int parseGitBinary(final FileHeader fh, int c) {
+	private int parseGitBinary(final FileHeader fh, int c, final int end) {
 		final BinaryHunk postImage = new BinaryHunk(fh, c);
-		final int nEnd = postImage.parseHunk(c);
+		final int nEnd = postImage.parseHunk(c, end);
 		if (nEnd < 0) {
 			// Not a binary hunk.
 			//
@@ -335,7 +334,7 @@ public class Patch {
 		fh.forwardBinaryHunk = postImage;
 
 		final BinaryHunk preImage = new BinaryHunk(fh, c);
-		final int oEnd = preImage.parseHunk(c);
+		final int oEnd = preImage.parseHunk(c, end);
 		if (oEnd >= 0) {
 			c = oEnd;
 			preImage.endOffset = c;

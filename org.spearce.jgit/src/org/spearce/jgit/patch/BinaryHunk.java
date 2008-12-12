@@ -91,7 +91,7 @@ public class BinaryHunk {
 		return length;
 	}
 
-	int parseHunk(int ptr) {
+	int parseHunk(int ptr, final int end) {
 		final byte[] buf = file.buf;
 
 		if (match(buf, ptr, LITERAL) >= 0) {
@@ -115,8 +115,7 @@ public class BinaryHunk {
 		// encoded information in this hunk. To save time we don't do a
 		// validation of the binary data at this point.
 		//
-		final int sz = buf.length;
-		while (ptr < sz) {
+		while (ptr < end) {
 			final boolean empty = buf[ptr] == '\n';
 			ptr = nextLF(buf, ptr);
 			if (empty)
