@@ -228,6 +228,74 @@ public class PatchTest extends TestCase {
 		assertEquals(272, fh.getHunks().get(0).getOldImage().getStartLine());
 	}
 
+	public void testParse_FixNoNewline() throws IOException {
+		final Patch p = parseTestPatchFile();
+		assertEquals(1, p.getFiles().size());
+		assertTrue(p.getErrors().isEmpty());
+
+		final FileHeader f = p.getFiles().get(0);
+
+		assertEquals("a", f.getNewName());
+		assertEquals(252, f.startOffset);
+
+		assertEquals("2e65efe", f.getOldId().name());
+		assertEquals("f2ad6c7", f.getNewId().name());
+		assertSame(FileHeader.PatchType.UNIFIED, f.getPatchType());
+		assertSame(FileMode.REGULAR_FILE, f.getOldMode());
+		assertSame(FileMode.REGULAR_FILE, f.getNewMode());
+		assertEquals(1, f.getHunks().size());
+		{
+			final HunkHeader h = f.getHunks().get(0);
+			assertSame(f, h.getFileHeader());
+			assertEquals(317, h.startOffset);
+			assertEquals(1, h.getOldImage().getStartLine());
+			assertEquals(1, h.getOldImage().getLineCount());
+			assertEquals(1, h.getNewStartLine());
+			assertEquals(1, h.getNewLineCount());
+
+			assertEquals(0, h.getLinesContext());
+			assertEquals(1, h.getOldImage().getLinesAdded());
+			assertEquals(1, h.getOldImage().getLinesDeleted());
+			assertSame(f.getOldId(), h.getOldImage().getId());
+
+			assertEquals(363, h.endOffset);
+		}
+	}
+
+	public void testParse_AddNoNewline() throws IOException {
+		final Patch p = parseTestPatchFile();
+		assertEquals(1, p.getFiles().size());
+		assertTrue(p.getErrors().isEmpty());
+
+		final FileHeader f = p.getFiles().get(0);
+
+		assertEquals("a", f.getNewName());
+		assertEquals(256, f.startOffset);
+
+		assertEquals("f2ad6c7", f.getOldId().name());
+		assertEquals("c59d9b6", f.getNewId().name());
+		assertSame(FileHeader.PatchType.UNIFIED, f.getPatchType());
+		assertSame(FileMode.REGULAR_FILE, f.getOldMode());
+		assertSame(FileMode.REGULAR_FILE, f.getNewMode());
+		assertEquals(1, f.getHunks().size());
+		{
+			final HunkHeader h = f.getHunks().get(0);
+			assertSame(f, h.getFileHeader());
+			assertEquals(321, h.startOffset);
+			assertEquals(1, h.getOldImage().getStartLine());
+			assertEquals(1, h.getOldImage().getLineCount());
+			assertEquals(1, h.getNewStartLine());
+			assertEquals(1, h.getNewLineCount());
+
+			assertEquals(0, h.getLinesContext());
+			assertEquals(1, h.getOldImage().getLinesAdded());
+			assertEquals(1, h.getOldImage().getLinesDeleted());
+			assertSame(f.getOldId(), h.getOldImage().getId());
+
+			assertEquals(367, h.endOffset);
+		}
+	}
+
 	private Patch parseTestPatchFile() throws IOException {
 		final String patchFile = getName() + ".patch";
 		final InputStream in = getClass().getResourceAsStream(patchFile);
