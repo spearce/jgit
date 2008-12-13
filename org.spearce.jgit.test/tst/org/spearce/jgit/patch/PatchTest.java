@@ -184,7 +184,7 @@ public class PatchTest extends TestCase {
 		assertEquals(272, fh.getHunks().get(0).getOldImage().getStartLine());
 	}
 
-	public void testParse_GitBinary() throws IOException {
+	public void testParse_GitBinaryLiteral() throws IOException {
 		final Patch p = parseTestPatchFile();
 		final int[] binsizes = { 359, 393, 372, 404 };
 		assertEquals(5, p.getFiles().size());
@@ -227,6 +227,43 @@ public class PatchTest extends TestCase {
 		assertNull(fh.getReverseBinaryHunk());
 		assertEquals(1, fh.getHunks().size());
 		assertEquals(272, fh.getHunks().get(0).getOldImage().getStartLine());
+	}
+
+	public void testParse_GitBinaryDelta() throws IOException {
+		final Patch p = parseTestPatchFile();
+		assertEquals(1, p.getFiles().size());
+		assertTrue(p.getErrors().isEmpty());
+
+		final FileHeader fh = p.getFiles().get(0);
+		assertTrue(fh.getNewName().startsWith("zero.bin"));
+		assertSame(FileHeader.ChangeType.MODIFY, fh.getChangeType());
+		assertSame(FileHeader.PatchType.GIT_BINARY, fh.getPatchType());
+		assertSame(FileMode.REGULAR_FILE, fh.getNewMode());
+
+		assertNotNull(fh.getOldId());
+		assertNotNull(fh.getNewId());
+		assertEquals("08e7df176454f3ee5eeda13efa0adaa54828dfd8", fh.getOldId()
+				.name());
+		assertEquals("d70d8710b6d32ff844af0ee7c247e4b4b051867f", fh.getNewId()
+				.name());
+
+		assertTrue(fh.getHunks().isEmpty());
+		assertFalse(fh.hasMetaDataChanges());
+
+		final BinaryHunk fwd = fh.getForwardBinaryHunk();
+		final BinaryHunk rev = fh.getReverseBinaryHunk();
+		assertNotNull(fwd);
+		assertNotNull(rev);
+		assertEquals(12, fwd.getSize());
+		assertEquals(11, rev.getSize());
+
+		assertSame(fh, fwd.getFileHeader());
+		assertSame(fh, rev.getFileHeader());
+
+		assertSame(BinaryHunk.Type.DELTA_DEFLATED, fwd.getType());
+		assertSame(BinaryHunk.Type.DELTA_DEFLATED, rev.getType());
+
+		assertEquals(496, fh.endOffset);
 	}
 
 	public void testParse_FixNoNewline() throws IOException {

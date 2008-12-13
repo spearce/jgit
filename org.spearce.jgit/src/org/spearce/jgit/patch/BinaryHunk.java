@@ -100,7 +100,7 @@ public class BinaryHunk {
 
 		} else if (match(buf, ptr, DELTA) >= 0) {
 			type = Type.DELTA_DEFLATED;
-			length = parseBase10(buf, ptr + LITERAL.length, null);
+			length = parseBase10(buf, ptr + DELTA.length, null);
 
 		} else {
 			// Not a valid binary hunk. Signal to the caller that
