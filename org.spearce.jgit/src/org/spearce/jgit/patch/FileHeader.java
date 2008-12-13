@@ -173,6 +173,21 @@ public class FileHeader {
 		return 1;
 	}
 
+	/** @return the byte array holding this file's patch script. */
+	public byte[] getBuffer() {
+		return buf;
+	}
+
+	/** @return offset the start of this file's script in {@link #getBuffer()}. */
+	public int getStartOffset() {
+		return startOffset;
+	}
+
+	/** @return offset one past the end of the file script. */
+	public int getEndOffset() {
+		return endOffset;
+	}
+
 	/**
 	 * Get the old name associated with this file.
 	 * <p>

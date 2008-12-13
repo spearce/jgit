@@ -81,6 +81,21 @@ public class BinaryHunk {
 		return file;
 	}
 
+	/** @return the byte array holding this hunk's patch script. */
+	public byte[] getBuffer() {
+		return file.buf;
+	}
+
+	/** @return offset the start of this hunk in {@link #getBuffer()}. */
+	public int getStartOffset() {
+		return startOffset;
+	}
+
+	/** @return offset one past the end of the hunk in {@link #getBuffer()}. */
+	public int getEndOffset() {
+		return endOffset;
+	}
+
 	/** @return type of this binary hunk */
 	public Type getType() {
 		return type;
