@@ -98,8 +98,7 @@ public class T0002_history extends GitTestCase {
 		IFileHistoryProvider fileHistoryProvider = provider.getFileHistoryProvider();
 		IFileHistory fileHistory = fileHistoryProvider.getFileHistoryFor(project.getProject().getWorkspace().getRoot().findMember("Project-1/A.txt"), IFileHistoryProvider.SINGLE_LINE_OF_DESCENT, new NullProgressMonitor());
 		IFileRevision[] fileRevisions = fileHistory.getFileRevisions();
-		assertEquals(2, fileRevisions.length);
-		assertEquals("Index", fileRevisions[0].getContentIdentifier());
-		assertEquals("6dd8f0b51204fa24a01734971947847549ec4ba8", fileRevisions[1].getContentIdentifier());
+		assertEquals(1, fileRevisions.length);
+		assertEquals("6dd8f0b51204fa24a01734971947847549ec4ba8", fileRevisions[0].getContentIdentifier());
 	}
 }
