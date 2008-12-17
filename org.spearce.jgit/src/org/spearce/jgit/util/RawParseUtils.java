@@ -135,7 +135,7 @@ public final class RawParseUtils {
 	}
 
 	/**
-	 * Parse a base 10 numeric from a sequence of ASCII digits.
+	 * Parse a base 10 numeric from a sequence of ASCII digits into an int.
 	 * <p>
 	 * Digit sequences can begin with an optional run of spaces before the
 	 * sequence, and may start with a '+' or a '-' to indicate sign position.
@@ -155,6 +155,60 @@ public final class RawParseUtils {
 	public static final int parseBase10(final byte[] b, int ptr,
 			final MutableInteger ptrResult) {
 		int r = 0;
+		int sign = 0;
+		try {
+			final int sz = b.length;
+			while (ptr < sz && b[ptr] == ' ')
+				ptr++;
+			if (ptr >= sz)
+				return 0;
+
+			switch (b[ptr]) {
+			case '-':
+				sign = -1;
+				ptr++;
+				break;
+			case '+':
+				ptr++;
+				break;
+			}
+
+			while (ptr < sz) {
+				final byte v = digits[b[ptr]];
+				if (v < 0)
+					break;
+				r = (r * 10) + v;
+				ptr++;
+			}
+		} catch (ArrayIndexOutOfBoundsException e) {
+			// Not a valid digit.
+		}
+		if (ptrResult != null)
+			ptrResult.value = ptr;
+		return sign < 0 ? -r : r;
+	}
+
+	/**
+	 * Parse a base 10 numeric from a sequence of ASCII digits into a long.
+	 * <p>
+	 * Digit sequences can begin with an optional run of spaces before the
+	 * sequence, and may start with a '+' or a '-' to indicate sign position.
+	 * Any other characters will cause the method to stop and return the current
+	 * result to the caller.
+	 * 
+	 * @param b
+	 *            buffer to scan.
+	 * @param ptr
+	 *            position within buffer to start parsing digits at.
+	 * @param ptrResult
+	 *            optional location to return the new ptr value through. If null
+	 *            the ptr value will be discarded.
+	 * @return the value at this location; 0 if the location is not a valid
+	 *         numeric.
+	 */
+	public static final long parseLongBase10(final byte[] b, int ptr,
+			final MutableInteger ptrResult) {
+		long r = 0;
 		int sign = 0;
 		try {
 			final int sz = b.length;
@@ -414,7 +468,7 @@ public final class RawParseUtils {
 		final String email = decode(cs, raw, emailB, emailE - 1);
 
 		final MutableInteger ptrout = new MutableInteger();
-		final int when = parseBase10(raw, emailE + 1, ptrout);
+		final long when = parseLongBase10(raw, emailE + 1, ptrout);
 		final int tz = parseTimeZoneOffset(raw, ptrout.value);
 
 		return new PersonIdent(name, email, when * 1000L, tz);
