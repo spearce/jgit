@@ -41,7 +41,9 @@ import static org.spearce.jgit.lib.Constants.encodeASCII;
 import static org.spearce.jgit.util.RawParseUtils.match;
 import static org.spearce.jgit.util.RawParseUtils.nextLF;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.spearce.jgit.lib.AbbreviatedObjectId;
@@ -111,6 +113,31 @@ public class CombinedFileHeader extends FileHeader {
 		return oldIds[nthParent];
 	}
 
+	@Override
+	public String getScriptText(final Charset ocs, final Charset ncs) {
+		final Charset[] cs = new Charset[getParentCount() + 1];
+		Arrays.fill(cs, ocs);
+		cs[getParentCount()] = ncs;
+		return getScriptText(cs);
+	}
+
+	/**
+	 * Convert the patch script for this file into a string.
+	 *
+	 * @param charsetGuess
+	 *            optional array to suggest the character set to use when
+	 *            decoding each file's line. If supplied the array must have a
+	 *            length of <code>{@link #getParentCount()} + 1</code>
+	 *            representing the old revision character sets and the new
+	 *            revision character set.
+	 * @return the patch script, as a Unicode string.
+	 */
+	@Override
+	public String getScriptText(final Charset[] charsetGuess) {
+		return super.getScriptText(charsetGuess);
+	}
+
+	@Override
 	int parseGitHeaders(int ptr, final int end) {
 		while (ptr < end) {
 			final int eol = nextLF(buf, ptr);

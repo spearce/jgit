@@ -40,6 +40,9 @@ package org.spearce.jgit.patch;
 import static org.spearce.jgit.util.RawParseUtils.nextLF;
 import static org.spearce.jgit.util.RawParseUtils.parseBase10;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 import org.spearce.jgit.lib.AbbreviatedObjectId;
 import org.spearce.jgit.util.MutableInteger;
 
@@ -187,5 +190,129 @@ public class CombinedHunkHeader extends HunkHeader {
 		}
 
 		return c;
+	}
+
+	@Override
+	void extractFileLines(final OutputStream[] out) throws IOException {
+		final byte[] buf = file.buf;
+		int ptr = startOffset;
+		int eol = nextLF(buf, ptr);
+		if (endOffset <= eol)
+			return;
+
+		// Treat the hunk header as though it were from the ancestor,
+		// as it may have a function header appearing after it which
+		// was copied out of the ancestor file.
+		//
+		out[0].write(buf, ptr, eol - ptr);
+
+		SCAN: for (ptr = eol; ptr < endOffset; ptr = eol) {
+			eol = nextLF(buf, ptr);
+
+			if (eol - ptr < old.length + 1) {
+				// Line isn't long enough to mention the state of each
+				// ancestor. It must be the end of the hunk.
+				break SCAN;
+			}
+
+			switch (buf[ptr]) {
+			case ' ':
+			case '-':
+			case '+':
+				break;
+
+			default:
+				// Line can't possibly be part of this hunk; the first
+				// ancestor information isn't recognizable.
+				//
+				break SCAN;
+			}
+
+			int delcnt = 0;
+			for (int ancestor = 0; ancestor < old.length; ancestor++) {
+				switch (buf[ptr + ancestor]) {
+				case '-':
+					delcnt++;
+					out[ancestor].write(buf, ptr, eol - ptr);
+					continue;
+
+				case ' ':
+					out[ancestor].write(buf, ptr, eol - ptr);
+					continue;
+
+				case '+':
+					continue;
+
+				default:
+					break SCAN;
+				}
+			}
+			if (delcnt < old.length) {
+				// This line appears in the new file if it wasn't deleted
+				// relative to all ancestors.
+				//
+				out[old.length].write(buf, ptr, eol - ptr);
+			}
+		}
+	}
+
+	void extractFileLines(final StringBuilder sb, final String[] text,
+			final int[] offsets) {
+		final byte[] buf = file.buf;
+		int ptr = startOffset;
+		int eol = nextLF(buf, ptr);
+		if (endOffset <= eol)
+			return;
+		copyLine(sb, text, offsets, 0);
+		SCAN: for (ptr = eol; ptr < endOffset; ptr = eol) {
+			eol = nextLF(buf, ptr);
+
+			if (eol - ptr < old.length + 1) {
+				// Line isn't long enough to mention the state of each
+				// ancestor. It must be the end of the hunk.
+				break SCAN;
+			}
+
+			switch (buf[ptr]) {
+			case ' ':
+			case '-':
+			case '+':
+				break;
+
+			default:
+				// Line can't possibly be part of this hunk; the first
+				// ancestor information isn't recognizable.
+				//
+				break SCAN;
+			}
+
+			boolean copied = false;
+			for (int ancestor = 0; ancestor < old.length; ancestor++) {
+				switch (buf[ptr + ancestor]) {
+				case ' ':
+				case '-':
+					if (copied)
+						skipLine(text, offsets, ancestor);
+					else {
+						copyLine(sb, text, offsets, ancestor);
+						copied = true;
+					}
+					continue;
+
+				case '+':
+					continue;
+
+				default:
+					break SCAN;
+				}
+			}
+			if (!copied) {
+				// If none of the ancestors caused the copy then this line
+				// must be new across the board, so it only appears in the
+				// text of the new file.
+				//
+				copyLine(sb, text, offsets, old.length);
+			}
+		}
 	}
 }

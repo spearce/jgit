@@ -472,6 +472,40 @@ public final class RawParseUtils {
 	 */
 	public static String decode(final Charset cs, final byte[] buffer,
 			final int start, final int end) {
+		try {
+			return decodeNoFallback(cs, buffer, start, end);
+		} catch (CharacterCodingException e) {
+			// Fall back to an ISO-8859-1 style encoding. At least all of
+			// the bytes will be present in the output.
+			//
+			return extractBinaryString(buffer, start, end);
+		}
+	}
+
+	/**
+	 * Decode a region of the buffer under the specified character set if
+	 * possible.
+	 *
+	 * If the byte stream cannot be decoded that way, the platform default is
+	 * tried and if that too fails, an exception is thrown.
+	 *
+	 * @param cs
+	 *            character set to use when decoding the buffer.
+	 * @param buffer
+	 *            buffer to pull raw bytes from.
+	 * @param start
+	 *            first position within the buffer to take data from.
+	 * @param end
+	 *            one position past the last location within the buffer to take
+	 *            data from.
+	 * @return a string representation of the range <code>[start,end)</code>,
+	 *         after decoding the region through the specified character set.
+	 * @throws CharacterCodingException
+	 *             the input is not in any of the tested character sets.
+	 */
+	public static String decodeNoFallback(final Charset cs,
+			final byte[] buffer, final int start, final int end)
+			throws CharacterCodingException {
 		final ByteBuffer b = ByteBuffer.wrap(buffer, start, end - start);
 		b.mark();
 
@@ -508,9 +542,26 @@ public final class RawParseUtils {
 			}
 		}
 
-		// Fall back to an ISO-8859-1 style encoding. At least all of
-		// the bytes will be present in the output.
-		//
+		throw new CharacterCodingException();
+	}
+
+	/**
+	 * Decode a region of the buffer under the ISO-8859-1 encoding.
+	 *
+	 * Each byte is treated as a single character in the 8859-1 character
+	 * encoding, performing a raw binary->char conversion.
+	 *
+	 * @param buffer
+	 *            buffer to pull raw bytes from.
+	 * @param start
+	 *            first position within the buffer to take data from.
+	 * @param end
+	 *            one position past the last location within the buffer to take
+	 *            data from.
+	 * @return a string representation of the range <code>[start,end)</code>.
+	 */
+	public static String extractBinaryString(final byte[] buffer,
+			final int start, final int end) {
 		final StringBuilder r = new StringBuilder(end - start);
 		for (int i = start; i < end; i++)
 			r.append((char) (buffer[i] & 0xff));

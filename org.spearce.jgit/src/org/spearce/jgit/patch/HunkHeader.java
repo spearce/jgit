@@ -41,6 +41,9 @@ import static org.spearce.jgit.util.RawParseUtils.match;
 import static org.spearce.jgit.util.RawParseUtils.nextLF;
 import static org.spearce.jgit.util.RawParseUtils.parseBase10;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 import org.spearce.jgit.lib.AbbreviatedObjectId;
 import org.spearce.jgit.util.MutableInteger;
 
@@ -239,5 +242,88 @@ public class HunkHeader {
 		}
 
 		return c;
+	}
+
+	void extractFileLines(final OutputStream[] out) throws IOException {
+		final byte[] buf = file.buf;
+		int ptr = startOffset;
+		int eol = nextLF(buf, ptr);
+		if (endOffset <= eol)
+			return;
+
+		// Treat the hunk header as though it were from the ancestor,
+		// as it may have a function header appearing after it which
+		// was copied out of the ancestor file.
+		//
+		out[0].write(buf, ptr, eol - ptr);
+
+		SCAN: for (ptr = eol; ptr < endOffset; ptr = eol) {
+			eol = nextLF(buf, ptr);
+			switch (buf[ptr]) {
+			case ' ':
+			case '\n':
+			case '\\':
+				out[0].write(buf, ptr, eol - ptr);
+				out[1].write(buf, ptr, eol - ptr);
+				break;
+			case '-':
+				out[0].write(buf, ptr, eol - ptr);
+				break;
+			case '+':
+				out[1].write(buf, ptr, eol - ptr);
+				break;
+			default:
+				break SCAN;
+			}
+		}
+	}
+
+	void extractFileLines(final StringBuilder sb, final String[] text,
+			final int[] offsets) {
+		final byte[] buf = file.buf;
+		int ptr = startOffset;
+		int eol = nextLF(buf, ptr);
+		if (endOffset <= eol)
+			return;
+		copyLine(sb, text, offsets, 0);
+		SCAN: for (ptr = eol; ptr < endOffset; ptr = eol) {
+			eol = nextLF(buf, ptr);
+			switch (buf[ptr]) {
+			case ' ':
+			case '\n':
+			case '\\':
+				copyLine(sb, text, offsets, 0);
+				skipLine(text, offsets, 1);
+				break;
+			case '-':
+				copyLine(sb, text, offsets, 0);
+				break;
+			case '+':
+				copyLine(sb, text, offsets, 1);
+				break;
+			default:
+				break SCAN;
+			}
+		}
+	}
+
+	protected void copyLine(final StringBuilder sb, final String[] text,
+			final int[] offsets, final int fileIdx) {
+		final String s = text[fileIdx];
+		final int start = offsets[fileIdx];
+		int end = s.indexOf('\n', start);
+		if (end < 0)
+			end = s.length();
+		else
+			end++;
+		sb.append(s, start, end);
+		offsets[fileIdx] = end;
+	}
+
+	protected void skipLine(final String[] text, final int[] offsets,
+			final int fileIdx) {
+		final String s = text[fileIdx];
+		final int end = s.indexOf('\n', offsets[fileIdx]);
+		offsets[fileIdx] = end < 0 ? s.length() : end + 1;
 	}
 }
