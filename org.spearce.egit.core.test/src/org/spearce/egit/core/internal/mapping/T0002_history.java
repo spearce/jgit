@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
+import java.util.TimeZone;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.team.core.RepositoryProvider;
@@ -64,8 +65,10 @@ public class T0002_history extends GitTestCase {
 		projectTree.setId(objectWriter.writeTree(projectTree));
 		tree.setId(objectWriter.writeTree(tree));
 		Commit commit = new Commit(thisGit);
-		commit.setAuthor(new PersonIdent(jauthor, new Date(0L)));
-		commit.setCommitter(new PersonIdent(jcommitter, new Date(0L)));
+		commit.setAuthor(new PersonIdent(jauthor, new Date(0L), TimeZone
+				.getTimeZone("GMT+1")));
+		commit.setCommitter(new PersonIdent(jcommitter, new Date(0L), TimeZone
+				.getTimeZone("GMT+1")));
 		commit.setMessage("Foo\n\nMessage");
 		commit.setTree(tree);
 		ObjectId commitId = objectWriter.writeCommit(commit);
