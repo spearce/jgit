@@ -23,7 +23,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
  * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
  * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSormE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
  * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
@@ -60,7 +60,7 @@ public class RevCommit extends RevObject {
 
 	RevCommit[] parents;
 
-	int commitTime;
+	int commitTime; // An int here for performance, overflows in 2038
 
 	int inDegree;
 
@@ -129,6 +129,8 @@ public class RevCommit extends RevObject {
 		ptr = RawParseUtils.committer(raw, ptr);
 		if (ptr > 0) {
 			ptr = RawParseUtils.nextLF(raw, ptr, '>');
+
+			// In 2038 commitTime will overflow unless it is changed to long.
 			commitTime = RawParseUtils.parseBase10(raw, ptr, null);
 		}
 
