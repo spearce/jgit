@@ -80,7 +80,7 @@ public class T0001_ConnectProviderOperationTest extends GitTestCase {
 		Commit commit = new Commit(thisGit);
 		commit.setTree(rootTree);
 		commit.setAuthor(new PersonIdent("J. Git", "j.git@egit.org", new Date(
-				1999, 1, 1), TimeZone.getTimeZone("GMT+1")));
+				60876075600000L), TimeZone.getTimeZone("GMT+1")));
 		commit.setCommitter(commit.getAuthor());
 		commit.setMessage("testNewUnsharedFile\n\nJunit tests\n");
 		ObjectId id = writer.writeCommit(commit);
