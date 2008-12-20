@@ -9,8 +9,10 @@ package org.spearce.egit.ui.internal.decorators;
 
 import java.io.IOException;
 
+import org.eclipse.core.resources.IEncodedStorage;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.GitProvider;
@@ -66,7 +68,23 @@ class GitDocument extends Document implements RepositoryListener {
 			Activator.trace("(GitQuickDiffProvider) compareTo: " + baseline);
 			ObjectLoader loader = repository.openBlob(blobEnry.getId());
 			byte[] bytes = loader.getBytes();
-			String s = new String(bytes); // FIXME Platform default charset. should be Eclipse default
+			String charset;
+			// Get the encoding for the current version. As a matter of
+			// principle one might want to use the eclipse settings for the
+			// version we are retrieving as that may be defined by the
+			// project settings, but there is no historic API for this.
+			IEncodedStorage encodedStorage = ((IEncodedStorage)resource);
+			try {
+				if (encodedStorage != null)
+					charset = encodedStorage.getCharset();
+				else
+					charset = resource.getParent().getDefaultCharset();
+			} catch (CoreException e) {
+				charset = Constants.CHARACTER_ENCODING;
+			}
+			// Finally we could consider validating the content with respect
+			// to the content. We don't do that here.
+			String s = new String(bytes, charset);
 			set(s);
 			Activator.trace("(GitQuickDiffProvider) has reference doc, size=" + s.length() + " bytes");
 		} else {
