@@ -86,6 +86,8 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 	 */
 	private static final int MAX_HAVES = 256;
 
+	protected static final int MAX_CLIENT_BUFFER = MAX_HAVES * 46 + 1024;
+
 	static final String OPTION_INCLUDE_TAG = "include-tag";
 
 	static final String OPTION_MULTI_ACK = "multi_ack";

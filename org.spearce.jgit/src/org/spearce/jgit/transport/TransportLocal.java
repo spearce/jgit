@@ -86,7 +86,10 @@ class TransportLocal extends PackTransport {
 
 	@Override
 	public FetchConnection openFetch() throws TransportException {
-		return new LocalFetchConnection();
+		final String up = getOptionUploadPack();
+		if ("git-upload-pack".equals(up) || "git upload-pack".equals(up))
+			return new InternalLocalFetchConnection();
+		return new ForkLocalFetchConnection();
 	}
 
 	@Override
@@ -130,10 +133,97 @@ class TransportLocal extends PackTransport {
 		}
 	}
 
-	class LocalFetchConnection extends BasePackFetchConnection {
+	class InternalLocalFetchConnection extends BasePackFetchConnection {
+		private Thread worker;
+
+		InternalLocalFetchConnection() throws TransportException {
+			super(TransportLocal.this);
+
+			final Repository dst;
+			try {
+				dst = new Repository(remoteGitDir);
+			} catch (IOException err) {
+				throw new TransportException(uri, "not a git directory");
+			}
+
+			final PipedInputStream in_r;
+			final PipedOutputStream in_w;
+
+			final PipedInputStream out_r;
+			final PipedOutputStream out_w;
+			try {
+				in_r = new PipedInputStream();
+				in_w = new PipedOutputStream(in_r);
+
+				out_r = new PipedInputStream() {
+					// The client (BasePackFetchConnection) can write
+					// a huge burst before it reads again. We need to
+					// force the buffer to be big enough, otherwise it
+					// will deadlock both threads.
+					{
+						buffer = new byte[MAX_CLIENT_BUFFER];
+					}
+				};
+				out_w = new PipedOutputStream(out_r);
+			} catch (IOException err) {
+				dst.close();
+				throw new TransportException(uri, "cannot connect pipes", err);
+			}
+
+			worker = new Thread("JGit-Upload-Pack") {
+				public void run() {
+					try {
+						final UploadPack rp = new UploadPack(dst);
+						rp.upload(out_r, in_w, null);
+					} catch (IOException err) {
+						// Client side of the pipes should report the problem.
+						err.printStackTrace();
+					} catch (RuntimeException err) {
+						// Clients side will notice we went away, and report.
+						err.printStackTrace();
+					} finally {
+						try {
+							out_r.close();
+						} catch (IOException e2) {
+							// Ignore close failure, we probably crashed above.
+						}
+
+						try {
+							in_w.close();
+						} catch (IOException e2) {
+							// Ignore close failure, we probably crashed above.
+						}
+
+						dst.close();
+					}
+				}
+			};
+			worker.start();
+
+			init(in_r, out_w);
+			readAdvertisedRefs();
+		}
+
+		@Override
+		public void close() {
+			super.close();
+
+			if (worker != null) {
+				try {
+					worker.join();
+				} catch (InterruptedException ie) {
+					// Stop waiting and return anyway.
+				} finally {
+					worker = null;
+				}
+			}
+		}
+	}
+
+	class ForkLocalFetchConnection extends BasePackFetchConnection {
 		private Process uploadPack;
 
-		LocalFetchConnection() throws TransportException {
+		ForkLocalFetchConnection() throws TransportException {
 			super(TransportLocal.this);
 			uploadPack = startProcessWithErrStream(getOptionUploadPack());
 			init(uploadPack.getInputStream(), uploadPack.getOutputStream());
