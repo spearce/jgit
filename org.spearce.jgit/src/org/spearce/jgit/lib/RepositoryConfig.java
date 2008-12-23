@@ -210,7 +210,7 @@ public class RepositoryConfig {
 	 * @return true if any value or defaultValue is true, false for missing or
 	 *         explicit false
 	 */
-	protected boolean getBoolean(final String section, final String name,
+	public boolean getBoolean(final String section, final String name,
 			final boolean defaultValue) {
 		return getBoolean(section, null, name, defaultValue);
 	}
@@ -229,7 +229,7 @@ public class RepositoryConfig {
 	 * @return true if any value or defaultValue is true, false for missing or
 	 *         explicit false
 	 */
-	protected boolean getBoolean(final String section, String subsection,
+	public boolean getBoolean(final String section, String subsection,
 			final String name, final boolean defaultValue) {
 		String n = getRawString(section, subsection, name);
 		if (n == null)
