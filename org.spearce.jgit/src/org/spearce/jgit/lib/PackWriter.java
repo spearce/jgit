@@ -436,8 +436,9 @@ public class PackWriter {
 	 * @throws IOException
 	 *             when some I/O problem occur during reading objects.
 	 */
-	public void preparePack(final Collection<ObjectId> interestingObjects,
-			final Collection<ObjectId> uninterestingObjects,
+	public void preparePack(
+			final Collection<? extends ObjectId> interestingObjects,
+			final Collection<? extends ObjectId> uninterestingObjects,
 			final boolean thin, final boolean ignoreMissingUninteresting)
 			throws IOException {
 		ObjectWalk walker = setUpWalker(interestingObjects,
@@ -727,8 +728,8 @@ public class PackWriter {
 	}
 
 	private ObjectWalk setUpWalker(
-			final Collection<ObjectId> interestingObjects,
-			final Collection<ObjectId> uninterestingObjects,
+			final Collection<? extends ObjectId> interestingObjects,
+			final Collection<? extends ObjectId> uninterestingObjects,
 			final boolean thin, final boolean ignoreMissingUninteresting)
 			throws MissingObjectException, IOException,
 			IncorrectObjectTypeException {
