@@ -93,7 +93,7 @@ class RefDatabase {
 		clearCache();
 	}
 
-	void clearCache() {
+	synchronized void clearCache() {
 		looseRefs = new HashMap<String, Ref>();
 		looseRefsMTime = new HashMap<String, Long>();
 		packedRefs = new HashMap<String, Ref>();
@@ -139,9 +139,11 @@ class RefDatabase {
 	}
 
 	void stored(final String origName, final String name, final ObjectId id, final long time) {
-		looseRefs.put(name, new Ref(Ref.Storage.LOOSE, origName, name, id));
-		looseRefsMTime.put(name, time);
-		setModified();
+		synchronized (this) {
+			looseRefs.put(name, new Ref(Ref.Storage.LOOSE, origName, name, id));
+			looseRefsMTime.put(name, time);
+			setModified();
+		}
 		db.fireRefsMaybeChanged();
 	}
 
@@ -157,11 +159,13 @@ class RefDatabase {
 	void link(final String name, final String target) throws IOException {
 		final byte[] content = Constants.encode("ref: " + target + "\n");
 		lockAndWriteFile(fileForRef(name), content);
-		setModified();
+		synchronized (this) {
+			setModified();
+		}
 		db.fireRefsMaybeChanged();
 	}
 
-	void setModified() {
+	private void setModified() {
 		lastRefModification = refModificationCounter++;
 	}
 
@@ -210,7 +214,7 @@ class RefDatabase {
 		return avail;
 	}
 
-	private void readPackedRefs(final Map<String, Ref> avail) {
+	private synchronized void readPackedRefs(final Map<String, Ref> avail) {
 		refreshPackedRefs();
 		avail.putAll(packedRefs);
 	}
@@ -229,7 +233,7 @@ class RefDatabase {
 		}
 	}
 
-	private void readOneLooseRef(final Map<String, Ref> avail,
+	private synchronized void readOneLooseRef(final Map<String, Ref> avail,
 			final String origName, final String refName, final File ent) {
 		// Unchanged and cached? Don't read it again.
 		//
@@ -323,8 +327,8 @@ class RefDatabase {
 		return readRefBasic(name, name, depth);
 	}
 
-	private Ref readRefBasic(final String origName, final String name, final int depth)
-			throws IOException {
+	private synchronized Ref readRefBasic(final String origName,
+			final String name, final int depth) throws IOException {
 		// Prefer loose ref to packed ref as the loose
 		// file can be more up-to-date than a packed one.
 		//
@@ -408,7 +412,7 @@ class RefDatabase {
 		return ref;
 	}
 
-	private void refreshPackedRefs() {
+	private synchronized void refreshPackedRefs() {
 		final long currTime = packedRefsFile.lastModified();
 		final long currLen = currTime == 0 ? 0 : packedRefsFile.length();
 		if (currTime == packedRefsLastModified && currLen == packedRefsLength)
@@ -479,7 +483,7 @@ class RefDatabase {
 			throw new ObjectWritingException("Unable to write " + name);
 	}
 
-	void removePackedRef(String name) throws IOException {
+	synchronized void removePackedRef(String name) throws IOException {
 		packedRefs.remove(name);
 		writePackedRefs();
 	}
@@ -508,5 +512,4 @@ class RefDatabase {
 		return new BufferedReader(new InputStreamReader(new FileInputStream(
 				fileLocation), Constants.CHARSET));
 	}
-
 }
