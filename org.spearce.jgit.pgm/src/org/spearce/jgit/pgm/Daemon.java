@@ -44,7 +44,6 @@ import java.util.List;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
-import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.transport.DaemonService;
 
 @Command(common = true, usage = "Export repositories over git://")
@@ -67,8 +66,13 @@ class Daemon extends TextBuiltin {
 	@Option(name = "--forbid-override", metaVar = "SERVICE", usage = "configure the service in daemon.servicename", multiValued = true)
 	final List<String> forbidOverride = new ArrayList<String>();
 
-	@Argument(metaVar = "DIRECTORY", usage = "directories to export")
+	@Argument(required = true, metaVar = "DIRECTORY", usage = "directories to export")
 	final List<File> directory = new ArrayList<File>();
+
+	@Override
+	protected boolean requiresRepository() {
+		return false;
+	}
 
 	@Override
 	protected void run() throws Exception {
@@ -88,13 +92,9 @@ class Daemon extends TextBuiltin {
 		for (final String n : forbidOverride)
 			service(d, n).setOverridable(false);
 
-		if (directory.isEmpty()) {
-			export(d, db);
-		} else {
-			for (final File f : directory) {
-				out.println("Exporting " + f.getAbsolutePath());
-				d.exportDirectory(f);
-			}
+		for (final File f : directory) {
+			out.println("Exporting " + f.getAbsolutePath());
+			d.exportDirectory(f);
 		}
 		d.start();
 		out.println("Listening on " + d.getAddress());
@@ -106,20 +106,5 @@ class Daemon extends TextBuiltin {
 		if (svc == null)
 			throw die("Service '" + n + "' not supported");
 		return svc;
-	}
-
-	private void export(final org.spearce.jgit.transport.Daemon daemon,
-			final Repository repo) {
-		File d = repo.getDirectory();
-		String name = d.getName();
-		while (name.equals(".git") || name.equals(".")) {
-			d = d.getParentFile();
-			name = d.getName();
-		}
-		if (!name.endsWith(".git"))
-			name += ".git";
-
-		out.println("Exporting current repository as \"" + name + "\"");
-		daemon.exportRepository(name, repo);
 	}
 }
