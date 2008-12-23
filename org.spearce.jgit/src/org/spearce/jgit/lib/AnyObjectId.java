@@ -387,7 +387,22 @@ public abstract class AnyObjectId implements Comparable {
 	 */
 	public void copyTo(final char[] tmp, final Writer w) throws IOException {
 		toHexCharArray(tmp);
-		w.write(tmp);
+		w.write(tmp, 0, STR_LEN);
+	}
+
+	/**
+	 * Copy this ObjectId to a StringBuilder in hex format.
+	 *
+	 * @param tmp
+	 *            temporary char array to buffer construct into before writing.
+	 *            Must be at least large enough to hold 2 digits for each byte
+	 *            of object id (40 characters or larger).
+	 * @param w
+	 *            the string to append onto.
+	 */
+	public void copyTo(final char[] tmp, final StringBuilder w) {
+		toHexCharArray(tmp);
+		w.append(tmp, 0, STR_LEN);
 	}
 
 	private char[] toHexCharArray() {
