@@ -320,9 +320,11 @@ public class IndexPack {
 					writeIdx();
 
 			} finally {
-				final Inflater inf = inflater;
-				inflater = null;
-				InflaterCache.release(inf);
+				try {
+					InflaterCache.release(inflater);
+				} finally {
+					inflater = null;
+				}
 
 				progress.endTask();
 				if (packOut != null)
