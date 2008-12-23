@@ -341,7 +341,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		return getReverseIdx().findNextOffset(startOffset, maxOffset);
 	}
 
-	private PackReverseIndex getReverseIdx() {
+	private synchronized PackReverseIndex getReverseIdx() {
 		if (reverseIdx == null)
 			reverseIdx = new PackReverseIndex(idx);
 		return reverseIdx;
