@@ -111,6 +111,18 @@ class PacketLineIn {
 		return RawParseUtils.decode(Constants.CHARSET, raw, 0, len);
 	}
 
+	String readStringNoLF() throws IOException {
+		int len = readLength();
+		if (len == 0)
+			return "";
+
+		len -= 4; // length header (4 bytes)
+
+		final byte[] raw = new byte[len];
+		NB.readFully(in, raw, 0, len);
+		return RawParseUtils.decode(Constants.CHARSET, raw, 0, len);
+	}
+
 	private void readLF() throws IOException {
 		if (in.read() != '\n')
 			throw new IOException("Protocol error: expected LF");
