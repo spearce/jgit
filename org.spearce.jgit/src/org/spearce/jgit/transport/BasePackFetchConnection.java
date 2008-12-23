@@ -100,6 +100,8 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 
 	static final String OPTION_SHALLOW = "shallow";
 
+	static final String OPTION_NO_PROGRESS = "no-progress";
+
 	private final RevWalk walk;
 
 	/** All commits that are immediately reachable by a local ref. */

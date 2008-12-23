@@ -41,6 +41,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -96,15 +97,32 @@ public class Daemon {
 		exportBase = new ArrayList<File>();
 		processors = new ThreadGroup("Git-Daemon");
 
-		services = new DaemonService[] { new DaemonService("receive-pack",
-				"receivepack") {
-			@Override
-			protected void execute(final DaemonClient dc, final Repository db)
-					throws IOException {
-				final ReceivePack rp = new ReceivePack(db);
-				rp.receive(dc.getInputStream(), dc.getOutputStream(), null);
-			}
-		} };
+		services = new DaemonService[] {
+				new DaemonService("upload-pack", "uploadpack") {
+					{
+						setEnabled(true);
+					}
+
+					@Override
+					protected void execute(final DaemonClient dc,
+							final Repository db) throws IOException {
+						final UploadPack rp = new UploadPack(db);
+						final InputStream in = dc.getInputStream();
+						rp.upload(in, dc.getOutputStream(), null);
+					}
+				}, new DaemonService("receive-pack", "receivepack") {
+					{
+						setEnabled(false);
+					}
+
+					@Override
+					protected void execute(final DaemonClient dc,
+							final Repository db) throws IOException {
+						final ReceivePack rp = new ReceivePack(db);
+						final InputStream in = dc.getInputStream();
+						rp.receive(in, dc.getOutputStream(), null);
+					}
+				} };
 	}
 
 	/** @return the address connections are received on. */

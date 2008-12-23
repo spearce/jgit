@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
- * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Google Inc.
  *
  * All rights reserved.
  *
@@ -36,61 +35,33 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.spearce.jgit.transport;
+package org.spearce.jgit.pgm;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.File;
 
-import org.spearce.jgit.lib.Constants;
+import org.kohsuke.args4j.Argument;
+import org.spearce.jgit.lib.Repository;
 
-class PacketLineOut {
-	private final OutputStream out;
+@Command(common = false, usage = "Server side backend for 'jgit fetch'")
+class UploadPack extends TextBuiltin {
+	@Argument(index = 0, required = true, metaVar = "DIRECTORY", usage = "Repository to read from")
+	File gitdir;
 
-	private final byte[] lenbuffer;
-
-	PacketLineOut(final OutputStream i) {
-		out = i;
-		lenbuffer = new byte[5];
+	@Override
+	protected final boolean requiresRepository() {
+		return false;
 	}
 
-	void writeString(final String s) throws IOException {
-		writePacket(Constants.encode(s));
-	}
+	@Override
+	protected void run() throws Exception {
+		final org.spearce.jgit.transport.UploadPack rp;
 
-	void writePacket(final byte[] packet) throws IOException {
-		formatLength(packet.length + 4);
-		out.write(lenbuffer, 0, 4);
-		out.write(packet);
-	}
-
-	void writeChannelPacket(final int channel, final byte[] buf, int off,
-			int len) throws IOException {
-		formatLength(len + 5);
-		lenbuffer[4] = (byte) channel;
-		out.write(lenbuffer, 0, 5);
-		out.write(buf, off, len);
-	}
-
-	void end() throws IOException {
-		formatLength(0);
-		out.write(lenbuffer, 0, 4);
-		flush();
-	}
-
-	void flush() throws IOException {
-		out.flush();
-	}
-
-	private static final byte[] hexchar = { '0', '1', '2', '3', '4', '5', '6',
-			'7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
-
-	private void formatLength(int w) {
-		int o = 3;
-		while (o >= 0 && w != 0) {
-			lenbuffer[o--] = hexchar[w & 0xf];
-			w >>>= 4;
-		}
-		while (o >= 0)
-			lenbuffer[o--] = '0';
+		if (new File(gitdir, ".git").isDirectory())
+			gitdir = new File(gitdir, ".git");
+		db = new Repository(gitdir);
+		if (!db.getObjectsDirectory().isDirectory())
+			throw die("'" + gitdir.getPath() + "' not a git repository");
+		rp = new org.spearce.jgit.transport.UploadPack(db);
+		rp.upload(System.in, System.out, System.err);
 	}
 }

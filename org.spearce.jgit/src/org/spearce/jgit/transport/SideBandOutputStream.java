@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
- * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Google Inc.
  *
  * All rights reserved.
  *
@@ -41,56 +40,54 @@ package org.spearce.jgit.transport;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.spearce.jgit.lib.Constants;
+/**
+ * Multiplexes data and progress messages
+ * <p>
+ * To correctly use this class you must wrap it in a BufferedOutputStream with a
+ * buffer size no larger than either {@link #SMALL_BUF} or {@link #MAX_BUF},
+ * minus {@link #HDR_SIZE}.
+ */
+class SideBandOutputStream extends OutputStream {
+	static final int CH_DATA = SideBandInputStream.CH_DATA;
 
-class PacketLineOut {
-	private final OutputStream out;
+	static final int CH_PROGRESS = SideBandInputStream.CH_PROGRESS;
 
-	private final byte[] lenbuffer;
+	static final int CH_ERROR = SideBandInputStream.CH_ERROR;
 
-	PacketLineOut(final OutputStream i) {
-		out = i;
-		lenbuffer = new byte[5];
+	static final int SMALL_BUF = 1000;
+
+	static final int MAX_BUF = 65520;
+
+	static final int HDR_SIZE = 5;
+
+	private final int channel;
+
+	private final PacketLineOut pckOut;
+
+	private byte[] singleByteBuffer;
+
+	SideBandOutputStream(final int chan, final PacketLineOut out) {
+		channel = chan;
+		pckOut = out;
 	}
 
-	void writeString(final String s) throws IOException {
-		writePacket(Constants.encode(s));
+	@Override
+	public void flush() throws IOException {
+		if (channel != CH_DATA)
+			pckOut.flush();
 	}
 
-	void writePacket(final byte[] packet) throws IOException {
-		formatLength(packet.length + 4);
-		out.write(lenbuffer, 0, 4);
-		out.write(packet);
+	@Override
+	public void write(final byte[] b, final int off, final int len)
+			throws IOException {
+		pckOut.writeChannelPacket(channel, b, off, len);
 	}
 
-	void writeChannelPacket(final int channel, final byte[] buf, int off,
-			int len) throws IOException {
-		formatLength(len + 5);
-		lenbuffer[4] = (byte) channel;
-		out.write(lenbuffer, 0, 5);
-		out.write(buf, off, len);
-	}
-
-	void end() throws IOException {
-		formatLength(0);
-		out.write(lenbuffer, 0, 4);
-		flush();
-	}
-
-	void flush() throws IOException {
-		out.flush();
-	}
-
-	private static final byte[] hexchar = { '0', '1', '2', '3', '4', '5', '6',
-			'7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
-
-	private void formatLength(int w) {
-		int o = 3;
-		while (o >= 0 && w != 0) {
-			lenbuffer[o--] = hexchar[w & 0xf];
-			w >>>= 4;
-		}
-		while (o >= 0)
-			lenbuffer[o--] = '0';
+	@Override
+	public void write(final int b) throws IOException {
+		if (singleByteBuffer == null)
+			singleByteBuffer = new byte[1];
+		singleByteBuffer[0] = (byte) b;
+		write(singleByteBuffer);
 	}
 }

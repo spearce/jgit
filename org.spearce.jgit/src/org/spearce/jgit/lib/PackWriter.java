@@ -173,7 +173,9 @@ public class PackWriter {
 
 	private final Deflater deflater;
 
-	private final ProgressMonitor monitor;
+	private ProgressMonitor initMonitor;
+
+	private ProgressMonitor writeMonitor;
 
 	private final byte[] buf = new byte[16384]; // 16 KB
 
@@ -206,12 +208,35 @@ public class PackWriter {
 	 * @param monitor
 	 *            operations progress monitor, used within
 	 *            {@link #preparePack(Iterator)},
-	 *            {@link #preparePack(Collection, Collection, boolean, boolean)},
-	 *            or {@link #writePack(OutputStream)}.
+	 *            {@link #preparePack(Collection, Collection, boolean, boolean)}
+	 *            , or {@link #writePack(OutputStream)}.
 	 */
 	public PackWriter(final Repository repo, final ProgressMonitor monitor) {
+		this(repo, monitor, monitor);
+	}
+
+	/**
+	 * Create writer for specified repository.
+	 * <p>
+	 * Objects for packing are specified in {@link #preparePack(Iterator)} or
+	 * {@link #preparePack(Collection, Collection, boolean, boolean)}.
+	 *
+	 * @param repo
+	 *            repository where objects are stored.
+	 * @param imonitor
+	 *            operations progress monitor, used within
+	 *            {@link #preparePack(Iterator)},
+	 *            {@link #preparePack(Collection, Collection, boolean, boolean)}
+	 *            ;
+	 * @param wmonitor
+	 *            operations progress monitor, used within
+	 *            {@link #writePack(OutputStream)}.
+	 */
+	public PackWriter(final Repository repo, final ProgressMonitor imonitor,
+			final ProgressMonitor wmonitor) {
 		this.db = repo;
-		this.monitor = monitor;
+		initMonitor = imonitor;
+		writeMonitor = wmonitor;
 		this.deflater = new Deflater(db.getConfig().getCore().getCompression());
 	}
 
@@ -447,6 +472,17 @@ public class PackWriter {
 	}
 
 	/**
+	 * Determine if the pack file will contain the requested object.
+	 *
+	 * @param id
+	 *            the object to test the existence of.
+	 * @return true if the object will appear in the output pack file.
+	 */
+	public boolean willInclude(final AnyObjectId id) {
+		return objectsMap.get(id) != null;
+	}
+
+	/**
 	 * Computes SHA-1 of lexicographically sorted objects ids written in this
 	 * pack, as used to name a pack file in repository.
 	 *
@@ -529,23 +565,23 @@ public class PackWriter {
 		countingOut = new CountingOutputStream(packStream);
 		out = new DigestOutputStream(countingOut, Constants.newMessageDigest());
 
-		monitor.beginTask(WRITING_OBJECTS_PROGRESS, getObjectsNumber());
+		writeMonitor.beginTask(WRITING_OBJECTS_PROGRESS, getObjectsNumber());
 		writeHeader();
 		writeObjects();
 		writeChecksum();
 
 		out.flush();
 		windowCursor.release();
-		monitor.endTask();
+		writeMonitor.endTask();
 	}
 
 	private void searchForReuse() throws IOException {
-		monitor.beginTask(SEARCHING_REUSE_PROGRESS, getObjectsNumber());
+		initMonitor.beginTask(SEARCHING_REUSE_PROGRESS, getObjectsNumber());
 		final Collection<PackedObjectLoader> reuseLoaders = new LinkedList<PackedObjectLoader>();
 
 		for (List<ObjectToPack> list : objectsLists) {
 			for (ObjectToPack otp : list) {
-				if (monitor.isCancelled())
+				if (initMonitor.isCancelled())
 					throw new IOException(
 							"Packing cancelled during objects writing");
 				reuseLoaders.clear();
@@ -557,11 +593,11 @@ public class PackWriter {
 				if (reuseObjects && !otp.hasReuseLoader()) {
 					selectObjectReuseForObject(otp, reuseLoaders);
 				}
-				monitor.update(1);
+				initMonitor.update(1);
 			}
 		}
 
-		monitor.endTask();
+		initMonitor.endTask();
 	}
 
 	private void selectDeltaReuseForObject(final ObjectToPack otp,
@@ -625,7 +661,7 @@ public class PackWriter {
 	private void writeObjects() throws IOException {
 		for (List<ObjectToPack> list : objectsLists) {
 			for (ObjectToPack otp : list) {
-				if (monitor.isCancelled())
+				if (writeMonitor.isCancelled())
 					throw new IOException(
 							"Packing cancelled during objects writing");
 				if (!otp.isWritten())
@@ -663,7 +699,7 @@ public class PackWriter {
 		else
 			writeWholeObject(otp);
 
-		monitor.update(1);
+		writeMonitor.update(1);
 	}
 
 	private void writeWholeObject(final ObjectToPack otp) throws IOException {
@@ -760,21 +796,34 @@ public class PackWriter {
 	private void findObjectsToPack(final ObjectWalk walker)
 			throws MissingObjectException, IncorrectObjectTypeException,
 			IOException {
-		monitor.beginTask(COUNTING_OBJECTS_PROGRESS, ProgressMonitor.UNKNOWN);
+		initMonitor.beginTask(COUNTING_OBJECTS_PROGRESS,
+				ProgressMonitor.UNKNOWN);
 		RevObject o;
 
 		while ((o = walker.next()) != null) {
 			addObject(o);
-			monitor.update(1);
+			initMonitor.update(1);
 		}
 		while ((o = walker.nextObject()) != null) {
 			addObject(o);
-			monitor.update(1);
+			initMonitor.update(1);
 		}
-		monitor.endTask();
+		initMonitor.endTask();
 	}
 
-	private void addObject(RevObject object)
+	/**
+	 * Include one object to the output file.
+	 * <p>
+	 * Objects are written in the order they are added. If the same object is
+	 * added twice, it may be written twice, creating a larger than necessary
+	 * file.
+	 *
+	 * @param object
+	 *            the object to add.
+	 * @throws IncorrectObjectTypeException
+	 *             the object is an unsupported type.
+	 */
+	public void addObject(final RevObject object)
 			throws IncorrectObjectTypeException {
 		if (object.has(RevFlag.UNINTERESTING)) {
 			edgeObjects.add(object);

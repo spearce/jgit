@@ -66,11 +66,11 @@ import org.spearce.jgit.util.RawParseUtils;
  * @see PacketLineIn#sideband(ProgressMonitor)
  */
 class SideBandInputStream extends InputStream {
-	private static final int CH_DATA = 1;
+	static final int CH_DATA = 1;
 
-	private static final int CH_PROGRESS = 2;
+	static final int CH_PROGRESS = 2;
 
-	private static final int CH_ERROR = 3;
+	static final int CH_ERROR = 3;
 
 	private static Pattern P_UNBOUNDED = Pattern.compile(
 			".*?([\\w ]+): (\\d+)(, done)?.*", Pattern.DOTALL);
