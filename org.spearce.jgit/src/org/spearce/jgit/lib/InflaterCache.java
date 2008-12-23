@@ -59,13 +59,18 @@ public class InflaterCache {
 	 * 
 	 * @return an available inflater. Never null.
 	 */
-	public synchronized static Inflater get() {
+	public static Inflater get() {
+		final Inflater r = getImpl();
+		return r != null ? r : new Inflater(false);
+	}
+
+	private synchronized static Inflater getImpl() {
 		if (openInflaterCount > 0) {
 			final Inflater r = inflaterCache[--openInflaterCount];
 			inflaterCache[openInflaterCount] = null;
 			return r;
 		}
-		return new Inflater(false);
+		return null;
 	}
 
 	/**
@@ -76,23 +81,19 @@ public class InflaterCache {
 	 *            does nothing.
 	 */
 	public static void release(final Inflater i) {
-		if (i == null)
-			return;
-
-		if (openInflaterCount == SZ) {
-			i.end();
-			return;
+		if (i != null) {
+			i.reset();
+			if (releaseImpl(i))
+				i.end();
 		}
-
-		i.reset();
-		releaseImpl(i);
 	}
 
-	private static synchronized void releaseImpl(final Inflater i) {
-		if (openInflaterCount == SZ)
-			i.end();
-		else
+	private static synchronized boolean releaseImpl(final Inflater i) {
+		if (openInflaterCount < SZ) {
 			inflaterCache[openInflaterCount++] = i;
+			return false;
+		}
+		return true;
 	}
 
 	private InflaterCache() {
