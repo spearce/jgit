@@ -41,10 +41,12 @@ package org.spearce.jgit.transport;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Set;
 
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.MutableObjectId;
+import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.revwalk.RevCommit;
@@ -137,9 +139,10 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 	}
 
 	public final void fetch(final ProgressMonitor monitor,
-			final Collection<Ref> want) throws TransportException {
+			final Collection<Ref> want, final Set<ObjectId> have)
+			throws TransportException {
 		markStartedOperation();
-		doFetch(monitor, want);
+		doFetch(monitor, want, have);
 	}
 
 	public boolean didFetchIncludeTags() {
@@ -151,10 +154,11 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 	}
 
 	protected void doFetch(final ProgressMonitor monitor,
-			final Collection<Ref> want) throws TransportException {
+			final Collection<Ref> want, final Set<ObjectId> have)
+			throws TransportException {
 		try {
 			markRefsAdvertised();
-			markReachable(maxTimeWanted(want));
+			markReachable(have, maxTimeWanted(want));
 
 			if (sendWants(want)) {
 				negotiate(monitor);
@@ -193,10 +197,21 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 		return maxTime;
 	}
 
-	private void markReachable(final int maxTime) throws IOException {
+	private void markReachable(final Set<ObjectId> have, final int maxTime)
+			throws IOException {
 		for (final Ref r : local.getAllRefs().values()) {
 			try {
 				final RevCommit o = walk.parseCommit(r.getObjectId());
+				o.add(REACHABLE);
+				reachableCommits.add(o);
+			} catch (IOException readError) {
+				// If we cannot read the value of the ref skip it.
+			}
+		}
+
+		for (final ObjectId id : have) {
+			try {
+				final RevCommit o = walk.parseCommit(id);
 				o.add(REACHABLE);
 				reachableCommits.add(o);
 			} catch (IOException readError) {

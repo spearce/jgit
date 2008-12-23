@@ -171,7 +171,8 @@ abstract class TransportBundle extends PackTransport {
 
 		@Override
 		protected void doFetch(final ProgressMonitor monitor,
-				final Collection<Ref> want) throws TransportException {
+				final Collection<Ref> want, final Set<ObjectId> have)
+				throws TransportException {
 			verifyPrerequisites();
 			try {
 				final IndexPack ip = newIndexPack();

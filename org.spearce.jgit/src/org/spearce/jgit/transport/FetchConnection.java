@@ -38,8 +38,10 @@
 package org.spearce.jgit.transport;
 
 import java.util.Collection;
+import java.util.Set;
 
 import org.spearce.jgit.errors.TransportException;
+import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
 
@@ -85,23 +87,29 @@ public interface FetchConnection extends Connection {
 	 * @param want
 	 *            one or more refs advertised by this connection that the caller
 	 *            wants to store locally.
+	 * @param have
+	 *            additional objects known to exist in the destination
+	 *            repository, especially if they aren't yet reachable by the ref
+	 *            database. Connections should take this set as an addition to
+	 *            what is reachable through all Refs, not in replace of it.
 	 * @throws TransportException
 	 *             objects could not be copied due to a network failure,
 	 *             protocol error, or error on remote side, or connection was
 	 *             already used for fetch.
 	 */
-	public void fetch(final ProgressMonitor monitor, final Collection<Ref> want)
+	public void fetch(final ProgressMonitor monitor,
+			final Collection<Ref> want, final Set<ObjectId> have)
 			throws TransportException;
 
 	/**
-	 * Did the last {@link #fetch(ProgressMonitor, Collection)} get tags?
+	 * Did the last {@link #fetch(ProgressMonitor, Collection, Set)} get tags?
 	 * <p>
 	 * Some Git aware transports are able to implicitly grab an annotated tag if
 	 * {@link TagOpt#AUTO_FOLLOW} or {@link TagOpt#FETCH_TAGS} was selected and
 	 * the object the tag peels to (references) was transferred as part of the
-	 * last {@link #fetch(ProgressMonitor, Collection)} call. If it is possible
-	 * for such tags to have been included in the transfer this method returns
-	 * true, allowing the caller to attempt tag discovery.
+	 * last {@link #fetch(ProgressMonitor, Collection, Set)} call. If it is
+	 * possible for such tags to have been included in the transfer this method
+	 * returns true, allowing the caller to attempt tag discovery.
 	 * <p>
 	 * By returning only true/false (and not the actual list of tags obtained)
 	 * the transport itself does not need to be aware of whether or not tags
@@ -113,7 +121,8 @@ public interface FetchConnection extends Connection {
 	public boolean didFetchIncludeTags();
 
 	/**
-	 * Did the last {@link #fetch(ProgressMonitor, Collection)} validate graph?
+	 * Did the last {@link #fetch(ProgressMonitor, Collection, Set)} validate
+	 * graph?
 	 * <p>
 	 * Some transports walk the object graph on the client side, with the client
 	 * looking for what objects it is missing and requesting them individually

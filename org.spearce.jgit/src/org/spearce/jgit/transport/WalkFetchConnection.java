@@ -195,8 +195,9 @@ class WalkFetchConnection extends BaseFetchConnection {
 
 	@Override
 	protected void doFetch(final ProgressMonitor monitor,
-			final Collection<Ref> want) throws TransportException {
-		markLocalRefsComplete();
+			final Collection<Ref> want, final Set<ObjectId> have)
+			throws TransportException {
+		markLocalRefsComplete(have);
 		queueWants(want);
 
 		while (!monitor.isCancelled() && !workQueue.isEmpty()) {
@@ -642,13 +643,20 @@ class WalkFetchConnection extends BaseFetchConnection {
 		return null;
 	}
 
-	private void markLocalRefsComplete() throws TransportException {
+	private void markLocalRefsComplete(final Set<ObjectId> have) throws TransportException {
 		for (final Ref r : local.getAllRefs().values()) {
 			try {
 				markLocalObjComplete(revWalk.parseAny(r.getObjectId()));
 			} catch (IOException readError) {
 				throw new TransportException("Local ref " + r.getName()
 						+ " is missing object(s).", readError);
+			}
+		}
+		for (final ObjectId id : have) {
+			try {
+				markLocalObjComplete(revWalk.parseAny(id));
+			} catch (IOException readError) {
+				throw new TransportException("Missing assumed "+id.name(), readError);
 			}
 		}
 	}

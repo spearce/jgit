@@ -75,6 +75,9 @@ class FetchProcess {
 	/** Set of refs we will actually wind up asking to obtain. */
 	private final HashMap<ObjectId, Ref> askFor = new HashMap<ObjectId, Ref>();
 
+	/** Objects we know we have locally. */
+	private final HashSet<ObjectId> have = new HashSet<ObjectId>();
+
 	/** Updates to local tracking branches (if any). */
 	private final ArrayList<TrackingRefUpdate> localUpdates = new ArrayList<TrackingRefUpdate>();
 
@@ -133,6 +136,7 @@ class FetchProcess {
 				// There are more tags that we want to follow, but
 				// not all were asked for on the initial request.
 				//
+				have.addAll(askFor.keySet());
 				askFor.clear();
 				for (final Ref r : additionalTags) {
 					final ObjectId id = r.getPeeledObjectId();
@@ -173,7 +177,7 @@ class FetchProcess {
 
 	private void fetchObjects(final ProgressMonitor monitor)
 			throws TransportException {
-		conn.fetch(monitor, askFor.values());
+		conn.fetch(monitor, askFor.values(), have);
 		if (transport.isCheckFetchedObjects()
 				&& !conn.didFetchTestConnectivity() && !askForIsComplete())
 			throw new TransportException(transport.getURI(),

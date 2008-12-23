@@ -38,8 +38,10 @@
 package org.spearce.jgit.transport;
 
 import java.util.Collection;
+import java.util.Set;
 
 import org.spearce.jgit.errors.TransportException;
+import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
 
@@ -54,9 +56,10 @@ import org.spearce.jgit.lib.Ref;
 abstract class BaseFetchConnection extends BaseConnection implements
 		FetchConnection {
 	public final void fetch(final ProgressMonitor monitor,
-			final Collection<Ref> want) throws TransportException {
+			final Collection<Ref> want, final Set<ObjectId> have)
+			throws TransportException {
 		markStartedOperation();
-		doFetch(monitor, want);
+		doFetch(monitor, want, have);
 	}
 
 	/**
@@ -68,19 +71,22 @@ abstract class BaseFetchConnection extends BaseConnection implements
 	}
 
 	/**
-	 * Implementation of {@link #fetch(ProgressMonitor, Collection)} without
-	 * checking for multiple fetch.
+	 * Implementation of {@link #fetch(ProgressMonitor, Collection, Set)}
+	 * without checking for multiple fetch.
 	 *
 	 * @param monitor
-	 *            as in {@link #fetch(ProgressMonitor, Collection)}
+	 *            as in {@link #fetch(ProgressMonitor, Collection, Set)}
 	 * @param want
-	 *            as in {@link #fetch(ProgressMonitor, Collection)}
+	 *            as in {@link #fetch(ProgressMonitor, Collection, Set)}
+	 * @param have
+	 *            as in {@link #fetch(ProgressMonitor, Collection, Set)}
 	 * @throws TransportException
-	 *             as in {@link #fetch(ProgressMonitor, Collection)}, but
+	 *             as in {@link #fetch(ProgressMonitor, Collection, Set)}, but
 	 *             implementation doesn't have to care about multiple
-	 *             {@link #fetch(ProgressMonitor, Collection)} calls, as it is
-	 *             checked in this class.
+	 *             {@link #fetch(ProgressMonitor, Collection, Set)} calls, as it
+	 *             is checked in this class.
 	 */
 	protected abstract void doFetch(final ProgressMonitor monitor,
-			final Collection<Ref> want) throws TransportException;
+			final Collection<Ref> want, final Set<ObjectId> have)
+			throws TransportException;
 }
