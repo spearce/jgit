@@ -56,8 +56,7 @@ import org.spearce.jgit.lib.Repository;
  * source projects, as there are no authentication or authorization overheads.
  */
 class TransportGitAnon extends PackTransport {
-	/** IANA assigned port number for Git. */
-	static final int GIT_PORT = 9418;
+	static final int GIT_PORT = Daemon.DEFAULT_PORT;
 
 	static boolean canHandle(final URIish uri) {
 		return "git".equals(uri.getScheme());
