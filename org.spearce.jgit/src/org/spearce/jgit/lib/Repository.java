@@ -825,6 +825,7 @@ public class Repository {
 	 */
 	public void scanForPacks() {
 		final ArrayList<PackFile> p = new ArrayList<PackFile>();
+		p.addAll(Arrays.asList(packs()));
 		for (final File d : objectsDirs())
 			scanForPacks(new File(d, "pack"), p);
 		final PackFile[] arr = new PackFile[p.size()];
@@ -843,7 +844,7 @@ public class Repository {
 			}
 		});
 		if (idxList != null) {
-			for (final String indexName : idxList) {
+			SCAN: for (final String indexName : idxList) {
 				final String n = indexName.substring(0, indexName.length() - 4);
 				final File idxFile = new File(packDir, n + ".idx");
 				final File packFile = new File(packDir, n + ".pack");
@@ -854,6 +855,11 @@ public class Repository {
 					// We have to skip over such useless indexes.
 					//
 					continue;
+				}
+
+				for (final PackFile p : packList) {
+					if (packFile.equals(p.getPackFile()))
+						continue SCAN;
 				}
 
 				try {

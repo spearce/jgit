@@ -94,6 +94,11 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		return reader(curs, ofs);
 	}
 
+	/** @return the File object which locates this pack on disk. */
+	public File getPackFile() {
+		return pack.getFile();
+	}
+
 	/**
 	 * Determine if an object is contained within the pack file.
 	 * <p>

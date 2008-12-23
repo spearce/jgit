@@ -101,13 +101,18 @@ public class WindowedFile {
 		return length;
 	}
 
+	/** @return the absolute file object this file reads from. */
+	public File getFile() {
+		return fPath.getAbsoluteFile();
+	}
+
 	/**
 	 * Get the path name of this file.
 	 * 
 	 * @return the absolute path name of the file.
 	 */
 	public String getName() {
-		return fPath.getAbsolutePath();
+		return getFile().getPath();
 	}
 
 	/**
