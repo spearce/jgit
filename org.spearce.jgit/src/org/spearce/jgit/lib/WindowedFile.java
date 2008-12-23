@@ -45,7 +45,6 @@ import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel.MapMode;
 import java.util.zip.DataFormatException;
-import java.util.zip.Inflater;
 
 /**
  * Read-only cached file access.
@@ -240,13 +239,8 @@ public class WindowedFile {
 
 	void readCompressed(final long position, final byte[] dstbuf,
 			final WindowCursor curs) throws IOException, DataFormatException {
-		final Inflater inf = InflaterCache.get();
-		try {
-			if (curs.inflate(this, position, dstbuf, 0, inf) != dstbuf.length)
-				throw new EOFException("Short compressed stream at " + position);
-		} finally {
-			InflaterCache.release(inf);
-		}
+		if (curs.inflate(this, position, dstbuf, 0) != dstbuf.length)
+			throw new EOFException("Short compressed stream at " + position);
 	}
 
 	/**

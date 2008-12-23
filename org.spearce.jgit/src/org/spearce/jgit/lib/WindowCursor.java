@@ -46,6 +46,8 @@ public final class WindowCursor {
 	/** Temporary buffer large enough for at least one raw object id. */
 	final byte[] tempId = new byte[Constants.OBJECT_ID_LENGTH];
 
+	private Inflater inf;
+
 	ByteWindow window;
 
 	Object handle;
@@ -98,16 +100,8 @@ public final class WindowCursor {
 	 *            data to.
 	 * @param dstoff
 	 *            current offset within <code>dstbuf</code> to inflate into.
-	 * @param inf
-	 *            the inflater to feed input to. The caller is responsible for
-	 *            initializing the inflater as multiple windows may need to
-	 *            supply data to the same inflater to completely decompress
-	 *            something.
 	 * @return updated <code>dstoff</code> based on the number of bytes
-	 *         successfully copied into <code>dstbuf</code> by
-	 *         <code>inf</code>. If the inflater is not yet finished then
-	 *         another window's data must still be supplied as input to finish
-	 *         decompression.
+	 *         successfully inflated into <code>dstbuf</code>.
 	 * @throws IOException
 	 *             this cursor does not match the provider or id and the proper
 	 *             window could not be acquired through the provider's cache.
@@ -116,8 +110,12 @@ public final class WindowCursor {
 	 *             stream corruption is likely.
 	 */
 	int inflate(final WindowedFile provider, long position,
-			final byte[] dstbuf, int dstoff, final Inflater inf)
+			final byte[] dstbuf, int dstoff)
 			throws IOException, DataFormatException {
+		if (inf == null)
+			inf = InflaterCache.get();
+		else
+			inf.reset();
 		for (;;) {
 			pin(provider, position);
 			dstoff = window.inflate(handle, position, dstbuf, dstoff, inf);
@@ -138,5 +136,20 @@ public final class WindowCursor {
 	public void release() {
 		window = null;
 		handle = null;
+		try {
+			InflaterCache.release(inf);
+		} finally {
+			inf = null;
+		}
+	}
+
+	/**
+	 * @param curs cursor to release; may be null.
+	 * @return always null.
+	 */
+	public static WindowCursor release(final WindowCursor curs) {
+		if (curs != null)
+			curs.release();
+		return null;
 	}
 }

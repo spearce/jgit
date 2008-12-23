@@ -251,7 +251,12 @@ public class Repository {
 	 */
 	public ObjectLoader openObject(final AnyObjectId id)
 			throws IOException {
-		return openObject(new WindowCursor(),id);
+		final WindowCursor wc = new WindowCursor();
+		try {
+			return openObject(wc, id);
+		} finally {
+			wc.release();
+		}
 	}
 
 	/**

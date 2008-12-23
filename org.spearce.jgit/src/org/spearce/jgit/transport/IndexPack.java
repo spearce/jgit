@@ -68,6 +68,7 @@ import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.PackIndexWriter;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.WindowCursor;
 import org.spearce.jgit.util.NB;
 
 /** Indexes Git pack files for local use. */
@@ -173,6 +174,8 @@ public class IndexPack {
 	/** If {@link #fixThin} this is the last byte of the original checksum. */
 	private long originalEOF;
 
+	private WindowCursor readCurs;
+
 	/**
 	 * Create a new pack indexer utility.
 	 * 
@@ -189,6 +192,7 @@ public class IndexPack {
 		repo = db;
 		in = src;
 		inflater = InflaterCache.get();
+		readCurs = new WindowCursor();
 		buf = new byte[BUFFER_SIZE];
 		objectData = new byte[BUFFER_SIZE];
 		objectDigest = Constants.newMessageDigest();
@@ -325,6 +329,7 @@ public class IndexPack {
 				} finally {
 					inflater = null;
 				}
+				readCurs = WindowCursor.release(readCurs);
 
 				progress.endTask();
 				if (packOut != null)
@@ -461,7 +466,7 @@ public class IndexPack {
 		final Deflater def = new Deflater(Deflater.DEFAULT_COMPRESSION, false);
 		long end = originalEOF;
 		for (final ObjectId baseId : new ArrayList<ObjectId>(baseById.keySet())) {
-			final ObjectLoader ldr = repo.openObject(baseId);
+			final ObjectLoader ldr = repo.openObject(readCurs, baseId);
 			if (ldr == null)
 				continue;
 			final byte[] data = ldr.getBytes();
@@ -715,7 +720,7 @@ public class IndexPack {
 			}
 		}
 
-		final ObjectLoader ldr = repo.openObject(id);
+		final ObjectLoader ldr = repo.openObject(readCurs, id);
 		if (ldr != null) {
 			final byte[] existingData = ldr.getCachedBytes();
 			if (ldr.getType() != type || !Arrays.equals(data, existingData)) {

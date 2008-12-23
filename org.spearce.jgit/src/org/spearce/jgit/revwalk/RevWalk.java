@@ -651,7 +651,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 		if ((t.flags & PARSED) != 0)
 			return t;
-		final ObjectLoader ldr = db.openObject(t);
+		final ObjectLoader ldr = db.openObject(curs, t);
 		if (ldr == null)
 			throw new MissingObjectException(t, Constants.TYPE_TREE);
 		if (ldr.getType() != Constants.OBJ_TREE)
@@ -680,7 +680,7 @@ public class RevWalk implements Iterable<RevCommit> {
 			throws MissingObjectException, IOException {
 		RevObject r = objects.get(id);
 		if (r == null) {
-			final ObjectLoader ldr = db.openObject(id);
+			final ObjectLoader ldr = db.openObject(curs, id);
 			if (ldr == null)
 				throw new MissingObjectException(id.toObjectId(), "unknown");
 			final byte[] data = ldr.getCachedBytes();

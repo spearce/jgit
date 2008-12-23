@@ -120,7 +120,12 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	 *             the pack file or the index could not be read.
 	 */
 	public PackedObjectLoader get(final AnyObjectId id) throws IOException {
-		return get(new WindowCursor(), id);
+		final WindowCursor wc = new WindowCursor();
+		try {
+			return get(wc, id);
+		} finally {
+			wc.release();
+		}
 	}
 
 	/**
