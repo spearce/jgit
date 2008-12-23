@@ -4,6 +4,7 @@ org.spearce.jgit.pgm.DiffTree
 org.spearce.jgit.pgm.Fetch
 org.spearce.jgit.pgm.Glog
 org.spearce.jgit.pgm.IndexPack
+org.spearce.jgit.pgm.Init
 org.spearce.jgit.pgm.Log
 org.spearce.jgit.pgm.LsRemote
 org.spearce.jgit.pgm.LsTree
