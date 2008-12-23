@@ -149,6 +149,9 @@ public class RefUpdate {
 	/** Old value of the ref, obtained after we lock it. */
 	private ObjectId oldValue;
 
+	/** If non-null, the value {@link #oldValue} must have to continue. */
+	private ObjectId expValue;
+
 	/** Result of the update operation. */
 	private Result result = Result.NOT_ATTEMPTED;
 
@@ -187,6 +190,27 @@ public class RefUpdate {
 	 */
 	public void setNewObjectId(final AnyObjectId id) {
 		newValue = id.toObjectId();
+	}
+
+	/**
+	 * @return the expected value of the ref after the lock is taken, but before
+	 *         update occurs. Null to avoid the compare and swap test. Use
+	 *         {@link ObjectId#zeroId()} to indicate expectation of a
+	 *         non-existant ref.
+	 */
+	public ObjectId getExpectedOldObjectId() {
+		return expValue;
+	}
+
+	/**
+	 * @param id
+	 *            the expected value of the ref after the lock is taken, but
+	 *            before update occurs. Null to avoid the compare and swap test.
+	 *            Use {@link ObjectId#zeroId()} to indicate expectation of a
+	 *            non-existant ref.
+	 */
+	public void setExpectedOldObjectId(final AnyObjectId id) {
+		expValue = id != null ? id.toObjectId() : null;
 	}
 
 	/**
@@ -370,6 +394,12 @@ public class RefUpdate {
 			return Result.LOCK_FAILURE;
 		try {
 			oldValue = db.idOf(getName());
+			if (expValue != null) {
+				final ObjectId o;
+				o = oldValue != null ? oldValue : ObjectId.zeroId();
+				if (!expValue.equals(o))
+					return Result.LOCK_FAILURE;
+			}
 			if (oldValue == null)
 				return store.store(lock, Result.NEW);
 
