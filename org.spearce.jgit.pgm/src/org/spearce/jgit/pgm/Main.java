@@ -143,15 +143,18 @@ public class Main {
 			System.exit(1);
 		}
 
-		if (gitdir == null)
-			gitdir = findGitDir();
-		if (gitdir == null || !gitdir.isDirectory()) {
-			System.err.println("error: can't find git directory");
-			System.exit(1);
-		}
-
 		final TextBuiltin cmd = subcommand;
-		cmd.init(new Repository(gitdir));
+		if (cmd.requiresRepository()) {
+			if (gitdir == null)
+				gitdir = findGitDir();
+			if (gitdir == null || !gitdir.isDirectory()) {
+				System.err.println("error: can't find git directory");
+				System.exit(1);
+			}
+			cmd.init(new Repository(gitdir), gitdir);
+		} else {
+			cmd.init(null, gitdir);
+		}
 		try {
 			cmd.execute(arguments.toArray(new String[arguments.size()]));
 		} finally {

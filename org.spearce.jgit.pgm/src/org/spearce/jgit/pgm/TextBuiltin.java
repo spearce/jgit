@@ -43,6 +43,7 @@ import static org.spearce.jgit.lib.Constants.R_REMOTES;
 import static org.spearce.jgit.lib.Constants.R_TAGS;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -77,6 +78,9 @@ public abstract class TextBuiltin {
 	/** Git repository the command was invoked within. */
 	protected Repository db;
 
+	/** Directory supplied via --git-dir command line option. */
+	protected File gitdir;
+
 	/** RevWalk used during command line parsing, if it was required. */
 	protected RevWalk argWalk;
 
@@ -84,10 +88,15 @@ public abstract class TextBuiltin {
 		commandName = name;
 	}
 
-	void init(final Repository repo) {
+	/** @return true if {@link #db}/{@link #getRepository()} is required. */
+	protected boolean requiresRepository() {
+		return true;
+	}
+
+	void init(final Repository repo, final File gd) {
 		try {
-			String outputEncoding = repo.getConfig().getString("i18n", null,
-					"logOutputEncoding");
+			final String outputEncoding = repo != null ? repo.getConfig()
+					.getString("i18n", null, "logOutputEncoding") : null;
 			if (outputEncoding != null)
 				out = new PrintWriter(new BufferedWriter(
 						new OutputStreamWriter(System.out, outputEncoding)));
@@ -97,7 +106,14 @@ public abstract class TextBuiltin {
 		} catch (IOException e) {
 			throw die("cannot create output stream");
 		}
-		db = repo;
+
+		if (repo != null) {
+			db = repo;
+			gitdir = repo.getDirectory();
+		} else {
+			db = null;
+			gitdir = gd;
+		}
 	}
 
 	/**
