@@ -424,7 +424,7 @@ public class RefUpdate {
 	private static RevObject safeParse(final RevWalk rw, final AnyObjectId id)
 			throws IOException {
 		try {
-			return rw.parseAny(id);
+			return id != null ? rw.parseAny(id) : null;
 		} catch (MissingObjectException e) {
 			// We can expect some objects to be missing, like if we are
 			// trying to force a deletion of a branch and the object it
