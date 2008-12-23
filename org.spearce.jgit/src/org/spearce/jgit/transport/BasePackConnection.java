@@ -207,8 +207,7 @@ abstract class BasePackConnection extends BaseConnection {
 	protected boolean wantCapability(final StringBuilder b, final String option) {
 		if (!isCapableOf(option))
 			return false;
-		if (b.length() > 0)
-			b.append(' ');
+		b.append(' ');
 		b.append(option);
 		return true;
 	}

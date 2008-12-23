@@ -181,7 +181,7 @@ class BasePackPushConnection extends BasePackConnection implements
 		capableReport = wantCapability(line, CAPABILITY_REPORT_STATUS);
 		capableDeleteRefs = wantCapability(line, CAPABILITY_DELETE_REFS);
 		if (line.length() > 0)
-			line.insert(0, '\0');
+			line.setCharAt(0, '\0');
 		return line.toString();
 	}
 
