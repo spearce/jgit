@@ -43,6 +43,8 @@ package org.spearce.jgit.transport;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 
 import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.errors.TransportException;
@@ -90,7 +92,10 @@ class TransportLocal extends PackTransport {
 	@Override
 	public PushConnection openPush() throws NotSupportedException,
 			TransportException {
-		return new LocalPushConnection();
+		final String rp = getOptionReceivePack();
+		if ("git-receive-pack".equals(rp) || "git receive-pack".equals(rp))
+			return new InternalLocalPushConnection();
+		return new ForkLocalPushConnection();
 	}
 
 	@Override
@@ -151,10 +156,87 @@ class TransportLocal extends PackTransport {
 		}
 	}
 
-	class LocalPushConnection extends BasePackPushConnection {
+	class InternalLocalPushConnection extends BasePackPushConnection {
+		private Thread worker;
+
+		InternalLocalPushConnection() throws TransportException {
+			super(TransportLocal.this);
+
+			final Repository dst;
+			try {
+				dst = new Repository(remoteGitDir);
+			} catch (IOException err) {
+				throw new TransportException(uri, "not a git directory");
+			}
+
+			final PipedInputStream in_r;
+			final PipedOutputStream in_w;
+
+			final PipedInputStream out_r;
+			final PipedOutputStream out_w;
+			try {
+				in_r = new PipedInputStream();
+				in_w = new PipedOutputStream(in_r);
+
+				out_r = new PipedInputStream();
+				out_w = new PipedOutputStream(out_r);
+			} catch (IOException err) {
+				dst.close();
+				throw new TransportException(uri, "cannot connect pipes", err);
+			}
+
+			worker = new Thread("JGit-Receive-Pack") {
+				public void run() {
+					try {
+						final ReceivePack rp = new ReceivePack(dst);
+						rp.receive(out_r, in_w, System.err);
+					} catch (IOException err) {
+						// Client side of the pipes should report the problem.
+					} catch (RuntimeException err) {
+						// Clients side will notice we went away, and report.
+					} finally {
+						try {
+							out_r.close();
+						} catch (IOException e2) {
+							// Ignore close failure, we probably crashed above.
+						}
+
+						try {
+							in_w.close();
+						} catch (IOException e2) {
+							// Ignore close failure, we probably crashed above.
+						}
+
+						dst.close();
+					}
+				}
+			};
+			worker.start();
+
+			init(in_r, out_w);
+			readAdvertisedRefs();
+		}
+
+		@Override
+		public void close() {
+			super.close();
+
+			if (worker != null) {
+				try {
+					worker.join();
+				} catch (InterruptedException ie) {
+					// Stop waiting and return anyway.
+				} finally {
+					worker = null;
+				}
+			}
+		}
+	}
+
+	class ForkLocalPushConnection extends BasePackPushConnection {
 		private Process receivePack;
 
-		LocalPushConnection() throws TransportException {
+		ForkLocalPushConnection() throws TransportException {
 			super(TransportLocal.this);
 			receivePack = startProcessWithErrStream(getOptionReceivePack());
 			init(receivePack.getInputStream(), receivePack.getOutputStream());
