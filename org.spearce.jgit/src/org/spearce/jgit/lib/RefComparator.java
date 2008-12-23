@@ -54,7 +54,7 @@ public class RefComparator implements Comparator<Ref> {
 	public static final RefComparator INSTANCE = new RefComparator();
 
 	public int compare(final Ref o1, final Ref o2) {
-		return o1.getName().compareTo(o2.getName());
+		return o1.getOrigName().compareTo(o2.getOrigName());
 	}
 
 	/**
