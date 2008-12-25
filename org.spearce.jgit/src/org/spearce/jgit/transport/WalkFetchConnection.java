@@ -59,6 +59,7 @@ import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
+import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.lib.ObjectChecker;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.PackIndex;
@@ -151,6 +152,8 @@ class WalkFetchConnection extends BaseFetchConnection {
 	 * this collection.
 	 */
 	private final Set<String> packsConsidered;
+
+	private final MutableObjectId idBuffer = new MutableObjectId();
 
 	/**
 	 * Errors received while trying to obtain an object.
@@ -300,16 +303,17 @@ class WalkFetchConnection extends BaseFetchConnection {
 
 				switch (sType) {
 				case Constants.OBJ_BLOB:
-				case Constants.OBJ_TREE: {
-					final ObjectId sId = treeWalk.getObjectId(0);
-					needs(revWalk.lookupAny(sId, sType));
+				case Constants.OBJ_TREE:
+					treeWalk.getObjectId(idBuffer, 0);
+					needs(revWalk.lookupAny(idBuffer, sType));
 					continue;
-				}
+
 				default:
 					if (FileMode.GITLINK.equals(mode))
 						continue;
+					treeWalk.getObjectId(idBuffer, 0);
 					throw new CorruptObjectException("Invalid mode " + mode
-							+ " for " + treeWalk.getObjectId(0).name() + " "
+							+ " for " + idBuffer.name() + " "
 							+ treeWalk.getPathString() + " in "
 							+ obj.getId().name() + ".");
 				}
@@ -722,14 +726,14 @@ class WalkFetchConnection extends BaseFetchConnection {
 			final int sType = mode.getObjectType();
 
 			switch (sType) {
-			case Constants.OBJ_BLOB: {
-				final ObjectId sid = treeWalk.getObjectId(0);
-				revWalk.lookupAny(sid, sType).add(COMPLETE);
+			case Constants.OBJ_BLOB:
+				treeWalk.getObjectId(idBuffer, 0);
+				revWalk.lookupAny(idBuffer, sType).add(COMPLETE);
 				continue;
-			}
+
 			case Constants.OBJ_TREE: {
-				final ObjectId sid = treeWalk.getObjectId(0);
-				final RevObject o = revWalk.lookupAny(sid, sType);
+				treeWalk.getObjectId(idBuffer, 0);
+				final RevObject o = revWalk.lookupAny(idBuffer, sType);
 				if (!o.has(COMPLETE)) {
 					o.add(COMPLETE);
 					treeWalk.enterSubtree();
@@ -739,8 +743,9 @@ class WalkFetchConnection extends BaseFetchConnection {
 			default:
 				if (FileMode.GITLINK.equals(mode))
 					continue;
+				treeWalk.getObjectId(idBuffer, 0);
 				throw new CorruptObjectException("Invalid mode " + mode
-						+ " for " + treeWalk.getObjectId(0).name() + " "
+						+ " for " + idBuffer.name() + " "
 						+ treeWalk.getPathString() + " in " + tree.name() + ".");
 			}
 		}
