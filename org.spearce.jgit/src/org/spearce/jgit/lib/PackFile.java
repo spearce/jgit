@@ -129,11 +129,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	public PackedObjectLoader get(final WindowCursor curs, final AnyObjectId id)
 			throws IOException {
 		final long offset = idx.findOffset(id);
-		if (offset == -1)
-			return null;
-		final PackedObjectLoader objReader = reader(curs, offset);
-		objReader.setId(id.toObjectId());
-		return objReader;
+		return 0 < offset ? reader(curs, offset) : null;
 	}
 
 	/**
@@ -219,11 +215,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 			pack.copyToStream(dataOffset, buf, cnt, crcOut, curs);
 			final long computed = crc.getValue();
 
-			ObjectId id;
-			if (loader.hasComputedId())
-				id = loader.getId();
-			else
-				id = findObjectForOffset(objectOffset);
+			final ObjectId id = findObjectForOffset(objectOffset);
 			final long expected = idx.findCRC32(id);
 			if (computed != expected)
 				throw new CorruptObjectException(id,

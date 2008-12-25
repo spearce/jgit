@@ -39,50 +39,12 @@
 package org.spearce.jgit.lib;
 
 import java.io.IOException;
-import java.security.MessageDigest;
 
 /**
  * Base class for a set of loaders for different representations of Git objects.
  * New loaders are constructed for every object.
  */
 public abstract class ObjectLoader {
-	private ObjectId objectId;
-
-	/**
-	 * @return the id of this object, possibly computed on demand
-	 * @throws IOException
-	 */
-	public ObjectId getId() throws IOException {
-		if (objectId == null) {
-			final MessageDigest md = Constants.newMessageDigest();
-			md.update(Constants.encodedTypeString(getType()));
-			md.update((byte) ' ');
-			md.update(Constants.encodeASCII(getSize()));
-			md.update((byte) 0);
-			md.update(getCachedBytes());
-			objectId = ObjectId.fromRaw(md.digest());
-		}
-		return objectId;
-	}
-
-	/**
-	 * @return true if id of loaded object is already known, false otherwise.
-	 */
-	protected boolean hasComputedId() {
-		return objectId != null;
-	}
-
-	/**
-	 * Set the SHA-1 id of the object handled by this loader
-	 * 
-	 * @param id
-	 */
-	protected void setId(final ObjectId id) {
-		if (objectId != null)
-			throw new IllegalStateException("Id already set.");
-		objectId = id;
-	}
-
 	/**
 	 * @return Git in pack object type, see {@link Constants}.
 	 * @throws IOException

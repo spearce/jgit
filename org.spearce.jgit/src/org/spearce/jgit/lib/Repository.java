@@ -317,7 +317,7 @@ public class Repository {
 			} while (k > 0);
 		}
 		try {
-			return new UnpackedObjectLoader(this, id.toObjectId());
+			return new UnpackedObjectLoader(this, id);
 		} catch (FileNotFoundException fnfe) {
 			return null;
 		}

@@ -92,7 +92,8 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 			return data;
 		} catch (DataFormatException dfe) {
 			final CorruptObjectException coe;
-			coe = new CorruptObjectException(getId(), "bad stream");
+			coe = new CorruptObjectException("Object at " + dataOffset + " in "
+					+ pack.getPackFile() + " has bad zlib stream");
 			coe.initCause(dfe);
 			throw coe;
 		}

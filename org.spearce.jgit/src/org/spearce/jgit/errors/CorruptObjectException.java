@@ -40,6 +40,7 @@ package org.spearce.jgit.errors;
 
 import java.io.IOException;
 
+import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.ObjectId;
 
 /**
@@ -47,6 +48,17 @@ import org.spearce.jgit.lib.ObjectId;
  */
 public class CorruptObjectException extends IOException {
 	private static final long serialVersionUID = 1L;
+
+	/**
+	 * Construct a CorruptObjectException for reporting a problem specified
+	 * object id
+	 *
+	 * @param id
+	 * @param why
+	 */
+	public CorruptObjectException(final AnyObjectId id, final String why) {
+		this(id.toObjectId(), why);
+	}
 
 	/**
 	 * Construct a CorruptObjectException for reporting a problem specified

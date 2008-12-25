@@ -67,13 +67,13 @@ public class UnpackedObjectLoader extends ObjectLoader {
 	 *            SHA-1
 	 * @throws IOException
 	 */
-	public UnpackedObjectLoader(final Repository db, final ObjectId id)
+	public UnpackedObjectLoader(final Repository db, final AnyObjectId id)
 			throws IOException {
 		this(readCompressed(db, id), id);
 	}
 
-	private static byte[] readCompressed(final Repository db, final ObjectId id)
-			throws FileNotFoundException, IOException {
+	private static byte[] readCompressed(final Repository db,
+			final AnyObjectId id) throws FileNotFoundException, IOException {
 		final FileInputStream objStream = new FileInputStream(db.toFile(id));
 		final byte[] compressed;
 		try {
@@ -101,10 +101,8 @@ public class UnpackedObjectLoader extends ObjectLoader {
 		this(compressed, null);
 	}
 
-	private UnpackedObjectLoader(final byte[] compressed, final ObjectId id)
+	private UnpackedObjectLoader(final byte[] compressed, final AnyObjectId id)
 			throws CorruptObjectException {
-		setId(id);
-
 		// Try to determine if this is a legacy format loose object or
 		// a new style loose object. The legacy format was completely
 		// compressed with zlib so the first byte must be 0x78 (15-bit
@@ -177,7 +175,7 @@ public class UnpackedObjectLoader extends ObjectLoader {
 		}
 	}
 
-	private void decompress(final ObjectId id, final Inflater inf, int p)
+	private void decompress(final AnyObjectId id, final Inflater inf, int p)
 			throws CorruptObjectException {
 		try {
 			while (!inf.finished())

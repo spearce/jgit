@@ -687,23 +687,23 @@ public class RevWalk implements Iterable<RevCommit> {
 			final int type = ldr.getType();
 			switch (type) {
 			case Constants.OBJ_COMMIT: {
-				final RevCommit c = createCommit(ldr.getId());
+				final RevCommit c = createCommit(id);
 				c.parseCanonical(this, data);
 				r = c;
 				break;
 			}
 			case Constants.OBJ_TREE: {
-				r = new RevTree(ldr.getId());
+				r = new RevTree(id);
 				r.flags |= PARSED;
 				break;
 			}
 			case Constants.OBJ_BLOB: {
-				r = new RevBlob(ldr.getId());
+				r = new RevBlob(id);
 				r.flags |= PARSED;
 				break;
 			}
 			case Constants.OBJ_TAG: {
-				final RevTag t = new RevTag(ldr.getId());
+				final RevTag t = new RevTag(id);
 				t.parseCanonical(this, data);
 				r = t;
 				break;

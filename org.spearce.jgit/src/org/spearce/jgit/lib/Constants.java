@@ -311,7 +311,7 @@ public final class Constants {
 	 * @throws CorruptObjectException
 	 *             there is no valid type identified by <code>typeString</code>.
 	 */
-	public static int decodeTypeString(final ObjectId id,
+	public static int decodeTypeString(final AnyObjectId id,
 			final byte[] typeString, final byte endMark,
 			final MutableInteger offset) throws CorruptObjectException {
 		try {
