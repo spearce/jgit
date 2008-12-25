@@ -465,8 +465,9 @@ public class PackWriter {
 			final Collection<? extends ObjectId> uninterestingObjects,
 			final boolean thin, final boolean ignoreMissingUninteresting)
 			throws IOException {
+		this.thin = thin;
 		ObjectWalk walker = setUpWalker(interestingObjects,
-				uninterestingObjects, thin, ignoreMissingUninteresting);
+				uninterestingObjects, ignoreMissingUninteresting);
 		findObjectsToPack(walker);
 	}
 
@@ -759,7 +760,7 @@ public class PackWriter {
 	private ObjectWalk setUpWalker(
 			final Collection<? extends ObjectId> interestingObjects,
 			final Collection<? extends ObjectId> uninterestingObjects,
-			final boolean thin, final boolean ignoreMissingUninteresting)
+			final boolean ignoreMissingUninteresting)
 			throws MissingObjectException, IOException,
 			IncorrectObjectTypeException {
 		final ObjectWalk walker = new ObjectWalk(db);
