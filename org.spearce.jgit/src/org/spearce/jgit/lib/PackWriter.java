@@ -46,7 +46,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
@@ -577,8 +576,7 @@ public class PackWriter {
 
 	private void searchForReuse() throws IOException {
 		initMonitor.beginTask(SEARCHING_REUSE_PROGRESS, getObjectsNumber());
-		final Collection<PackedObjectLoader> reuseLoaders = new LinkedList<PackedObjectLoader>();
-
+		final Collection<PackedObjectLoader> reuseLoaders = new ArrayList<PackedObjectLoader>();
 		for (List<ObjectToPack> list : objectsLists) {
 			for (ObjectToPack otp : list) {
 				if (initMonitor.isCancelled())
