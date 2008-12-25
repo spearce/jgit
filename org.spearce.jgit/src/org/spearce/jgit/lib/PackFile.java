@@ -117,25 +117,6 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	/**
 	 * Get an object from this pack.
 	 * 
-	 * @param id
-	 *            the object to obtain from the pack. Must not be null.
-	 * @return the object loader for the requested object if it is contained in
-	 *         this pack; null if the object was not found.
-	 * @throws IOException
-	 *             the pack file or the index could not be read.
-	 */
-	public PackedObjectLoader get(final AnyObjectId id) throws IOException {
-		final WindowCursor wc = new WindowCursor();
-		try {
-			return get(wc, id);
-		} finally {
-			wc.release();
-		}
-	}
-
-	/**
-	 * Get an object from this pack.
-	 * 
 	 * @param curs
 	 *            temporary working space associated with the calling thread.
 	 * @param id

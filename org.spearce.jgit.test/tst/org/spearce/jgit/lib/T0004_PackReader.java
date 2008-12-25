@@ -55,7 +55,7 @@ public class T0004_PackReader extends RepositoryTestCase {
 
 		id = ObjectId.fromString("902d5476fa249b7abc9d84c611577a81381f0327");
 		pr = new PackFile(db, TEST_IDX, TEST_PACK);
-		or = pr.get(id);
+		or = pr.get(new WindowCursor(), id);
 		assertNotNull(or);
 		assertEquals(id, or.getId());
 		assertEquals(Constants.OBJ_TREE, or.getType());
