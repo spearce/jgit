@@ -46,8 +46,10 @@ import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
+import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.WindowCursor;
 import org.spearce.jgit.treewalk.filter.TreeFilter;
 
 /**
@@ -345,6 +347,32 @@ public abstract class AbstractTreeIterator {
 	 */
 	public abstract AbstractTreeIterator createSubtreeIterator(Repository repo)
 			throws IncorrectObjectTypeException, IOException;
+
+	/**
+	 * Create a new iterator for the current entry's subtree.
+	 * <p>
+	 * The parent reference of the iterator must be <code>this</code>, otherwise
+	 * the caller would not be able to exit out of the subtree iterator
+	 * correctly and return to continue walking <code>this</code>.
+	 *
+	 * @param repo
+	 *            repository to load the tree data from.
+	 * @param idBuffer
+	 *            temporary ObjectId buffer for use by this method.
+	 * @param curs
+	 *            window cursor to use during repository access.
+	 * @return a new parser that walks over the current subtree.
+	 * @throws IncorrectObjectTypeException
+	 *             the current entry is not actually a tree and cannot be parsed
+	 *             as though it were a tree.
+	 * @throws IOException
+	 *             a loose object or pack file could not be read.
+	 */
+	public AbstractTreeIterator createSubtreeIterator(final Repository repo,
+			final MutableObjectId idBuffer, final WindowCursor curs)
+			throws IncorrectObjectTypeException, IOException {
+		return createSubtreeIterator(repo);
+	}
 
 	/**
 	 * Is this tree iterator positioned on its first entry?

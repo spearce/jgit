@@ -41,11 +41,14 @@ import java.io.IOException;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
+import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.WindowCursor;
 
 /** Parses raw Git trees from the canonical semi-text/semi-binary format. */
 public class CanonicalTreeParser extends AbstractTreeIterator {
@@ -87,6 +90,8 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 	 * @param id
 	 *            identity of the tree being parsed; used only in exception
 	 *            messages if data corruption is found.
+	 * @param curs
+	 *            window cursor to use during repository access.
 	 * @throws MissingObjectException
 	 *             the object supplied is not available from the repository.
 	 * @throws IncorrectObjectTypeException
@@ -95,25 +100,44 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 	 * @throws IOException
 	 *             a loose object or pack file could not be read.
 	 */
-	public void reset(final Repository repo, final ObjectId id)
+	public void reset(final Repository repo, final AnyObjectId id,
+			final WindowCursor curs)
 			throws IncorrectObjectTypeException, IOException {
-		final ObjectLoader ldr = repo.openObject(id);
-		if (ldr == null)
-			throw new MissingObjectException(id, Constants.TYPE_TREE);
+		final ObjectLoader ldr = repo.openObject(curs, id);
+		if (ldr == null) {
+			final ObjectId me = id.toObjectId();
+			throw new MissingObjectException(me, Constants.TYPE_TREE);
+		}
 		final byte[] subtreeData = ldr.getCachedBytes();
-		if (ldr.getType() != Constants.OBJ_TREE)
-			throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
+		if (ldr.getType() != Constants.OBJ_TREE) {
+			final ObjectId me = id.toObjectId();
+			throw new IncorrectObjectTypeException(me, Constants.TYPE_TREE);
+		}
 		reset(subtreeData);
+	}
+
+	@Override
+	public CanonicalTreeParser createSubtreeIterator(final Repository repo,
+			final MutableObjectId idBuffer, final WindowCursor curs)
+			throws IncorrectObjectTypeException, IOException {
+		idBuffer.fromRaw(idBuffer(), idOffset());
+		if (!FileMode.TREE.equals(mode)) {
+			final ObjectId me = idBuffer.toObjectId();
+			throw new IncorrectObjectTypeException(me, Constants.TYPE_TREE);
+		}
+		final CanonicalTreeParser p = new CanonicalTreeParser(this);
+		p.reset(repo, idBuffer, curs);
+		return p;
 	}
 
 	public CanonicalTreeParser createSubtreeIterator(final Repository repo)
 			throws IncorrectObjectTypeException, IOException {
-		final ObjectId id = getEntryObjectId();
-		if (!FileMode.TREE.equals(mode))
-			throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
-		final CanonicalTreeParser p = new CanonicalTreeParser(this);
-		p.reset(repo, id);
-		return p;
+		final WindowCursor curs = new WindowCursor();
+		try {
+			return createSubtreeIterator(repo, new MutableObjectId(), curs);
+		} finally {
+			curs.release();
+		}
 	}
 
 	@Override

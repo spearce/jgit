@@ -44,11 +44,13 @@ import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.StopWalkException;
+import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.WindowCursor;
 import org.spearce.jgit.revwalk.RevTree;
 import org.spearce.jgit.treewalk.filter.PathFilterGroup;
 import org.spearce.jgit.treewalk.filter.TreeFilter;
@@ -99,7 +101,7 @@ public class TreeWalk {
 	 *             a tree object was not found.
 	 */
 	public static TreeWalk forPath(final Repository db, final String path,
-			final ObjectId[] trees) throws MissingObjectException,
+			final AnyObjectId[] trees) throws MissingObjectException,
 			IncorrectObjectTypeException, CorruptObjectException, IOException {
 		final TreeWalk r = new TreeWalk(db);
 		r.setFilter(PathFilterGroup.createFromStrings(Collections
@@ -141,6 +143,10 @@ public class TreeWalk {
 	}
 
 	private final Repository db;
+
+	private final MutableObjectId idBuffer = new MutableObjectId();
+
+	private final WindowCursor curs = new WindowCursor();
 
 	private TreeFilter filter;
 
@@ -278,6 +284,46 @@ public class TreeWalk {
 	}
 
 	/**
+	 * Reset this walker to run over a single existing tree.
+	 *
+	 * @param id
+	 *            the tree we need to parse. The walker will execute over this
+	 *            single tree if the reset is successful.
+	 * @throws MissingObjectException
+	 *             the given tree object does not exist in this repository.
+	 * @throws IncorrectObjectTypeException
+	 *             the given object id does not denote a tree, but instead names
+	 *             some other non-tree type of object. Note that commits are not
+	 *             trees, even if they are sometimes called a "tree-ish".
+	 * @throws CorruptObjectException
+	 *             the object claimed to be a tree, but its contents did not
+	 *             appear to be a tree. The repository may have data corruption.
+	 * @throws IOException
+	 *             a loose object or pack file could not be read.
+	 */
+	public void reset(final AnyObjectId id) throws MissingObjectException,
+			IncorrectObjectTypeException, CorruptObjectException, IOException {
+		if (trees.length == 1) {
+			AbstractTreeIterator o = trees[0];
+			while (o.parent != null)
+				o = o.parent;
+			if (o instanceof CanonicalTreeParser) {
+				o.matches = null;
+				o.matchShift = 0;
+				((CanonicalTreeParser) o).reset(db, id, curs);
+				trees[0] = o;
+			} else {
+				trees[0] = parserFor(id);
+			}
+		} else {
+			trees = new AbstractTreeIterator[] { parserFor(id) };
+		}
+
+		advance = false;
+		depth = 0;
+	}
+
+	/**
 	 * Reset this walker to run over a set of existing trees.
 	 * 
 	 * @param ids
@@ -295,7 +341,7 @@ public class TreeWalk {
 	 * @throws IOException
 	 *             a loose object or pack file could not be read.
 	 */
-	public void reset(final ObjectId[] ids) throws MissingObjectException,
+	public void reset(final AnyObjectId[] ids) throws MissingObjectException,
 			IncorrectObjectTypeException, CorruptObjectException, IOException {
 		final int oldLen = trees.length;
 		final int newLen = ids.length;
@@ -311,7 +357,7 @@ public class TreeWalk {
 				if (o instanceof CanonicalTreeParser) {
 					o.matches = null;
 					o.matchShift = 0;
-					((CanonicalTreeParser) o).reset(db, ids[i]);
+					((CanonicalTreeParser) o).reset(db, ids[i], curs);
 					r[i] = o;
 					continue;
 				}
@@ -709,7 +755,7 @@ public class TreeWalk {
 			final AbstractTreeIterator t = trees[i];
 			final AbstractTreeIterator n;
 			if (t.matches == ch && !t.eof() && FileMode.TREE.equals(t.mode))
-				n = t.createSubtreeIterator(db);
+				n = t.createSubtreeIterator(db, idBuffer, curs);
 			else
 				n = new EmptyTreeIterator(t);
 			tmp[i] = n;
@@ -781,10 +827,10 @@ public class TreeWalk {
 		currentHead = minRef;
 	}
 
-	private CanonicalTreeParser parserFor(final ObjectId id)
+	private CanonicalTreeParser parserFor(final AnyObjectId id)
 			throws IncorrectObjectTypeException, IOException {
 		final CanonicalTreeParser p = new CanonicalTreeParser();
-		p.reset(db, id);
+		p.reset(db, id, curs);
 		return p;
 	}
 

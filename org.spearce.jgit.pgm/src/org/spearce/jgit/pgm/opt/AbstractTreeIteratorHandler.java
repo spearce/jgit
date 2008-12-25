@@ -51,6 +51,7 @@ import org.spearce.jgit.dircache.DirCacheIterator;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.WindowCursor;
 import org.spearce.jgit.treewalk.AbstractTreeIterator;
 import org.spearce.jgit.treewalk.CanonicalTreeParser;
 import org.spearce.jgit.treewalk.FileTreeIterator;
@@ -110,8 +111,9 @@ public class AbstractTreeIteratorHandler extends
 			throw new CmdLineException(name + " is not a tree");
 
 		final CanonicalTreeParser p = new CanonicalTreeParser();
+		final WindowCursor curs = new WindowCursor();
 		try {
-			p.reset(clp.getRepository(), clp.getRevWalk().parseTree(id));
+			p.reset(clp.getRepository(), clp.getRevWalk().parseTree(id), curs);
 		} catch (MissingObjectException e) {
 			throw new CmdLineException(name + " is not a tree");
 		} catch (IncorrectObjectTypeException e) {
@@ -119,6 +121,8 @@ public class AbstractTreeIteratorHandler extends
 		} catch (IOException e) {
 			throw new CmdLineException("cannot read " + name + ": "
 					+ e.getMessage());
+		} finally {
+			curs.release();
 		}
 
 		setter.addValue(p);

@@ -296,7 +296,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 
 	private void processTree(final RevObject obj) throws TransportException {
 		try {
-			treeWalk.reset(new ObjectId[] { obj });
+			treeWalk.reset(obj);
 			while (treeWalk.next()) {
 				final FileMode mode = treeWalk.getFileMode(0);
 				final int sType = mode.getObjectType();
@@ -720,7 +720,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 		if (tree.has(COMPLETE))
 			return;
 		tree.add(COMPLETE);
-		treeWalk.reset(new ObjectId[] { tree });
+		treeWalk.reset(tree);
 		while (treeWalk.next()) {
 			final FileMode mode = treeWalk.getFileMode(0);
 			final int sType = mode.getObjectType();

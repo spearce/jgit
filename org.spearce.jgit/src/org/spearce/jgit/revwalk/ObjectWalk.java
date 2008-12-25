@@ -45,7 +45,6 @@ import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
-import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.treewalk.TreeWalk;
 
@@ -296,7 +295,7 @@ public class ObjectWalk extends RevWalk {
 				continue;
 			if (o instanceof RevTree) {
 				currentTree = (RevTree) o;
-				treeWalk.reset(new ObjectId[] { currentTree });
+				treeWalk.reset(currentTree);
 			}
 			return o;
 		}
@@ -386,7 +385,7 @@ public class ObjectWalk extends RevWalk {
 			return;
 		tree.flags |= UNINTERESTING;
 
-		treeWalk.reset(new ObjectId[] { tree });
+		treeWalk.reset(tree);
 		while (treeWalk.next()) {
 			final FileMode mode = treeWalk.getFileMode(0);
 			final int sType = mode.getObjectType();
