@@ -46,6 +46,7 @@ import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.StopWalkException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
+import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.revwalk.RevTree;
@@ -513,7 +514,8 @@ public class TreeWalk {
 	 * <p>
 	 * Using this method to compare ObjectId values between trees of this walker
 	 * is very inefficient. Applications should try to use
-	 * {@link #idEqual(int, int)} whenever possible.
+	 * {@link #idEqual(int, int)} or {@link #getObjectId(MutableObjectId, int)}
+	 * whenever possible.
 	 * <p>
 	 * Every tree supplies an object id, even if the tree does not contain the
 	 * current entry. In the latter case {@link ObjectId#zeroId()} is returned.
@@ -521,12 +523,36 @@ public class TreeWalk {
 	 * @param nth
 	 *            tree to obtain the object identifier from.
 	 * @return object identifier for the current tree entry.
+	 * @see #getObjectId(MutableObjectId, int)
 	 * @see #idEqual(int, int)
 	 */
 	public ObjectId getObjectId(final int nth) {
 		final AbstractTreeIterator t = trees[nth];
 		return t.matches == currentHead ? t.getEntryObjectId() : ObjectId
 				.zeroId();
+	}
+
+	/**
+	 * Obtain the ObjectId for the current entry.
+	 * <p>
+	 * Every tree supplies an object id, even if the tree does not contain the
+	 * current entry. In the latter case {@link ObjectId#zeroId()} is supplied.
+	 * <p>
+	 * Applications should try to use {@link #idEqual(int, int)} when possible
+	 * as it avoids conversion overheads.
+	 *
+	 * @param out
+	 *            buffer to copy the object id into.
+	 * @param nth
+	 *            tree to obtain the object identifier from.
+	 * @see #idEqual(int, int)
+	 */
+	public void getObjectId(final MutableObjectId out, final int nth) {
+		final AbstractTreeIterator t = trees[nth];
+		if (t.matches == currentHead)
+			out.fromRaw(t.idBuffer(), t.idOffset());
+		else
+			out.clear();
 	}
 
 	/**
