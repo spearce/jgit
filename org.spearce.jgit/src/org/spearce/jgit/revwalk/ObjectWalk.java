@@ -46,7 +46,7 @@ import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.Repository;
-import org.spearce.jgit.treewalk.TreeWalk;
+import org.spearce.jgit.treewalk.CanonicalTreeParser;
 
 /**
  * Specialized subclass of RevWalk to include trees, blobs and tags.
@@ -74,7 +74,7 @@ public class ObjectWalk extends RevWalk {
 	 */
 	private static final int IN_PENDING = RevWalk.REWRITE;
 
-	private final TreeWalk treeWalk;
+	private CanonicalTreeParser treeWalk;
 
 	private BlockObjQueue pendingObjects;
 
@@ -92,8 +92,8 @@ public class ObjectWalk extends RevWalk {
 	 */
 	public ObjectWalk(final Repository repo) {
 		super(repo);
-		treeWalk = new TreeWalk(repo);
 		pendingObjects = new BlockObjQueue();
+		treeWalk = new CanonicalTreeParser();
 	}
 
 	/**
@@ -240,17 +240,17 @@ public class ObjectWalk extends RevWalk {
 		fromTreeWalk = false;
 
 		if (enterSubtree) {
-			treeWalk.enterSubtree();
+			treeWalk = treeWalk.createSubtreeIterator(db, idBuffer, curs);
 			enterSubtree = false;
 		}
 
-		while (treeWalk.next()) {
-			final FileMode mode = treeWalk.getFileMode(0);
+		for (; !treeWalk.eof(); treeWalk = treeWalk.next()) {
+			final FileMode mode = treeWalk.getEntryFileMode();
 			final int sType = mode.getObjectType();
 
 			switch (sType) {
 			case Constants.OBJ_BLOB: {
-				treeWalk.getObjectId(idBuffer, 0);
+				treeWalk.getEntryObjectId(idBuffer);
 				final RevObject o = lookupAny(idBuffer, sType);
 				if ((o.flags & SEEN) != 0)
 					continue;
@@ -262,7 +262,7 @@ public class ObjectWalk extends RevWalk {
 				return o;
 			}
 			case Constants.OBJ_TREE: {
-				treeWalk.getObjectId(idBuffer, 0);
+				treeWalk.getEntryObjectId(idBuffer);
 				final RevObject o = lookupAny(idBuffer, sType);
 				if ((o.flags & SEEN) != 0)
 					continue;
@@ -277,10 +277,11 @@ public class ObjectWalk extends RevWalk {
 			default:
 				if (FileMode.GITLINK.equals(mode))
 					continue;
-				treeWalk.getObjectId(idBuffer, 0);
+				treeWalk.getEntryObjectId(idBuffer);
 				throw new CorruptObjectException("Invalid mode " + mode
 						+ " for " + idBuffer.name() + " "
-						+ treeWalk.getPathString() + " in " + currentTree + ".");
+						+ treeWalk.getEntryPathString() + " in " + currentTree
+						+ ".");
 			}
 		}
 
@@ -295,7 +296,7 @@ public class ObjectWalk extends RevWalk {
 				continue;
 			if (o instanceof RevTree) {
 				currentTree = (RevTree) o;
-				treeWalk.reset(currentTree);
+				treeWalk = treeWalk.resetRoot(db, currentTree, curs);
 			}
 			return o;
 		}
@@ -353,7 +354,7 @@ public class ObjectWalk extends RevWalk {
 	 *         has no path, such as for annotated tags or root level trees.
 	 */
 	public String getPathString() {
-		return fromTreeWalk ? treeWalk.getPathString() : null;
+		return fromTreeWalk ? treeWalk.getEntryPathString() : null;
 	}
 
 	@Override
@@ -385,33 +386,34 @@ public class ObjectWalk extends RevWalk {
 			return;
 		tree.flags |= UNINTERESTING;
 
-		treeWalk.reset(tree);
-		while (treeWalk.next()) {
-			final FileMode mode = treeWalk.getFileMode(0);
+		treeWalk = treeWalk.resetRoot(db, tree, curs);
+		for (;!treeWalk.eof(); treeWalk = treeWalk.next()) {
+			final FileMode mode = treeWalk.getEntryFileMode();
 			final int sType = mode.getObjectType();
 
 			switch (sType) {
 			case Constants.OBJ_BLOB: {
-				treeWalk.getObjectId(idBuffer, 0);
+				treeWalk.getEntryObjectId(idBuffer);
 				lookupAny(idBuffer, sType).flags |= UNINTERESTING;
 				continue;
 			}
 			case Constants.OBJ_TREE: {
-				treeWalk.getObjectId(idBuffer, 0);
+				treeWalk.getEntryObjectId(idBuffer);
 				final RevObject subtree = lookupAny(idBuffer, sType);
 				if ((subtree.flags & UNINTERESTING) == 0) {
 					subtree.flags |= UNINTERESTING;
-					treeWalk.enterSubtree();
+					treeWalk = treeWalk.createSubtreeIterator(db, idBuffer,
+							curs);
 				}
 				continue;
 			}
 			default:
 				if (FileMode.GITLINK.equals(mode))
 					continue;
-				treeWalk.getObjectId(idBuffer, 0);
+				treeWalk.getEntryObjectId(idBuffer);
 				throw new CorruptObjectException("Invalid mode " + mode
 						+ " for " + idBuffer.name() + " "
-						+ treeWalk.getPathString() + " in " + tree + ".");
+						+ treeWalk.getEntryPathString() + " in " + tree + ".");
 			}
 		}
 	}

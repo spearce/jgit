@@ -596,7 +596,7 @@ public class TreeWalk {
 	public void getObjectId(final MutableObjectId out, final int nth) {
 		final AbstractTreeIterator t = trees[nth];
 		if (t.matches == currentHead)
-			out.fromRaw(t.idBuffer(), t.idOffset());
+			t.getEntryObjectId(out);
 		else
 			out.clear();
 	}
@@ -834,7 +834,7 @@ public class TreeWalk {
 		return p;
 	}
 
-	private static String pathOf(final AbstractTreeIterator t) {
+	static String pathOf(final AbstractTreeIterator t) {
 		return RawParseUtils.decode(Constants.CHARSET, t.path, 0, t.pathLen);
 	}
 }

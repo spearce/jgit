@@ -52,6 +52,8 @@ import org.spearce.jgit.lib.WindowCursor;
 
 /** Parses raw Git trees from the canonical semi-text/semi-binary format. */
 public class CanonicalTreeParser extends AbstractTreeIterator {
+	private static final byte[] EMPTY = {};
+
 	private byte[] raw;
 
 	/** First offset within {@link #raw} of the current entry's data. */
@@ -62,7 +64,7 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 
 	/** Create a new parser. */
 	public CanonicalTreeParser() {
-		// Nothing necessary.
+		raw = EMPTY;
 	}
 
 	private CanonicalTreeParser(final CanonicalTreeParser p) {
@@ -85,6 +87,41 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 	/**
 	 * Reset this parser to walk through the given tree.
 	 * 
+	 * @param repo
+	 *            repository to load the tree data from.
+	 * @param id
+	 *            identity of the tree being parsed; used only in exception
+	 *            messages if data corruption is found.
+	 * @param curs
+	 *            window cursor to use during repository access.
+	 * @return the root level parser.
+	 * @throws MissingObjectException
+	 *             the object supplied is not available from the repository.
+	 * @throws IncorrectObjectTypeException
+	 *             the object supplied as an argument is not actually a tree and
+	 *             cannot be parsed as though it were a tree.
+	 * @throws IOException
+	 *             a loose object or pack file could not be read.
+	 */
+	public CanonicalTreeParser resetRoot(final Repository repo,
+			final AnyObjectId id, final WindowCursor curs)
+			throws IncorrectObjectTypeException, IOException {
+		CanonicalTreeParser p = this;
+		while (p.parent != null)
+			p = (CanonicalTreeParser) p.parent;
+		p.reset(repo, id, curs);
+		return p;
+	}
+
+	/** @return this iterator, or its parent, if the tree is at eof. */
+	public CanonicalTreeParser next() {
+		next(1);
+		return eof() && parent != null ? (CanonicalTreeParser) parent : this;
+	}
+
+	/**
+	 * Reset this parser to walk through the given tree.
+	 *
 	 * @param repo
 	 *            repository to load the tree data from.
 	 * @param id

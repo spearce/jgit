@@ -308,6 +308,26 @@ public abstract class AbstractTreeIterator {
 	}
 
 	/**
+	 * Obtain the ObjectId for the current entry.
+	 *
+	 * @param out
+	 *            buffer to copy the object id into.
+	 */
+	public void getEntryObjectId(final MutableObjectId out) {
+		out.fromRaw(idBuffer(), idOffset());
+	}
+
+	/** @return the file mode of the current entry. */
+	public FileMode getEntryFileMode() {
+		return FileMode.fromBits(mode);
+	}
+
+	/** @return path of the current entry, as a string. */
+	public String getEntryPathString() {
+		return TreeWalk.pathOf(this);
+	}
+
+	/**
 	 * Get the byte array buffer object IDs must be copied out of.
 	 * <p>
 	 * The id buffer contains the bytes necessary to construct an ObjectId for
