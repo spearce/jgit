@@ -705,14 +705,14 @@ public class PackWriter {
 	private void writeWholeObject(final ObjectToPack otp) throws IOException {
 		if (otp.hasReuseLoader()) {
 			final PackedObjectLoader loader = otp.getReuseLoader();
-			writeObjectHeader(loader.getType(), loader.getSize());
+			writeObjectHeader(otp.getType(), loader.getSize());
 			loader.copyRawData(out, buf);
 			otp.disposeLoader();
 		} else {
 			final ObjectLoader loader = db.openObject(windowCursor, otp);
 			final DeflaterOutputStream deflaterOut = new DeflaterOutputStream(
 					out, deflater);
-			writeObjectHeader(loader.getType(), loader.getSize());
+			writeObjectHeader(otp.getType(), loader.getSize());
 			deflaterOut.write(loader.getCachedBytes());
 			deflaterOut.finish();
 			deflater.reset();
@@ -833,7 +833,7 @@ public class PackWriter {
 			return;
 		}
 
-		final ObjectToPack otp = new ObjectToPack(object);
+		final ObjectToPack otp = new ObjectToPack(object, object.getType());
 		try {
 			objectsLists[object.getType()].add(otp);
 		} catch (ArrayIndexOutOfBoundsException x) {
@@ -858,7 +858,8 @@ public class PackWriter {
 
 		private PackedObjectLoader reuseLoader;
 
-		private int deltaDepth;
+		/** Low bits contain the objectType; higher bits the deltaDepth */
+		private int flags;
 
 		private boolean wantWrite;
 
@@ -868,9 +869,12 @@ public class PackWriter {
 		 *
 		 * @param src
 		 *            object id of object for packing
+		 * @param type
+		 *            real type code of the object, not its in-pack type.
 		 */
-		ObjectToPack(AnyObjectId src) {
+		ObjectToPack(AnyObjectId src, final int type) {
 			super(src);
+			flags |= type;
 		}
 
 		/**
@@ -946,15 +950,23 @@ public class PackWriter {
 			this.reuseLoader = null;
 		}
 
+		int getType() {
+			return flags & 0x7;
+		}
+
 		int getDeltaDepth() {
-			return deltaDepth;
+			return flags >>> 3;
 		}
 
 		void updateDeltaDepth() {
+			final int d;
 			if (deltaBase instanceof ObjectToPack)
-				deltaDepth = ((ObjectToPack) deltaBase).deltaDepth + 1;
+				d = ((ObjectToPack) deltaBase).getDeltaDepth() + 1;
 			else if (deltaBase != null)
-				deltaDepth = 1;
+				d = 1;
+			else
+				d = 0;
+			flags = (d << 3) | getType();
 		}
 
 		boolean wantWrite() {
