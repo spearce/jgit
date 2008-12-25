@@ -49,7 +49,7 @@ import org.spearce.jgit.lib.ObjectId;
  * objects from the pack. This extension of ObjectId includes the offset.
  */
 public class PackedObjectInfo extends ObjectId {
-	private long offset;
+	protected long offset;
 
 	private int crc;
 
