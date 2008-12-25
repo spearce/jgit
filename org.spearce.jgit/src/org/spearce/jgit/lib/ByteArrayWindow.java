@@ -38,6 +38,8 @@
 
 package org.spearce.jgit.lib;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -45,6 +47,8 @@ import java.util.zip.Inflater;
  * A {@link ByteWindow} with an underlying byte array for storage.
  */
 final class ByteArrayWindow extends ByteWindow<byte[]> {
+	boolean loaded;
+
 	/**
 	 * Constructor for ByteWindow.
 	 * 
@@ -64,6 +68,7 @@ final class ByteArrayWindow extends ByteWindow<byte[]> {
 	}
 
 	int copy(final byte[] array, final int p, final byte[] b, final int o, int n) {
+		ensureLoaded(array);
 		n = Math.min(array.length - p, n);
 		System.arraycopy(array, p, b, o, n);
 		return n;
@@ -71,6 +76,7 @@ final class ByteArrayWindow extends ByteWindow<byte[]> {
 
 	int inflate(final byte[] array, final int pos, final byte[] b, int o,
 			final Inflater inf) throws DataFormatException {
+		ensureLoaded(array);
 		while (!inf.finished()) {
 			if (inf.needsInput()) {
 				inf.setInput(array, pos, array.length - pos);
@@ -81,5 +87,16 @@ final class ByteArrayWindow extends ByteWindow<byte[]> {
 		while (!inf.finished() && !inf.needsInput())
 			o += inf.inflate(b, o, b.length - o);
 		return o;
+	}
+
+	private synchronized void ensureLoaded(final byte[] array) {
+		if (!loaded) {
+			try {
+				provider.fd.getChannel().read(ByteBuffer.wrap(array), start);
+			} catch (IOException e) {
+				throw new RuntimeException("Cannot fault in window", e);
+			}
+			loaded = true;
+		}
 	}
 }

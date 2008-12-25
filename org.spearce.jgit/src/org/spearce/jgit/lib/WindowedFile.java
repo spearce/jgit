@@ -73,7 +73,7 @@ public class WindowedFile {
 
 	final int hash;
 
-	private RandomAccessFile fd;
+	RandomAccessFile fd;
 
 	private long length;
 
@@ -298,8 +298,8 @@ public class WindowedFile {
 		fd = null;
 	}
 
-	void loadWindow(final WindowCursor curs, final int windowId,
-			final long pos, final int size) throws IOException {
+	void allocWindow(final WindowCursor curs, final int windowId,
+			final long pos, final int size) {
 		if (WindowCache.mmap) {
 			MappedByteBuffer map;
 			try {
@@ -323,7 +323,10 @@ public class WindowedFile {
 			if (map != null) {
 				if (map.hasArray()) {
 					final byte[] b = map.array();
-					curs.window = new ByteArrayWindow(this, pos, windowId, b);
+					final ByteArrayWindow w;
+					w = new ByteArrayWindow(this, pos, windowId, b);
+					w.loaded = true;
+					curs.window = w;
 					curs.handle = b;
 				} else {
 					curs.window = new ByteBufferWindow(this, pos, windowId, map);
@@ -334,10 +337,6 @@ public class WindowedFile {
 		}
 
 		final byte[] b = new byte[size];
-		synchronized (fd) {
-			fd.seek(pos);
-			fd.readFully(b);
-		}
 		curs.window = new ByteArrayWindow(this, pos, windowId, b);
 		curs.handle = b;
 	}
