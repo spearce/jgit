@@ -239,15 +239,10 @@ public abstract class PackIndex implements Iterable<PackIndex.MutableEntry> {
 	 * in pack (both mutable).
 	 * 
 	 */
-	public static class MutableEntry extends MutableObjectId {
-		private long offset;
+	public static class MutableEntry {
+		protected final MutableObjectId idBuffer = new MutableObjectId();
 
-		/**
-		 * Empty constructor. Object fields should be filled in later.
-		 */
-		public MutableEntry() {
-			super();
-		}
+		long offset;
 
 		/**
 		 * Returns offset for this index object entry
@@ -258,29 +253,42 @@ public abstract class PackIndex implements Iterable<PackIndex.MutableEntry> {
 			return offset;
 		}
 
-		void setOffset(long offset) {
-			this.offset = offset;
+		/** @return hex string describing the object id of this entry. */
+		public String name() {
+			ensureId();
+			return idBuffer.name();
 		}
 
-		private MutableEntry(MutableEntry src) {
-			super(src);
-			this.offset = src.offset;
+		/** @return a copy of the object id. */
+		public ObjectId toObjectId() {
+			ensureId();
+			return idBuffer.toObjectId();
 		}
 
-		/**
-		 * Returns mutable copy of this mutable entry.
-		 * 
-		 * @return copy of this mutable entry
-		 */
+		/** @return a complete copy of this entry, that won't modify */
 		public MutableEntry cloneEntry() {
-			return new MutableEntry(this);
+			final MutableEntry r = new MutableEntry();
+			ensureId();
+			r.idBuffer.w1 = idBuffer.w1;
+			r.idBuffer.w2 = idBuffer.w2;
+			r.idBuffer.w3 = idBuffer.w3;
+			r.idBuffer.w4 = idBuffer.w4;
+			r.idBuffer.w5 = idBuffer.w5;
+			r.offset = offset;
+			return r;
+		}
+
+		protected void ensureId() {
+			// Override in implementations.
 		}
 	}
 
 	protected abstract class EntriesIterator implements Iterator<MutableEntry> {
-		protected MutableEntry objectId = new MutableEntry();
+		protected final MutableEntry entry = initEntry();
 
 		protected long returnedNumber = 0;
+
+		protected abstract MutableEntry initEntry();
 
 		public boolean hasNext() {
 			return returnedNumber < getObjectCount();

@@ -487,7 +487,7 @@ public class PackWriterTest extends RepositoryTestCase {
 
 		int i = 0;
 		for (MutableEntry me : entries) {
-			assertEquals(objectsOrder[i++], me.copy());
+			assertEquals(objectsOrder[i++].toObjectId(), me.toObjectId());
 		}
 	}
 }

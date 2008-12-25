@@ -134,10 +134,10 @@ public abstract class PackIndexTest extends RepositoryTestCase {
 	 */
 	public void testCompareEntriesOffsetsWithFindOffsets() {
 		for (MutableEntry me : smallIdx) {
-			assertEquals(smallIdx.findOffset(me), me.getOffset());
+			assertEquals(smallIdx.findOffset(me.toObjectId()), me.getOffset());
 		}
 		for (MutableEntry me : denseIdx) {
-			assertEquals(denseIdx.findOffset(me), me.getOffset());
+			assertEquals(denseIdx.findOffset(me.toObjectId()), me.getOffset());
 		}
 	}
 

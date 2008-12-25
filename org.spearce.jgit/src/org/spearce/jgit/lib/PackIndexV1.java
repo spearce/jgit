@@ -162,21 +162,27 @@ class PackIndexV1 extends PackIndex {
 
 		private int levelTwo;
 
+		@Override
+		protected MutableEntry initEntry() {
+			return new MutableEntry() {
+				protected void ensureId() {
+					idBuffer.fromRaw(idxdata[levelOne], levelTwo
+							- Constants.OBJECT_ID_LENGTH);
+				}
+			};
+		}
+
 		public MutableEntry next() {
 			for (; levelOne < idxdata.length; levelOne++) {
 				if (idxdata[levelOne] == null)
 					continue;
-
 				if (levelTwo < idxdata[levelOne].length) {
-					long offset = NB.decodeUInt32(idxdata[levelOne], levelTwo);
-					objectId.setOffset(offset);
-					objectId.fromRaw(idxdata[levelOne], levelTwo + 4);
+					entry.offset = NB.decodeUInt32(idxdata[levelOne], levelTwo);
 					levelTwo += Constants.OBJECT_ID_LENGTH + 4;
 					returnedNumber++;
-					return objectId;
-				} else {
-					levelTwo = 0;
+					return entry;
 				}
+				levelTwo = 0;
 			}
 			throw new NoSuchElementException();
 		}
