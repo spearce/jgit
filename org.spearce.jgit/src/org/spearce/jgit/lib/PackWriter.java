@@ -859,10 +859,15 @@ public class PackWriter {
 
 		private PackedObjectLoader reuseLoader;
 
-		/** Low bits contain the objectType; higher bits the deltaDepth */
+		/**
+		 * Bit field, from bit 0 to bit 31:
+		 * <ul>
+		 * <li>1 bit: wantWrite</li>
+		 * <li>3 bits: type</li>
+		 * <li>28 bits: deltaDepth</li>
+		 * </ul>
+		 */
 		private int flags;
-
-		private boolean wantWrite;
 
 		/**
 		 * Construct object for specified object id. <br/> By default object is
@@ -875,7 +880,7 @@ public class PackWriter {
 		 */
 		ObjectToPack(AnyObjectId src, final int type) {
 			super(src);
-			flags |= type;
+			flags |= type << 1;
 		}
 
 		/**
@@ -952,11 +957,11 @@ public class PackWriter {
 		}
 
 		int getType() {
-			return flags & 0x7;
+			return (flags>>1) & 0x7;
 		}
 
 		int getDeltaDepth() {
-			return flags >>> 3;
+			return flags >>> 4;
 		}
 
 		void updateDeltaDepth() {
@@ -967,15 +972,15 @@ public class PackWriter {
 				d = 1;
 			else
 				d = 0;
-			flags = (d << 3) | getType();
+			flags = (d << 4) | flags & 0x15;
 		}
 
 		boolean wantWrite() {
-			return wantWrite;
+			return (flags & 1) == 1;
 		}
 
 		void markWantWrite() {
-			this.wantWrite = true;
+			flags |= 1;
 		}
 	}
 }
