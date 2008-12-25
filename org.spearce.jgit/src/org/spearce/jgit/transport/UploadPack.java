@@ -434,6 +434,7 @@ public class UploadPack {
 				}
 				return true;
 			}
+			c.dispose();
 		}
 		return false;
 	}

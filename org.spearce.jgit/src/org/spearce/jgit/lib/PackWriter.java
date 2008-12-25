@@ -802,10 +802,12 @@ public class PackWriter {
 
 		while ((o = walker.next()) != null) {
 			addObject(o);
+			o.dispose();
 			initMonitor.update(1);
 		}
 		while ((o = walker.nextObject()) != null) {
 			addObject(o);
+			o.dispose();
 			initMonitor.update(1);
 		}
 		initMonitor.endTask();
