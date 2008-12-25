@@ -681,12 +681,6 @@ public class PackWriter {
 					writeObject(deltaBase);
 				}
 			}
-
-			otp.updateDeltaDepth();
-			if (otp.getDeltaDepth() > maxDeltaDepth) {
-				otp.clearDeltaBase();
-				otp.disposeLoader();
-			}
 		}
 
 		assert !otp.isWritten();
