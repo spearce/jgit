@@ -248,6 +248,11 @@ public class WindowedFile {
 			throw new EOFException("Short compressed stream at " + position);
 	}
 
+	void verifyCompressed(final long position, final WindowCursor curs)
+			throws IOException, DataFormatException {
+		curs.inflateVerify(this, position);
+	}
+
 	/**
 	 * Overridable hook called after the file is opened.
 	 * <p>

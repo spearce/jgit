@@ -218,15 +218,19 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 			final ObjectId id = findObjectForOffset(objectOffset);
 			final long expected = idx.findCRC32(id);
 			if (computed != expected)
-				throw new CorruptObjectException(id,
-						"Possible data corruption - CRC32 of raw pack data (object offset "
-								+ objectOffset
-								+ ") mismatch CRC32 from pack index");
+				throw new CorruptObjectException("Object at " + dataOffset
+						+ " in " + getPackFile() + " has bad zlib stream");
 		} else {
+			try {
+				pack.verifyCompressed(dataOffset, curs);
+			} catch (DataFormatException dfe) {
+				final CorruptObjectException coe;
+				coe = new CorruptObjectException("Object at " + dataOffset
+						+ " in " + getPackFile() + " has bad zlib stream");
+				coe.initCause(dfe);
+				throw coe;
+			}
 			pack.copyToStream(dataOffset, buf, cnt, out, curs);
-
-			// read to verify against Adler32 zlib checksum
-			loader.getCachedBytes();
 		}
 	}
 

@@ -89,6 +89,20 @@ final class ByteArrayWindow extends ByteWindow<byte[]> {
 		return o;
 	}
 
+	void inflateVerify(final byte[] array, final int pos, final Inflater inf)
+			throws DataFormatException {
+		ensureLoaded(array);
+		while (!inf.finished()) {
+			if (inf.needsInput()) {
+				inf.setInput(array, pos, array.length - pos);
+				break;
+			}
+			inf.inflate(verifyGarbageBuffer, 0, verifyGarbageBuffer.length);
+		}
+		while (!inf.finished() && !inf.needsInput())
+			inf.inflate(verifyGarbageBuffer, 0, verifyGarbageBuffer.length);
+	}
+
 	private synchronized void ensureLoaded(final byte[] array) {
 		if (!loaded) {
 			try {

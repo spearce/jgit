@@ -125,6 +125,22 @@ public final class WindowCursor {
 		}
 	}
 
+	void inflateVerify(final WindowedFile provider, long position)
+			throws IOException, DataFormatException {
+		if (inf == null)
+			inf = InflaterCache.get();
+		else
+			inf.reset();
+		for (;;) {
+			pin(provider, position);
+			window.inflateVerify(handle, position, inf);
+			if (inf.finished())
+				return;
+			position = window.end;
+		}
+	}
+
+
 	private void pin(final WindowedFile provider, final long position)
 			throws IOException {
 		final ByteWindow w = window;

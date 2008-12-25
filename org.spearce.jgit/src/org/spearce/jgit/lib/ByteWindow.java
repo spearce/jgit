@@ -207,4 +207,14 @@ abstract class ByteWindow<T> extends SoftReference<T> {
 	 */
 	abstract int inflate(T ref, int pos, byte[] dstbuf, int dstoff, Inflater inf)
 			throws DataFormatException;
+
+	protected static final byte[] verifyGarbageBuffer = new byte[2048];
+
+	final void inflateVerify(T ref, long pos, Inflater inf)
+			throws DataFormatException {
+		inflateVerify(ref, (int) (pos - start), inf);
+	}
+
+	abstract void inflateVerify(T ref, int pos, Inflater inf)
+			throws DataFormatException;
 }
