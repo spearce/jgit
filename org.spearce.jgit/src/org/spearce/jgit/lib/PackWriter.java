@@ -710,10 +710,11 @@ public class PackWriter {
 			otp.disposeLoader();
 		} else {
 			final ObjectLoader loader = db.openObject(windowCursor, otp);
+			final byte[] data = loader.getCachedBytes();
 			final DeflaterOutputStream deflaterOut = new DeflaterOutputStream(
 					out, deflater);
-			writeObjectHeader(otp.getType(), loader.getSize());
-			deflaterOut.write(loader.getCachedBytes());
+			writeObjectHeader(otp.getType(), data.length);
+			deflaterOut.write(data);
 			deflaterOut.finish();
 			deflater.reset();
 		}
