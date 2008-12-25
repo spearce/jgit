@@ -66,6 +66,15 @@ public class MutableObjectId extends AnyObjectId {
 		this.w5 = src.w5;
 	}
 
+	/** Make this id match {@link ObjectId#zeroId()}. */
+	public void clear() {
+		w1 = 0;
+		w2 = 0;
+		w3 = 0;
+		w4 = 0;
+		w5 = 0;
+	}
+
 	/**
 	 * Convert an ObjectId from raw binary representation.
 	 * 
