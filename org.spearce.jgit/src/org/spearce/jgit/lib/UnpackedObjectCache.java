@@ -40,17 +40,14 @@ package org.spearce.jgit.lib;
 import java.lang.ref.SoftReference;
 
 class UnpackedObjectCache {
-	private static final int CACHE_SZ = 256;
+	private static final int CACHE_SZ = 1024;
 
 	private static final int MB = 1024 * 1024;
 
 	private static final SoftReference<Entry> DEAD;
 
-	private static int hash(final WindowedFile pack, final long position) {
-		int h = pack.hash + (int) position;
-		h += h >>> 16;
-		h += h >>> 8;
-		return h & (CACHE_SZ - 1);
+	private static int hash(final long position) {
+		return (((int) position) << 22) >>> 22;
 	}
 
 	private static int maxByteCount;
@@ -80,7 +77,7 @@ class UnpackedObjectCache {
 	}
 
 	static synchronized Entry get(final WindowedFile pack, final long position) {
-		final Slot e = cache[hash(pack, position)];
+		final Slot e = cache[hash(position)];
 		if (e.provider == pack && e.position == position) {
 			final Entry buf = e.data.get();
 			if (buf != null) {
@@ -96,7 +93,7 @@ class UnpackedObjectCache {
 		if (data.length > maxByteCount)
 			return; // Too large to cache.
 
-		final Slot e = cache[hash(pack, position)];
+		final Slot e = cache[hash(position)];
 		clearEntry(e);
 
 		openByteCount += data.length;
@@ -104,6 +101,7 @@ class UnpackedObjectCache {
 
 		e.provider = pack;
 		e.position = position;
+		e.sz = data.length;
 		e.data = new SoftReference<Entry>(new Entry(data, objectType));
 		moveToHead(e);
 	}
@@ -155,11 +153,10 @@ class UnpackedObjectCache {
 	}
 
 	private static void clearEntry(final Slot e) {
-		final Entry old = e.data.get();
-		if (old != null)
-			openByteCount -= old.data.length;
+		openByteCount -= e.sz;
 		e.provider = null;
 		e.data = DEAD;
+		e.sz = 0;
 	}
 
 	private UnpackedObjectCache() {
@@ -185,6 +182,8 @@ class UnpackedObjectCache {
 		WindowedFile provider;
 
 		long position;
+
+		int sz;
 
 		SoftReference<Entry> data = DEAD;
 	}
