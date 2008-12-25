@@ -251,7 +251,8 @@ public class ObjectWalk extends RevWalk {
 
 			switch (sType) {
 			case Constants.OBJ_BLOB: {
-				final RevObject o = lookupAny(treeWalk.getObjectId(0), sType);
+				treeWalk.getObjectId(idBuffer, 0);
+				final RevObject o = lookupAny(idBuffer, sType);
 				if ((o.flags & SEEN) != 0)
 					continue;
 				o.flags |= SEEN;
@@ -262,7 +263,8 @@ public class ObjectWalk extends RevWalk {
 				return o;
 			}
 			case Constants.OBJ_TREE: {
-				final RevObject o = lookupAny(treeWalk.getObjectId(0), sType);
+				treeWalk.getObjectId(idBuffer, 0);
+				final RevObject o = lookupAny(idBuffer, sType);
 				if ((o.flags & SEEN) != 0)
 					continue;
 				o.flags |= SEEN;
@@ -276,8 +278,9 @@ public class ObjectWalk extends RevWalk {
 			default:
 				if (FileMode.GITLINK.equals(mode))
 					continue;
+				treeWalk.getObjectId(idBuffer, 0);
 				throw new CorruptObjectException("Invalid mode " + mode
-						+ " for " + treeWalk.getObjectId(0).name() + " "
+						+ " for " + idBuffer.name() + " "
 						+ treeWalk.getPathString() + " in " + currentTree + ".");
 			}
 		}
@@ -390,13 +393,13 @@ public class ObjectWalk extends RevWalk {
 
 			switch (sType) {
 			case Constants.OBJ_BLOB: {
-				final ObjectId sid = treeWalk.getObjectId(0);
-				lookupAny(sid, sType).flags |= UNINTERESTING;
+				treeWalk.getObjectId(idBuffer, 0);
+				lookupAny(idBuffer, sType).flags |= UNINTERESTING;
 				continue;
 			}
 			case Constants.OBJ_TREE: {
-				final ObjectId sid = treeWalk.getObjectId(0);
-				final RevObject subtree = lookupAny(sid, sType);
+				treeWalk.getObjectId(idBuffer, 0);
+				final RevObject subtree = lookupAny(idBuffer, sType);
 				if ((subtree.flags & UNINTERESTING) == 0) {
 					subtree.flags |= UNINTERESTING;
 					treeWalk.enterSubtree();
@@ -406,8 +409,9 @@ public class ObjectWalk extends RevWalk {
 			default:
 				if (FileMode.GITLINK.equals(mode))
 					continue;
+				treeWalk.getObjectId(idBuffer, 0);
 				throw new CorruptObjectException("Invalid mode " + mode
-						+ " for " + treeWalk.getObjectId(0).name() + " "
+						+ " for " + idBuffer.name() + " "
 						+ treeWalk.getPathString() + " in " + tree + ".");
 			}
 		}
