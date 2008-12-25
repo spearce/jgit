@@ -299,22 +299,41 @@ public class WindowedFile {
 	}
 
 	void loadWindow(final WindowCursor curs, final int windowId,
-			final long pos, final int windowSize) throws IOException {
+			final long pos, final int size) throws IOException {
 		if (WindowCache.mmap) {
-			final MappedByteBuffer map = fd.getChannel().map(MapMode.READ_ONLY,
-					pos, windowSize);
-			if (map.hasArray()) {
-				final byte[] b = map.array();
-				curs.window = new ByteArrayWindow(this, pos, windowId, b);
-				curs.handle = b;
-			} else {
-				curs.window = new ByteBufferWindow(this, pos, windowId, map);
-				curs.handle = map;
+			MappedByteBuffer map;
+			try {
+				map = fd.getChannel().map(MapMode.READ_ONLY, pos, size);
+			} catch (IOException e) {
+				// The most likely reason this failed is the JVM has run out
+				// of virtual memory. We need to discard quickly, and try to
+				// force the GC to finalize and release any existing mappings.
+				try {
+					curs.release();
+					System.gc();
+					System.runFinalization();
+					map = fd.getChannel().map(MapMode.READ_ONLY, pos, size);
+				} catch (IOException ioe2) {
+					// Temporarily disable mmap and do buffered disk IO.
+					//
+					map = null;
+					System.err.println("warning: mmap failure: "+ioe2);
+				}
 			}
-			return;
+			if (map != null) {
+				if (map.hasArray()) {
+					final byte[] b = map.array();
+					curs.window = new ByteArrayWindow(this, pos, windowId, b);
+					curs.handle = b;
+				} else {
+					curs.window = new ByteBufferWindow(this, pos, windowId, map);
+					curs.handle = map;
+				}
+				return;
+			}
 		}
 
-		final byte[] b = new byte[windowSize];
+		final byte[] b = new byte[size];
 		synchronized (fd) {
 			fd.seek(pos);
 			fd.readFully(b);

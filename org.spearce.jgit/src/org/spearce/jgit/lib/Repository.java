@@ -290,30 +290,9 @@ public class Repository {
 		int k = packs.length;
 		if (k > 0) {
 			do {
-				try {
-					final ObjectLoader ol = packs[--k].get(curs, id);
-					if (ol != null)
-						return ol;
-				} catch (IOException ioe) {
-					// This shouldn't happen unless the pack was corrupted
-					// after we opened it or the VM runs out of memory. This is
-					// a know problem with memory mapped I/O in java and have
-					// been noticed with JDK < 1.6. Tell the gc that now is a good
-					// time to collect and try once more.
-					try {
-						curs.release();
-						System.gc();
-						final ObjectLoader ol = packs[k].get(curs, id);
-						if (ol != null)
-							return ol;
-					} catch (IOException ioe2) {
-						ioe2.printStackTrace();
-						ioe.printStackTrace();
-						// Still fails.. that's BAD, maybe the pack has
-						// been corrupted after all, or the gc didn't manage
-						// to release enough previously mmaped areas.
-					}
-				}
+				final ObjectLoader ol = packs[--k].get(curs, id);
+				if (ol != null)
+					return ol;
 			} while (k > 0);
 		}
 		try {
