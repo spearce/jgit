@@ -45,8 +45,7 @@ import java.io.OutputStream;
  * Counting output stream decoration. Counts bytes written to stream.
  */
 public class CountingOutputStream extends FilterOutputStream {
-
-	private int count;
+	private long count;
 
 	/**
 	 * Create counting stream being decorated to provided real output stream.
@@ -76,7 +75,7 @@ public class CountingOutputStream extends FilterOutputStream {
 	 * @return number of written bytes since last reset (object is reset upon
 	 *         creation)
 	 */
-	public int getCount() {
+	public long getCount() {
 		return count;
 	}
 

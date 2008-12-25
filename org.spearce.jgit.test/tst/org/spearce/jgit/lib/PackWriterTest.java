@@ -308,11 +308,11 @@ public class PackWriterTest extends RepositoryTestCase {
 	 */
 	public void testWritePack2SizeDeltasVsNoDeltas() throws Exception {
 		testWritePack2();
-		final int sizePack2NoDeltas = cos.getCount();
+		final long sizePack2NoDeltas = cos.getCount();
 		tearDown();
 		setUp();
 		testWritePack2DeltasReuseRefs();
-		final int sizePack2DeltasRefs = cos.getCount();
+		final long sizePack2DeltasRefs = cos.getCount();
 
 		assertTrue(sizePack2NoDeltas > sizePack2DeltasRefs);
 	}
@@ -327,11 +327,11 @@ public class PackWriterTest extends RepositoryTestCase {
 	 */
 	public void testWritePack2SizeOffsetsVsRefs() throws Exception {
 		testWritePack2DeltasReuseRefs();
-		final int sizePack2DeltasRefs = cos.getCount();
+		final long sizePack2DeltasRefs = cos.getCount();
 		tearDown();
 		setUp();
 		testWritePack2DeltasReuseOffsets();
-		final int sizePack2DeltasOffsets = cos.getCount();
+		final long sizePack2DeltasOffsets = cos.getCount();
 
 		assertTrue(sizePack2DeltasRefs > sizePack2DeltasOffsets);
 	}
@@ -345,11 +345,11 @@ public class PackWriterTest extends RepositoryTestCase {
 	 */
 	public void testWritePack4SizeThinVsNoThin() throws Exception {
 		testWritePack4();
-		final int sizePack4 = cos.getCount();
+		final long sizePack4 = cos.getCount();
 		tearDown();
 		setUp();
 		testWritePack4ThinPack();
-		final int sizePack4Thin = cos.getCount();
+		final long sizePack4Thin = cos.getCount();
 
 		assertTrue(sizePack4 > sizePack4Thin);
 	}
