@@ -56,13 +56,19 @@ import java.util.zip.Inflater;
  *            type of object reference used to manage the window data.
  */
 abstract class ByteWindow<T> extends SoftReference<T> {
+	boolean sizeActive = true;
+
+	ByteWindow<?> chainNext;
+
+	ByteWindow<?> lruPrev;
+
+	ByteWindow<?> lruNext;
+
 	final WindowedFile provider;
 
 	final int id;
 
 	final int size;
-
-	int lastAccessed;
 
 	final long start;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007, Robin Rosenberg <robin.rosenberg@dewire.com>
+ * Copyright (C) 2008, Google Inc.
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
  * All rights reserved.
@@ -68,21 +68,49 @@ public class WindowCache {
 
 	static final ReferenceQueue<?> clearedWindowQueue;
 
-	private static ByteWindow[] windows;
+	private static ByteWindow[] cache;
 
-	private static int openWindowCount;
+	private static ByteWindow lruHead;
+
+	private static ByteWindow lruTail;
 
 	private static int openByteCount;
 
-	private static int accessClock;
+	private static int hits;
+
+	private static int reqs;
+
+	private static int opens;
+
+	private static int closes;
 
 	static {
 		maxByteCount = 10 * MB;
 		windowSizeShift = bits(8 * KB);
 		windowSize = 1 << windowSizeShift;
 		mmap = false;
-		windows = new ByteWindow[maxByteCount / windowSize];
+		cache = new ByteWindow[cacheTableSize()];
 		clearedWindowQueue = new ReferenceQueue<Object>();
+	}
+
+	static synchronized String statString() {
+		int maxChain = 0, tot = 0;
+		for (ByteWindow<?> e : cache) {
+			int n = 0;
+			for (; e != null; e = e.chainNext) {
+				n++;
+				tot++;
+			}
+			maxChain = Math.max(maxChain, n);
+		}
+		return "WindowCache[ hits: " + (hits * 100 / reqs) + "%"
+				+ "; windows: " + tot + " maxChain: " + maxChain + "; kb:"
+				+ (openByteCount / KB) + "; cache: " + cache.length + " fds: "
+				+ (opens - closes) + "," + opens + "," + closes + " ]";
+	}
+
+	private static int cacheTableSize() {
+		return 5 * (maxByteCount / windowSize) / 2;
 	}
 
 	/**
@@ -135,27 +163,36 @@ public class WindowCache {
 			// We have to throw away every window we have. None
 			// of them are suitable for the new configuration.
 			//
-			for (int i = 0; i < openWindowCount; i++) {
-				final ByteWindow win = windows[i];
-				if (--win.provider.openCount == 0)
-					win.provider.cacheClose();
-				windows[i] = null;
+			for (ByteWindow<?> e : cache) {
+				for (; e != null; e = e.chainNext)
+					clear(e);
 			}
-			windows = new ByteWindow[maxByteCount / windowSize];
-			openWindowCount = 0;
-			openByteCount = 0;
-		} else if (prune) {
-			// Our memory limit was decreased so we should try
-			// to drop windows to ensure we meet the new lower
-			// limit we were just given.
-			//
-			final int wincnt = maxByteCount / windowSize;
-			releaseMemory(wincnt, null, 0, 0);
+			runClearedWindowQueue();
+			cache = new ByteWindow[cacheTableSize()];
 
-			if (wincnt != windows.length) {
-				final ByteWindow[] n = new ByteWindow[wincnt];
-				System.arraycopy(windows, 0, n, 0, openWindowCount);
-				windows = n;
+		} else {
+			if (prune) {
+				// We should decrease our memory usage.
+				//
+				releaseMemory();
+				runClearedWindowQueue();
+			}
+
+			if (cache.length != cacheTableSize()) {
+				// The cache table should be resized.
+				// Rehash every entry.
+				//
+				final ByteWindow[] priorTable = cache;
+
+				cache = new ByteWindow[cacheTableSize()];
+				for (ByteWindow<?> e : priorTable) {
+					for (ByteWindow<?> n; e != null; e = n) {
+						n = e.chainNext;
+						final int idx = hash(e.provider, e.id);
+						e.chainNext = cache[idx];
+						cache[idx] = e;
+					}
+				}
 			}
 		}
 	}
@@ -178,19 +215,27 @@ public class WindowCache {
 	 */
 	public static synchronized final void get(final WindowCursor curs,
 			final WindowedFile wp, final long position) throws IOException {
+		reqs++;
 		final int id = (int) (position >> windowSizeShift);
-		int idx = binarySearch(wp, id);
-		if (0 <= idx) {
-			final ByteWindow<?> w = windows[idx];
-			if ((curs.handle = w.get()) != null) {
-				w.lastAccessed = ++accessClock;
-				curs.window = w;
-				return;
+		final int idx = hash(wp, id);
+		for (ByteWindow<?> e = cache[idx]; e != null; e = e.chainNext) {
+			if (e.provider == wp && e.id == id) {
+				if ((curs.handle = e.get()) != null) {
+					curs.window = e;
+					makeMostRecent(e);
+					hits++;
+					return;
+				}
+
+				clear(e);
+				break;
 			}
 		}
 
-		if (++wp.openCount == 1) {
+		if (wp.openCount == 0) {
 			try {
+				opens++;
+				wp.openCount = 1;
 				wp.cacheOpen();
 			} catch (IOException ioe) {
 				wp.openCount = 0;
@@ -201,106 +246,55 @@ public class WindowCache {
 			} catch (Error ioe) {
 				wp.openCount = 0;
 				throw ioe;
+			} finally {
+				wp.openCount--;
 			}
 
 			// The cacheOpen may have mapped the window we are trying to
 			// map ourselves. Retrying the search ensures that does not
 			// happen to us.
 			//
-			idx = binarySearch(wp, id);
-			if (0 <= idx) {
-				final ByteWindow<?> w = windows[idx];
-				if ((curs.handle = w.get()) != null) {
-					w.lastAccessed = ++accessClock;
-					curs.window = w;
-					return;
+			for (ByteWindow<?> e = cache[idx]; e != null; e = e.chainNext) {
+				if (e.provider == wp && e.id == id) {
+					if ((curs.handle = e.get()) != null) {
+						curs.window = e;
+						makeMostRecent(e);
+						return;
+					}
+
+					clear(e);
+					break;
 				}
 			}
 		}
 
-		idx = -(idx + 1);
-		final int wSz = windowSize(wp, id);
-		idx = releaseMemory(windows.length, wp, idx, wSz);
+		final int wsz = windowSize(wp, id);
+		wp.openCount++;
+		openByteCount += wsz;
+		releaseMemory();
+		runClearedWindowQueue();
 
-		if (idx < 0)
-			idx = 0;
-		final int toMove = openWindowCount - idx;
-		if (toMove > 0)
-			System.arraycopy(windows, idx, windows, idx + 1, toMove);
-		wp.loadWindow(curs, id, id << windowSizeShift, wSz);
-		windows[idx] = curs.window;
-		openWindowCount++;
-		openByteCount += curs.window.size;
+		wp.loadWindow(curs, id, id << windowSizeShift, wsz);
+		final ByteWindow<?> e = curs.window;
+		e.chainNext = cache[idx];
+		cache[idx] = e;
+		insertLRU(e);
 	}
 
-	private static int releaseMemory(final int maxWindowCount,
-			final WindowedFile willRead, int insertionIndex, final int willAdd) {
-		for (;;) {
-			final ByteWindow<?> w = (ByteWindow<?>) clearedWindowQueue.poll();
-			if (w == null)
-				break;
-			final int oldest = binarySearch(w.provider, w.id);
-			if (oldest < 0 || windows[oldest] != w)
-				continue; // Must have been evicted by our other controls.
-
-			final WindowedFile p = w.provider;
-			if (--p.openCount == 0 && p != willRead)
-				p.cacheClose();
-
-			openByteCount -= w.size;
-			final int toMove = openWindowCount - oldest - 1;
-			if (toMove > 0)
-				System.arraycopy(windows, oldest + 1, windows, oldest, toMove);
-			windows[--openWindowCount] = null;
-			if (oldest < insertionIndex)
-				insertionIndex--;
+	private static void makeMostRecent(ByteWindow<?> e) {
+		if (lruHead != e) {
+			unlinkLRU(e);
+			insertLRU(e);
 		}
-
-		while (openWindowCount >= maxWindowCount
-				|| (openWindowCount > 0 && openByteCount + willAdd > maxByteCount)) {
-			int oldest = 0;
-			for (int k = openWindowCount - 1; k > 0; k--) {
-				if (windows[k].lastAccessed < windows[oldest].lastAccessed)
-					oldest = k;
-			}
-
-			final ByteWindow w = windows[oldest];
-			final WindowedFile p = w.provider;
-			if (--p.openCount == 0 && p != willRead)
-				p.cacheClose();
-
-			openByteCount -= w.size;
-			final int toMove = openWindowCount - oldest - 1;
-			if (toMove > 0)
-				System.arraycopy(windows, oldest + 1, windows, oldest, toMove);
-			windows[--openWindowCount] = null;
-			w.enqueue();
-			if (oldest < insertionIndex)
-				insertionIndex--;
-		}
-
-		return insertionIndex;
 	}
 
-	private static final int binarySearch(final WindowedFile sprov,
-			final int sid) {
-		if (openWindowCount == 0)
-			return -1;
-		final int shc = sprov.hash;
-		int high = openWindowCount;
-		int low = 0;
-		do {
-			final int mid = (low + high) / 2;
-			final ByteWindow mw = windows[mid];
-			if (mw.provider == sprov && mw.id == sid)
-				return mid;
-			final int mhc = mw.provider.hash;
-			if (mhc < shc || (shc == mhc && mw.id < sid))
-				low = mid + 1;
-			else
-				high = mid;
-		} while (low < high);
-		return -(low + 1);
+	private static void releaseMemory() {
+		ByteWindow<?> e = lruTail;
+		while (openByteCount > maxByteCount && e != null) {
+			final ByteWindow<?> p = e.lruPrev;
+			clear(e);
+			e = p;
+		}
 	}
 
 	/**
@@ -316,20 +310,87 @@ public class WindowCache {
 	 *            cache.
 	 */
 	public static synchronized final void purge(final WindowedFile wp) {
-		int d = 0;
-		for (int s = 0; s < openWindowCount; s++) {
-			final ByteWindow win = windows[s];
-			if (win.provider != wp)
-				windows[d++] = win;
-			else
-				openByteCount -= win.size;
+		for (ByteWindow e : cache) {
+			for (; e != null; e = e.chainNext) {
+				if (e.provider == wp)
+					clear(e);
+			}
 		}
-		openWindowCount = d;
+		runClearedWindowQueue();
+	}
 
-		if (wp.openCount > 0) {
-			wp.openCount = 0;
-			wp.cacheClose();
+	private static void runClearedWindowQueue() {
+		ByteWindow<?> e;
+		while ((e = (ByteWindow) clearedWindowQueue.poll()) != null) {
+			unlinkSize(e);
+			unlinkLRU(e);
+			unlinkCache(e);
+			e.chainNext = null;
+			e.lruNext = null;
+			e.lruPrev = null;
 		}
+	}
+
+	private static void clear(final ByteWindow<?> e) {
+		unlinkSize(e);
+		e.clear();
+		e.enqueue();
+	}
+
+	private static void unlinkSize(final ByteWindow<?> e) {
+		if (e.sizeActive) {
+			if (--e.provider.openCount == 0) {
+				closes++;
+				e.provider.cacheClose();
+			}
+			openByteCount -= e.size;
+			e.sizeActive = false;
+		}
+	}
+
+	private static void unlinkCache(final ByteWindow dead) {
+		final int idx = hash(dead.provider, dead.id);
+		ByteWindow<?> e = cache[idx], p = null, n;
+		for (; e != null; p = e, e = n) {
+			n = e.chainNext;
+			if (e == dead) {
+				if (p == null)
+					cache[idx] = n;
+				else
+					p.chainNext = n;
+				break;
+			}
+		}
+	}
+
+	private static void unlinkLRU(final ByteWindow e) {
+		final ByteWindow<?> prev = e.lruPrev;
+		final ByteWindow<?> next = e.lruNext;
+
+		if (prev != null)
+			prev.lruNext = next;
+		else
+			lruHead = next;
+
+		if (next != null)
+			next.lruPrev = prev;
+		else
+			lruTail = prev;
+	}
+
+	private static void insertLRU(final ByteWindow<?> e) {
+		final ByteWindow h = lruHead;
+		e.lruPrev = null;
+		e.lruNext = h;
+		if (h != null)
+			h.lruPrev = e;
+		else
+			lruTail = e;
+		lruHead = e;
+	}
+
+	private static int hash(final WindowedFile wp, final int id) {
+		return ((wp.hash + id) >>> 1) % cache.length;
 	}
 
 	private static int windowSize(final WindowedFile file, final int id) {

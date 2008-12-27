@@ -88,7 +88,7 @@ public class WindowedFile {
 	 */
 	public WindowedFile(final File file) {
 		fPath = file;
-		hash = System.identityHashCode(this);
+		hash = System.identityHashCode(this) * 31;
 		length = Long.MAX_VALUE;
 	}
 
