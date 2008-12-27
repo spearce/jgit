@@ -155,6 +155,11 @@ public class ReceivePack {
 		return walk;
 	}
 
+	/** @return all refs which were advertised to the client. */
+	public final Map<String, Ref> getAdvertisedRefs() {
+		return refs;
+	}
+
 	/**
 	 * @return true if this instance will verify received objects are formatted
 	 *         correctly. Validating objects requires more CPU time on this side
