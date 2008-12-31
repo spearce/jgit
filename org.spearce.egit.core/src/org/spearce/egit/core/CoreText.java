@@ -14,8 +14,6 @@ import org.eclipse.osgi.util.NLS;
  * Possibly Translated strings for the Egit plugin.
  */
 public class CoreText extends NLS {
-	/** */
-	public static String AssumeUnchangedOperation_failed;
 
 	/** */
 	public static String AssumeUnchangedOperation_adding;
@@ -82,15 +80,6 @@ public class CoreText extends NLS {
 
 	/** */
 	public static String Error_CanonicalFile;
-
-	/** */
-	public static String CheckpointJob_writing;
-
-	/** */
-	public static String CheckpointJob_name;
-
-	/** */
-	public static String CheckpointJob_failed;
 
 	/** */
 	public static String CloneOperation_title;
