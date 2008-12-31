@@ -73,16 +73,18 @@ class SideBandInputStream extends InputStream {
 	static final int CH_ERROR = 3;
 
 	private static Pattern P_UNBOUNDED = Pattern.compile(
-			".*?([\\w ]+): (\\d+)(, done)?.*", Pattern.DOTALL);
+			"^([\\w ]+): (\\d+)( |, done)?.*", Pattern.DOTALL);
 
 	private static Pattern P_BOUNDED = Pattern.compile(
-			".*?([\\w ]+):.*\\((\\d+)/(\\d+)\\).*", Pattern.DOTALL);
+			"^([\\w ]+):.*\\((\\d+)/(\\d+)\\).*", Pattern.DOTALL);
 
 	private final PacketLineIn pckIn;
 
 	private final InputStream in;
 
 	private final ProgressMonitor monitor;
+
+	private String progressBuffer = "";
 
 	private String currentTask;
 
@@ -160,7 +162,31 @@ class SideBandInputStream extends InputStream {
 		}
 	}
 
-	private void progress(final String msg) {
+	private void progress(String pkt) {
+		pkt = progressBuffer + pkt;
+		for (;;) {
+			final int lf = pkt.indexOf('\n');
+			final int cr = pkt.indexOf('\r');
+			final int s;
+			if (0 <= lf && 0 <= cr)
+				s = Math.min(lf, cr);
+			else if (0 <= lf)
+				s = lf;
+			else if (0 <= cr)
+				s = cr;
+			else
+				break;
+
+			final String msg = pkt.substring(0, s);
+			if (doProgressLine(msg))
+				pkt = pkt.substring(s + 1);
+			else
+				break;
+		}
+		progressBuffer = pkt;
+	}
+
+	private boolean doProgressLine(final String msg) {
 		Matcher matcher;
 
 		matcher = P_BOUNDED.matcher(msg);
@@ -175,7 +201,7 @@ class SideBandInputStream extends InputStream {
 			final int cnt = Integer.parseInt(matcher.group(2));
 			monitor.update(cnt - lastCnt);
 			lastCnt = cnt;
-			return;
+			return true;
 		}
 
 		matcher = P_UNBOUNDED.matcher(msg);
@@ -189,7 +215,10 @@ class SideBandInputStream extends InputStream {
 			final int cnt = Integer.parseInt(matcher.group(2));
 			monitor.update(cnt - lastCnt);
 			lastCnt = cnt;
+			return true;
 		}
+
+		return false;
 	}
 
 	private String readString(final int len) throws IOException {
