@@ -17,6 +17,48 @@ import org.eclipse.osgi.util.NLS;
  */
 public class UIText extends NLS {
 	/** */
+	public static String WizardProjectsImportPage_ImportProjectsTitle;
+
+	/** */
+	public static String WizardProjectsImportPage_ImportProjectsDescription;
+
+	/** */
+	public static String WizardProjectsImportPage_ProjectsListTitle;
+
+	/** */
+	public static String WizardProjectsImportPage_selectAll;
+
+	/** */
+	public static String WizardProjectsImportPage_deselectAll;
+
+	/** */
+	public static String WizardProjectsImportPage_projectLabel;
+
+	/** */
+	public static String WizardProjectsImportPage_SearchingMessage;
+
+	/** */
+	public static String WizardProjectsImportPage_ProcessingMessage;
+
+	/** */
+	public static String WizardProjectsImportPage_projectsInWorkspace;
+
+	/** */
+	public static String WizardProjectsImportPage_CheckingMessage;
+
+	/** */
+	public static String WizardProjectsImportPage_SelectDialogTitle;
+
+	/** */
+	public static String WizardProjectImportPage_errorMessage;
+
+	/** */
+	public static String WizardProjectsImportPage_CreateProjectsTask;
+
+	/** */
+	public static String WizardProjectsImportPage_enableGit;
+
+	/** */
 	public static String SharingWizard_windowTitle;
 
 	/** */

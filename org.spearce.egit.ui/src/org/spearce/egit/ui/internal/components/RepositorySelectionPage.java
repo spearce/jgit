@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2007, Robin Rosenberg <robin.rosenberg@dewire.com>
+ * Copyright (C) 2007, 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Roger C. Soares <rogersoares@intelinet.com.br>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
@@ -659,5 +659,12 @@ public class RepositorySelectionPage extends BaseWizardPage {
 			setEnabledRecursively(authGroup, false);
 			break;
 		}
+	}
+
+	@Override
+	public void setVisible(boolean visible) {
+		super.setVisible(visible);
+		if (visible)
+			uriText.setFocus();
 	}
 }

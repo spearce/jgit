@@ -2,6 +2,7 @@
  * Copyright (C) 2008, Roger C. Soares <rogersoares@intelinet.com.br>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
+ * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -18,11 +19,13 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.dialogs.ErrorDialog;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.ui.IImportWizard;
 import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.PlatformUI;
 import org.spearce.egit.core.op.CloneOperation;
 import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIIcons;
@@ -41,6 +44,8 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 
 	private CloneDestinationPage cloneDestination;
 
+	private GitProjectsImportPage importProject;
+
 	public void init(IWorkbench arg0, IStructuredSelection arg1) {
 		setWindowTitle(UIText.GitCloneWizard_title);
 		setDefaultPageImageDescriptor(UIIcons.WIZBAN_IMPORT_REPO);
@@ -48,6 +53,46 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 		cloneSource = new RepositorySelectionPage(true);
 		validSource = new SourceBranchPage(cloneSource);
 		cloneDestination = new CloneDestinationPage(cloneSource, validSource);
+		importProject = new GitProjectsImportPage() {
+			@Override
+			public void setVisible(boolean visible) {
+				if (visible) {
+					if (cloneDestination.alreadyClonedInto == null) {
+						performClone(false);
+						cloneDestination.alreadyClonedInto = cloneDestination
+								.getDestinationFile().getAbsolutePath();
+					}
+					setProjectsList(cloneDestination.alreadyClonedInto);
+				}
+				super.setVisible(visible);
+			}
+		};
+	}
+
+	@Override
+	public boolean performCancel() {
+		if (cloneDestination.alreadyClonedInto != null) {
+			if (MessageDialog
+					.openQuestion(getShell(), "Aborting clone.",
+							"A complete clone was already made. Do you want to delete it?")) {
+				deleteRecursively(new File(cloneDestination.alreadyClonedInto));
+			}
+		}
+		return true;
+	}
+
+	private void deleteRecursively(File f) {
+		for (File i : f.listFiles()) {
+			if (i.isDirectory()) {
+				deleteRecursively(i);
+			} else {
+				if (!i.delete()) {
+					i.deleteOnExit();
+				}
+			}
+		}
+		if (!f.delete())
+			f.deleteOnExit();
 	}
 
 	@Override
@@ -55,10 +100,24 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 		addPage(cloneSource);
 		addPage(validSource);
 		addPage(cloneDestination);
+		addPage(importProject);
+	}
+
+	@Override
+	public boolean canFinish() {
+		return cloneDestination.isPageComplete()
+				&& !cloneDestination.showImportWizard.getSelection()
+				|| importProject.isPageComplete();
 	}
 
 	@Override
 	public boolean performFinish() {
+		if (!cloneDestination.showImportWizard.getSelection())
+			return performClone(true);
+		return importProject.createProjects();
+	}
+
+	boolean performClone(boolean background) {
 		final URIish uri = cloneSource.getSelection().getURI();
 		final boolean allSelected = validSource.isAllSelected();
 		final Collection<Ref> selectedBranches = validSource
@@ -80,24 +139,37 @@ public class GitCloneWizard extends Wizard implements IImportWizard {
 
 		final CloneOperation op = new CloneOperation(uri, allSelected,
 				selectedBranches, workdir, branch, remoteName);
-		final Job job = new Job(NLS.bind(UIText.GitCloneWizard_jobName, uri
-				.toString())) {
-			@Override
-			protected IStatus run(final IProgressMonitor monitor) {
-				try {
-					op.run(monitor);
-					return Status.OK_STATUS;
-				} catch (InterruptedException e) {
-					return Status.CANCEL_STATUS;
-				} catch (InvocationTargetException e) {
-					Throwable thr = e.getCause();
-					return new Status(IStatus.ERROR, Activator.getPluginId(),
-							0, thr.getMessage(), thr);
+		if (background) {
+			final Job job = new Job(NLS.bind(UIText.GitCloneWizard_jobName, uri
+					.toString())) {
+				@Override
+				protected IStatus run(final IProgressMonitor monitor) {
+					try {
+						op.run(monitor);
+						return Status.OK_STATUS;
+					} catch (InterruptedException e) {
+						return Status.CANCEL_STATUS;
+					} catch (InvocationTargetException e) {
+						Throwable thr = e.getCause();
+						return new Status(IStatus.ERROR, Activator
+								.getPluginId(), 0, thr.getMessage(), thr);
+					}
 				}
+			};
+			job.setUser(true);
+			job.schedule();
+			return true;
+		} else {
+			try {
+				PlatformUI.getWorkbench().getProgressService().run(false, true,
+						op);
+				return true;
+			} catch (Exception e) {
+				Activator.logError("Failed to clone", e);
+				MessageDialog.openError(getShell(), "Failed clone", e
+						.toString());
+				return false;
 			}
-		};
-		job.setUser(true);
-		job.schedule();
-		return true;
+		}
 	}
 }

@@ -2,6 +2,7 @@
  * Copyright (C) 2008, Roger C. Soares <rogersoares@intelinet.com.br>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
+ * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -57,12 +58,15 @@ class CloneDestinationPage extends WizardPage {
 
 	private Text remoteText;
 
+	Button showImportWizard;
+
+	String alreadyClonedInto;
+
 	CloneDestinationPage(final RepositorySelectionPage sp,
 			final SourceBranchPage bp) {
 		super(CloneDestinationPage.class.getName());
 		sourcePage = sp;
 		branchPage = bp;
-
 		setTitle(UIText.CloneDestinationPage_title);
 
 		final SelectionChangeListener listener = new SelectionChangeListener() {
@@ -82,7 +86,7 @@ class CloneDestinationPage extends WizardPage {
 
 		createDestinationGroup(panel);
 		createConfigGroup(panel);
-
+		createWorkbenchGroup(panel);
 		setControl(panel);
 		checkPage();
 	}
@@ -92,6 +96,8 @@ class CloneDestinationPage extends WizardPage {
 		if (visible)
 			revalidate();
 		super.setVisible(visible);
+		if (visible)
+			directoryText.setFocus();
 	}
 
 	private void checkPreviousPagesSelections() {
@@ -165,6 +171,20 @@ class CloneDestinationPage extends WizardPage {
 		});
 	}
 
+	private void createWorkbenchGroup(Composite parent) {
+		final Group g = createGroup(parent, "Workspace import");
+		newLabel(g, "Import projects after clone");
+		showImportWizard = new Button(g, SWT.CHECK);
+		showImportWizard.setSelection(true);
+		showImportWizard.setLayoutData(createFieldGridData());
+		showImportWizard.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				checkPage();
+			}
+		});
+	}
+
 	private static Group createGroup(final Composite parent, final String text) {
 		final Group g = new Group(parent, SWT.NONE);
 		final GridLayout layout = new GridLayout();
@@ -222,9 +242,11 @@ class CloneDestinationPage extends WizardPage {
 			return;
 		}
 		final File absoluteFile = new File(dstpath).getAbsoluteFile();
-		if (!isEmptyDir(absoluteFile)) {
-			setErrorMessage(NLS.bind(UIText.CloneDestinationPage_errorNotEmptyDir,
-					absoluteFile.getPath()));
+		if (!absoluteFile.getAbsolutePath().equals(alreadyClonedInto)
+				&& !isEmptyDir(absoluteFile)) {
+			setErrorMessage(NLS.bind(
+					UIText.CloneDestinationPage_errorNotEmptyDir, absoluteFile
+							.getPath()));
 			setPageComplete(false);
 			return;
 		}
@@ -316,4 +338,8 @@ class CloneDestinationPage extends WizardPage {
 		return path;
 	}
 
+	@Override
+	public boolean canFlipToNextPage() {
+		return super.canFlipToNextPage() && showImportWizard.getSelection();
+	}
 }
