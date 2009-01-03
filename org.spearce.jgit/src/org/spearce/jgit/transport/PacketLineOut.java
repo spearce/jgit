@@ -54,7 +54,7 @@ class PacketLineOut {
 	}
 
 	void writeString(final String s) throws IOException {
-		writePacket(Constants.encodeASCII(s));
+		writePacket(Constants.encode(s));
 	}
 
 	void writePacket(final byte[] packet) throws IOException {
