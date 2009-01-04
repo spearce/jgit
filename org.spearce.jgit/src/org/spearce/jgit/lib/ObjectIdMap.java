@@ -178,7 +178,6 @@ public class ObjectIdMap<V> extends AbstractMap<ObjectId, V> {
 		return true;
 	}
 
-	@SuppressWarnings("unchecked")
 	public V put(ObjectId key, V value) {
 		return submap(key).put(key, value);
 	}

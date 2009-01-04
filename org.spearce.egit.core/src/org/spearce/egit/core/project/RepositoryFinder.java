@@ -47,7 +47,7 @@ import org.spearce.egit.core.CoreText;
 public class RepositoryFinder {
 	private final IProject proj;
 
-	private final Collection results;
+	private final Collection<RepositoryMapping> results = new ArrayList<RepositoryMapping>();
 
 	/**
 	 * Create a new finder to locate Git repositories for a project.
@@ -58,7 +58,6 @@ public class RepositoryFinder {
 	 */
 	public RepositoryFinder(final IProject p) {
 		proj = p;
-		results = new ArrayList();
 	}
 
 	/**
@@ -72,7 +71,7 @@ public class RepositoryFinder {
 	 *             Eclipse was unable to access its workspace, and threw up on
 	 *             us. We're throwing it back at the caller.
 	 */
-	public Collection find(IProgressMonitor m) throws CoreException {
+	public Collection<RepositoryMapping> find(IProgressMonitor m) throws CoreException {
 		if (m == null) {
 			m = new NullProgressMonitor();
 		}

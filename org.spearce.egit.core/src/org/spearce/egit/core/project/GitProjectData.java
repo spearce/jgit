@@ -48,9 +48,9 @@ import org.spearce.jgit.lib.WindowCache;
  * a Git repository.
  */
 public class GitProjectData {
-	private static final Map projectDataCache = new HashMap();
+	private static final Map<IProject, GitProjectData> projectDataCache = new HashMap<IProject, GitProjectData>();
 
-	private static final Map repositoryCache = new HashMap();
+	private static final Map<File, WeakReference> repositoryCache = new HashMap<File, WeakReference>();
 
 	private static RepositoryChangeListener[] repositoryChangeListeners = {};
 
@@ -193,7 +193,7 @@ public class GitProjectData {
 	}
 
 	private synchronized static GitProjectData lookup(final IProject p) {
-		return (GitProjectData) projectDataCache.get(p);
+		return projectDataCache.get(p);
 	}
 
 	private synchronized static Repository lookupRepository(final File gitDir)
@@ -206,11 +206,11 @@ public class GitProjectData {
 			}
 		}
 
-		final Reference r = (Reference) repositoryCache.get(gitDir);
+		final Reference r = repositoryCache.get(gitDir);
 		Repository d = r != null ? (Repository) r.get() : null;
 		if (d == null) {
 			d = new Repository(gitDir);
-			repositoryCache.put(gitDir, new WeakReference(d));
+			repositoryCache.put(gitDir, new WeakReference<Repository>(d));
 		}
 		return d;
 	}
@@ -229,9 +229,9 @@ public class GitProjectData {
 
 	private final IProject project;
 
-	private final Collection mappings;
+	private final Collection<RepositoryMapping> mappings = new ArrayList<RepositoryMapping>();
 
-	private final Set protectedResources;
+	private final Set<IResource> protectedResources = new HashSet<IResource>();
 
 	/**
 	 * Construct a {@link GitProjectData} for the mapping
@@ -241,8 +241,6 @@ public class GitProjectData {
 	 */
 	public GitProjectData(final IProject p) {
 		project = p;
-		mappings = new ArrayList();
-		protectedResources = new HashSet();
 	}
 
 	/**
@@ -257,7 +255,7 @@ public class GitProjectData {
 	 *
 	 * @param newMappings
 	 */
-	public void setRepositoryMappings(final Collection newMappings) {
+	public void setRepositoryMappings(final Collection<RepositoryMapping> newMappings) {
 		mappings.clear();
 		mappings.addAll(newMappings);
 		remapAll();

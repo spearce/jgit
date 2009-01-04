@@ -236,7 +236,7 @@ public class T0002_Tree extends RepositoryTestCase {
 
 	public void test007_manyFileLookup() throws IOException {
 		final Tree t = new Tree(db);
-		final List files = new ArrayList(26 * 26);
+		final List<FileTreeEntry> files = new ArrayList<FileTreeEntry>(26 * 26);
 		for (char level1 = 'a'; level1 <= 'z'; level1++) {
 			for (char level2 = 'a'; level2 <= 'z'; level2++) {
 				final String n = "." + level1 + level2 + "9";
@@ -251,7 +251,7 @@ public class T0002_Tree extends RepositoryTestCase {
 		assertNotNull(ents);
 		assertEquals(files.size(), ents.length);
 		for (int k = 0; k < ents.length; k++) {
-			assertTrue("File " + ((FileTreeEntry) files.get(k)).getName()
+			assertTrue("File " + files.get(k).getName()
 					+ " is at " + k + ".", files.get(k) == ents[k]);
 		}
 	}

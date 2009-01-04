@@ -46,12 +46,11 @@ import java.util.ArrayList;
  * Abstract TreeVisitor for visiting all files known by a Tree.
  */
 public abstract class TreeVisitorWithCurrentDirectory implements TreeVisitor {
-	private final ArrayList stack;
+	private final ArrayList<File> stack = new ArrayList<File>(16);
 
 	private File currentDirectory;
 
 	protected TreeVisitorWithCurrentDirectory(final File rootDirectory) {
-		stack = new ArrayList(16);
 		currentDirectory = rootDirectory;
 	}
 
@@ -67,6 +66,6 @@ public abstract class TreeVisitorWithCurrentDirectory implements TreeVisitor {
 	}
 
 	public void endVisitTree(final Tree t) throws IOException {
-		currentDirectory = (File) stack.remove(stack.size() - 1);
+		currentDirectory = stack.remove(stack.size() - 1);
 	}
 }

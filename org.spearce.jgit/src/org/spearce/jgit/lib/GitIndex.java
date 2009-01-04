@@ -107,18 +107,16 @@ public class GitIndex {
 
 	private final Repository db;
 
-	private Map entries = new TreeMap(new Comparator() {
-		public int compare(Object arg0, Object arg1) {
-			byte[] a = (byte[]) arg0;
-			byte[] b = (byte[]) arg1;
-			for (int i = 0; i < a.length && i < b.length; ++i) {
-				int c = a[i] - b[i];
+	private Map<byte[], Entry> entries = new TreeMap<byte[], Entry>(new Comparator<byte[]>() {
+		public int compare(byte[] o1, byte[] o2) {
+			for (int i = 0; i < o1.length && i < o2.length; ++i) {
+				int c = o1[i] - o2[i];
 				if (c != 0)
 					return c;
 			}
-			if (a.length < b.length)
+			if (o1.length < o2.length)
 				return -1;
-			else if (a.length > b.length)
+			else if (o1.length > o2.length)
 				return 1;
 			return 0;
 		}
@@ -161,7 +159,7 @@ public class GitIndex {
 	 */
 	public Entry add(File wd, File f) throws IOException {
 		byte[] key = makeKey(wd, f);
-		Entry e = (Entry) entries.get(key);
+		Entry e = entries.get(key);
 		if (e == null) {
 			e = new Entry(key, f, 0);
 			entries.put(key, e);
@@ -302,7 +300,7 @@ public class GitIndex {
 		return FS.INSTANCE.supportsExecute();
 	}
 
-	static byte[] makeKey(File wd, File f) throws IOException {
+	static byte[] makeKey(File wd, File f) {
 		if (!f.getPath().startsWith(wd.getPath()))
 			throw new Error("Path is not in working dir");
 		String relName = Repository.stripWorkDir(wd, f);
@@ -362,8 +360,7 @@ public class GitIndex {
 			flags = (short) ((stage << 12) | name.length); // TODO: fix flags
 		}
 
-		Entry(TreeEntry f, int stage)
-				throws UnsupportedEncodingException {
+		Entry(TreeEntry f, int stage) {
 			ctime = -1; // hmm
 			mtime = -1;
 			dev = -1;
@@ -810,7 +807,7 @@ public class GitIndex {
 		checkWriteOk();
 		ObjectWriter writer = new ObjectWriter(db);
 		Tree current = new Tree(db);
-		Stack trees = new Stack();
+		Stack<Tree> trees = new Stack<Tree>();
 		trees.push(current);
 		String[] prevName = new String[0];
 		for (Iterator i = entries.values().iterator(); i.hasNext();) {
@@ -844,7 +841,7 @@ public class GitIndex {
 			current.setId(writer.writeTree(current));
 			trees.pop();
 			if (!trees.isEmpty())
-				current = (Tree) trees.peek();
+				current = trees.peek();
 		}
 		return current.getTreeId();
 	}
@@ -886,7 +883,7 @@ public class GitIndex {
 	 * @return The index entries sorted
 	 */
 	public Entry[] getMembers() {
-		return (Entry[]) entries.values().toArray(new Entry[entries.size()]);
+		return entries.values().toArray(new Entry[entries.size()]);
 	}
 
 	/**
@@ -897,7 +894,7 @@ public class GitIndex {
 	 * @throws UnsupportedEncodingException
 	 */
 	public Entry getEntry(String path) throws UnsupportedEncodingException {
-		return (Entry) entries.get(Repository.gitInternalSlash(Constants.encode(path)));
+		return entries.get(Repository.gitInternalSlash(Constants.encode(path)));
 	}
 
 	/**
