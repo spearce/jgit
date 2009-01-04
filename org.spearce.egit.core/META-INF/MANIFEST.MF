@@ -16,5 +16,5 @@ Export-Package: org.spearce.egit.core.internal.storage;x-friends:="org.spearce.e
  org.spearce.egit.core,
  org.spearce.egit.core.op,
  org.spearce.egit.core.project
-Eclipse-LazyStart: true
+Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: J2SE-1.5

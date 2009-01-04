@@ -15,7 +15,7 @@ Export-Package: org.spearce.jgit.dircache,
  org.spearce.jgit.treewalk,
  org.spearce.jgit.treewalk.filter,
  org.spearce.jgit.util
-Eclipse-LazyStart: true
+Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Bundle-ClassPath: .
 Require-Bundle: com.jcraft.jsch;visibility:=reexport
