@@ -7,6 +7,9 @@
 
 package org.spearce.jgit.util;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 
 /**
  * Encodes and decodes to and from Base64 notation.
@@ -175,11 +178,20 @@ public class Base64
     private final static byte WHITE_SPACE_ENC = -5; // Indicates white space in encoding
     private final static byte EQUALS_SIGN_ENC = -1; // Indicates equals sign in encoding
 
+    private static void closeStream(Closeable stream) {
+        if (stream != null) {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     /** Defeats instantiation. */
-    private Base64(){}
-
-
+    private Base64() {
+        //suppress empty block warning
+    }
 
 /* ********  E N C O D I N G   M E T H O D S  ******** */
 
@@ -353,10 +365,10 @@ public class Base64
         }   // end catch
         finally
         {
-            try{ oos.close();   } catch( Exception e ){}
-            try{ gzos.close();  } catch( Exception e ){}
-            try{ b64os.close(); } catch( Exception e ){}
-            try{ baos.close();  } catch( Exception e ){}
+            closeStream(oos);
+            closeStream(gzos);
+            closeStream(b64os);
+            closeStream(baos);
         }   // end finally
 
         // Return value according to relevant encoding.
@@ -486,9 +498,9 @@ public class Base64
             }   // end catch
             finally
             {
-                try{ gzos.close();  } catch( Exception e ){}
-                try{ b64os.close(); } catch( Exception e ){}
-                try{ baos.close();  } catch( Exception e ){}
+                closeStream(gzos);
+                closeStream(b64os);
+                closeStream(baos);
             }   // end finally
 
             // Return value according to relevant encoding.
@@ -763,9 +775,9 @@ public class Base64
                 }   // end catch
                 finally
                 {
-                    try{ baos.close(); } catch( Exception e ){}
-                    try{ gzis.close(); } catch( Exception e ){}
-                    try{ bais.close(); } catch( Exception e ){}
+                    closeStream(baos);
+                    closeStream(gzis);
+                    closeStream(bais);
                 }   // end finally
 
             }   // end if: gzipped
@@ -804,17 +816,15 @@ public class Base64
         catch( java.io.IOException e )
         {
             e.printStackTrace();
-            obj = null;
         }   // end catch
         catch( java.lang.ClassNotFoundException e )
         {
             e.printStackTrace();
-            obj = null;
         }   // end catch
         finally
         {
-            try{ bais.close(); } catch( Exception e ){}
-            try{ ois.close();  } catch( Exception e ){}
+            closeStream(bais);
+            closeStream(ois);
         }   // end finally
 
         return obj;
@@ -849,7 +859,7 @@ public class Base64
         }   // end catch: IOException
         finally
         {
-            try{ bos.close(); } catch( Exception e ){}
+            closeStream(bos);
         }   // end finally
 
         return success;
@@ -882,7 +892,7 @@ public class Base64
         }   // end catch: IOException
         finally
         {
-                try{ bos.close(); } catch( Exception e ){}
+            closeStream(bos);
         }   // end finally
 
         return success;
@@ -940,7 +950,7 @@ public class Base64
         }   // end catch: IOException
         finally
         {
-            try{ bis.close(); } catch( Exception e) {}
+            closeStream(bis);
         }   // end finally
 
         return decodedData;
@@ -988,7 +998,7 @@ public class Base64
         }   // end catch: IOException
         finally
         {
-            try{ bis.close(); } catch( Exception e) {}
+            closeStream(bis);
         }   // end finally
 
         return encodedData;
