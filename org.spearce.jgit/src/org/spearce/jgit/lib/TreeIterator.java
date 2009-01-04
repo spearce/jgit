@@ -76,7 +76,7 @@ public class TreeIterator implements Iterator<TreeEntry> {
 		 * Visit leaves first, then node
 		 */
 		POSTORDER
-	};
+	}
 
 	/**
 	 * Construct a {@link TreeIterator} for visiting all non-tree nodes.

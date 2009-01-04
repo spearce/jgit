@@ -236,8 +236,9 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 			// space so this prunes our search more quickly.
 			//
 			ptr -= Constants.OBJECT_ID_LENGTH;
-			while (raw[--ptr] != ' ')
-				/* nothing */;
+			while (raw[--ptr] != ' ') {
+				/* nothing */
+			}
 			if (--ptr < Constants.OBJECT_ID_LENGTH) {
 				if (delta != 0)
 					throw new ArrayIndexOutOfBoundsException(delta);
