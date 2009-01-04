@@ -51,11 +51,11 @@ class GitFileHistory extends FileHistory implements IAdaptable {
 	GitFileHistory(final IResource rsrc, final int flags,
 			final IProgressMonitor monitor) {
 		resource = rsrc;
-		walk = buildWalk(flags);
+		walk = buildWalk();
 		revisions = buildRevisions(monitor, flags);
 	}
 
-	private KidWalk buildWalk(final int flags) {
+	private KidWalk buildWalk() {
 		final RepositoryMapping rm = RepositoryMapping.getMapping(resource);
 		if (rm == null) {
 			Activator.logError("Git not attached to project "
