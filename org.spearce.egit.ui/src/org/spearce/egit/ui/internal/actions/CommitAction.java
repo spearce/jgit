@@ -140,7 +140,7 @@ public class CommitAction extends RepositoryAction {
 	private void performCommit(CommitDialog commitDialog, String commitMessage)
 			throws TeamException {
 		// System.out.println("Commit Message: " + commitMessage);
-		IFile[] selectedItems = commitDialog.getSelectedItems();
+		IFile[] selectedItems = commitDialog.getSelectedFiles();
 
 		HashMap<Repository, Tree> treeMap = new HashMap<Repository, Tree>();
 		try {

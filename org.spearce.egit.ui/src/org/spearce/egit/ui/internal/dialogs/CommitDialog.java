@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 
 import org.eclipse.core.resources.IFile;
@@ -28,9 +29,11 @@ import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
@@ -63,56 +66,38 @@ import org.spearce.jgit.lib.GitIndex.Entry;
  */
 public class CommitDialog extends Dialog {
 
+	class CommitContentProvider implements IStructuredContentProvider {
+
+		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+			// Empty
+		}
+
+		public void dispose() {
+			// Empty
+		}
+
+		public Object[] getElements(Object inputElement) {
+			return items.toArray();
+		}
+
+	}
+
 	class CommitLabelProvider extends WorkbenchLabelProvider implements
 			ITableLabelProvider {
 		public String getColumnText(Object obj, int columnIndex) {
-			IFile file = (IFile) obj;
-			if (columnIndex == 1)
-				return file.getProject().getName() + ": "
-						+ file.getProjectRelativePath();
+			CommitItem item = (CommitItem) obj;
 
-			else if (columnIndex == 0) {
-				String prefix = "Unknown";
+			switch (columnIndex) {
+			case 0:
+				return item.status;
 
-				try {
-					RepositoryMapping repositoryMapping = RepositoryMapping.getMapping(file.getProject());
+			case 1:
+				return item.file.getProject().getName() + ": "
+						+ item.file.getProjectRelativePath();
 
-					Repository repo = repositoryMapping.getRepository();
-					GitIndex index = repo.getIndex();
-					Tree headTree = repo.mapTree(Constants.HEAD);
-
-					String repoPath = repositoryMapping
-							.getRepoRelativePath(file);
-					TreeEntry headEntry = headTree.findBlobMember(repoPath);
-					boolean headExists = headTree.existsBlob(repoPath);
-
-					Entry indexEntry = index.getEntry(repoPath);
-					if (headEntry == null) {
-						prefix = "Added";
-						if (indexEntry.isModified(repositoryMapping.getWorkDir()))
-							prefix = "Added, index diff";
-					} else if (indexEntry == null) {
-						prefix = "Removed";
-					} else if (headExists
-							&& !headEntry.getId().equals(
-									indexEntry.getObjectId())) {
-						prefix = "Modified";
-
-
-						if (indexEntry.isModified(repositoryMapping.getWorkDir()))
-							prefix = "Mod., index diff";
-					} else if (!new File(repositoryMapping.getWorkDir(), indexEntry.getName()).isFile()) {
-						prefix = "Rem., not staged";
-					} else if (indexEntry.isModified(repositoryMapping.getWorkDir())) {
-						prefix = "Mod., not staged";
-					}
-
-				} catch (Exception e) {
-				}
-
-				return prefix;
+			default:
+				return null;
 			}
-			return null;
 		}
 
 		public Image getColumnImage(Object element, int columnIndex) {
@@ -122,7 +107,7 @@ public class CommitDialog extends Dialog {
 		}
 	}
 
-	ArrayList<IFile> files;
+	ArrayList<CommitItem> items = new ArrayList<CommitItem>();
 
 	/**
 	 * @param parentShell
@@ -228,30 +213,17 @@ public class CommitDialog extends Dialog {
 		TableColumn statCol = new TableColumn(resourcesTable, SWT.LEFT);
 		statCol.setText("Status");
 		statCol.setWidth(150);
+		statCol.addSelectionListener(new HeaderSelectionListener(CommitItem.Order.ByStatus));
 
 		TableColumn resourceCol = new TableColumn(resourcesTable, SWT.LEFT);
 		resourceCol.setText("File");
 		resourceCol.setWidth(415);
+		resourceCol.addSelectionListener(new HeaderSelectionListener(CommitItem.Order.ByFile));
 
 		filesViewer = new CheckboxTableViewer(resourcesTable);
-		filesViewer.setContentProvider(new IStructuredContentProvider() {
-
-			public void inputChanged(Viewer viewer, Object oldInput,
-					Object newInput) {
-				// Empty
-			}
-
-			public void dispose() {
-				// Empty
-			}
-
-			public Object[] getElements(Object inputElement) {
-				return files.toArray();
-			}
-
-		});
+		filesViewer.setContentProvider(new CommitContentProvider());
 		filesViewer.setLabelProvider(new CommitLabelProvider());
-		filesViewer.setInput(files);
+		filesViewer.setInput(items);
 		filesViewer.setAllChecked(true);
 		filesViewer.getTable().setMenu(getContextMenu());
 
@@ -272,15 +244,15 @@ public class CommitDialog extends Dialog {
 				try {
 					ArrayList<GitIndex> changedIndexes = new ArrayList<GitIndex>();
 					for (Iterator<Object> it = sel.iterator(); it.hasNext();) {
-						IFile file = (IFile) it.next();
+						CommitItem commitItem = (CommitItem) it.next();
 
-						IProject project = file.getProject();
+						IProject project = commitItem.file.getProject();
 						RepositoryMapping map = RepositoryMapping.getMapping(project);
 
 						Repository repo = map.getRepository();
 						GitIndex index = null;
 						index = repo.getIndex();
-						Entry entry = index.getEntry(map.getRepoRelativePath(file));
+						Entry entry = index.getEntry(map.getRepoRelativePath(commitItem.file));
 						if (entry != null && entry.isModified(map.getWorkDir())) {
 							entry.update(new File(map.getWorkDir(), entry.getName()));
 							if (!changedIndexes.contains(index))
@@ -301,6 +273,47 @@ public class CommitDialog extends Dialog {
 		});
 		
 		return menu;
+	}
+
+	private static String getFileStatus(IFile file) {
+		String prefix = "Unknown";
+
+		try {
+			RepositoryMapping repositoryMapping = RepositoryMapping
+					.getMapping(file.getProject());
+
+			Repository repo = repositoryMapping.getRepository();
+			GitIndex index = repo.getIndex();
+			Tree headTree = repo.mapTree(Constants.HEAD);
+
+			String repoPath = repositoryMapping.getRepoRelativePath(file);
+			TreeEntry headEntry = headTree.findBlobMember(repoPath);
+			boolean headExists = headTree.existsBlob(repoPath);
+
+			Entry indexEntry = index.getEntry(repoPath);
+			if (headEntry == null) {
+				prefix = "Added";
+				if (indexEntry.isModified(repositoryMapping.getWorkDir()))
+					prefix = "Added, index diff";
+			} else if (indexEntry == null) {
+				prefix = "Removed";
+			} else if (headExists
+					&& !headEntry.getId().equals(indexEntry.getObjectId())) {
+				prefix = "Modified";
+
+				if (indexEntry.isModified(repositoryMapping.getWorkDir()))
+					prefix = "Mod., index diff";
+			} else if (!new File(repositoryMapping.getWorkDir(), indexEntry
+					.getName()).isFile()) {
+				prefix = "Rem., not staged";
+			} else if (indexEntry.isModified(repositoryMapping.getWorkDir())) {
+				prefix = "Mod., not staged";
+			}
+
+		} catch (Exception e) {
+		}
+
+		return prefix;
 	}
 
 	/**
@@ -324,7 +337,7 @@ public class CommitDialog extends Dialog {
 	private boolean amending = false;
 	private boolean amendAllowed = true;
 
-	private ArrayList<IFile> selectedItems = new ArrayList<IFile>();
+	private ArrayList<IFile> selectedFiles = new ArrayList<IFile>();
 	private String previousCommitMessage = "";
 
 	/**
@@ -332,15 +345,51 @@ public class CommitDialog extends Dialog {
 	 *
 	 * @param items
 	 */
-	public void setSelectedItems(IFile[] items) {
-		Collections.addAll(selectedItems, items);
+	public void setSelectedFiles(IFile[] items) {
+		Collections.addAll(selectedFiles, items);
 	}
 
 	/**
 	 * @return the resources selected by the user to commit.
 	 */
-	public IFile[] getSelectedItems() {
-		return selectedItems.toArray(new IFile[0]);
+	public IFile[] getSelectedFiles() {
+		return selectedFiles.toArray(new IFile[0]);
+	}
+
+	class HeaderSelectionListener extends SelectionAdapter {
+
+		private CommitItem.Order order;
+
+		private boolean reversed;
+
+		public HeaderSelectionListener(CommitItem.Order order) {
+			this.order = order;
+		}
+
+		@Override
+		public void widgetSelected(SelectionEvent e) {
+			TableColumn column = (TableColumn)e.widget;
+			Table table = column.getParent();
+
+			if (column == table.getSortColumn()) {
+				reversed = !reversed;
+			} else {
+				reversed = false;
+			}
+			table.setSortColumn(column);
+
+			Comparator<CommitItem> comparator;
+			if (reversed) {
+				comparator = order.descending();
+				table.setSortDirection(SWT.DOWN);
+			} else {
+				comparator = order;
+				table.setSortDirection(SWT.UP);
+			}
+
+			filesViewer.setComparator(new CommitViewerComparator(comparator));
+		}
+
 	}
 
 	@Override
@@ -351,9 +400,9 @@ public class CommitDialog extends Dialog {
 		amending = amendingButton.getSelection();
 		
 		Object[] checkedElements = filesViewer.getCheckedElements();
-		selectedItems.clear();
+		selectedFiles.clear();
 		for (Object obj : checkedElements)
-			selectedItems.add((IFile) obj);
+			selectedFiles.add(((CommitItem) obj).file);
 
 		if (commitMessage.trim().length() == 0) {
 			MessageDialog.openWarning(getShell(), "No message", "You must enter a commit message");
@@ -369,7 +418,7 @@ public class CommitDialog extends Dialog {
 			}
 		} else author = null;
 
-		if (selectedItems.isEmpty() && !amending) {
+		if (selectedFiles.isEmpty() && !amending) {
 			MessageDialog.openWarning(getShell(), "No items selected", "No items are currently selected to be committed.");
 			return;
 		}
@@ -383,7 +432,13 @@ public class CommitDialog extends Dialog {
 	 * @param files potentially affected by a new commit
 	 */
 	public void setFileList(ArrayList<IFile> files) {
-		this.files = files;
+		items.clear();
+		for (IFile file : files) {
+			CommitItem item = new CommitItem();
+			item.status = getFileStatus(file);
+			item.file = file;
+			items.add(item);
+		}
 	}
 
 	@Override
@@ -468,4 +523,51 @@ public class CommitDialog extends Dialog {
 	protected int getShellStyle() {
 		return super.getShellStyle() | SWT.RESIZE;
 	}
+}
+
+class CommitItem {
+	String status;
+
+	IFile file;
+
+	public static enum Order implements Comparator<CommitItem> {
+		ByStatus() {
+
+			public int compare(CommitItem o1, CommitItem o2) {
+				return o1.status.compareTo(o2.status);
+			}
+
+		},
+
+		ByFile() {
+
+			public int compare(CommitItem o1, CommitItem o2) {
+				return o1.file.getProjectRelativePath().toString().
+					compareTo(o2.file.getProjectRelativePath().toString());
+			}
+
+		};
+
+		public Comparator<CommitItem> ascending() {
+			return this;
+		}
+
+		public Comparator<CommitItem> descending() {
+			return Collections.reverseOrder(this);
+		}
+	}
+}
+
+class CommitViewerComparator extends ViewerComparator {
+
+	public CommitViewerComparator(Comparator comparator){
+		super(comparator);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public int compare(Viewer viewer, Object e1, Object e2) {
+		return getComparator().compare(e1, e2);
+	}
+
 }
