@@ -42,6 +42,7 @@ package org.spearce.jgit.errors;
  * side or a character class which is open to the right side.
  */
 public class NoClosingBracketException extends InvalidPatternException {
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * @param indexOfOpeningBracket

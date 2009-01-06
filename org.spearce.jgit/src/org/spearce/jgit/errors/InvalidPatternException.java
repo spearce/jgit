@@ -42,6 +42,8 @@ package org.spearce.jgit.errors;
  *
  */
 public class InvalidPatternException extends Exception {
+	private static final long serialVersionUID = 1L;
+
 	private final String pattern;
 
 	/**
