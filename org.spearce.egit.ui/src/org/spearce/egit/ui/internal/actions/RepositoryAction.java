@@ -100,7 +100,7 @@ public abstract class RepositoryAction extends TeamAction {
 				mapping = repositoryMapping;
 			if (repositoryMapping == null)
 				return null;
-			if (repositoryMapping != null && mapping.getRepository() != repositoryMapping.getRepository()) {
+			if (mapping.getRepository() != repositoryMapping.getRepository()) {
 				if (warn)
 					MessageDialog.openError(getShell(), "Multiple Repositories Selection", "Cannot perform reset on multiple repositories simultaneously.\n\nPlease select items from only one repository.");
 				return null;

@@ -289,7 +289,6 @@ public class ObjectWriter {
 		return writeObject(Constants.OBJ_BLOB, len, is, false);
 	}
 
-	@SuppressWarnings("null")
 	ObjectId writeObject(final int type, long len, final InputStream is,
 			boolean store) throws IOException {
 		final File t;
