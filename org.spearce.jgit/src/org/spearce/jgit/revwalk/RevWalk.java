@@ -1014,8 +1014,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		return new RevCommit(id);
 	}
 
-	void carryFlagsImpl(final RevCommit c) throws MissingObjectException,
-			IncorrectObjectTypeException, IOException {
+	void carryFlagsImpl(final RevCommit c) {
 		final int carry = c.flags & carryFlags;
 		if (carry != 0)
 			RevCommit.carryFlags(c, carry);

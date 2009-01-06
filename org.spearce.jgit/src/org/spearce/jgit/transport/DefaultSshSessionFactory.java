@@ -153,7 +153,7 @@ class DefaultSshSessionFactory extends SshSessionFactory {
 		}
 	}
 
-	private void identities() throws JSchException {
+	private void identities() {
 		final File home = FS.userHome();
 		if (home == null)
 			return;
