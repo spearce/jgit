@@ -62,6 +62,16 @@ public class URIishTest extends TestCase {
 		assertEquals(u, new URIish(str));
 	}
 
+	public void testWindowsFile2() throws Exception {
+		final String str = "D:\\m y";
+		URIish u = new URIish(str);
+		assertNull(u.getScheme());
+		assertFalse(u.isRemote());
+		assertEquals("D:/m y", u.getPath());
+		assertEquals("D:/m y", u.toString());
+		assertEquals(u, new URIish(str));
+	}
+
 	public void testFileProtoUnix() throws Exception {
 		final String str = "file:///home/m y";
 		URIish u = new URIish(str);

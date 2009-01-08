@@ -51,7 +51,7 @@ import java.util.regex.Pattern;
  */
 public class URIish {
 	private static final Pattern FULL_URI = Pattern
-			.compile("^(?:([a-z0-9+-]+)://(?:([^/]+?)(?::([^/]+?))?@)?(?:([^/]+?))?(?::(\\d+))?)?((?:[A-Za-z]:)?/.+)$");
+			.compile("^(?:([a-z][a-z0-9+-]+)://(?:([^/]+?)(?::([^/]+?))?@)?(?:([^/]+?))?(?::(\\d+))?)?((?:[A-Za-z]:)?/.+)$");
 
 	private static final Pattern SCP_URI = Pattern
 			.compile("^(?:([^@]+?)@)?([^:]+?):(.+)$");
@@ -75,6 +75,7 @@ public class URIish {
 	 * @throws URISyntaxException
 	 */
 	public URIish(String s) throws URISyntaxException {
+		s = s.replace('\\', '/');
 		Matcher matcher = FULL_URI.matcher(s);
 		if (matcher.matches()) {
 			scheme = matcher.group(1);
