@@ -173,9 +173,9 @@ class CloneDestinationPage extends WizardPage {
 
 	private void createWorkbenchGroup(Composite parent) {
 		final Group g = createGroup(parent, "Workspace import");
-		newLabel(g, "Import projects after clone");
 		showImportWizard = new Button(g, SWT.CHECK);
 		showImportWizard.setSelection(true);
+		showImportWizard.setText("Import projects after clone");
 		showImportWizard.setLayoutData(createFieldGridData());
 		showImportWizard.addSelectionListener(new SelectionAdapter() {
 			@Override
