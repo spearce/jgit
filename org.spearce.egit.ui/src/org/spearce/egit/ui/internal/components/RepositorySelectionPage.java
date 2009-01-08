@@ -536,7 +536,7 @@ public class RepositorySelectionPage extends BaseWizardPage {
 				if (uri.getPath() == null) {
 					selectionIncomplete(NLS.bind(
 							UIText.RepositorySelectionPage_fieldRequired,
-							UIText.RepositorySelectionPage_promptPath, proto));
+							unamp(UIText.RepositorySelectionPage_promptPath), proto));
 					return;
 				}
 
@@ -552,7 +552,7 @@ public class RepositorySelectionPage extends BaseWizardPage {
 						selectionIncomplete(NLS
 								.bind(
 										UIText.RepositorySelectionPage_fieldNotSupported,
-										badField, proto));
+										unamp(badField), proto));
 						return;
 					}
 
@@ -571,7 +571,7 @@ public class RepositorySelectionPage extends BaseWizardPage {
 				if (uri.getHost() == null) {
 					selectionIncomplete(NLS.bind(
 							UIText.RepositorySelectionPage_fieldRequired,
-							UIText.RepositorySelectionPage_promptHost, proto));
+							unamp(UIText.RepositorySelectionPage_promptHost), proto));
 					return;
 				}
 
@@ -585,7 +585,7 @@ public class RepositorySelectionPage extends BaseWizardPage {
 						selectionIncomplete(NLS
 								.bind(
 										UIText.RepositorySelectionPage_fieldNotSupported,
-										badField, proto));
+										unamp(badField), proto));
 						return;
 					}
 				}
@@ -606,6 +606,10 @@ public class RepositorySelectionPage extends BaseWizardPage {
 			selectionComplete(null, remoteConfig);
 			return;
 		}
+	}
+
+	private String unamp(String s) {
+		return s.replace("&","");
 	}
 
 	private void selectionIncomplete(final String errorMessage) {
