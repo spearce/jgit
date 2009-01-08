@@ -429,7 +429,7 @@ public class RepositorySelectionPage extends BaseWizardPage {
 	}
 
 	private static boolean isFile(final URIish uri) {
-		if ("file".equals(uri.getScheme()))
+		if ("file".equals(uri.getScheme()) || uri.getScheme() == null)
 			return true;
 		if (uri.getHost() != null || uri.getPort() > 0 || uri.getUser() != null
 				|| uri.getPass() != null || uri.getPath() == null)
