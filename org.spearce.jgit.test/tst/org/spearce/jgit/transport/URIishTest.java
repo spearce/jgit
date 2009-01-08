@@ -72,6 +72,16 @@ public class URIishTest extends TestCase {
 		assertEquals(u, new URIish(str));
 	}
 
+	public void testUNC() throws Exception {
+		final String str = "\\\\some\\place";
+		URIish u = new URIish(str);
+		assertNull(u.getScheme());
+		assertFalse(u.isRemote());
+		assertEquals("//some/place", u.getPath());
+		assertEquals("//some/place", u.toString());
+		assertEquals(u, new URIish(str));
+	}
+
 	public void testFileProtoUnix() throws Exception {
 		final String str = "file:///home/m y";
 		URIish u = new URIish(str);
