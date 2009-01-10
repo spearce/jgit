@@ -15,7 +15,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.ListenerList;
+import org.eclipse.jface.text.DefaultTextDoubleClickStrategy;
 import org.eclipse.jface.text.Document;
+import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.TextViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
@@ -98,6 +100,9 @@ class CommitMessageViewer extends TextViewer {
 				}
 			}
 		});
+		setTextDoubleClickStrategy(new DefaultTextDoubleClickStrategy(),
+				IDocument.DEFAULT_CONTENT_TYPE);
+		activatePlugins();
 	}
 
 	void addCommitNavigationListener(final CommitNavigationListener l) {
