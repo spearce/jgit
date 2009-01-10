@@ -52,6 +52,7 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
 import org.spearce.egit.core.project.RepositoryMapping;
+import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.PersonIdent;
@@ -92,7 +93,7 @@ public class CommitDialog extends Dialog {
 				return item.status;
 
 			case 1:
-				return item.file.getProject().getName() + ": "
+				return item.file.getProject().getName() + ": " //$NON-NLS-1$
 						+ item.file.getProjectRelativePath();
 
 			default:
@@ -118,10 +119,10 @@ public class CommitDialog extends Dialog {
 
 	@Override
 	protected void createButtonsForButtonBar(Composite parent) {
-		createButton(parent, IDialogConstants.SELECT_ALL_ID, "Select All", false);
-		createButton(parent, IDialogConstants.DESELECT_ALL_ID, "Deselect All", false);
+		createButton(parent, IDialogConstants.SELECT_ALL_ID, UIText.CommitDialog_SelectAll, false);
+		createButton(parent, IDialogConstants.DESELECT_ALL_ID, UIText.CommitDialog_DeselectAll, false);
 
-		createButton(parent, IDialogConstants.OK_ID, "Commit", true);
+		createButton(parent, IDialogConstants.OK_ID, UIText.CommitDialog_Commit, true);
 		createButton(parent, IDialogConstants.CANCEL_ID,
 				IDialogConstants.CANCEL_LABEL, false);
 	}
@@ -130,19 +131,19 @@ public class CommitDialog extends Dialog {
 	Text authorText;
 	Button amendingButton;
 	Button signedOffButton;
-	
+
 	CheckboxTableViewer filesViewer;
 
 	@Override
 	protected Control createDialogArea(Composite parent) {
 		Composite container = (Composite) super.createDialogArea(parent);
-		parent.getShell().setText("Commit Changes");
+		parent.getShell().setText(UIText.CommitDialog_CommitChanges);
 
 		GridLayout layout = new GridLayout(2, false);
 		container.setLayout(layout);
 
 		Label label = new Label(container, SWT.LEFT);
-		label.setText("Commit Message:");
+		label.setText(UIText.CommitDialog_CommitMessage);
 		label.setLayoutData(GridDataFactory.fillDefaults().span(2, 1).grab(true, false).create());
 
 		commitText = new Text(container, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL);
@@ -163,7 +164,7 @@ public class CommitDialog extends Dialog {
 			}
 		});
 
-		new Label(container, SWT.LEFT).setText("Author: ");
+		new Label(container, SWT.LEFT).setText(UIText.CommitDialog_Author);
 		authorText = new Text(container, SWT.BORDER);
 		authorText.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).create());
 		if (author != null)
@@ -186,24 +187,24 @@ public class CommitDialog extends Dialog {
 					alreadyAdded = true;
 					String curText = commitText.getText();
 					if (curText.length() > 0)
-						curText += "\n";
+						curText += "\n"; //$NON-NLS-1$
 					commitText.setText(curText + previousCommitMessage);
 				}
 			}
-		
+
 			public void widgetDefaultSelected(SelectionEvent arg0) {
 				// Empty
 			}
 		});
-		
-		amendingButton.setText("Amend previous commit");
+
+		amendingButton.setText(UIText.CommitDialog_AmendPreviousCommit);
 		amendingButton.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).span(2, 1).create());
 
 		signedOffButton = new Button(container, SWT.CHECK);
 		signedOffButton.setSelection(signedOff);
-		signedOffButton.setText("Add Signed-off-by");
+		signedOffButton.setText(UIText.CommitDialog_AddSOB);
 		signedOffButton.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).span(2, 1).create());
-		
+
 		Table resourcesTable = new Table(container, SWT.H_SCROLL | SWT.V_SCROLL
 				| SWT.FULL_SELECTION | SWT.MULTI | SWT.CHECK | SWT.BORDER);
 		resourcesTable.setLayoutData(GridDataFactory.fillDefaults().hint(600,
@@ -211,12 +212,12 @@ public class CommitDialog extends Dialog {
 
 		resourcesTable.setHeaderVisible(true);
 		TableColumn statCol = new TableColumn(resourcesTable, SWT.LEFT);
-		statCol.setText("Status");
+		statCol.setText(UIText.CommitDialog_Status);
 		statCol.setWidth(150);
 		statCol.addSelectionListener(new HeaderSelectionListener(CommitItem.Order.ByStatus));
 
 		TableColumn resourceCol = new TableColumn(resourcesTable, SWT.LEFT);
-		resourceCol.setText("File");
+		resourceCol.setText(UIText.CommitDialog_File);
 		resourceCol.setWidth(415);
 		resourceCol.addSelectionListener(new HeaderSelectionListener(CommitItem.Order.ByFile));
 
@@ -234,7 +235,7 @@ public class CommitDialog extends Dialog {
 	private Menu getContextMenu() {
 		Menu menu = new Menu(filesViewer.getTable());
 		MenuItem item = new MenuItem(menu, SWT.PUSH);
-		item.setText("Add file on disk to index");
+		item.setText(UIText.CommitDialog_AddFileOnDiskToIndex);
 		item.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event arg0) {
 				IStructuredSelection sel = (IStructuredSelection) filesViewer.getSelection();
@@ -271,12 +272,12 @@ public class CommitDialog extends Dialog {
 				}
 			}
 		});
-		
+
 		return menu;
 	}
 
 	private static String getFileStatus(IFile file) {
-		String prefix = "Unknown";
+		String prefix = UIText.CommitDialog_StatusUnknown;
 
 		try {
 			RepositoryMapping repositoryMapping = RepositoryMapping
@@ -292,22 +293,22 @@ public class CommitDialog extends Dialog {
 
 			Entry indexEntry = index.getEntry(repoPath);
 			if (headEntry == null) {
-				prefix = "Added";
+				prefix = UIText.CommitDialog_StatusAdded;
 				if (indexEntry.isModified(repositoryMapping.getWorkDir()))
-					prefix = "Added, index diff";
+					prefix = UIText.CommitDialog_StatusAddedIndexDiff;
 			} else if (indexEntry == null) {
-				prefix = "Removed";
+				prefix = UIText.CommitDialog_StatusRemoved;
 			} else if (headExists
 					&& !headEntry.getId().equals(indexEntry.getObjectId())) {
-				prefix = "Modified";
+				prefix = UIText.CommitDialog_StatusModified;
 
 				if (indexEntry.isModified(repositoryMapping.getWorkDir()))
-					prefix = "Mod., index diff";
+					prefix = UIText.CommitDialog_StatusModifiedIndexDiff;
 			} else if (!new File(repositoryMapping.getWorkDir(), indexEntry
 					.getName()).isFile()) {
-				prefix = "Rem., not staged";
+				prefix = UIText.CommitDialog_StatusRemovedNotStaged;
 			} else if (indexEntry.isModified(repositoryMapping.getWorkDir())) {
-				prefix = "Mod., not staged";
+				prefix = UIText.CommitDialog_StatusModifiedNotStaged;
 			}
 
 		} catch (Exception e) {
@@ -331,14 +332,14 @@ public class CommitDialog extends Dialog {
 		this.commitMessage = s;
 	}
 
-	private String commitMessage = "";
+	private String commitMessage = ""; //$NON-NLS-1$
 	private String author = null;
 	private boolean signedOff = false;
 	private boolean amending = false;
 	private boolean amendAllowed = true;
 
 	private ArrayList<IFile> selectedFiles = new ArrayList<IFile>();
-	private String previousCommitMessage = "";
+	private String previousCommitMessage = ""; //$NON-NLS-1$
 
 	/**
 	 * Pre-select suggested set of resources to commit
@@ -398,28 +399,28 @@ public class CommitDialog extends Dialog {
 		author = authorText.getText().trim();
 		signedOff = signedOffButton.getSelection();
 		amending = amendingButton.getSelection();
-		
+
 		Object[] checkedElements = filesViewer.getCheckedElements();
 		selectedFiles.clear();
 		for (Object obj : checkedElements)
 			selectedFiles.add(((CommitItem) obj).file);
 
 		if (commitMessage.trim().length() == 0) {
-			MessageDialog.openWarning(getShell(), "No message", "You must enter a commit message");
+			MessageDialog.openWarning(getShell(), UIText.CommitDialog_ErrorNoMessage, UIText.CommitDialog_ErrorMustEnterCommitMessage);
 			return;
 		}
-		
+
 		if (author.length() > 0) {
 			try {
 				new PersonIdent(author);
 			} catch (IllegalArgumentException e) {
-				MessageDialog.openWarning(getShell(), "Invalid author", "Invalid author specified. Please use the form:\nA U Thor <author@example.com>");
+				MessageDialog.openWarning(getShell(), UIText.CommitDialog_ErrorInvalidAuthor, UIText.CommitDialog_ErrorInvalidAuthorSpecified);
 				return;
 			}
 		} else author = null;
 
 		if (selectedFiles.isEmpty() && !amending) {
-			MessageDialog.openWarning(getShell(), "No items selected", "No items are currently selected to be committed.");
+			MessageDialog.openWarning(getShell(), UIText.CommitDialog_ErrorNoItemsSelected, UIText.CommitDialog_ErrorNoItemsSelectedToBeCommitted);
 			return;
 		}
 		super.okPressed();

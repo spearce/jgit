@@ -566,6 +566,81 @@ public class UIText extends NLS {
 	public static String PushWizard_windowTitleWithDestination;
 
 	/** */
+	public static String CommitDialog_AddFileOnDiskToIndex;
+
+	/** */
+	public static String CommitDialog_AddSOB;
+
+	/** */
+	public static String CommitDialog_AmendPreviousCommit;
+
+	/** */
+	public static String CommitDialog_Author;
+
+	/** */
+	public static String CommitDialog_Commit;
+
+	/** */
+	public static String CommitDialog_CommitChanges;
+
+	/** */
+	public static String CommitDialog_CommitMessage;
+
+	/** */
+	public static String CommitDialog_DeselectAll;
+
+	/** */
+	public static String CommitDialog_ErrorInvalidAuthor;
+
+	/** */
+	public static String CommitDialog_ErrorInvalidAuthorSpecified;
+
+	/** */
+	public static String CommitDialog_ErrorMustEnterCommitMessage;
+
+	/** */
+	public static String CommitDialog_ErrorNoItemsSelected;
+
+	/** */
+	public static String CommitDialog_ErrorNoItemsSelectedToBeCommitted;
+
+	/** */
+	public static String CommitDialog_ErrorNoMessage;
+
+	/** */
+	public static String CommitDialog_File;
+
+	/** */
+	public static String CommitDialog_SelectAll;
+
+	/** */
+	public static String CommitDialog_Status;
+
+	/** */
+	public static String CommitDialog_StatusAdded;
+
+	/** */
+	public static String CommitDialog_StatusAddedIndexDiff;
+
+	/** */
+	public static String CommitDialog_StatusModified;
+
+	/** */
+	public static String CommitDialog_StatusModifiedIndexDiff;
+
+	/** */
+	public static String CommitDialog_StatusModifiedNotStaged;
+
+	/** */
+	public static String CommitDialog_StatusRemoved;
+
+	/** */
+	public static String CommitDialog_StatusRemovedNotStaged;
+
+	/** */
+	public static String CommitDialog_StatusUnknown;
+
+	/** */
 	public static String ConfirmationPage_cantConnectToAnyTitle;
 
 	/** */
