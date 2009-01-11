@@ -87,7 +87,7 @@ public class BranchSelectionDialog extends Dialog {
 		parent = (Composite) super.createDialogArea(base);
 		parent.setLayout(GridLayoutFactory.swtDefaults().create());
 		new Label(parent, SWT.NONE).setText(UIText.BranchSelectionDialog_Refs);
-		branchTree = new Tree(parent, SWT.NONE);
+		branchTree = new Tree(parent, SWT.BORDER);
 		branchTree.setLayoutData(GridDataFactory.fillDefaults().grab(true,true).hint(500, 300).create());
 
 		if (showResetType) {
