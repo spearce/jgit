@@ -24,6 +24,7 @@ import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.window.Window;
+import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
@@ -37,12 +38,14 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 import org.spearce.egit.core.op.ResetOperation.ResetType;
 import org.spearce.egit.ui.Activator;
+import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.RefUpdate;
@@ -56,7 +59,7 @@ public class BranchSelectionDialog extends Dialog {
 	private final Repository repo;
 
 	private boolean showResetType = true;
-	
+
 	/**
 	 * Construct a dialog to select a branch to reset to or check out
 	 * @param parentShell
@@ -76,38 +79,38 @@ public class BranchSelectionDialog extends Dialog {
 	}
 
 	private Composite parent;
-	
+
 	private Tree branchTree;
-	
+
 	@Override
 	protected Composite createDialogArea(Composite base) {
 		parent = (Composite) super.createDialogArea(base);
 		parent.setLayout(GridLayoutFactory.swtDefaults().create());
-		
+		new Label(parent, SWT.NONE).setText(UIText.BranchSelectionDialog_Refs);
 		branchTree = new Tree(parent, SWT.NONE);
 		branchTree.setLayoutData(GridDataFactory.fillDefaults().grab(true,true).hint(500, 300).create());
-		
+
 		if (showResetType) {
 			buildResetGroup();
 		}
-		
+
 		try {
 			fillTreeWithBranches(null);
 		} catch (IOException e) {
-			Activator.logError("Could not refresh list of branches", e);
+			Activator.logError(UIText.BranchSelectionDialog_ErrorCouldNotRefresh, e);
 		}
-		
+
 		return parent;
 	}
 
 	private void buildResetGroup() {
 		Group g = new Group(parent, SWT.NONE);
-		g.setText("Reset Type");
+		g.setText(UIText.BranchSelectionDialog_ResetType);
 		g.setLayoutData(GridDataFactory.swtDefaults().align(SWT.CENTER, SWT.CENTER).create());
 		g.setLayout(new RowLayout(SWT.VERTICAL));
 
 		Button soft = new Button(g, SWT.RADIO);
-		soft.setText("Soft (Index and working directory unmodified)");
+		soft.setText(UIText.BranchSelectionDialog_ResetTypeSoft);
 		soft.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event event) {
 				resetType = ResetType.SOFT;
@@ -116,7 +119,7 @@ public class BranchSelectionDialog extends Dialog {
 
 		Button medium = new Button(g, SWT.RADIO);
 		medium.setSelection(true);
-		medium.setText("Mixed (working directory unmodified)");
+		medium.setText(UIText.BranchSelectionDialog_ResetTypeMixed);
 		medium.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event event) {
 				resetType = ResetType.MIXED;
@@ -124,7 +127,7 @@ public class BranchSelectionDialog extends Dialog {
 		});
 
 		Button hard = new Button(g, SWT.RADIO);
-		hard.setText("Hard");
+		hard.setText(UIText.BranchSelectionDialog_ResetTypeHard);
 		hard.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event event) {
 				resetType = ResetType.HARD;
@@ -137,12 +140,12 @@ public class BranchSelectionDialog extends Dialog {
 		List<String> branches = new ArrayList<String>(repo.getAllRefs()
 				.keySet());
 		Collections.sort(branches);
-		
+
 		TreeItem curItem = null;
 		TreeItem curSubItem = null;
 		String curPrefix = null;
 		String curSubPrefix = null;
-		
+
 		for (String ref : branches) {
 			String shortName = ref;
 			if (ref.startsWith("refs/heads/")) {
@@ -152,18 +155,18 @@ public class BranchSelectionDialog extends Dialog {
 					curSubPrefix = null;
 					curSubItem = null;
 					curItem = new TreeItem(branchTree, SWT.NONE);
-					curItem.setText("Local Branches");
+					curItem.setText(UIText.BranchSelectionDialog_LocalBranches);
 				}
 			} else if (ref.startsWith("refs/remotes/")) {
 				shortName = ref.substring(13);
 				if (!"refs/remotes/".equals(curPrefix)) {
 					curPrefix = "refs/remotes/";
 					curItem = new TreeItem(branchTree, SWT.NONE);
-					curItem.setText("Remote Branches");
+					curItem.setText(UIText.BranchSelectionDialog_RemoteBranches);
 					curSubItem = null;
 					curSubPrefix = null;
-				} 
-				
+				}
+
 				int slashPos = shortName.indexOf("/");
 				if (slashPos > -1) {
 					String remoteName = shortName.substring(0, slashPos);
@@ -184,7 +187,7 @@ public class BranchSelectionDialog extends Dialog {
 					curSubPrefix = null;
 					curSubItem = null;
 					curItem = new TreeItem(branchTree, SWT.NONE);
-					curItem.setText("Tags");
+					curItem.setText(UIText.BranchSelectionDialog_Tags);
 				}
 			}
 			TreeItem item;
@@ -195,7 +198,7 @@ public class BranchSelectionDialog extends Dialog {
 			else item = new TreeItem(curSubItem, SWT.NONE);
 			item.setData(ref);
 			if (ref.equals(branch)) {
-				item.setText(shortName + " (current)");
+				item.setText(shortName + UIText.BranchSelectionDialog_BranchSuffix_Current);
 				FontData fd = item.getFont().getFontData()[0];
 				fd.setStyle(fd.getStyle() | SWT.BOLD);
 				final Font f = new Font(getShell().getDisplay(), fd);
@@ -212,9 +215,9 @@ public class BranchSelectionDialog extends Dialog {
 				branchTree.select(item);
 		}
 	}
-	
+
 	private String refName = null;
-	
+
 	/**
 	 * @return Selected ref
 	 */
@@ -223,32 +226,34 @@ public class BranchSelectionDialog extends Dialog {
 	}
 
 	private ResetType resetType = ResetType.MIXED;
-	
+
 	/**
 	 * @return Type of Reset
 	 */
 	public ResetType getResetType() {
 		return resetType;
 	}
-	
+
 	@Override
 	protected void okPressed() {
 		refNameFromDialog();
 		if (refName == null) {
-			MessageDialog.openWarning(getShell(), "No branch/tag selected", "You must select a valid ref.");
+			MessageDialog.openWarning(getShell(),
+					UIText.BranchSelectionDialog_NoBranchSeletectTitle,
+					UIText.BranchSelectionDialog_NoBranchSeletectMessage);
 			return;
 		}
-		
+
 		if (showResetType) {
 			if (resetType == ResetType.HARD) {
-				if (!MessageDialog.openQuestion(getShell(), "Really reset?", 
-						"Resetting will overwrite any changes in your working directory.\n\n" +
-				"Do you wish to continue?")) {
+				if (!MessageDialog.openQuestion(getShell(),
+						UIText.BranchSelectionDialog_ReallyResetTitle,
+						UIText.BranchSelectionDialog_ReallyResetMessage)) {
 					return;
 				}
 			}
 		}
-		
+
 		super.okPressed();
 	}
 
@@ -266,7 +271,7 @@ public class BranchSelectionDialog extends Dialog {
 		if (!showResetType) {
 			Button newButton = new Button(parent, SWT.PUSH);
 			newButton.setFont(JFaceResources.getDialogFont());
-			newButton.setText("New branch");
+			newButton.setText(UIText.BranchSelectionDialog_NewBranch);
 			((GridLayout)parent.getLayout()).numColumns++;
 			newButton.addSelectionListener(new SelectionListener() {
 
@@ -276,20 +281,20 @@ public class BranchSelectionDialog extends Dialog {
 
 					InputDialog labelDialog = new InputDialog(
 							getShell(),
-							"New branch",
-							"Enter name of new branch. It will branch from the selected branch. refs/heads/ will be prepended to the name you type",
+							UIText.BranchSelectionDialog_QuestionNewBranchTitle,
+							UIText.BranchSelectionDialog_QuestionNewBranchMessage,
 							null, new IInputValidator() {
 								public String isValid(String newText) {
 									String testFor = Constants.R_HEADS + newText;
 									try {
 										if (repo.resolve(testFor) != null)
-											return "Already exists";
+											return UIText.BranchSelectionDialog_ErrorAlreadyExists;
 									} catch (IOException e1) {
-										Activator.logError(String.format(
-												"Could not attempt to resolve %s", testFor), e1);
+										Activator.logError(NLS.bind(
+												UIText.BranchSelectionDialog_ErrorCouldNotResolve, testFor), e1);
 									}
 									if (!Repository.isValidRefName(testFor))
-										return "Invalid ref name";
+										return UIText.BranchSelectionDialog_ErrorInvalidRefName;
 									return null;
 								}
 							});
@@ -307,14 +312,17 @@ public class BranchSelectionDialog extends Dialog {
 							updateRef.setNewObjectId(startAt);
 							updateRef.update();
 						} catch (IOException e1) {
-							Activator.logError(String.format(
-									"Could not create new ref %s", newRefName), e1);
+							Activator.logError(NLS.bind(
+									UIText.BranchSelectionDialog_ErrorCouldNotCreateNewRef,
+															newRefName), e1);
 						}
 						try {
 							branchTree.removeAll();
 							fillTreeWithBranches(newRefName);
 						} catch (IOException e1) {
-							Activator.logError("Could not refresh list of branches",e1);
+							Activator.logError(
+									UIText.BranchSelectionDialog_ErrorCouldNotRefreshBranchList,
+											e1);
 						}
 					}
 				}
@@ -324,7 +332,9 @@ public class BranchSelectionDialog extends Dialog {
 				}
 			});
 		}
-		createButton(parent, IDialogConstants.OK_ID, showResetType ? "Reset" : "Checkout", true);
+		createButton(parent, IDialogConstants.OK_ID,
+				showResetType ? UIText.BranchSelectionDialog_OkReset
+						: UIText.BranchSelectionDialog_OkCheckout, true);
 		createButton(parent, IDialogConstants.CANCEL_ID, IDialogConstants.CANCEL_LABEL, false);
 	}
 

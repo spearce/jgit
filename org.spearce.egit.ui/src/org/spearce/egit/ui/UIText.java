@@ -841,6 +841,78 @@ public class UIText extends NLS {
 	/** */
 	public static String WindowCachePreferencePage_packedGitMMAP;
 
+	/** */
+	public static String BranchSelectionDialog_OkReset;
+
+	/** */
+	public static String BranchSelectionDialog_ErrorCouldNotRefreshBranchList;
+
+	/** */
+	public static String BranchSelectionDialog_ErrorCouldNotCreateNewRef;
+
+	/** */
+	public static String BranchSelectionDialog_ErrorCouldNotRefresh;
+
+	/** */
+	public static String BranchSelectionDialog_BranchSuffix_Current;
+
+	/** */
+	public static String BranchSelectionDialog_ResetType;
+
+	/** */
+	public static String BranchSelectionDialog_ResetTypeSoft;
+
+	/** */
+	public static String BranchSelectionDialog_ResetTypeMixed;
+
+	/** */
+	public static String BranchSelectionDialog_ResetTypeHard;
+
+	/** */
+	public static String BranchSelectionDialog_Tags;
+
+	/** */
+	public static String BranchSelectionDialog_RemoteBranches;
+
+	/** */
+	public static String BranchSelectionDialog_LocalBranches;
+
+	/** */
+	public static String BranchSelectionDialog_NoBranchSeletectTitle;
+
+	/** */
+	public static String BranchSelectionDialog_ReallyResetTitle;
+
+	/** */
+	public static String BranchSelectionDialog_ReallyResetMessage;
+
+	/** */
+	public static String BranchSelectionDialog_QuestionNewBranchTitle;
+
+	/** */
+	public static String BranchSelectionDialog_QuestionNewBranchMessage;
+
+	/** */
+	public static String BranchSelectionDialog_NewBranch;
+
+	/** */
+	public static String BranchSelectionDialog_ErrorAlreadyExists;
+
+	/** */
+	public static String BranchSelectionDialog_ErrorCouldNotResolve;
+
+	/** */
+	public static String BranchSelectionDialog_ErrorInvalidRefName;
+
+	/** */
+	public static String BranchSelectionDialog_OkCheckout;
+
+	/** */
+	public static String BranchSelectionDialog_NoBranchSeletectMessage;
+
+	/** */
+	public static String BranchSelectionDialog_Refs;
+
 	static {
 		initializeMessages(UIText.class.getPackage().getName() + ".uitext",
 				UIText.class);
