@@ -71,10 +71,10 @@ public final class RawParseUtils {
 	 *            first position within b, this should match src[0].
 	 * @param src
 	 *            the buffer to test for equality with b.
-	 * @return ptr += src.length if b[ptr..src.length] == src; else -1.
+	 * @return ptr + src.length if b[ptr..src.length] == src; else -1.
 	 */
 	public static final int match(final byte[] b, int ptr, final byte[] src) {
-		if (ptr + src.length >= b.length)
+		if (ptr + src.length > b.length)
 			return -1;
 		for (int i = 0; i < src.length; i++, ptr++)
 			if (b[ptr] != src[i])
