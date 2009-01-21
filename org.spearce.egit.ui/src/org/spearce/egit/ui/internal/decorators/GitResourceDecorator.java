@@ -296,6 +296,12 @@ public class GitResourceDecorator extends LabelProvider implements
 				Repository repository = mapped.getRepository();
 				GitIndex index = repository.getIndex();
 				String repoRelativePath = mapped.getRepoRelativePath(rsrc);
+
+				if (repoRelativePath == null) {
+					Activator.trace("Cannot decorate linked resource " + rsrc);
+					return;
+				}
+
 				Tree headTree = repository.mapTree(Constants.HEAD);
 				TreeEntry blob = headTree!=null ? headTree.findBlobMember(repoRelativePath) : null;
 				Entry entry = index.getEntry(repoRelativePath);
