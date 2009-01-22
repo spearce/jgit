@@ -111,6 +111,17 @@ public class DirCache {
 	}
 
 	/**
+	 * Create a new empty index which is never stored on disk.
+	 *
+	 * @return an empty cache which has no backing store file. The cache may not
+	 *         be read or written, but it may be queried and updated (in
+	 *         memory).
+	 */
+	public static DirCache newInCore() {
+		return new DirCache(null);
+	}
+
+	/**
 	 * Create a new in-core index representation and read an index from disk.
 	 * <p>
 	 * The new index will be read before it is returned to the caller. Read
@@ -297,6 +308,8 @@ public class DirCache {
 	 *             library does not support.
 	 */
 	public void read() throws IOException, CorruptObjectException {
+		if (liveFile == null)
+			throw new IOException("DirCache does not have a backing file");
 		if (!liveFile.exists())
 			clear();
 		else if (liveFile.lastModified() != lastModified) {
@@ -407,6 +420,8 @@ public class DirCache {
 	 *             hold the lock.
 	 */
 	public boolean lock() throws IOException {
+		if (liveFile == null)
+			throw new IOException("DirCache does not have a backing file");
 		final LockFile tmp = new LockFile(liveFile);
 		if (tmp.lock()) {
 			tmp.setNeedStatInformation(true);
@@ -515,6 +530,8 @@ public class DirCache {
 	}
 
 	private void requireLocked(final LockFile tmp) {
+		if (liveFile == null)
+			throw new IllegalStateException("DirCache is not locked");
 		if (tmp == null)
 			throw new IllegalStateException("DirCache "
 					+ liveFile.getAbsolutePath() + " not locked.");
