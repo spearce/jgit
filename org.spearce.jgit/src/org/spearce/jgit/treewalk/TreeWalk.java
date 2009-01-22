@@ -616,7 +616,16 @@ public class TreeWalk {
 		final AbstractTreeIterator ch = currentHead;
 		final AbstractTreeIterator a = trees[nthA];
 		final AbstractTreeIterator b = trees[nthB];
-		return a.matches == ch && b.matches == ch && a.idEqual(b);
+		if (a.matches == ch && b.matches == ch)
+			return a.idEqual(b);
+		if (a.matches != ch && b.matches != ch) {
+			// If neither tree matches the current path node then neither
+			// tree has this entry. In such case the ObjectId is zero(),
+			// and zero() is always equal to zero().
+			//
+			return true;
+		}
+		return false;
 	}
 
 	/**
