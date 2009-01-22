@@ -60,6 +60,18 @@ import org.spearce.jgit.util.NB;
 public class DirCacheEntry {
 	private static final byte[] nullpad = new byte[8];
 
+	/** The standard (fully merged) stage for an entry. */
+	public static final int STAGE_0 = 0;
+
+	/** The base tree revision for an entry. */
+	public static final int STAGE_1 = 1;
+
+	/** The first tree revision (usually called "ours"). */
+	public static final int STAGE_2 = 2;
+
+	/** The second tree revision (usually called "theirs"). */
+	public static final int STAGE_3 = 3;
+
 	// private static final int P_CTIME = 0;
 
 	// private static final int P_CTIME_NSEC = 4;
@@ -141,7 +153,7 @@ public class DirCacheEntry {
 	}
 
 	/**
-	 * Create an empty entry.
+	 * Create an empty entry at stage 0.
 	 *
 	 * @param newPath
 	 *            name of the cache entry.
@@ -151,20 +163,46 @@ public class DirCacheEntry {
 	}
 
 	/**
-	 * Create an empty entry.
+	 * Create an empty entry at the specified stage.
+	 *
+	 * @param newPath
+	 *            name of the cache entry.
+	 * @param stage
+	 *            the stage index of the new entry.
+	 */
+	public DirCacheEntry(final String newPath, final int stage) {
+		this(Constants.encode(newPath), stage);
+	}
+
+	/**
+	 * Create an empty entry at stage 0.
 	 *
 	 * @param newPath
 	 *            name of the cache entry, in the standard encoding.
 	 */
 	public DirCacheEntry(final byte[] newPath) {
+		this(newPath, STAGE_0);
+	}
+
+	/**
+	 * Create an empty entry at the specified stage.
+	 *
+	 * @param newPath
+	 *            name of the cache entry, in the standard encoding.
+	 * @param stage
+	 *            the stage index of the new entry.
+	 */
+	public DirCacheEntry(final byte[] newPath, final int stage) {
 		info = new byte[INFO_LEN];
 		infoOffset = 0;
-
 		path = newPath;
+
+		int flags = ((stage & 0x3) << 12);
 		if (path.length < NAME_MASK)
-			NB.encodeInt16(info, infoOffset + P_FLAGS, path.length);
+			flags |= path.length;
 		else
-			NB.encodeInt16(info, infoOffset + P_FLAGS, NAME_MASK);
+			flags |= NAME_MASK;
+		NB.encodeInt16(info, infoOffset + P_FLAGS, flags);
 	}
 
 	void write(final OutputStream os) throws IOException {
