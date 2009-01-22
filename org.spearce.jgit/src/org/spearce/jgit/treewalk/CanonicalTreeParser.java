@@ -67,6 +67,36 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 		raw = EMPTY;
 	}
 
+	/**
+	 * Create a new parser for a tree appearing in a subset of a repository.
+	 *
+	 * @param prefix
+	 *            position of this iterator in the repository tree. The value
+	 *            may be null or the empty array to indicate the prefix is the
+	 *            root of the repository. A trailing slash ('/') is
+	 *            automatically appended if the prefix does not end in '/'.
+	 * @param repo
+	 *            repository to load the tree data from.
+	 * @param treeId
+	 *            identity of the tree being parsed; used only in exception
+	 *            messages if data corruption is found.
+	 * @param curs
+	 *            a window cursor to use during data access from the repository.
+	 * @throws MissingObjectException
+	 *             the object supplied is not available from the repository.
+	 * @throws IncorrectObjectTypeException
+	 *             the object supplied as an argument is not actually a tree and
+	 *             cannot be parsed as though it were a tree.
+	 * @throws IOException
+	 *             a loose object or pack file could not be read.
+	 */
+	public CanonicalTreeParser(final byte[] prefix, final Repository repo,
+			final ObjectId treeId, final WindowCursor curs)
+			throws IncorrectObjectTypeException, IOException {
+		super(prefix);
+		reset(repo, treeId, curs);
+	}
+
 	private CanonicalTreeParser(final CanonicalTreeParser p) {
 		super(p);
 	}

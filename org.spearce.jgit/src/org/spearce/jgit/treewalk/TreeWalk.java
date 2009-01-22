@@ -354,7 +354,7 @@ public class TreeWalk {
 				o = trees[i];
 				while (o.parent != null)
 					o = o.parent;
-				if (o instanceof CanonicalTreeParser) {
+				if (o instanceof CanonicalTreeParser && o.pathOffset == 0) {
 					o.matches = null;
 					o.matchShift = 0;
 					((CanonicalTreeParser) o).reset(db, ids[i], curs);
