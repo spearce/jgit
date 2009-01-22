@@ -295,6 +295,15 @@ public class DirCacheEntry {
 	}
 
 	/**
+	 * Obtain the {@link FileMode} for this entry.
+	 *
+	 * @return the file mode singleton for this entry.
+	 */
+	public FileMode getFileMode() {
+		return FileMode.fromBits(getRawMode());
+	}
+
+	/**
 	 * Set the file mode for this entry.
 	 *
 	 * @param mode
