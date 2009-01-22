@@ -123,7 +123,7 @@ public class TransportTest extends RepositoryTestCase {
 				.findRemoteRefUpdatesFor(Collections.nCopies(1, new RefSpec(
 						"+refs/heads/*:refs/heads/test/*")));
 
-		assertEquals(7, result.size());
+		assertEquals(9, result.size());
 		boolean foundA = false;
 		boolean foundB = false;
 		for (final RemoteRefUpdate rru : result) {

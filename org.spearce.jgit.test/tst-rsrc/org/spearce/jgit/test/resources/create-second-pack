@@ -138,7 +138,18 @@ done
 
 git repack -d
 
+git checkout -b f a
+mkdir f
+echo "an eff" >f/f
+git add f/f
+git commit -m "An eff"
+git checkout -b g a
+mkdir f
+echo "an F" >f/f
+git add f/f
+git commit -m "An F"
+git repack -d
 git pack-refs --all
 
 
-qgit --all master
+gitk --all master
