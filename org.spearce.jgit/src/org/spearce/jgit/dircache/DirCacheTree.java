@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2008, Google Inc.
  *
  * All rights reserved.
  *
@@ -37,14 +38,20 @@
 
 package org.spearce.jgit.dircache;
 
+import static org.spearce.jgit.lib.Constants.OBJECT_ID_LENGTH;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import org.spearce.jgit.errors.UnmergedPathException;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.util.MutableInteger;
 import org.spearce.jgit.util.RawParseUtils;
 
@@ -271,6 +278,114 @@ public class DirCacheTree {
 		final StringBuilder r = new StringBuilder();
 		appendName(r);
 		return r.toString();
+	}
+
+	/**
+	 * Write (if necessary) this tree to the object store.
+	 *
+	 * @param cache
+	 *            the complete cache from DirCache.
+	 * @param cIdx
+	 *            first position of <code>cache</code> that is a member of this
+	 *            tree. The path of <code>cache[cacheIdx].path</code> for the
+	 *            range <code>[0,pathOff-1)</code> matches the complete path of
+	 *            this tree, from the root of the repository.
+	 * @param pathOffset
+	 *            number of bytes of <code>cache[cacheIdx].path</code> that
+	 *            matches this tree's path. The value at array position
+	 *            <code>cache[cacheIdx].path[pathOff-1]</code> is always '/' if
+	 *            <code>pathOff</code> is > 0.
+	 * @param ow
+	 *            the writer to use when serializing to the store.
+	 * @return identity of this tree.
+	 * @throws UnmergedPathException
+	 *             one or more paths contain higher-order stages (stage > 0),
+	 *             which cannot be stored in a tree object.
+	 * @throws IOException
+	 *             an unexpected error occurred writing to the object store.
+	 */
+	ObjectId writeTree(final DirCacheEntry[] cache, int cIdx,
+			final int pathOffset, final ObjectWriter ow)
+			throws UnmergedPathException, IOException {
+		if (id == null) {
+			final int endIdx = cIdx + entrySpan;
+			final int size = computeSize(cache, cIdx, pathOffset, ow);
+			final ByteArrayOutputStream out = new ByteArrayOutputStream(size);
+			int childIdx = 0;
+			int entryIdx = cIdx;
+
+			while (entryIdx < endIdx) {
+				final DirCacheEntry e = cache[entryIdx];
+				final byte[] ep = e.path;
+				if (childIdx < childCnt) {
+					final DirCacheTree st = children[childIdx];
+					if (st.contains(ep, pathOffset, ep.length)) {
+						FileMode.TREE.copyTo(out);
+						out.write(' ');
+						out.write(st.encodedName);
+						out.write(0);
+						st.id.copyRawTo(out);
+
+						entryIdx += st.entrySpan;
+						childIdx++;
+						continue;
+					}
+				}
+
+				e.getFileMode().copyTo(out);
+				out.write(' ');
+				out.write(ep, pathOffset, ep.length - pathOffset);
+				out.write(0);
+				out.write(e.idBuffer(), e.idOffset(), OBJECT_ID_LENGTH);
+				entryIdx++;
+			}
+
+			id = ow.writeCanonicalTree(out.toByteArray());
+		}
+		return id;
+	}
+
+	private int computeSize(final DirCacheEntry[] cache, int cIdx,
+			final int pathOffset, final ObjectWriter ow)
+			throws UnmergedPathException, IOException {
+		final int endIdx = cIdx + entrySpan;
+		int childIdx = 0;
+		int entryIdx = cIdx;
+		int size = 0;
+
+		while (entryIdx < endIdx) {
+			final DirCacheEntry e = cache[entryIdx];
+			if (e.getStage() != 0)
+				throw new UnmergedPathException(e);
+
+			final byte[] ep = e.path;
+			if (childIdx < childCnt) {
+				final DirCacheTree st = children[childIdx];
+				if (st.contains(ep, pathOffset, ep.length)) {
+					final int stOffset = pathOffset + st.nameLength() + 1;
+					st.writeTree(cache, entryIdx, stOffset, ow);
+
+					size += FileMode.TREE.copyToLength();
+					size += st.nameLength();
+					size += OBJECT_ID_LENGTH + 2;
+
+					entryIdx += st.entrySpan;
+					childIdx++;
+					continue;
+				}
+			}
+
+			final FileMode mode = e.getFileMode();
+			if (mode.getObjectType() == Constants.OBJ_BAD)
+				throw new UnmergedPathException(e);
+
+			size += mode.copyToLength();
+			size += ep.length - pathOffset;
+			size += OBJECT_ID_LENGTH + 2;
+			entryIdx++;
+		}
+
+		return size;
 	}
 
 	private void appendName(final StringBuilder r) {

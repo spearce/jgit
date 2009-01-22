@@ -155,10 +155,18 @@ public class ObjectWriter {
 			o.write(0);
 			id.copyRawTo(o);
 		}
-		return writeTree(o.toByteArray());
+		return writeCanonicalTree(o.toByteArray());
 	}
 
-	private ObjectId writeTree(final byte[] b) throws IOException {
+	/**
+	 * Write a canonical tree to the object database.
+	 *
+	 * @param b
+	 *            the canonical encoding of the tree object.
+	 * @return SHA-1 of the tree
+	 * @throws IOException
+	 */
+	public ObjectId writeCanonicalTree(final byte[] b) throws IOException {
 		return writeTree(b.length, new ByteArrayInputStream(b));
 	}
 

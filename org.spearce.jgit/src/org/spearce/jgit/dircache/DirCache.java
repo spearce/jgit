@@ -51,8 +51,11 @@ import java.security.MessageDigest;
 import java.util.Comparator;
 
 import org.spearce.jgit.errors.CorruptObjectException;
+import org.spearce.jgit.errors.UnmergedPathException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.LockFile;
+import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.util.MutableInteger;
 import org.spearce.jgit.util.NB;
@@ -691,5 +694,22 @@ public class DirCache {
 			tree.validate(sortedEntries, entryCnt, 0, 0);
 		}
 		return tree;
+	}
+
+	/**
+	 * Write all index trees to the object store, returning the root tree.
+	 *
+	 * @param ow
+	 *            the writer to use when serializing to the store.
+	 * @return identity for the root tree.
+	 * @throws UnmergedPathException
+	 *             one or more paths contain higher-order stages (stage > 0),
+	 *             which cannot be stored in a tree object.
+	 * @throws IOException
+	 *             an unexpected error occurred writing to the object store.
+	 */
+	public ObjectId writeTree(final ObjectWriter ow)
+			throws UnmergedPathException, IOException {
+		return getCacheTree(true).writeTree(sortedEntries, 0, 0, ow);
 	}
 }

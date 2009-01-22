@@ -191,6 +191,13 @@ public abstract class FileMode {
 	}
 
 	/**
+	 * @return the number of bytes written by {@link #copyTo(OutputStream)}.
+	 */
+	public int copyToLength() {
+		return octalBytes.length;
+	}
+
+	/**
 	 * Get the object type that should appear for this type of mode.
 	 * <p>
 	 * See the object type constants in {@link Constants}.
