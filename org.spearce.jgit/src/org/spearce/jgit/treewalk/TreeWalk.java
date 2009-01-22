@@ -663,6 +663,21 @@ public class TreeWalk {
 	}
 
 	/**
+	 * Get the current entry's complete path as a UTF-8 byte array.
+	 *
+	 * @return complete path of the current entry, from the root of the
+	 *         repository. If the current entry is in a subtree there will be at
+	 *         least one '/' in the returned string.
+	 */
+	public byte[] getRawPath() {
+		final AbstractTreeIterator t = currentHead;
+		final int n = t.pathLen;
+		final byte[] r = new byte[n];
+		System.arraycopy(t.path, 0, r, 0, n);
+		return r;
+	}
+
+	/**
 	 * Test if the supplied path matches the current entry's path.
 	 * <p>
 	 * This method tests that the supplied path is exactly equal to the current
