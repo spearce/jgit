@@ -37,7 +37,15 @@
 
 package org.spearce.jgit.dircache;
 
+import java.io.IOException;
 import java.util.Arrays;
+
+import org.spearce.jgit.lib.AnyObjectId;
+import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.WindowCursor;
+import org.spearce.jgit.treewalk.AbstractTreeIterator;
+import org.spearce.jgit.treewalk.CanonicalTreeParser;
+import org.spearce.jgit.treewalk.TreeWalk;
 
 /**
  * Updates a {@link DirCache} by adding individual {@link DirCacheEntry}s.
@@ -110,6 +118,63 @@ public class DirCacheBuilder extends BaseDirCacheEditor {
 	public void keep(final int pos, int cnt) {
 		beforeAdd(cache.getEntry(pos));
 		fastKeep(pos, cnt);
+	}
+
+	/**
+	 * Recursively add an entire tree into this builder.
+	 * <p>
+	 * If pathPrefix is "a/b" and the tree contains file "c" then the resulting
+	 * DirCacheEntry will have the path "a/b/c".
+	 * <p>
+	 * All entries are inserted at stage 0, therefore assuming that the
+	 * application will not insert any other paths with the same pathPrefix.
+	 *
+	 * @param pathPrefix
+	 *            UTF-8 encoded prefix to mount the tree's entries at. If the
+	 *            path does not end with '/' one will be automatically inserted
+	 *            as necessary.
+	 * @param db
+	 *            repository the tree(s) will be read from during recursive
+	 *            traversal. This must be the same repository that the resulting
+	 *            DirCache would be written out to (or used in) otherwise the
+	 *            caller is simply asking for deferred MissingObjectExceptions.
+	 * @param tree
+	 *            the tree to recursively add. This tree's contents will appear
+	 *            under <code>pathPrefix</code>. The ObjectId must be that of a
+	 *            tree; the caller is responsible for dereferencing a tag or
+	 *            commit (if necessary).
+	 * @throws IOException
+	 *             a tree cannot be read to iterate through its entries.
+	 */
+	public void addTree(final byte[] pathPrefix, final Repository db,
+			final AnyObjectId tree) throws IOException {
+		final TreeWalk tw = new TreeWalk(db);
+		tw.reset();
+		final WindowCursor curs = new WindowCursor();
+		try {
+			tw.addTree(new CanonicalTreeParser(pathPrefix, db, tree
+					.toObjectId(), curs));
+		} finally {
+			curs.release();
+		}
+		tw.setRecursive(true);
+		if (tw.next()) {
+			final DirCacheEntry newEntry = toEntry(tw);
+			beforeAdd(newEntry);
+			fastAdd(newEntry);
+			while (tw.next())
+				fastAdd(toEntry(tw));
+		}
+	}
+
+	private DirCacheEntry toEntry(final TreeWalk tw) {
+		final DirCacheEntry e = new DirCacheEntry(tw.getRawPath());
+		final AbstractTreeIterator i;
+
+		i = tw.getTree(0, AbstractTreeIterator.class);
+		e.setFileMode(tw.getFileMode(0));
+		e.setObjectIdFromRaw(i.idBuffer(), i.idOffset());
+		return e;
 	}
 
 	public void finish() {
