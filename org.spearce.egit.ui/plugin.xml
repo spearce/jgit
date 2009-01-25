@@ -187,11 +187,19 @@
       <page name="%GitPreferences_HistoryPreferencePage_name"
             category="org.eclipse.team.ui.TeamPreferences/org.spearce.egit.ui.GitPreferences"
             class="org.spearce.egit.ui.internal.preferences.HistoryPreferencePage"
-            id="org.spearce.egit.ui.internal.preferences.HistoryPreferencePage" />
+	    id="org.spearce.egit.ui.internal.preferences.HistoryPreferencePage" >
+	    <keywordReference
+		  id="org.spearce.egit.ui.keyword.git">
+	    </keywordReference>
+	    </page>
       <page name="%GitPreferences_WindowCachePreferencePage_name"
             category="org.eclipse.team.ui.TeamPreferences/org.spearce.egit.ui.GitPreferences"
             class="org.spearce.egit.ui.internal.preferences.WindowCachePreferencePage"
-            id="org.spearce.egit.ui.internal.preferences.WindowCachePreferencePage" />
+	    id="org.spearce.egit.ui.internal.preferences.WindowCachePreferencePage" >
+	    <keywordReference
+		  id="org.spearce.egit.ui.keyword.git">
+	    </keywordReference>
+      </page>
    </extension>
 
    <extension point="org.eclipse.ui.propertyPages">
@@ -212,6 +220,14 @@
          </filter>
       </page>
    </extension>
+
+   <extension point="org.eclipse.ui.keywords">
+	  <keyword
+			id="org.spearce.egit.ui.keyword.git"
+			label="git">
+	  </keyword>
+   </extension>
+
    <extension point="org.eclipse.ui.decorators">
       <decorator
             lightweight="true"
