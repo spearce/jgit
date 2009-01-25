@@ -170,7 +170,7 @@
             </adapter>
          </factory>
          <factory
-               adaptableType="org.eclipse.core.internal.resources.Resource"
+	       adaptableType="org.eclipse.core.resources.IResource"
                class="org.spearce.egit.ui.internal.factories.GitAdapterFactory">
             <adapter
                   type="org.eclipse.team.ui.history.IHistoryPageSource">
