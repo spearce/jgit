@@ -89,7 +89,7 @@ public class UnpackedObjectLoader extends ObjectLoader {
 
 	/**
 	 * Construct an ObjectLoader from a loose object's compressed form.
-	 * 
+	 *
 	 * @param compressed
 	 *            entire content of the loose object file.
 	 * @throws CorruptObjectException
@@ -187,7 +187,7 @@ public class UnpackedObjectLoader extends ObjectLoader {
 			throw coe;
 		}
 		if (p != objectSize)
-			new CorruptObjectException(id, "incorrect length");
+			throw new CorruptObjectException(id, "incorrect length");
 	}
 
 	public int getType() {
