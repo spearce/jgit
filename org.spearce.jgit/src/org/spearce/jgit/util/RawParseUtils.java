@@ -40,6 +40,7 @@ package org.spearce.jgit.util;
 import static org.spearce.jgit.lib.ObjectChecker.author;
 import static org.spearce.jgit.lib.ObjectChecker.committer;
 import static org.spearce.jgit.lib.ObjectChecker.encoding;
+import static org.spearce.jgit.lib.ObjectChecker.tagger;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
@@ -397,6 +398,34 @@ public final class RawParseUtils {
 	}
 
 	/**
+	 * Locate the "tagger " header line data.
+	 *
+	 * @param b
+	 *            buffer to scan.
+	 * @param ptr
+	 *            position in buffer to start the scan at. Most callers should
+	 *            pass 0 to ensure the scan starts from the beginning of the tag
+	 *            buffer and does not accidentally look at message body.
+	 * @return position just after the space in "tagger ", so the first
+	 *         character of the tagger's name. If no tagger header can be
+	 *         located -1 is returned.
+	 */
+	public static final int tagger(final byte[] b, int ptr) {
+		final int sz = b.length;
+		if (ptr == 0)
+			ptr += 48; // skip the "object ..." line.
+		while (ptr < sz) {
+			if (b[ptr] == '\n')
+				return -1;
+			final int m = match(b, ptr, tagger);
+			if (m >= 0)
+				return m;
+			ptr = nextLF(b, ptr);
+		}
+		return -1;
+	}
+
+	/**
 	 * Locate the "encoding " header line.
 	 * 
 	 * @param b
@@ -648,9 +677,27 @@ public final class RawParseUtils {
 		while (ptr < sz && b[ptr] == 'p')
 			ptr += 48; // skip this parent.
 
-		// skip any remaining header lines, ignoring what their actual
-		// header line type is.
+		// Skip any remaining header lines, ignoring what their actual
+		// header line type is. This is identical to the logic for a tag.
 		//
+		return tagMessage(b, ptr);
+	}
+
+	/**
+	 * Locate the position of the tag message body.
+	 *
+	 * @param b
+	 *            buffer to scan.
+	 * @param ptr
+	 *            position in buffer to start the scan at. Most callers should
+	 *            pass 0 to ensure the scan starts from the beginning of the tag
+	 *            buffer.
+	 * @return position of the user's message buffer.
+	 */
+	public static final int tagMessage(final byte[] b, int ptr) {
+		final int sz = b.length;
+		if (ptr == 0)
+			ptr += 48; // skip the "object ..." line.
 		while (ptr < sz && b[ptr] != '\n')
 			ptr = nextLF(b, ptr);
 		if (ptr < sz && b[ptr] == '\n')

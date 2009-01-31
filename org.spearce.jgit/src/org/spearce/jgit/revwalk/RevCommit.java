@@ -367,7 +367,7 @@ public class RevCommit extends RevObject {
 		return str;
 	}
 
-	private static boolean hasLF(final byte[] r, int b, final int e) {
+	static boolean hasLF(final byte[] r, int b, final int e) {
 		while (b < e)
 			if (r[b++] == '\n')
 				return true;
