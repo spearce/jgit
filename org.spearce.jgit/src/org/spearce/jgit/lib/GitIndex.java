@@ -411,11 +411,9 @@ public class GitIndex {
 		 * @throws IOException
 		 */
 		public boolean update(File f) throws IOException {
-			boolean modified = false;
 			long lm = f.lastModified() * 1000000L;
-			if (mtime != lm)
-				modified = true;
-			mtime = f.lastModified() * 1000000L;
+			boolean modified = mtime != lm;
+			mtime = lm;
 			if (size != f.length())
 				modified = true;
 			if (config_filemode()) {
