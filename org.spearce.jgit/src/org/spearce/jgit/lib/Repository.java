@@ -231,8 +231,8 @@ public class Repository {
 		String d=n.substring(0, 2);
 		String f=n.substring(2);
 		final File[] objectsDirs = objectsDirs();
-		for (int i=0; i<objectsDirs.length; ++i) {
-			File ret = new File(new File(objectsDirs[i], d), f);
+		for (File objectsDir : objectsDirs) {
+			File ret = new File(new File(objectsDir, d), f);
 			if (ret.exists())
 				return ret;
 		}

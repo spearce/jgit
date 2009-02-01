@@ -756,8 +756,7 @@ public class GitIndex {
 	 * @throws IOException
 	 */
 	public void checkout(File wd) throws IOException {
-		for (Iterator i = entries.values().iterator(); i.hasNext();) {
-			Entry e = (Entry) i.next();
+		for (Entry e : entries.values()) {
 			if (e.getStage() != 0)
 				continue;
 			checkoutEntry(wd, e);
@@ -810,8 +809,7 @@ public class GitIndex {
 		Stack<Tree> trees = new Stack<Tree>();
 		trees.push(current);
 		String[] prevName = new String[0];
-		for (Iterator i = entries.values().iterator(); i.hasNext();) {
-			Entry e = (Entry) i.next();
+		for (Entry e : entries.values()) {
 			if (e.getStage() != 0)
 				continue;
 			String[] newName = splitDirPath(e.getName());
