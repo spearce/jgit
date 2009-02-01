@@ -247,11 +247,9 @@ public class Repository {
 	public boolean hasObject(final AnyObjectId objectId) {
 		final PackFile[] packs = packs();
 		int k = packs.length;
-		if (k > 0) {
-			do {
-				if (packs[--k].hasObject(objectId))
-					return true;
-			} while (k > 0);
+		while (k > 0) {
+			if (packs[--k].hasObject(objectId))
+				return true;
 		}
 		return toFile(objectId).isFile();
 	}
@@ -288,12 +286,10 @@ public class Repository {
 			throws IOException {
 		final PackFile[] packs = packs();
 		int k = packs.length;
-		if (k > 0) {
-			do {
-				final ObjectLoader ol = packs[--k].get(curs, id);
-				if (ol != null)
-					return ol;
-			} while (k > 0);
+		while (k > 0) {
+			final ObjectLoader ol = packs[--k].get(curs, id);
+			if (ol != null)
+				return ol;
 		}
 		try {
 			return new UnpackedObjectLoader(this, id);
