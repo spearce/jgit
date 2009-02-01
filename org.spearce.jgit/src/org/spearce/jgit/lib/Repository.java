@@ -389,16 +389,23 @@ public class Repository {
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
-		if (or.getType() == Constants.OBJ_TREE)
+		switch (or.getType()) {
+		case Constants.OBJ_TREE:
 			return makeTree(id, raw);
-		if (or.getType() == Constants.OBJ_COMMIT)
+
+		case Constants.OBJ_COMMIT:
 			return makeCommit(id, raw);
-		if (or.getType() == Constants.OBJ_TAG)
+
+		case Constants.OBJ_TAG:
 			return makeTag(id, refName, raw);
-		if (or.getType() == Constants.OBJ_BLOB)
+
+		case Constants.OBJ_BLOB:
 			return raw;
-		throw new IncorrectObjectTypeException(id,
+
+		default:
+			throw new IncorrectObjectTypeException(id,
 				"COMMIT nor TREE nor BLOB nor TAG");
+		}
 	}
 
 	/**
@@ -449,12 +456,16 @@ public class Repository {
 		if (or == null)
 			return null;
 		final byte[] raw = or.getBytes();
-		if (Constants.OBJ_TREE == or.getType()) {
+		switch (or.getType()) {
+		case Constants.OBJ_TREE:
 			return new Tree(this, id, raw);
-		}
-		if (Constants.OBJ_COMMIT == or.getType())
+
+		case Constants.OBJ_COMMIT:
 			return mapTree(ObjectId.fromString(raw, 5));
-		throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
+
+		default:
+			throw new IncorrectObjectTypeException(id, Constants.TYPE_TREE);
+		}
 	}
 
 	private Tree makeTree(final ObjectId id, final byte[] raw) throws IOException {
