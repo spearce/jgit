@@ -46,6 +46,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.spearce.jgit.lib.GitIndex.Entry;
+import org.spearce.jgit.util.FS;
 
 public class T0007_Index extends RepositoryTestCase {
 
@@ -319,6 +320,10 @@ public class T0007_Index extends RepositoryTestCase {
 	}
 
 	public void test030_executeBit_coreModeTrue() throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, Error, Exception {
+		if (!FS.INSTANCE.supportsExecute()) {
+			System.err.println("Test ignored since platform FS does not support the execute permission");
+			return;
+		}
 		try {
 			// coremode true is the default, typically set to false
 			// by git init (but not jgit!)
@@ -370,6 +375,10 @@ public class T0007_Index extends RepositoryTestCase {
 	}
 
 	public void test031_executeBit_coreModeFalse() throws IllegalArgumentException, IllegalAccessException, InvocationTargetException, Error, Exception {
+		if (!FS.INSTANCE.supportsExecute()) {
+			System.err.println("Test ignored since platform FS does not support the execute permission");
+			return;
+		}
 		try {
 			// coremode true is the default, typically set to false
 			// by git init (but not jgit!)
