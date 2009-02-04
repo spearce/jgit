@@ -61,6 +61,8 @@ import org.spearce.jgit.util.RawParseUtils;
  * <p>
  * This class can perform n-way differences across as many trees as necessary.
  * <p>
+ * Each tree added must have the same root as existing trees in the walk.
+ * <p>
  * A TreeWalk instance can only be used once to generate results. Running a
  * second time requires creating a new TreeWalk instance, or invoking
  * {@link #reset()} and adding new trees before starting again. Resetting an
@@ -87,7 +89,7 @@ public class TreeWalk {
 	 * @param path
 	 *            single path to advance the tree walk instance into.
 	 * @param trees
-	 *            one or more trees to walk through.
+	 *            one or more trees to walk through, all with the same root.
 	 * @return a new tree walk configured for exactly this one path; null if no
 	 *         path was found in any of the trees.
 	 * @throws IOException
@@ -377,6 +379,8 @@ public class TreeWalk {
 	 * <p>
 	 * The position of this tree is returned to the caller, in case the caller
 	 * has lost track of the order they added the trees into the walker.
+	 * <p>
+	 * The tree must have the same root as existing trees in the walk.
 	 * 
 	 * @param id
 	 *            identity of the tree object the caller wants walked.
@@ -403,10 +407,16 @@ public class TreeWalk {
 	 * <p>
 	 * The position of this tree is returned to the caller, in case the caller
 	 * has lost track of the order they added the trees into the walker.
+	 * <p>
+	 * The tree which the iterator operates on must have the same root as
+	 * existing trees in the walk.
 	 * 
 	 * @param p
 	 *            an iterator to walk over. The iterator should be new, with no
 	 *            parent, and should still be positioned before the first entry.
+	 *            The tree which the iterator operates on must have the same root
+	 *            as other trees in the walk.
+	 *
 	 * @return position of this tree within the walker.
 	 * @throws CorruptObjectException
 	 *             the iterator was unable to obtain its first entry, due to
