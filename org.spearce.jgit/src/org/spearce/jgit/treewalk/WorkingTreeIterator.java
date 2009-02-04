@@ -324,7 +324,7 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 			final String name = e.getName();
 			if (".".equals(name) || "..".equals(name))
 				continue;
-			if (parent == null && ".git".equals(name))
+			if (".git".equals(name))
 				continue;
 			if (i != o)
 				entries[o] = e;

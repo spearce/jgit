@@ -15,6 +15,7 @@ import java.io.InputStream;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.runtime.CoreException;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
@@ -53,7 +54,7 @@ public class ContainerTreeIterator extends WorkingTreeIterator {
 	private final IContainer node;
 
 	/**
-	 * Construct a new iterator from the workspace.
+	 * Construct a new iterator from a container in the workspace.
 	 * <p>
 	 * The iterator will support traversal over the named container, but only if
 	 * it is contained within a project which has the Git repository provider
@@ -67,6 +68,23 @@ public class ContainerTreeIterator extends WorkingTreeIterator {
 	public ContainerTreeIterator(final IContainer base) {
 		super(computePrefix(base));
 		node = base;
+		init(entries());
+	}
+
+	/**
+	 * Construct a new iterator from the workspace root.
+	 * <p>
+	 * The iterator will support traversal over workspace projects that have
+	 * a Git repository provider connected and is mapped into a Git repository.
+	 * During the iteration the paths will be automatically generated to match
+	 * the proper repository paths for this container's children.
+	 *
+	 * @param root
+	 *            the workspace root to walk over.
+	 */
+	public ContainerTreeIterator(final IWorkspaceRoot root) {
+		super("");
+		node = root;
 		init(entries());
 	}
 
@@ -119,6 +137,7 @@ public class ContainerTreeIterator extends WorkingTreeIterator {
 				else
 					mode = FileMode.REGULAR_FILE;
 				break;
+			case IResource.PROJECT:
 			case IResource.FOLDER: {
 				final IContainer c = (IContainer) f;
 				if (c.findMember(".git") != null)
@@ -140,7 +159,10 @@ public class ContainerTreeIterator extends WorkingTreeIterator {
 
 		@Override
 		public String getName() {
-			return rsrc.getName();
+			if (rsrc.getType() == IResource.PROJECT)
+				return rsrc.getLocation().lastSegment();
+			else
+				return rsrc.getName();
 		}
 
 		@Override
