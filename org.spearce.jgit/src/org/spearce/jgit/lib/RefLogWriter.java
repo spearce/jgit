@@ -42,7 +42,6 @@ package org.spearce.jgit.lib;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 
 /**
  * Utility class to add reflog entries
@@ -50,6 +49,49 @@ import java.io.PrintWriter;
  * @author Dave Watson
  */
 public class RefLogWriter {
+	static void append(final RefUpdate u, final String msg) throws IOException {
+		final ObjectId oldId = u.getOldObjectId();
+		final ObjectId newId = u.getNewObjectId();
+		final Repository db = u.getRepository();
+		final PersonIdent ident = u.getRefLogIdent();
+
+		appendOneRecord(oldId, newId, ident, msg, db, u.getName());
+	}
+
+	private static void appendOneRecord(final ObjectId oldId,
+			final ObjectId newId, PersonIdent ident, final String msg,
+			final Repository db, final String refName) throws IOException {
+		if (ident == null)
+			ident = new PersonIdent(db);
+		else
+			ident = new PersonIdent(ident);
+
+		final StringBuilder r = new StringBuilder();
+		r.append(ObjectId.toString(oldId));
+		r.append(' ');
+		r.append(ObjectId.toString(newId));
+		r.append(' ');
+		r.append(ident.toExternalString());
+		r.append('\t');
+		r.append(msg);
+		r.append('\n');
+
+		final byte[] rec = Constants.encode(r.toString());
+		final File logdir = new File(db.getDirectory(), Constants.LOGS);
+		final File reflog = new File(logdir, refName);
+		final File refdir = reflog.getParentFile();
+
+		if (!refdir.exists() && !refdir.mkdirs())
+			throw new IOException("Cannot create directory " + refdir);
+
+		final FileOutputStream out = new FileOutputStream(reflog, true);
+		try {
+			out.write(rec);
+		} finally {
+			out.close();
+		}
+	}
+
 	/**
 	 * Writes reflog entry for ref specified by refName
 	 * 
@@ -64,33 +106,10 @@ public class RefLogWriter {
 	 * @param refName
 	 *            full ref name
 	 * @throws IOException
+	 * @deprecated rely upon {@link RefUpdate}'s automatic logging instead.
 	 */
 	public static void writeReflog(Repository repo, ObjectId oldCommit,
 			ObjectId commit, String message, String refName) throws IOException {
-		String entry = buildReflogString(repo, oldCommit, commit, message);
-
-		File directory = repo.getDirectory();
-		File reflogfile = new File(directory, Constants.LOGS + "/" + refName);
-		File reflogdir = reflogfile.getParentFile();
-		if (!reflogdir.exists())
-			if (!reflogdir.mkdirs())
-				throw new IOException("Cannot create directory "+reflogdir);
-		PrintWriter writer = new PrintWriter(new FileOutputStream(reflogfile, true));
-		writer.println(entry);
-		writer.close();
+		appendOneRecord(oldCommit, commit, null, message, repo, refName);
 	}
-
-	private static String buildReflogString(Repository repo,
-			ObjectId oldCommit, ObjectId commit, String message) {
-		PersonIdent me = new PersonIdent(repo);
-		String initial = "";
-		if (oldCommit == null) {
-			oldCommit = ObjectId.zeroId();
-			initial = " (initial)";
-		}
-		String s = oldCommit.name() + " " + commit.name() + " "
-				+ me.toExternalString() + "\t" + message + initial;
-		return s;
-	}
-
 }

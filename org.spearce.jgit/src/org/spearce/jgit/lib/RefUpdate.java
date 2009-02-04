@@ -140,6 +140,9 @@ public class RefUpdate {
 	/** Does this specification ask for forced updated (rewind/reset)? */
 	private boolean force;
 
+	/** Identity to record action as within the reflog. */
+	private PersonIdent refLogIdent;
+
 	/** Message the caller wants included in the reflog. */
 	private String refLogMessage;
 
@@ -162,6 +165,11 @@ public class RefUpdate {
 		this.ref = ref;
 		oldValue = ref.getObjectId();
 		looseFile = f;
+	}
+
+	/** @return the repository the updated ref resides in */
+	public Repository getRepository() {
+		return db.getRepository();
 	}
 
 	/**
@@ -230,6 +238,27 @@ public class RefUpdate {
 	 */
 	public void setForceUpdate(final boolean b) {
 		force = b;
+	}
+
+	/** @return identity of the user making the change in the reflog. */
+	public PersonIdent getRefLogIdent() {
+		return refLogIdent;
+	}
+
+	/**
+	 * Set the identity of the user appearing in the reflog.
+	 * <p>
+	 * The timestamp portion of the identity is ignored. A new identity with the
+	 * current timestamp will be created automatically when the update occurs
+	 * and the log record is written.
+	 *
+	 * @param pi
+	 *            identity of the user. If null the identity will be
+	 *            automatically determined based on the repository
+	 *            configuration.
+	 */
+	public void setRefLogIdent(final PersonIdent pi) {
+		refLogIdent = pi;
 	}
 
 	/**
@@ -450,8 +479,7 @@ public class RefUpdate {
 			else if (status == Result.NEW)
 				msg += ": created";
 		}
-		RefLogWriter.writeReflog(db.getRepository(), oldValue, newValue, msg,
-				getName());
+		RefLogWriter.append(this, msg);
 		if (!lock.commit())
 			return Result.LOCK_FAILURE;
 		db.stored(this.ref.getOrigName(),  ref.getName(), newValue, lock.getCommitLastModified());
