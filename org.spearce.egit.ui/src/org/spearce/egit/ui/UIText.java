@@ -913,6 +913,15 @@ public class UIText extends NLS {
 	/** */
 	public static String BranchSelectionDialog_Refs;
 
+	/** */
+	public static String HistoryPage_ShowAllVersionsForProject;
+
+	/** */
+	public static String HistoryPage_ShowAllVersionsForRepo;
+
+	/** */
+	public static String HistoryPage_ShowAllVersionsForFolder;
+
 	static {
 		initializeMessages(UIText.class.getPackage().getName() + ".uitext",
 				UIText.class);

@@ -1,5 +1,4 @@
 /*******************************************************************************
- * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Roger C. Soares <rogersoares@intelinet.com.br>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
@@ -27,6 +26,7 @@ import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.text.ITextOperationTarget;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -193,6 +193,98 @@ public class GitHistoryPage extends HistoryPage implements RepositoryListener {
 	 */
 	private RevObjectSelectionProvider revObjectSelectionProvider;
 
+	private static final String PREF_SHOWALLFILTER = "org.spearce.egit.ui.githistorypage.showallfilter"; //$NON-NLS-1$
+
+	enum ShowFilter {
+		SHOWALLRESOURCE,
+		SHOWALLFOLDER,
+		SHOWALLPROJECT,
+		SHOWALLREPO,
+	}
+
+	class ShowFilterAction extends Action {
+		private final ShowFilter filter;
+
+		ShowFilterAction(ShowFilter filter, ImageDescriptor icon, String toolTipText) {
+			super(null, IAction.AS_CHECK_BOX);
+			this.filter = filter;
+			setImageDescriptor(icon);
+			setToolTipText(toolTipText);
+		}
+		@Override
+		public void run() {
+			if (!isChecked()) {
+				if (showAllFilter == filter) {
+					showAllFilter = ShowFilter.SHOWALLRESOURCE;
+					refresh();
+				}
+			}
+			if (isChecked() && showAllFilter != filter) {
+				showAllFilter = filter;
+				if (this != showAllRepoVersionsAction)
+					showAllRepoVersionsAction.setChecked(false);
+				if (this != showAllProjectVersionsAction)
+					showAllProjectVersionsAction.setChecked(false);
+				if (this != showAllFolderVersionsAction)
+					showAllFolderVersionsAction.setChecked(false);
+				refresh();
+			}
+			Activator.getDefault().getPreferenceStore().setValue(
+					PREF_SHOWALLFILTER, showAllFilter.toString());
+		}
+		@Override
+		public String toString() {
+			return "ShowFilter[" + filter.toString() + "]"; //$NON-NLS-1$ //$NON-NLS-2$
+		}
+	}
+
+	private ShowFilter showAllFilter = ShowFilter.SHOWALLRESOURCE;
+
+	private ShowFilterAction showAllRepoVersionsAction;
+
+	private ShowFilterAction showAllProjectVersionsAction;
+
+	private ShowFilterAction showAllFolderVersionsAction;
+
+	private void createResourceFilterActions() {
+		try {
+			showAllFilter = ShowFilter.valueOf(Activator.getDefault()
+					.getPreferenceStore().getString(PREF_SHOWALLFILTER));
+		} catch (IllegalArgumentException e) {
+			showAllFilter = ShowFilter.SHOWALLRESOURCE;
+		}
+
+		showAllRepoVersionsAction = new ShowFilterAction(
+				ShowFilter.SHOWALLREPO, UIIcons.FILTERREPO,
+				UIText.HistoryPage_ShowAllVersionsForRepo);
+
+		showAllProjectVersionsAction = new ShowFilterAction(
+				ShowFilter.SHOWALLPROJECT, UIIcons.FILTERPROJECT,
+				UIText.HistoryPage_ShowAllVersionsForProject);
+
+		showAllFolderVersionsAction = new ShowFilterAction(
+				ShowFilter.SHOWALLFOLDER, UIIcons.FILTERFOLDER,
+				UIText.HistoryPage_ShowAllVersionsForFolder);
+
+		showAllRepoVersionsAction
+				.setChecked(showAllFilter == showAllRepoVersionsAction.filter);
+		showAllProjectVersionsAction
+				.setChecked(showAllFilter == showAllProjectVersionsAction.filter);
+		showAllFolderVersionsAction
+				.setChecked(showAllFilter == showAllFolderVersionsAction.filter);
+
+		getSite().getActionBars().getToolBarManager().add(new Separator());
+
+		getSite().getActionBars().getToolBarManager().add(
+				showAllRepoVersionsAction);
+
+		getSite().getActionBars().getToolBarManager().add(
+				showAllProjectVersionsAction);
+
+		getSite().getActionBars().getToolBarManager().add(
+				showAllFolderVersionsAction);
+	}
+
 	@Override
 	public void createControl(final Composite parent) {
 		GridData gd;
@@ -227,6 +319,7 @@ public class GitHistoryPage extends HistoryPage implements RepositoryListener {
 		popupMgr = new MenuManager(null, POPUP_ID);
 		attachCommitSelectionChanged();
 		createLocalToolbarActions();
+		createResourceFilterActions();
 		createStandardActions();
 		createViewMenu();
 
@@ -566,9 +659,21 @@ public class GitHistoryPage extends HistoryPage implements RepositoryListener {
 			else if (db != map.getRepository())
 				return false;
 
-			final String name = map.getRepoRelativePath(r);
-			if (name != null && name.length() > 0)
-				paths.add(name);
+			if (showAllFilter == ShowFilter.SHOWALLFOLDER) {
+				final String name = map.getRepoRelativePath(r.getParent());
+				if (name != null && name.length() > 0)
+					paths.add(name);
+			} else if (showAllFilter == ShowFilter.SHOWALLPROJECT) {
+				final String name = map.getRepoRelativePath(r.getProject());
+				if (name != null && name.length() > 0)
+					paths.add(name);
+			} else if (showAllFilter == ShowFilter.SHOWALLREPO) {
+				// nothing
+			} else /*if (showAllFilter == ShowFilter.SHOWALLRESOURCE)*/ {
+				final String name = map.getRepoRelativePath(r);
+				if (name != null && name.length() > 0)
+					paths.add(name);
+			}
 		}
 
 		if (db == null)

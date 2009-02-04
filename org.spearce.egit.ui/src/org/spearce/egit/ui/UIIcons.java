@@ -71,6 +71,15 @@ public class UIIcons {
 	/** Connect Wizard banner */
 	public static final ImageDescriptor WIZBAN_CONNECT_REPO;
 
+	/** History filter, select all version in repo */
+	public static ImageDescriptor FILTERREPO;
+
+	/** History filter, select all version in same project */
+	public static ImageDescriptor FILTERPROJECT;
+
+	/** History filter, select all version in same folder */
+	public static ImageDescriptor FILTERFOLDER;
+
 	private static final URL base;
 
 	static {
@@ -97,6 +106,9 @@ public class UIIcons {
 		CHECKBOX_ENABLED_UNCHECKED = map("checkboxes/enabled_unchecked.gif");
 		CHECKBOX_DISABLED_CHECKED = map("checkboxes/disabled_checked.gif");
 		CHECKBOX_DISABLED_UNCHECKED = map("checkboxes/disabled_unchecked.gif");
+		FILTERREPO = map("elcl16/filterrepo.gif");
+		FILTERPROJECT = map("elcl16/filterproject.gif");
+		FILTERFOLDER = map("elcl16/filterfolder.gif");
 	}
 
 	private static ImageDescriptor map(final String icon) {
