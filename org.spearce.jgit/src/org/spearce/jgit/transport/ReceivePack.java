@@ -57,6 +57,7 @@ import org.spearce.jgit.errors.PackProtocolException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.NullProgressMonitor;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.RefComparator;
 import org.spearce.jgit.lib.RefUpdate;
@@ -93,6 +94,9 @@ public class ReceivePack {
 
 	/** Should an incoming transfer permit non-fast-forward requests? */
 	private boolean allowNonFastForwards;
+
+	/** Identity to record action as within the reflog. */
+	private PersonIdent refLogIdent;
 
 	/** Hook to validate the update commands before execution. */
 	private PreReceiveHook preReceive;
@@ -219,6 +223,27 @@ public class ReceivePack {
 	 */
 	public void setAllowNonFastForwards(final boolean canRewind) {
 		allowNonFastForwards = canRewind;
+	}
+
+	/** @return identity of the user making the changes in the reflog. */
+	public PersonIdent getRefLogIdent() {
+		return refLogIdent;
+	}
+
+	/**
+	 * Set the identity of the user appearing in the affected reflogs.
+	 * <p>
+	 * The timestamp portion of the identity is ignored. A new identity with the
+	 * current timestamp will be created automatically when the updates occur
+	 * and the log records are written.
+	 *
+	 * @param pi
+	 *            identity of the user. If null the identity will be
+	 *            automatically determined based on the repository
+	 *            configuration.
+	 */
+	public void setRefLogIdent(final PersonIdent pi) {
+		refLogIdent = pi;
 	}
 
 	/** @return get the hook invoked before updates occur. */
@@ -645,6 +670,7 @@ public class ReceivePack {
 	private void execute(final ReceiveCommand cmd) {
 		try {
 			final RefUpdate ru = db.updateRef(cmd.getRefName());
+			ru.setRefLogIdent(getRefLogIdent());
 			switch (cmd.getType()) {
 			case DELETE:
 				if (!ObjectId.zeroId().equals(cmd.getOldId())) {
