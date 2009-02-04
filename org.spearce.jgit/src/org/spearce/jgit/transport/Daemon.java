@@ -43,6 +43,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -53,6 +54,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Repository;
 
 /** Basic daemon for the anonymous <code>git://</code> transport protocol. */
@@ -118,8 +120,15 @@ public class Daemon {
 					@Override
 					protected void execute(final DaemonClient dc,
 							final Repository db) throws IOException {
+						final InetAddress peer = dc.getRemoteAddress();
+						String host = peer.getCanonicalHostName();
+						if (host == null)
+							host = peer.getHostAddress();
 						final ReceivePack rp = new ReceivePack(db);
 						final InputStream in = dc.getInputStream();
+						final String name = "anonymous";
+						final String email = name + "@" + host;
+						rp.setRefLogIdent(new PersonIdent(name, email));
 						rp.receive(in, dc.getOutputStream(), null);
 					}
 				} };
