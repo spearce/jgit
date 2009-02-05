@@ -46,11 +46,14 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
 import org.spearce.jgit.util.JGitTestUtil;
+import org.spearce.jgit.util.SystemReader;
 
 /**
  * Base class for most JGit unit tests.
@@ -83,6 +86,28 @@ public abstract class RepositoryTestCase extends TestCase {
 	}
 
 	protected boolean packedGitMMAP;
+
+	protected static class FakeSystemReader implements SystemReader {
+		Map<String, String> values = new HashMap<String, String>();
+		public String getenv(String variable) {
+			return values.get(variable);
+		}
+		public String getProperty(String key) {
+			return values.get(key);
+		}
+	}
+
+	/**
+	 * Simulates the reading of system variables and properties.
+	 * Unit test can control the returned values by manipulating
+	 * {@link FakeSystemReader#values}.
+	 */
+	protected static FakeSystemReader fakeSystemReader;
+
+	static {
+		fakeSystemReader = new FakeSystemReader();
+		RepositoryConfig.setSystemReader(fakeSystemReader);
+	}
 
 	/**
 	 * Configure JGit before setting up test repositories.
@@ -250,6 +275,13 @@ public abstract class RepositoryTestCase extends TestCase {
 		copyFile(JGitTestUtil.getTestResourceFile("packed-refs"), new File(trash_git,"packed-refs"));
 
 		db.scanForPacks();
+
+		fakeSystemReader.values.clear();
+		fakeSystemReader.values.put(Constants.OS_USER_NAME_KEY, Constants.OS_USER_NAME_KEY);
+		fakeSystemReader.values.put(Constants.GIT_AUTHOR_NAME_KEY, Constants.GIT_AUTHOR_NAME_KEY);
+		fakeSystemReader.values.put(Constants.GIT_AUTHOR_EMAIL_KEY, Constants.GIT_AUTHOR_EMAIL_KEY);
+		fakeSystemReader.values.put(Constants.GIT_COMMITTER_NAME_KEY, Constants.GIT_COMMITTER_NAME_KEY);
+		fakeSystemReader.values.put(Constants.GIT_COMMITTER_EMAIL_KEY, Constants.GIT_COMMITTER_EMAIL_KEY);
 	}
 
 	protected void tearDown() throws Exception {

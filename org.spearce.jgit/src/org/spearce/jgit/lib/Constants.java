@@ -228,6 +228,24 @@ public final class Constants {
 	/** Packed refs file */
 	public static final String PACKED_REFS = "packed-refs";
 
+	/** The environment variable that contains the system user name */
+	public static final String OS_USER_NAME_KEY = "user.name";
+
+	/** The environment variable that contains the author's name */
+	public static final String GIT_AUTHOR_NAME_KEY = "GIT_AUTHOR_NAME";
+
+	/** The environment variable that contains the author's email */
+	public static final String GIT_AUTHOR_EMAIL_KEY = "GIT_AUTHOR_EMAIL";
+
+	/** The environment variable that contains the commiter's name */
+	public static final String GIT_COMMITTER_NAME_KEY = "GIT_COMMITTER_NAME";
+
+	/** The environment variable that contains the commiter's email */
+	public static final String GIT_COMMITTER_EMAIL_KEY = "GIT_COMMITTER_EMAIL";
+
+	/** Default value for the user name if no other information is available */
+	public static final String UNKNOWN_USER_DEFAULT = "unknown-user";
+
 	/**
 	 * Create a new digest function for objects.
 	 * 

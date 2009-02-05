@@ -42,6 +42,8 @@ package org.spearce.jgit.lib;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.LinkedList;
 
@@ -115,5 +117,71 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 		RepositoryConfig repositoryConfig = new RepositoryConfig(null, path);
 		assertEquals(true, repositoryConfig.getBoolean("foo", null, "bar", false));
 		assertEquals("", repositoryConfig.getString("foo", null, "bar"));
+	}
+
+	public void test007_readUserInfos() throws IOException {
+		String hostname;
+		try {
+			InetAddress localMachine = InetAddress.getLocalHost();
+			hostname = localMachine.getCanonicalHostName();
+		} catch (UnknownHostException e) {
+			hostname = "localhost";
+		}
+
+		final File globalConfig = writeTrashFile("global.config", "");
+		final File localConfig = writeTrashFile("local.config", "");
+		System.clearProperty(Constants.OS_USER_NAME_KEY);
+
+		RepositoryConfig globalRepositoryConfig = new RepositoryConfig(null, globalConfig);
+		RepositoryConfig localRepositoryConfig = new RepositoryConfig(globalRepositoryConfig, localConfig);
+		fakeSystemReader.values.clear();
+
+		String authorName;
+		String authorEmail;
+
+		// no values defined nowhere
+		authorName = localRepositoryConfig.getAuthorName();
+		authorEmail = localRepositoryConfig.getAuthorEmail();
+		assertEquals(Constants.UNKNOWN_USER_DEFAULT, authorName);
+		assertEquals(Constants.UNKNOWN_USER_DEFAULT + "@" + hostname, authorEmail);
+
+		// the system user name is defined
+		fakeSystemReader.values.put(Constants.OS_USER_NAME_KEY, "os user name");
+		authorName = localRepositoryConfig.getAuthorName();
+		assertEquals("os user name", authorName);
+
+		if (hostname != null && hostname.length() != 0) {
+			authorEmail = localRepositoryConfig.getAuthorEmail();
+			assertEquals("os user name@" + hostname, authorEmail);
+		}
+
+		// the git environment variables are defined
+		fakeSystemReader.values.put(Constants.GIT_AUTHOR_NAME_KEY, "git author name");
+		fakeSystemReader.values.put(Constants.GIT_AUTHOR_EMAIL_KEY, "author@email");
+		authorName = localRepositoryConfig.getAuthorName();
+		authorEmail = localRepositoryConfig.getAuthorEmail();
+		assertEquals("git author name", authorName);
+		assertEquals("author@email", authorEmail);
+
+		// the values are defined in the global configuration
+		globalRepositoryConfig.setString("user", null, "name", "global username");
+		globalRepositoryConfig.setString("user", null, "email", "author@globalemail");
+		authorName = localRepositoryConfig.getAuthorName();
+		authorEmail = localRepositoryConfig.getAuthorEmail();
+		assertEquals("global username", authorName);
+		assertEquals("author@globalemail", authorEmail);
+
+		// the values are defined in the local configuration
+		localRepositoryConfig.setString("user", null, "name", "local username");
+		localRepositoryConfig.setString("user", null, "email", "author@localemail");
+		authorName = localRepositoryConfig.getAuthorName();
+		authorEmail = localRepositoryConfig.getAuthorEmail();
+		assertEquals("local username", authorName);
+		assertEquals("author@localemail", authorEmail);
+
+		authorName = localRepositoryConfig.getCommitterName();
+		authorEmail = localRepositoryConfig.getCommitterEmail();
+		assertEquals("local username", authorName);
+		assertEquals("author@localemail", authorEmail);
 	}
 }

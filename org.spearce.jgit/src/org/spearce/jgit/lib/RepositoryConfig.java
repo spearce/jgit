@@ -50,6 +50,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -60,6 +62,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.spearce.jgit.util.FS;
+import org.spearce.jgit.util.SystemReader;
 
 /**
  * An object representing the Git config file.
@@ -98,7 +101,19 @@ public class RepositoryConfig {
 
 	private Map<String, Object> byName;
 
+	private static String hostname;
+
 	private static final String MAGIC_EMPTY_VALUE = "%%magic%%empty%%";
+
+	// default system reader gets the value from the system
+	private static SystemReader systemReader = new SystemReader() {
+		public String getenv(String variable) {
+			return System.getenv(variable);
+		}
+		public String getProperty(String key) {
+			return System.getProperty(key);
+		}
+	};
 
 	RepositoryConfig(final Repository repo) {
 		this(openUserConfig(), FS.resolve(repo.getDirectory(), "config"));
@@ -306,6 +321,83 @@ public class RepositoryConfig {
 		if (baseConfig != null)
 			result.addAll(baseConfig.getSubsections(section));
 		return result;
+	}
+
+	/**
+	 * @return the author name as defined in the git variables
+	 *         and configurations. If no name could be found, try
+	 *         to use the system user name instead.
+	 */
+	public String getAuthorName() {
+		return getUsernameInternal(Constants.GIT_AUTHOR_NAME_KEY);
+	}
+
+	/**
+	 * @return the committer name as defined in the git variables
+	 *         and configurations. If no name could be found, try
+	 *         to use the system user name instead.
+	 */
+	public String getCommitterName() {
+		return getUsernameInternal(Constants.GIT_COMMITTER_NAME_KEY);
+	}
+
+	private String getUsernameInternal(String gitVariableKey) {
+		// try to get the user name from the local and global configurations.
+		String username = getString("user", null, "name");
+
+		if (username == null) {
+			// try to get the user name for the system property GIT_XXX_NAME
+			username = systemReader.getenv(gitVariableKey);
+		}
+		if (username == null) {
+			// get the system user name
+			username = systemReader.getProperty(Constants.OS_USER_NAME_KEY);
+		}
+		if (username == null) {
+			username = Constants.UNKNOWN_USER_DEFAULT;
+		}
+		return username;
+	}
+
+	/**
+	 * @return the author email as defined in git variables and
+	 *         configurations. If no email could be found, try to
+	 *         propose one default with the user name and the
+	 *         host name.
+	 */
+	public String getAuthorEmail() {
+		return getUserEmailInternal(Constants.GIT_AUTHOR_EMAIL_KEY);
+	}
+
+	/**
+	 * @return the committer email as defined in git variables and
+	 *         configurations. If no email could be found, try to
+	 *         propose one default with the user name and the
+	 *         host name.
+	 */
+	public String getCommitterEmail() {
+		return getUserEmailInternal(Constants.GIT_COMMITTER_EMAIL_KEY);
+	}
+
+	private String getUserEmailInternal(String gitVariableKey) {
+		// try to get the email from the local and global configurations.
+		String email = getString("user", null, "email");
+
+		if (email == null) {
+			// try to get the email for the system property GIT_XXX_EMAIL
+			email = systemReader.getenv(gitVariableKey);
+		}
+
+		if (email == null) {
+			// try to construct an email
+			String username = systemReader.getProperty(Constants.OS_USER_NAME_KEY);
+			if (username == null){
+				username = Constants.UNKNOWN_USER_DEFAULT;
+			}
+			email = username + "@" + getHostname();
+		}
+
+		return email;
 	}
 
 	private String getRawString(final String section, final String subsection,
@@ -957,4 +1049,32 @@ public class RepositoryConfig {
 			return a.equalsIgnoreCase(b);
 		}
 	}
+
+	/**
+	 * Gets the hostname of the local host.
+	 * If no hostname can be found, the hostname is set to the default value "localhost".
+	 * @return the canonical hostname
+	 */
+	private static String getHostname() {
+		if (hostname == null) {
+			try {
+				InetAddress localMachine = InetAddress.getLocalHost();
+				hostname = localMachine.getCanonicalHostName();
+			} catch (UnknownHostException e) {
+				// we do nothing
+				hostname = "localhost";
+			}
+			assert hostname != null;
+		}
+		return hostname;
+	}
+
+	/**
+	 * Overrides the default system reader by a custom one.
+	 * @param newSystemReader new system reader
+	 */
+	public static void setSystemReader(SystemReader newSystemReader) {
+		systemReader = newSystemReader;
+	}
+
 }

@@ -41,6 +41,7 @@ import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.RepositoryConfig;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.TreeEntry;
 import org.spearce.jgit.lib.GitIndex.Entry;
@@ -70,8 +71,10 @@ public class CommitAction extends RepositoryAction {
 		}
 
 		Repository[] repos = getRepositoriesFor(getProjectsForSelectedResources());
+		Repository repository = null;
 		amendAllowed = repos.length == 1;
 		for (Repository repo : repos) {
+			repository = repo;
 			if (!repo.getRepositoryState().canCommit()) {
 				MessageDialog.openError(getTargetPart().getSite().getShell(),
 					"Cannot commit now", "Repository state:"
@@ -95,12 +98,26 @@ public class CommitAction extends RepositoryAction {
 			}
 		}
 
+		String author = null;
+		if (repository != null) {
+			final RepositoryConfig config = repository.getConfig();
+			author = config.getAuthorName();
+			if (author != null && author.length() != 0) {
+				final String email = config.getAuthorEmail();
+				if (email != null && email.length() != 0) {
+					author = author + " <" + email + ">";
+				}
+			}
+		}
+
 		loadPreviousCommit();
 
 		CommitDialog commitDialog = new CommitDialog(getTargetPart().getSite().getShell());
 		commitDialog.setAmending(amending);
 		commitDialog.setAmendAllowed(amendAllowed);
 		commitDialog.setFileList(files);
+		commitDialog.setAuthor(author);
+
 		if (previousCommit != null)
 			commitDialog.setPreviousCommitMessage(previousCommit.getMessage());
 
