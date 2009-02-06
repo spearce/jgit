@@ -57,33 +57,17 @@ public class PersonIdent {
 
 	private final int tzOffset;
 
-	private static String getHostName() {
-		try {
-			java.net.InetAddress addr = java.net.InetAddress.getLocalHost();
-			String hostname = addr.getCanonicalHostName();
-			return hostname;
-		} catch (java.net.UnknownHostException e) {
-			return "localhost";
-		}
-	}
-
 	/**
-	 * Creates new PersonIdent from config info in repository, with current time
+	 * Creates new PersonIdent from config info in repository, with current time.
+	 * This new PersonIdent gets the info from the default committer as available
+	 * from the configuration.
 	 * 
 	 * @param repo
 	 */
 	public PersonIdent(final Repository repo) {
-		RepositoryConfig config = repo.getConfig();
-		String username = config.getString("user", null, "name");
-		if (username == null)
-			username = System.getProperty("user.name");
-
-		String email = config.getString("user", null, "email");
-		if (email == null)
-			email = System.getProperty("user.name") + "@" + getHostName();
-
-		name = username;
-		emailAddress = email;
+		final RepositoryConfig config = repo.getConfig();
+		name = config.getCommitterName();
+		emailAddress = config.getCommitterEmail();
 		when = System.currentTimeMillis();
 		tzOffset = TimeZone.getDefault().getOffset(when) / (60 * 1000);
 	}
