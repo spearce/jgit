@@ -468,6 +468,7 @@ public class PackWriterTest extends RepositoryTestCase {
 		}
 		final InputStream is = new ByteArrayInputStream(os.toByteArray());
 		final IndexPack indexer = new IndexPack(db, is, packBase);
+		indexer.setKeepEmpty(true);
 		indexer.setFixThin(thin);
 		indexer.index(new TextProgressMonitor());
 		pack = new PackFile(db, indexFile, packFile);

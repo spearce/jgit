@@ -143,6 +143,8 @@ public class IndexPack {
 
 	private boolean fixThin;
 
+	private boolean keepEmpty;
+
 	private int outputVersion;
 
 	private final File dstPack;
@@ -239,6 +241,19 @@ public class IndexPack {
 	}
 
 	/**
+	 * Configure this index pack instance to keep an empty pack.
+	 * <p>
+	 * By default an empty pack (a pack with no objects) is not kept, as doing
+	 * so is completely pointless. With no objects in the pack there is no data
+	 * stored by it, so the pack is unnecessary.
+	 *
+	 * @param empty true to enable keeping an empty pack.
+	 */
+	public void setKeepEmpty(final boolean empty) {
+		keepEmpty = empty;
+	}
+
+	/**
 	 * Configure the checker used to validate received objects.
 	 * <p>
 	 * Usually object checking isn't necessary, as Git implementations only
@@ -313,14 +328,14 @@ public class IndexPack {
 						fixThinPack(progress);
 					}
 				}
-				if (packOut != null)
+				if (packOut != null && (keepEmpty || entryCount > 0))
 					packOut.getChannel().force(true);
 
 				packDigest = null;
 				baseById = null;
 				baseByPos = null;
 
-				if (dstIdx != null)
+				if (dstIdx != null && (keepEmpty || entryCount > 0))
 					writeIdx();
 
 			} finally {
@@ -336,10 +351,12 @@ public class IndexPack {
 					packOut.close();
 			}
 
-			if (dstPack != null)
-				dstPack.setReadOnly();
-			if (dstIdx != null)
-				dstIdx.setReadOnly();
+			if (keepEmpty || entryCount > 0) {
+				if (dstPack != null)
+					dstPack.setReadOnly();
+				if (dstIdx != null)
+					dstIdx.setReadOnly();
+			}
 		} catch (IOException err) {
 			if (dstPack != null)
 				dstPack.delete();
@@ -946,6 +963,11 @@ public class IndexPack {
 	 *             removed prior to throwing the exception to the caller.
 	 */
 	public void renameAndOpenPack() throws IOException {
+		if (!keepEmpty && entryCount == 0) {
+			cleanupTemporaryFiles();
+			return;
+		}
+
 		final MessageDigest d = Constants.newMessageDigest();
 		final byte[] oeBytes = new byte[Constants.OBJECT_ID_LENGTH];
 		for (int i = 0; i < entryCount; i++) {
