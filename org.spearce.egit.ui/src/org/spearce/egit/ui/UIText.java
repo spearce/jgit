@@ -584,6 +584,9 @@ public class UIText extends NLS {
 	public static String CommitDialog_CommitChanges;
 
 	/** */
+	public static String CommitDialog_Committer;
+
+	/** */
 	public static String CommitDialog_CommitMessage;
 
 	/** */
@@ -594,6 +597,9 @@ public class UIText extends NLS {
 
 	/** */
 	public static String CommitDialog_ErrorInvalidAuthorSpecified;
+
+	/** */
+	public static String CommitDialog_ErrorInvalidCommitterSpecified;
 
 	/** */
 	public static String CommitDialog_ErrorMustEnterCommitMessage;

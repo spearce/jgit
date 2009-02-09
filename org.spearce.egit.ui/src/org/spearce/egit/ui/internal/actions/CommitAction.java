@@ -15,7 +15,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -99,15 +98,16 @@ public class CommitAction extends RepositoryAction {
 		}
 
 		String author = null;
+		String committer = null;
 		if (repository != null) {
 			final RepositoryConfig config = repository.getConfig();
 			author = config.getAuthorName();
-			if (author != null && author.length() != 0) {
-				final String email = config.getAuthorEmail();
-				if (email != null && email.length() != 0) {
-					author = author + " <" + email + ">";
-				}
-			}
+			final String authorEmail = config.getAuthorEmail();
+			author = author + " <" + authorEmail + ">";
+
+			committer = config.getCommitterName();
+			final String committerEmail = config.getCommitterEmail();
+			committer = committer + " <" + committerEmail + ">";
 		}
 
 		loadPreviousCommit();
@@ -117,6 +117,7 @@ public class CommitAction extends RepositoryAction {
 		commitDialog.setAmendAllowed(amendAllowed);
 		commitDialog.setFileList(files);
 		commitDialog.setAuthor(author);
+		commitDialog.setCommitter(committer);
 
 		if (previousCommit != null) {
 			commitDialog.setPreviousCommitMessage(previousCommit.getMessage());
@@ -181,6 +182,15 @@ public class CommitAction extends RepositoryAction {
 
 	private String doCommits(CommitDialog commitDialog, String commitMessage,
 			HashMap<Repository, Tree> treeMap) throws IOException, TeamException {
+
+		final String author = commitDialog.getAuthor();
+		final String committer = commitDialog.getCommitter();
+		final Date commitDate = new Date();
+		final TimeZone timeZone = TimeZone.getDefault();
+
+		final PersonIdent authorIdent = new PersonIdent(author);
+		final PersonIdent committerIdent = new PersonIdent(committer);
+
 		for (java.util.Map.Entry<Repository, Tree> entry : treeMap.entrySet()) {
 			Tree tree = entry.getValue();
 			Repository repo = tree.getRepository();
@@ -199,26 +209,13 @@ public class CommitAction extends RepositoryAction {
 			Commit commit = new Commit(repo, parentIds);
 			commit.setTree(tree);
 			commitMessage = commitMessage.replaceAll("\r", "\n");
+			if (commitDialog.isSignedOff())
+				commitMessage += "\n\nSigned-off-by: " + committerIdent.getName() + " <"
+								+ committerIdent.getEmailAddress() + ">";
 
-			PersonIdent personIdent = new PersonIdent(repo);
-			String username = personIdent.getName();
-			String email = personIdent.getEmailAddress();
-
-			if (commitDialog.isSignedOff()) {
-				commitMessage += "\n\nSigned-off-by: " + username + " <"
-						+ email + ">";
-			}
 			commit.setMessage(commitMessage);
-
-			if (commitDialog.getAuthor() == null) {
-				commit.setAuthor(personIdent);
-			} else {
-				PersonIdent author = new PersonIdent(commitDialog.getAuthor());
-				commit.setAuthor(new PersonIdent(author, new Date(Calendar
-						.getInstance().getTimeInMillis()), TimeZone
-						.getDefault()));
-			}
-			commit.setCommitter(personIdent);
+			commit.setAuthor(new PersonIdent(authorIdent, commitDate, timeZone));
+			commit.setCommitter(new PersonIdent(committerIdent, commitDate, timeZone));
 
 			ObjectWriter writer = new ObjectWriter(repo);
 			commit.setCommitId(writer.writeCommit(commit));

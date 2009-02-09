@@ -129,6 +129,7 @@ public class CommitDialog extends Dialog {
 
 	Text commitText;
 	Text authorText;
+	Text committerText;
 	Button amendingButton;
 	Button signedOffButton;
 
@@ -169,6 +170,12 @@ public class CommitDialog extends Dialog {
 		authorText.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).create());
 		if (author != null)
 			authorText.setText(author);
+
+		new Label(container, SWT.LEFT).setText(UIText.CommitDialog_Committer);
+		committerText = new Text(container, SWT.BORDER);
+		committerText.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).create());
+		if (committer != null)
+			committerText.setText(committer);
 
 		amendingButton = new Button(container, SWT.CHECK);
 		if (amending) {
@@ -336,6 +343,7 @@ public class CommitDialog extends Dialog {
 
 	private String commitMessage = ""; //$NON-NLS-1$
 	private String author = null;
+	private String committer = null;
 	private String previousAuthor = null;
 	private boolean signedOff = false;
 	private boolean amending = false;
@@ -400,6 +408,7 @@ public class CommitDialog extends Dialog {
 	protected void okPressed() {
 		commitMessage = commitText.getText();
 		author = authorText.getText().trim();
+		committer = committerText.getText().trim();
 		signedOff = signedOffButton.getSelection();
 		amending = amendingButton.getSelection();
 
@@ -413,14 +422,33 @@ public class CommitDialog extends Dialog {
 			return;
 		}
 
+		boolean authorValid = false;
 		if (author.length() > 0) {
 			try {
 				new PersonIdent(author);
+				authorValid = true;
 			} catch (IllegalArgumentException e) {
-				MessageDialog.openWarning(getShell(), UIText.CommitDialog_ErrorInvalidAuthor, UIText.CommitDialog_ErrorInvalidAuthorSpecified);
-				return;
+				authorValid = false;
 			}
-		} else author = null;
+		}
+		if (!authorValid) {
+			MessageDialog.openWarning(getShell(), UIText.CommitDialog_ErrorInvalidAuthor, UIText.CommitDialog_ErrorInvalidAuthorSpecified);
+			return;
+		}
+
+		boolean committerValid = false;
+		if (committer.length() > 0) {
+			try {
+				new PersonIdent(committer);
+				committerValid = true;
+			} catch (IllegalArgumentException e) {
+				committerValid = false;
+			}
+		}
+		if (!committerValid) {
+			MessageDialog.openWarning(getShell(), UIText.CommitDialog_ErrorInvalidAuthor, UIText.CommitDialog_ErrorInvalidCommitterSpecified);
+			return;
+		}
 
 		if (selectedFiles.isEmpty() && !amending) {
 			MessageDialog.openWarning(getShell(), UIText.CommitDialog_ErrorNoItemsSelected, UIText.CommitDialog_ErrorNoItemsSelectedToBeCommitted);
@@ -470,6 +498,22 @@ public class CommitDialog extends Dialog {
 	 */
 	public void setAuthor(String author) {
 		this.author = author;
+	}
+
+	/**
+	 * @return The committer to set for the commit
+	 */
+	public String getCommitter() {
+		return committer;
+	}
+
+	/**
+	 * Pre-set committer for the commit
+	 *
+	 * @param committer
+	 */
+	public void setCommitter(String committer) {
+		this.committer = committer;
 	}
 
 	/**
