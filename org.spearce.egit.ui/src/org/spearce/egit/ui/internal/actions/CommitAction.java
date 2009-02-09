@@ -118,8 +118,11 @@ public class CommitAction extends RepositoryAction {
 		commitDialog.setFileList(files);
 		commitDialog.setAuthor(author);
 
-		if (previousCommit != null)
+		if (previousCommit != null) {
 			commitDialog.setPreviousCommitMessage(previousCommit.getMessage());
+			PersonIdent previousAuthor = previousCommit.getAuthor();
+			commitDialog.setPreviousAuthor(previousAuthor.getName() + " <" + previousAuthor.getEmailAddress() + ">");
+		}
 
 		if (commitDialog.open() != IDialogConstants.OK_ID)
 			return;

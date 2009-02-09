@@ -175,6 +175,7 @@ public class CommitDialog extends Dialog {
 			amendingButton.setSelection(amending);
 			amendingButton.setEnabled(false); // if already set, don't allow any changes
 			commitText.setText(previousCommitMessage);
+			authorText.setText(previousAuthor);
 		} else if (!amendAllowed) {
 			amendingButton.setEnabled(false);
 		}
@@ -189,6 +190,7 @@ public class CommitDialog extends Dialog {
 					if (curText.length() > 0)
 						curText += "\n"; //$NON-NLS-1$
 					commitText.setText(curText + previousCommitMessage);
+					authorText.setText(previousAuthor);
 				}
 			}
 
@@ -334,6 +336,7 @@ public class CommitDialog extends Dialog {
 
 	private String commitMessage = ""; //$NON-NLS-1$
 	private String author = null;
+	private String previousAuthor = null;
 	private boolean signedOff = false;
 	private boolean amending = false;
 	private boolean amendAllowed = true;
@@ -467,6 +470,15 @@ public class CommitDialog extends Dialog {
 	 */
 	public void setAuthor(String author) {
 		this.author = author;
+	}
+
+	/**
+	 * Pre-set the previous author if amending the commit
+	 *
+	 * @param previousAuthor
+	 */
+	public void setPreviousAuthor(String previousAuthor) {
+		this.previousAuthor = previousAuthor;
 	}
 
 	/**
