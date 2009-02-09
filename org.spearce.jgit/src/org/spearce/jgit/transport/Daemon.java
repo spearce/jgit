@@ -52,7 +52,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Repository;
@@ -63,9 +62,6 @@ public class Daemon {
 	public static final int DEFAULT_PORT = 9418;
 
 	private static final int BACKLOG = 5;
-
-	private static final Pattern SAFE_REPOSITORY_NAME = Pattern
-			.compile("^[A-Za-z][A-Za-z0-9/_ -]+(\\.git)?$");
 
 	private InetSocketAddress myAddress;
 
@@ -286,7 +282,25 @@ public class Daemon {
 	}
 
 	Repository openRepository(String name) {
+		// Assume any attempt to use \ was by a Windows client
+		// and correct to the more typical / used in Git URIs.
+		//
+		name = name.replace('\\', '/');
+
+		// git://thishost/path should always be name="/path" here
+		//
 		if (!name.startsWith("/"))
+			return null;
+
+		// Forbid Windows UNC paths as they might escape the base
+		//
+		if (name.startsWith("//"))
+			return null;
+
+		// Forbid funny paths which contain an up-reference, they
+		// might be trying to escape and read /../etc/password.
+		//
+		if (name.contains("/../"))
 			return null;
 		name = name.substring(1);
 
@@ -301,24 +315,22 @@ public class Daemon {
 				return db;
 		}
 
-		if (SAFE_REPOSITORY_NAME.matcher(name).matches()) {
-			final File[] search;
-			synchronized (exportBase) {
-				search = exportBase.toArray(new File[exportBase.size()]);
-			}
-			for (final File f : search) {
-				db = openRepository(new File(f, name));
-				if (db != null)
-					return db;
+		final File[] search;
+		synchronized (exportBase) {
+			search = exportBase.toArray(new File[exportBase.size()]);
+		}
+		for (final File f : search) {
+			db = openRepository(new File(f, name));
+			if (db != null)
+				return db;
 
-				db = openRepository(new File(f, name + ".git"));
-				if (db != null)
-					return db;
+			db = openRepository(new File(f, name + ".git"));
+			if (db != null)
+				return db;
 
-				db = openRepository(new File(f, name + "/.git"));
-				if (db != null)
-					return db;
-			}
+			db = openRepository(new File(f, name + "/.git"));
+			if (db != null)
+				return db;
 		}
 		return null;
 	}
