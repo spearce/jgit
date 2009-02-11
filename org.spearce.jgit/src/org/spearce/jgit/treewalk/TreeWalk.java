@@ -739,6 +739,15 @@ public class TreeWalk {
 	}
 
 	/**
+	 * Get the current subtree depth of this walker.
+	 *
+	 * @return the current subtree depth of this walker.
+	 */
+	public int getDepth() {
+		return depth;
+	}
+
+	/**
 	 * Is the current entry a subtree?
 	 * <p>
 	 * This method is faster then testing the raw mode bits of all trees to see

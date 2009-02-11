@@ -106,6 +106,15 @@ public class ContainerTreeIterator extends WorkingTreeIterator {
 					Constants.TYPE_TREE);
 	}
 
+	/**
+	 * Get the ResourceEntry for the current entry.
+	 *
+	 * @return the current entry
+	 */
+	public ResourceEntry getResourceEntry() {
+		return (ResourceEntry) current();
+	}
+
 	private Entry[] entries() {
 		final IResource[] all;
 		try {
@@ -120,7 +129,10 @@ public class ContainerTreeIterator extends WorkingTreeIterator {
 		return r;
 	}
 
-	static class ResourceEntry extends Entry {
+	/**
+	 * Wrapper for a resource in the Eclipse workspace
+	 */
+	static public class ResourceEntry extends Entry {
 		final IResource rsrc;
 
 		private final FileMode mode;
@@ -193,6 +205,15 @@ public class ContainerTreeIterator extends WorkingTreeIterator {
 				}
 			}
 			throw new IOException("Not a regular file: " + rsrc);
+		}
+
+		/**
+		 * Get the underlying resource of this entry.
+		 *
+		 * @return the underlying resource
+		 */
+		public IResource getResource() {
+			return rsrc;
 		}
 
 		private File asFile() {
