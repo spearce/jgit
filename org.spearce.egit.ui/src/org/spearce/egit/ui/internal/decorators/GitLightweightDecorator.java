@@ -14,11 +14,9 @@
 package org.spearce.egit.ui.internal.decorators;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,7 +26,6 @@ import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IResourceDeltaVisitor;
-import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.resources.mapping.ResourceMapping;
 import org.eclipse.core.runtime.CoreException;
@@ -697,7 +694,7 @@ public class GitLightweightDecorator extends LabelProvider implements
 		if (prop.equals(TeamUI.GLOBAL_IGNORES_CHANGED)
 				|| prop.equals(TeamUI.GLOBAL_FILE_TYPES_CHANGED)
 				|| prop.equals(Activator.DECORATORS_CHANGED)) {
-			postLabelEvent(new LabelProviderChangedEvent(this, null /* all */));
+			postLabelEvent(new LabelProviderChangedEvent(this));
 		}
 	}
 
@@ -824,29 +821,12 @@ public class GitLightweightDecorator extends LabelProvider implements
 	 * Callback for RepositoryChangeListener events, as well as
 	 * RepositoryListener events via repositoryChanged()
 	 *
-	 * We resolve the project and schedule a refresh of each resource in the
-	 * project.
-	 *
 	 * @see org.spearce.egit.core.project.RepositoryChangeListener#repositoryChanged(org.spearce.egit.core.project.RepositoryMapping)
 	 */
 	public void repositoryChanged(RepositoryMapping mapping) {
-		final IProject project = mapping.getContainer().getProject();
-		if (project == null)
-			return;
-
-		final List<IResource> resources = new ArrayList<IResource>();
-		try {
-			project.accept(new IResourceVisitor() {
-				public boolean visit(IResource resource) {
-					resources.add(resource);
-					return true;
-				}
-			});
-			postLabelEvent(new LabelProviderChangedEvent(this, resources
-					.toArray()));
-		} catch (final CoreException e) {
-			handleException(project, e);
-		}
+		// Until we find a way to refresh visible labels within a project
+		// we have to use this blanket refresh that includes all projects.
+		postLabelEvent(new LabelProviderChangedEvent(this));
 	}
 
 	// -------- Helper methods --------
