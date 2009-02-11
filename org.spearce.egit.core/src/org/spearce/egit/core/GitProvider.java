@@ -8,7 +8,9 @@
  *******************************************************************************/
 package org.spearce.egit.core;
 
+import org.eclipse.core.resources.IResourceRuleFactory;
 import org.eclipse.core.resources.team.IMoveDeleteHook;
+import org.eclipse.core.resources.team.ResourceRuleFactory;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.team.core.RepositoryProvider;
 import org.eclipse.team.core.history.IFileHistoryProvider;
@@ -24,6 +26,8 @@ public class GitProvider extends RepositoryProvider {
 	private GitMoveDeleteHook hook;
 
 	private GitFileHistoryProvider historyProvider;
+
+	private final IResourceRuleFactory resourceRuleFactory = new GitResourceRuleFactory();
 
 	public String getID() {
 		return getClass().getName();
@@ -69,5 +73,15 @@ public class GitProvider extends RepositoryProvider {
 			historyProvider = new GitFileHistoryProvider();
 		}
 		return historyProvider;
+	}
+
+	@Override
+	public IResourceRuleFactory getRuleFactory() {
+		return resourceRuleFactory;
+	}
+
+	private static class GitResourceRuleFactory extends ResourceRuleFactory {
+		// Use the default rule factory instead of the
+		// pessimistic one by default.
 	}
 }
