@@ -66,6 +66,9 @@ class Daemon extends TextBuiltin {
 	@Option(name = "--forbid-override", metaVar = "SERVICE", usage = "configure the service in daemon.servicename", multiValued = true)
 	final List<String> forbidOverride = new ArrayList<String>();
 
+	@Option(name = "--export-all", usage = "export without git-daemon-export-ok")
+	boolean exportAll;
+
 	@Argument(required = true, metaVar = "DIRECTORY", usage = "directories to export")
 	final List<File> directory = new ArrayList<File>();
 
@@ -81,6 +84,7 @@ class Daemon extends TextBuiltin {
 		d = new org.spearce.jgit.transport.Daemon(
 				host != null ? new InetSocketAddress(host, port)
 						: new InetSocketAddress(port));
+		d.setExportAll(exportAll);
 
 		for (final String n : enable)
 			service(d, n).setEnabled(true);

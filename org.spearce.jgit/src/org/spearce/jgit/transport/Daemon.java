@@ -69,6 +69,8 @@ public class Daemon {
 
 	private final ThreadGroup processors;
 
+	private boolean exportAll;
+
 	private Map<String, Repository> exports;
 
 	private Collection<File> exportBase;
@@ -152,6 +154,32 @@ public class Daemon {
 				return s;
 		}
 		return null;
+	}
+
+	/**
+	 * @return false if <code>git-daemon-export-ok</code> is required to export
+	 *         a repository; true if <code>git-daemon-export-ok</code> is
+	 *         ignored.
+	 * @see #setExportAll(boolean)
+	 */
+	public synchronized boolean isExportAll() {
+		return exportAll;
+	}
+
+	/**
+	 * Set whether or not to export all repositories.
+	 * <p>
+	 * If false (the default), repositories must have a
+	 * <code>git-daemon-export-ok</code> file to be accessed through this
+	 * daemon.
+	 * <p>
+	 * If true, all repositories are available through the daemon, whether or
+	 * not <code>git-daemon-export-ok</code> exists.
+	 *
+	 * @param export
+	 */
+	public synchronized void setExportAll(final boolean export) {
+		exportAll = export;
 	}
 
 	/**
@@ -336,7 +364,7 @@ public class Daemon {
 	}
 
 	private Repository openRepository(final File d) {
-		if (d.isDirectory() && new File(d, "git-daemon-export-ok").exists()) {
+		if (d.isDirectory() && canExport(d)) {
 			try {
 				return new Repository(d);
 			} catch (IOException err) {
@@ -344,5 +372,12 @@ public class Daemon {
 			}
 		}
 		return null;
+	}
+
+	private boolean canExport(final File d) {
+		if (isExportAll()) {
+			return true;
+		}
+		return new File(d, "git-daemon-export-ok").exists();
 	}
 }
