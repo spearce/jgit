@@ -52,7 +52,7 @@ public class GitProjectData {
 
 	private static final Map<File, WeakReference> repositoryCache = new HashMap<File, WeakReference>();
 
-	private static RepositoryChangeListener[] repositoryChangeListeners = {};
+	private static Set<RepositoryChangeListener> repositoryChangeListeners = new HashSet<RepositoryChangeListener>();
 
 	@SuppressWarnings("synthetic-access")
 	private static final IResourceChangeListener rcl = new RCL();
@@ -112,16 +112,18 @@ public class GitProjectData {
 			final RepositoryChangeListener objectThatCares) {
 		if (objectThatCares == null)
 			throw new NullPointerException();
-		for (int k = repositoryChangeListeners.length - 1; k >= 0; k--) {
-			if (repositoryChangeListeners[k] == objectThatCares)
-				return;
-		}
-		final int p = repositoryChangeListeners.length;
-		final RepositoryChangeListener[] n;
-		n = new RepositoryChangeListener[p + 1];
-		System.arraycopy(repositoryChangeListeners, 0, n, 0, p);
-		n[p] = objectThatCares;
-		repositoryChangeListeners = n;
+		repositoryChangeListeners.add(objectThatCares);
+	}
+
+	/**
+	 * Remove a registered {@link RepositoryChangeListener}
+	 *
+	 * @param objectThatCares
+	 *            The listener to remove
+	 */
+	public static synchronized void removeRepositoryChangeListener(
+			final RepositoryChangeListener objectThatCares) {
+		repositoryChangeListeners.remove(objectThatCares);
 	}
 
 	/**
@@ -131,13 +133,21 @@ public class GitProjectData {
 	 *            the repository which has had changes occur within it.
 	 */
 	static void fireRepositoryChanged(final RepositoryMapping which) {
-		final RepositoryChangeListener[] e = getRepositoryChangeListeners();
-		for (int k = e.length - 1; k >= 0; k--)
-			e[k].repositoryChanged(which);
+		for (RepositoryChangeListener listener : getRepositoryChangeListeners())
+			listener.repositoryChanged(which);
 	}
 
+	/**
+	 * Get a copy of the current set of repository change listeners
+	 * <p>
+	 * The array has no references, so is safe for iteration and modification
+	 *
+	 * @return a copy of the current repository change listeners
+	 */
 	private static synchronized RepositoryChangeListener[] getRepositoryChangeListeners() {
-		return repositoryChangeListeners;
+		return repositoryChangeListeners
+				.toArray(new RepositoryChangeListener[repositoryChangeListeners
+						.size()]);
 	}
 
 	/**
