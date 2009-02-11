@@ -60,9 +60,12 @@ import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIPreferences;
 import org.spearce.egit.ui.UIText;
+import org.spearce.egit.ui.internal.decorators.IDecoratableResource.Staged;
 import org.spearce.jgit.dircache.DirCache;
+import org.spearce.jgit.dircache.DirCacheEntry;
 import org.spearce.jgit.dircache.DirCacheIterator;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.IndexChangedEvent;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.RefsChangedEvent;
@@ -200,6 +203,20 @@ public class GitLightweightDecorator extends LabelProvider implements
 
 		private boolean ignored = false;
 
+		private boolean dirty = false;
+
+		private boolean conflicts = false;
+
+		private boolean assumeValid = false;
+
+		private Staged staged = Staged.NOT_STAGED;
+
+		static final int T_HEAD = 0;
+
+		static final int T_INDEX = 1;
+
+		static final int T_WORKSPACE = 2;
+
 		public DecoratableResourceAdapter(IResource resourceToWrap)
 				throws IOException {
 			resource = resourceToWrap;
@@ -207,59 +224,162 @@ public class GitLightweightDecorator extends LabelProvider implements
 			repository = mapping.getRepository();
 			headId = repository.resolve(Constants.HEAD);
 
-			initializeValues();
+			switch (resource.getType()) {
+			case IResource.FILE:
+				extractFileProperties();
+				break;
+			case IResource.FOLDER:
+				extractContainerProperties();
+				break;
+			case IResource.PROJECT:
+				extractProjectProperties();
+				break;
+			}
 		}
 
-		/**
-		 * Initialize the various values that are used for making decoration
-		 * decisions later on.
-		 *
-		 * We might as well pre-load these now, instead of using lazy
-		 * initialization, because they are all read by the decorator when
-		 * building variable bindings and computing the preferred overlay.
-		 *
-		 * @throws IOException
-		 */
-		private void initializeValues() throws IOException {
+		private void extractFileProperties() throws IOException {
+			TreeWalk treeWalk = createHeadVsIndexTreeWalk();
+			if (treeWalk == null)
+				return;
 
-			// Resolve current branch
-			branch = repository.getBranch();
-
-			// Resolve tracked state
-			if (getType() == IResource.PROJECT) {
+			if (treeWalk.next())
 				tracked = true;
+			else
+				return;
+
+			// TODO: Also read ignores from .git/info/excludes et al.
+			if (Team.isIgnoredHint(resource)) {
+				ignored = true;
+				return;
+			}
+
+			final DirCacheIterator indexIterator = treeWalk.getTree(T_INDEX,
+					DirCacheIterator.class);
+			final DirCacheEntry indexEntry = indexIterator != null ? indexIterator
+					.getDirCacheEntry()
+					: null;
+
+			if (indexEntry == null) {
+				staged = Staged.REMOVED;
 			} else {
-				final TreeWalk treeWalk = new TreeWalk(repository);
+				if (indexEntry.isAssumeValid()) {
+					dirty = false;
+					assumeValid = true;
+				} else if (indexEntry.getStage() > 0) {
+					conflicts = true;
+				} else if (treeWalk.getRawMode(T_HEAD) == FileMode.MISSING
+						.getBits()) {
+					staged = Staged.ADDED;
+				} else {
+					long indexEntryLastModified = indexEntry.getLastModified();
+					long resourceLastModified = resource.getLocalTimeStamp();
 
-				Set<String> repositoryPaths = Collections.singleton(mapping
-						.getRepoRelativePath(resource));
-				if (!(repositoryPaths.isEmpty() || repositoryPaths.contains(""))) {
-					treeWalk.setFilter(PathFilterGroup
-							.createFromStrings(repositoryPaths));
-					treeWalk.setRecursive(treeWalk.getFilter()
-							.shouldBeRecursive());
-					treeWalk.reset();
+					// C-Git under Windows stores timestamps with 1-seconds
+					// resolution, so we need to check to see if this is the
+					// case here, and possibly fix the timestamp of the resource
+					// to match the resolution of the index.
+					if (indexEntryLastModified % 1000 == 0) {
+						resourceLastModified -= resourceLastModified % 1000;
+					}
 
-					if (headId != null)
-						treeWalk.addTree(new RevWalk(repository)
-								.parseTree(headId));
-					else
-						treeWalk.addTree(new EmptyTreeIterator());
+					if (resourceLastModified != indexEntryLastModified) {
+						// TODO: Consider doing a content check here, to rule
+						// out false positives, as we might get mismatch between
+						// timestamps, even if the content is the same
+						dirty = true;
+					}
 
-					treeWalk.addTree(new DirCacheIterator(DirCache
-							.read(repository)));
-					if (treeWalk.next()) {
-						tracked = true;
+					if (treeWalk.getRawMode(T_HEAD) != treeWalk
+							.getRawMode(T_INDEX)
+							|| !treeWalk.idEqual(T_HEAD, T_INDEX)) {
+						staged = Staged.MODIFIED;
 					}
 				}
 			}
 
-			// Resolve ignored state (currently only reads the global Eclipse
-			// ignores)
+		}
+
+		private void extractContainerProperties() throws IOException {
+			TreeWalk treeWalk = createHeadVsIndexTreeWalk();
+			if (treeWalk == null)
+				return;
+
+			if (treeWalk.next())
+				tracked = true;
+			else
+				return;
+
 			// TODO: Also read ignores from .git/info/excludes et al.
 			if (Team.isIgnoredHint(resource)) {
 				ignored = true;
+				return;
 			}
+
+			// TODO: Compute dirty state for folder, using ContainerTreeIterator
+			// and ContainerDiffFilter
+
+		}
+
+		private void extractProjectProperties() throws IOException {
+			branch = repository.getBranch();
+			tracked = true;
+
+			// TODO: Compute dirty state for folder, using ContainerTreeIterator
+			// and ContainerDiffFilter
+
+		}
+
+		/**
+		 * Adds a filter to the specified tree walk limiting the results to only
+		 * those matching the resource specified by
+		 * <code>resourceToFilterBy</code>
+		 * <p>
+		 * If the resource does not exists in the current repository, or it has
+		 * an empty path (it is the project itself), the filter is not added,
+		 * and the method returns <code>null</code>.
+		 *
+		 * @param treeWalk
+		 *            the tree walk to add the filter to
+		 * @param resourceToFilterBy
+		 *            the resource to filter by
+		 *
+		 * @return <code>true</code> if the filter could be added,
+		 *         <code>false</code> otherwise
+		 */
+		private boolean addResourceFilter(final TreeWalk treeWalk,
+				final IResource resourceToFilterBy) {
+			Set<String> repositoryPaths = Collections.singleton(mapping
+					.getRepoRelativePath(resourceToFilterBy));
+			if (repositoryPaths.isEmpty() || repositoryPaths.contains(""))
+				return false;
+
+			treeWalk.setFilter(PathFilterGroup
+					.createFromStrings(repositoryPaths));
+			return true;
+		}
+
+		/**
+		 * Helper method to create a new tree walk between HEAD and the index.
+		 *
+		 * @return the created tree walk, or null if it could not be created
+		 * @throws IOException
+		 *             if there were errors when creating the tree walk
+		 */
+		private TreeWalk createHeadVsIndexTreeWalk() throws IOException {
+			final TreeWalk treeWalk = new TreeWalk(repository);
+			if (!addResourceFilter(treeWalk, resource))
+				return null;
+
+			treeWalk.setRecursive(treeWalk.getFilter().shouldBeRecursive());
+			treeWalk.reset();
+
+			if (headId != null)
+				treeWalk.addTree(new RevWalk(repository).parseTree(headId));
+			else
+				treeWalk.addTree(new EmptyTreeIterator());
+
+			treeWalk.addTree(new DirCacheIterator(DirCache.read(repository)));
+			return treeWalk;
 		}
 
 		public String getName() {
@@ -281,6 +401,22 @@ public class GitLightweightDecorator extends LabelProvider implements
 		public boolean isIgnored() {
 			return ignored;
 		}
+
+		public boolean isDirty() {
+			return dirty;
+		}
+
+		public Staged staged() {
+			return staged;
+		}
+
+		public boolean hasConflicts() {
+			return conflicts;
+		}
+
+		public boolean isAssumeValid() {
+			return assumeValid;
+		}
 	}
 
 	/**
@@ -297,6 +433,12 @@ public class GitLightweightDecorator extends LabelProvider implements
 
 		/** */
 		public static final String BINDING_BRANCH_NAME = "branch"; //$NON-NLS-1$
+
+		/** */
+		public static final String BINDING_DIRTY_FLAG = "dirty"; //$NON-NLS-1$
+
+		/** */
+		public static final String BINDING_STAGED_FLAG = "staged"; //$NON-NLS-1$
 
 		private IPreferenceStore store;
 
@@ -325,10 +467,26 @@ public class GitLightweightDecorator extends LabelProvider implements
 
 		private static ImageDescriptor untrackedImage;
 
+		private static ImageDescriptor stagedImage;
+
+		private static ImageDescriptor stagedAddedImage;
+
+		private static ImageDescriptor stagedRemovedImage;
+
+		private static ImageDescriptor conflictImage;
+
+		private static ImageDescriptor assumeValidImage;
+
 		static {
 			trackedImage = new CachedImageDescriptor(TeamImages
 					.getImageDescriptor(ISharedImages.IMG_CHECKEDIN_OVR));
 			untrackedImage = new CachedImageDescriptor(UIIcons.OVR_UNTRACKED);
+			stagedImage = new CachedImageDescriptor(UIIcons.OVR_STAGED);
+			stagedAddedImage = new CachedImageDescriptor(UIIcons.OVR_STAGED_ADD);
+			stagedRemovedImage = new CachedImageDescriptor(
+					UIIcons.OVR_STAGED_REMOVE);
+			conflictImage = new CachedImageDescriptor(UIIcons.OVR_CONFLICT);
+			assumeValidImage = new CachedImageDescriptor(UIIcons.OVR_ASSUMEVALID);
 		}
 
 		/**
@@ -354,6 +512,9 @@ public class GitLightweightDecorator extends LabelProvider implements
 		 */
 		public void decorate(IDecoration decoration,
 				IDecoratableResource resource) {
+			if (resource.isIgnored())
+				return;
+
 			decorateText(decoration, resource);
 			decorateIcons(decoration, resource);
 		}
@@ -379,22 +540,49 @@ public class GitLightweightDecorator extends LabelProvider implements
 			Map<String, String> bindings = new HashMap<String, String>();
 			bindings.put(BINDING_RESOURCE_NAME, resource.getName());
 			bindings.put(BINDING_BRANCH_NAME, resource.getBranch());
+			bindings.put(BINDING_DIRTY_FLAG, resource.isDirty() ? ">" : null);
+			bindings.put(BINDING_STAGED_FLAG,
+					resource.staged() != Staged.NOT_STAGED ? "*" : null);
 
 			decorate(decoration, format, bindings);
 		}
 
 		private void decorateIcons(IDecoration decoration,
 				IDecoratableResource resource) {
-			if (resource.isIgnored())
-				return;
+			ImageDescriptor overlay = null;
 
 			if (resource.isTracked()) {
 				if (store.getBoolean(UIPreferences.DECORATOR_SHOW_TRACKED_ICON))
-					decoration.addOverlay(trackedImage);
-			} else if (store
-					.getBoolean(UIPreferences.DECORATOR_SHOW_UNTRACKED_ICON)) {
-				decoration.addOverlay(untrackedImage);
+					overlay = trackedImage;
+
+				if (store
+						.getBoolean(UIPreferences.DECORATOR_SHOW_ASSUME_VALID_ICON)
+						&& resource.isAssumeValid())
+					overlay = assumeValidImage;
+
+				// Staged overrides tracked
+				Staged staged = resource.staged();
+				if (store.getBoolean(UIPreferences.DECORATOR_SHOW_STAGED_ICON)
+						&& staged != Staged.NOT_STAGED) {
+					if (staged == Staged.ADDED)
+						overlay = stagedAddedImage;
+					else if (staged == Staged.REMOVED)
+						overlay = stagedRemovedImage;
+					else
+						overlay = stagedImage;
+				}
+
+				// Conflicts override everything
+				if (store.getBoolean(UIPreferences.DECORATOR_SHOW_CONFLICTS_ICON)
+						&& resource.hasConflicts())
+					overlay = conflictImage;
+
+			} else if (store.getBoolean(UIPreferences.DECORATOR_SHOW_UNTRACKED_ICON)) {
+				overlay = untrackedImage;
 			}
+
+			// Overlays can only be added once, so do it at the end
+			decoration.addOverlay(overlay);
 		}
 
 		/**
@@ -411,7 +599,7 @@ public class GitLightweightDecorator extends LabelProvider implements
 		 *            values
 		 */
 		public static void decorate(IDecoration decoration, String format,
-				Map bindings) {
+				Map<String, String> bindings) {
 			StringBuffer prefix = new StringBuffer();
 			StringBuffer suffix = new StringBuffer();
 			StringBuffer output = prefix;
@@ -426,6 +614,15 @@ public class GitLightweightDecorator extends LabelProvider implements
 						String key = format.substring(end + 1, start);
 						String s;
 
+						// Allow users to override the binding
+						if (key.indexOf(':') > -1) {
+							String[] keyAndBinding = key.split(":", 2);
+							key = keyAndBinding[0];
+							if (keyAndBinding.length > 1
+									&& bindings.get(key) != null)
+								bindings.put(key, keyAndBinding[1]);
+						}
+
 						// We use the BINDING_RESOURCE_NAME key to determine if
 						// we are doing the prefix or suffix. The name isn't
 						// actually part of either.
@@ -433,7 +630,7 @@ public class GitLightweightDecorator extends LabelProvider implements
 							output = suffix;
 							s = null;
 						} else {
-							s = (String) bindings.get(key);
+							s = bindings.get(key);
 						}
 
 						if (s != null) {
@@ -522,6 +719,14 @@ public class GitLightweightDecorator extends LabelProvider implements
 				public boolean visit(IResourceDelta delta) throws CoreException {
 					final IResource resource = delta.getResource();
 
+					// If the resource is not part of a project under Git
+					// revision control
+					final RepositoryMapping mapping = RepositoryMapping
+							.getMapping(resource);
+					if (mapping == null) {
+						// Ignore the change
+						return true;
+					}
 					if (resource.getType() == IResource.ROOT) {
 						// Continue with the delta
 						return true;

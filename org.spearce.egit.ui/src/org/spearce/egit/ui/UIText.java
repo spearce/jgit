@@ -968,10 +968,16 @@ public class UIText extends NLS {
 	public static String DecoratorPreferencesPage_generalTabFolder;
 
 	/** */
-	public static String DecoratorPreferencesPage_nameResourceVariable;
+	public static String DecoratorPreferencesPage_bindingResourceName;
 
 	/** */
 	public static String DecoratorPreferencesPage_bindingBranchName;
+
+	/** */
+	public static String DecoratorPreferencesPage_bindingDirtyFlag;
+
+	/** */
+	public static String DecoratorPreferencesPage_bindingStagedFlag;
 
 	/** */
 	public static String DecoratorPreferencesPage_selectFormats;
@@ -993,6 +999,15 @@ public class UIText extends NLS {
 
 	/** */
 	public static String DecoratorPreferencesPage_iconsShowUntracked;
+
+	/** */
+	public static String DecoratorPreferencesPage_iconsShowStaged;
+
+	/** */
+	public static String DecoratorPreferencesPage_iconsShowConflicts;
+
+	/** */
+	public static String DecoratorPreferencesPage_iconsShowAssumeValid;
 
 	static {
 		initializeMessages(UIText.class.getPackage().getName() + ".uitext",

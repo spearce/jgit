@@ -64,6 +64,12 @@ public class UIPreferences {
 	public final static String DECORATOR_SHOW_TRACKED_ICON = "decorator_show_tracked_icon";
 	/** */
 	public final static String DECORATOR_SHOW_UNTRACKED_ICON = "decorator_show_untracked_icon";
+	/** */
+	public final static String DECORATOR_SHOW_STAGED_ICON = "decorator_show_staged_icon";
+	/** */
+	public final static String DECORATOR_SHOW_CONFLICTS_ICON = "decorator_show_conflicts_icon";
+	/** */
+	public final static String DECORATOR_SHOW_ASSUME_VALID_ICON = "decorator_show_assume_valid_icon";
 
 	/**
 	 * Get the preference values associated with a fixed integer array.

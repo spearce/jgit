@@ -18,11 +18,15 @@ import org.eclipse.jface.resource.ImageDescriptor;
  * Icons for the the Eclipse plugin. Mostly decorations.
  */
 public class UIIcons {
+
+	/** Decoration for resource in the index but not yet committed. */
+	public static final ImageDescriptor OVR_STAGED;
+
 	/** Decoration for resource added to index but not yet committed. */
-	public static final ImageDescriptor OVR_PENDING_ADD;
+	public static final ImageDescriptor OVR_STAGED_ADD;
 
 	/** Decoration for resource removed from the index but not commit. */
-	public static final ImageDescriptor OVR_PENDING_REMOVE;
+	public static final ImageDescriptor OVR_STAGED_REMOVE;
 
 	/** Decoration for resource not being tracked by Git */
 	public static final ImageDescriptor OVR_UNTRACKED;
@@ -84,11 +88,12 @@ public class UIIcons {
 
 	static {
 		base = init();
-		OVR_PENDING_ADD = map("ovr/pending_add.gif");
-		OVR_PENDING_REMOVE = map("ovr/pending_remove.gif");
+		OVR_STAGED = map("ovr/staged.gif");
+		OVR_STAGED_ADD = map("ovr/staged_added.gif");
+		OVR_STAGED_REMOVE = map("ovr/staged_removed.gif");
 		OVR_UNTRACKED = map("ovr/untracked.gif");
 		OVR_CONFLICT = map("ovr/conflict.gif");
-		OVR_ASSUMEVALID = map("ovr/assumevalid.gif");
+		OVR_ASSUMEVALID = map("ovr/assume_valid.gif");
 		ELCL16_FIND = map("elcl16/find.gif");
 		ELCL16_NEXT = map("elcl16/next.gif");
 		ELCL16_PREVIOUS = map("elcl16/previous.gif");

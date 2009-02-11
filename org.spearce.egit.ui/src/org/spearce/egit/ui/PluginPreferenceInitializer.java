@@ -44,6 +44,9 @@ public class PluginPreferenceInitializer extends AbstractPreferenceInitializer {
 				UIText.DecoratorPreferencesPage_projectFormatDefault);
 		prefs.setDefault(UIPreferences.DECORATOR_SHOW_TRACKED_ICON, true);
 		prefs.setDefault(UIPreferences.DECORATOR_SHOW_UNTRACKED_ICON, true);
+		prefs.setDefault(UIPreferences.DECORATOR_SHOW_STAGED_ICON, true);
+		prefs.setDefault(UIPreferences.DECORATOR_SHOW_CONFLICTS_ICON, true);
+		prefs.setDefault(UIPreferences.DECORATOR_SHOW_ASSUME_VALID_ICON, true);
 
 		w = new int[] { 500, 500 };
 		UIPreferences.setDefault(prefs,

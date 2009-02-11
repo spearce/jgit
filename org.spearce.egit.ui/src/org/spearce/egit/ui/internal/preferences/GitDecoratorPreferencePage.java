@@ -55,6 +55,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
@@ -71,8 +72,9 @@ import org.spearce.egit.ui.Activator;
 import org.spearce.egit.ui.UIPreferences;
 import org.spearce.egit.ui.UIText;
 import org.spearce.egit.ui.internal.SWTUtils;
-import org.spearce.egit.ui.internal.decorators.GitLightweightDecorator.DecorationHelper;
 import org.spearce.egit.ui.internal.decorators.IDecoratableResource;
+import org.spearce.egit.ui.internal.decorators.GitLightweightDecorator.DecorationHelper;
+import org.spearce.egit.ui.internal.decorators.IDecoratableResource.Staged;
 
 /**
  * Preference page for customizing Git label decorations
@@ -94,22 +96,43 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 
 	private Preview preview;
 
+	private Button showStaged;
+
+	private Button showConflicts;
+
+	private Button showAssumeValid;
+
 	private static final Collection PREVIEW_FILESYSTEM_ROOT;
 
 	private static IPropertyChangeListener themeListener;
 
 	static {
 		final PreviewResource project = new PreviewResource(
-				"Project", IResource.PROJECT, "master", true, false); //$NON-NLS-1$1
+				"Project", IResource.PROJECT, "master", true, false, false, Staged.NOT_STAGED, false, false); //$NON-NLS-1$1
 		final ArrayList<PreviewResource> children = new ArrayList<PreviewResource>();
+
 		children.add(new PreviewResource(
-				"folder", IResource.FOLDER, null, true, false)); //$NON-NLS-1$
+						"folder", IResource.FOLDER, null, true, false, false, Staged.NOT_STAGED, false, false)); //$NON-NLS-1$
 		children.add(new PreviewResource(
-				"file.txt", IResource.FILE, null, true, false)); //$NON-NLS-1$
+						"tracked.txt", IResource.FILE, null, true, false, false, Staged.NOT_STAGED, false, false)); //$NON-NLS-1$
 		children.add(new PreviewResource(
-				"untracked.txt", IResource.FILE, null, false, false)); //$NON-NLS-1$
+						"untracked.txt", IResource.FILE, null, false, false, false, Staged.NOT_STAGED, false, false)); //$NON-NLS-1$
 		children.add(new PreviewResource(
-				"ignored.txt", IResource.FILE, null, false, true)); //$NON-NLS-1$
+						"ignored.txt", IResource.FILE, null, false, true, false, Staged.NOT_STAGED, false, false)); //$NON-NLS-1$
+		children.add(new PreviewResource(
+						"dirty.txt", IResource.FILE, null, true, false, true, Staged.NOT_STAGED, false, false)); //$NON-NLS-1$
+		children.add(new PreviewResource(
+						"staged.txt", IResource.FILE, null, true, false, false, Staged.MODIFIED, false, false)); //$NON-NLS-1$
+		children.add(new PreviewResource(
+						"partially-staged.txt", IResource.FILE, null, true, false, true, Staged.MODIFIED, false, false)); //$NON-NLS-1$
+		children.add(new PreviewResource(
+						"added.txt", IResource.FILE, null, true, false, false, Staged.ADDED, false, false)); //$NON-NLS-1$
+		children.add(new PreviewResource(
+						"removed.txt", IResource.FILE, null, true, false, false, Staged.REMOVED, false, false)); //$NON-NLS-1$
+		children.add(new PreviewResource(
+						"conflict.txt", IResource.FILE, null, true, false, true, Staged.NOT_STAGED, true, false)); //$NON-NLS-1$
+		children.add(new PreviewResource(
+						"assume-valid.txt", IResource.FILE, null, true, false, false, Staged.NOT_STAGED, false, true)); //$NON-NLS-1$
 		project.children = children;
 		PREVIEW_FILESYSTEM_ROOT = Collections.singleton(project);
 	}
@@ -190,22 +213,29 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 		Composite fileTextGroup = SWTUtils.createHVFillComposite(parent,
 				SWTUtils.MARGINS_DEFAULT, 3);
 
+		int labelWidth = convertWidthInCharsToPixels(Math.max(
+				UIText.DecoratorPreferencesPage_fileFormatLabel.length(),
+				Math.max(UIText.DecoratorPreferencesPage_folderFormatLabel
+						.length(),
+						UIText.DecoratorPreferencesPage_projectFormatLabel
+								.length())));
+
 		TextPair format = createFormatEditorControl(fileTextGroup,
 				UIText.DecoratorPreferencesPage_fileFormatLabel,
 				UIText.DecoratorPreferencesPage_addVariablesAction,
-				getFileBindingDescriptions());
+				getFileBindingDescriptions(), labelWidth);
 		fileTextFormat = format.t1;
 
 		format = createFormatEditorControl(fileTextGroup,
 				UIText.DecoratorPreferencesPage_folderFormatLabel,
 				UIText.DecoratorPreferencesPage_addVariablesAction,
-				getFolderBindingDescriptions());
+				getFolderBindingDescriptions(), labelWidth);
 		folderTextFormat = format.t1;
 
 		format = createFormatEditorControl(fileTextGroup,
 				UIText.DecoratorPreferencesPage_projectFormatLabel,
 				UIText.DecoratorPreferencesPage_addVariablesAction,
-				getProjectBindingDescriptions());
+				getProjectBindingDescriptions(), labelWidth);
 		projectTextFormat = format.t1;
 
 		return fileTextGroup;
@@ -219,17 +249,29 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 				UIText.DecoratorPreferencesPage_iconsShowTracked);
 		showUntracked = SWTUtils.createCheckBox(imageGroup,
 				UIText.DecoratorPreferencesPage_iconsShowUntracked);
+		showStaged = SWTUtils.createCheckBox(imageGroup,
+				UIText.DecoratorPreferencesPage_iconsShowStaged);
+		showConflicts = SWTUtils.createCheckBox(imageGroup,
+				UIText.DecoratorPreferencesPage_iconsShowConflicts);
+		showAssumeValid = SWTUtils.createCheckBox(imageGroup,
+				UIText.DecoratorPreferencesPage_iconsShowAssumeValid);
 
 		return imageGroup;
 	}
 
 	private TextPair createFormatEditorControl(Composite composite,
-			String title, String buttonText, final Map supportedBindings) {
+			String title, String buttonText, final Map supportedBindings,
+			int labelWidth) {
 
-		SWTUtils.createLabel(composite, title);
+		Label label = SWTUtils.createLabel(composite, title);
+		GridData labelGridData = new GridData();
+		labelGridData.widthHint = labelWidth;
+		label.setLayoutData(labelGridData);
 
 		Text format = new Text(composite, SWT.BORDER);
-		format.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		GridData textGridData = new GridData(GridData.FILL_HORIZONTAL);
+		textGridData.widthHint = 200;
+		format.setLayoutData(textGridData);
 		format.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				updatePreview();
@@ -273,6 +315,12 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 				.getBoolean(UIPreferences.DECORATOR_SHOW_TRACKED_ICON));
 		showUntracked.setSelection(store
 				.getBoolean(UIPreferences.DECORATOR_SHOW_UNTRACKED_ICON));
+		showStaged.setSelection(store
+				.getBoolean(UIPreferences.DECORATOR_SHOW_STAGED_ICON));
+		showConflicts.setSelection(store
+				.getBoolean(UIPreferences.DECORATOR_SHOW_CONFLICTS_ICON));
+		showAssumeValid.setSelection(store
+				.getBoolean(UIPreferences.DECORATOR_SHOW_ASSUME_VALID_ICON));
 
 		SelectionListener selectionListener = new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
@@ -283,6 +331,9 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 		computeDeepDirtyState.addSelectionListener(selectionListener);
 		showTracked.addSelectionListener(selectionListener);
 		showUntracked.addSelectionListener(selectionListener);
+		showStaged.addSelectionListener(selectionListener);
+		showConflicts.addSelectionListener(selectionListener);
+		showAssumeValid.addSelectionListener(selectionListener);
 
 		setValid(true);
 	}
@@ -334,6 +385,12 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 				.getSelection());
 		store.setValue(UIPreferences.DECORATOR_SHOW_UNTRACKED_ICON,
 				showUntracked.getSelection());
+		store.setValue(UIPreferences.DECORATOR_SHOW_STAGED_ICON, showStaged
+				.getSelection());
+		store.setValue(UIPreferences.DECORATOR_SHOW_CONFLICTS_ICON,
+				showConflicts.getSelection());
+		store.setValue(UIPreferences.DECORATOR_SHOW_ASSUME_VALID_ICON,
+				showAssumeValid.getSelection());
 
 		return true;
 	}
@@ -363,6 +420,14 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 		showUntracked
 				.setSelection(store
 						.getDefaultBoolean(UIPreferences.DECORATOR_SHOW_UNTRACKED_ICON));
+		showStaged.setSelection(store
+				.getDefaultBoolean(UIPreferences.DECORATOR_SHOW_STAGED_ICON));
+		showConflicts
+				.setSelection(store
+						.getDefaultBoolean(UIPreferences.DECORATOR_SHOW_CONFLICTS_ICON));
+		showAssumeValid
+				.setSelection(store
+						.getDefaultBoolean(UIPreferences.DECORATOR_SHOW_ASSUME_VALID_ICON));
 	}
 
 	/**
@@ -473,7 +538,11 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 	private Map getFileBindingDescriptions() {
 		Map<String, String> bindings = new HashMap<String, String>();
 		bindings.put(DecorationHelper.BINDING_RESOURCE_NAME,
-				UIText.DecoratorPreferencesPage_nameResourceVariable);
+				UIText.DecoratorPreferencesPage_bindingResourceName);
+		bindings.put(DecorationHelper.BINDING_DIRTY_FLAG,
+				UIText.DecoratorPreferencesPage_bindingDirtyFlag);
+		bindings.put(DecorationHelper.BINDING_STAGED_FLAG,
+				UIText.DecoratorPreferencesPage_bindingStagedFlag);
 		return bindings;
 	}
 
@@ -486,7 +555,11 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 	private Map getFolderBindingDescriptions() {
 		Map<String, String> bindings = new HashMap<String, String>();
 		bindings.put(DecorationHelper.BINDING_RESOURCE_NAME,
-				UIText.DecoratorPreferencesPage_nameResourceVariable);
+				UIText.DecoratorPreferencesPage_bindingResourceName);
+		bindings.put(DecorationHelper.BINDING_DIRTY_FLAG,
+				UIText.DecoratorPreferencesPage_bindingDirtyFlag);
+		bindings.put(DecorationHelper.BINDING_STAGED_FLAG,
+				UIText.DecoratorPreferencesPage_bindingStagedFlag);
 		return bindings;
 	}
 
@@ -499,7 +572,11 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 	private Map getProjectBindingDescriptions() {
 		Map<String, String> bindings = new HashMap<String, String>();
 		bindings.put(DecorationHelper.BINDING_RESOURCE_NAME,
-				UIText.DecoratorPreferencesPage_nameResourceVariable);
+				UIText.DecoratorPreferencesPage_bindingResourceName);
+		bindings.put(DecorationHelper.BINDING_DIRTY_FLAG,
+				UIText.DecoratorPreferencesPage_bindingDirtyFlag);
+		bindings.put(DecorationHelper.BINDING_STAGED_FLAG,
+				UIText.DecoratorPreferencesPage_bindingStagedFlag);
 		bindings.put(DecorationHelper.BINDING_BRANCH_NAME,
 				UIText.DecoratorPreferencesPage_bindingBranchName);
 		return bindings;
@@ -658,14 +735,28 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 
 		private boolean ignored;
 
+		private boolean dirty;
+
+		private boolean conflicts;
+
+		private Staged staged;
+
+		private boolean assumeValid;
+
 		public PreviewResource(String name, int type, String branch,
-				boolean tracked, boolean ignored) {
+				boolean tracked, boolean ignored, boolean dirty, Staged staged,
+				boolean conflicts, boolean assumeValid) {
+
 			this.name = name;
 			this.branch = branch;
 			this.type = type;
 			this.children = Collections.EMPTY_LIST;
 			this.tracked = tracked;
 			this.ignored = ignored;
+			this.dirty = dirty;
+			this.staged = staged;
+			this.conflicts = conflicts;
+			this.assumeValid = assumeValid;
 		}
 
 		public String getName() {
@@ -687,6 +778,22 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 		public boolean isIgnored() {
 			return ignored;
 		}
+
+		public boolean isDirty() {
+			return dirty;
+		}
+
+		public Staged staged() {
+			return staged;
+		}
+
+		public boolean hasConflicts() {
+			return conflicts;
+		}
+
+		public boolean isAssumeValid() {
+			return assumeValid;
+		}
 	}
 
 	private class PreviewDecoration implements IDecoration {
@@ -703,12 +810,19 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 
 		private Color foregroundColor;
 
+		/**
+		 * Adds an icon overlay to the decoration
+		 * <p>
+		 * Copies the behavior of <code>DecorationBuilder</code> of only
+		 * allowing the overlay to be set once.
+		 */
 		public void addOverlay(ImageDescriptor overlayImage) {
-			overlay = overlayImage;
+			if (overlay == null)
+				overlay = overlayImage;
 		}
 
 		public void addOverlay(ImageDescriptor overlayImage, int quadrant) {
-			overlay = overlayImage;
+			addOverlay(overlayImage);
 		}
 
 		public void addPrefix(String prefix) {
