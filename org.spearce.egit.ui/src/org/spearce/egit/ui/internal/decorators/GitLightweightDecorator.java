@@ -14,7 +14,6 @@
 package org.spearce.egit.ui.internal.decorators;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -42,7 +41,6 @@ import org.eclipse.jface.viewers.LabelProviderChangedEvent;
 import org.eclipse.osgi.util.TextProcessor;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.team.core.Team;
 import org.eclipse.team.ui.ISharedImages;
 import org.eclipse.team.ui.TeamImages;
 import org.eclipse.team.ui.TeamUI;
@@ -58,21 +56,11 @@ import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIPreferences;
 import org.spearce.egit.ui.UIText;
 import org.spearce.egit.ui.internal.decorators.IDecoratableResource.Staged;
-import org.spearce.jgit.dircache.DirCache;
-import org.spearce.jgit.dircache.DirCacheEntry;
-import org.spearce.jgit.dircache.DirCacheIterator;
-import org.spearce.jgit.lib.Constants;
-import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.IndexChangedEvent;
-import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.RefsChangedEvent;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.RepositoryChangedEvent;
 import org.spearce.jgit.lib.RepositoryListener;
-import org.spearce.jgit.revwalk.RevWalk;
-import org.spearce.jgit.treewalk.EmptyTreeIterator;
-import org.spearce.jgit.treewalk.TreeWalk;
-import org.spearce.jgit.treewalk.filter.PathFilterGroup;
 
 /**
  * Supplies annotations for displayed resources
@@ -151,6 +139,15 @@ public class GitLightweightDecorator extends LabelProvider implements
 		if (resource == null)
 			return;
 
+		// Don't decorate if the workbench is not running
+		if (!PlatformUI.isWorkbenchRunning())
+			return;
+
+		// Don't decorate if UI plugin is not running
+		Activator activator = Activator.getDefault();
+		if (activator == null)
+			return;
+
 		// Don't decorate the workspace root
 		if (resource.getType() == IResource.ROOT)
 			return;
@@ -169,11 +166,6 @@ public class GitLightweightDecorator extends LabelProvider implements
 		if (mapping.getRepoRelativePath(resource) == null)
 			return;
 
-		// Don't decorate if UI plugin is not running
-		Activator activator = Activator.getDefault();
-		if (activator == null)
-			return;
-
 		try {
 			DecorationHelper helper = new DecorationHelper(activator
 					.getPreferenceStore());
@@ -181,238 +173,6 @@ public class GitLightweightDecorator extends LabelProvider implements
 					new DecoratableResourceAdapter(resource));
 		} catch (IOException e) {
 			handleException(resource, GitException.wrapException(e));
-		}
-	}
-
-	private class DecoratableResourceAdapter implements IDecoratableResource {
-
-		private final IResource resource;
-
-		private final RepositoryMapping mapping;
-
-		private final Repository repository;
-
-		private final ObjectId headId;
-
-		private String branch = "";
-
-		private boolean tracked = false;
-
-		private boolean ignored = false;
-
-		private boolean dirty = false;
-
-		private boolean conflicts = false;
-
-		private boolean assumeValid = false;
-
-		private Staged staged = Staged.NOT_STAGED;
-
-		static final int T_HEAD = 0;
-
-		static final int T_INDEX = 1;
-
-		static final int T_WORKSPACE = 2;
-
-		public DecoratableResourceAdapter(IResource resourceToWrap)
-				throws IOException {
-			resource = resourceToWrap;
-			mapping = RepositoryMapping.getMapping(resource);
-			repository = mapping.getRepository();
-			headId = repository.resolve(Constants.HEAD);
-
-			switch (resource.getType()) {
-			case IResource.FILE:
-				extractFileProperties();
-				break;
-			case IResource.FOLDER:
-				extractContainerProperties();
-				break;
-			case IResource.PROJECT:
-				extractProjectProperties();
-				break;
-			}
-		}
-
-		private void extractFileProperties() throws IOException {
-			TreeWalk treeWalk = createHeadVsIndexTreeWalk();
-			if (treeWalk == null)
-				return;
-
-			if (treeWalk.next())
-				tracked = true;
-			else
-				return;
-
-			// TODO: Also read ignores from .git/info/excludes et al.
-			if (Team.isIgnoredHint(resource)) {
-				ignored = true;
-				return;
-			}
-
-			final DirCacheIterator indexIterator = treeWalk.getTree(T_INDEX,
-					DirCacheIterator.class);
-			final DirCacheEntry indexEntry = indexIterator != null ? indexIterator
-					.getDirCacheEntry()
-					: null;
-
-			if (indexEntry == null) {
-				staged = Staged.REMOVED;
-			} else {
-				if (indexEntry.isAssumeValid()) {
-					dirty = false;
-					assumeValid = true;
-				} else if (indexEntry.getStage() > 0) {
-					conflicts = true;
-				} else if (treeWalk.getRawMode(T_HEAD) == FileMode.MISSING
-						.getBits()) {
-					staged = Staged.ADDED;
-				} else {
-					long indexEntryLastModified = indexEntry.getLastModified();
-					long resourceLastModified = resource.getLocalTimeStamp();
-
-					// C-Git under Windows stores timestamps with 1-seconds
-					// resolution, so we need to check to see if this is the
-					// case here, and possibly fix the timestamp of the resource
-					// to match the resolution of the index.
-					if (indexEntryLastModified % 1000 == 0) {
-						resourceLastModified -= resourceLastModified % 1000;
-					}
-
-					if (resourceLastModified != indexEntryLastModified) {
-						// TODO: Consider doing a content check here, to rule
-						// out false positives, as we might get mismatch between
-						// timestamps, even if the content is the same
-						dirty = true;
-					}
-
-					if (treeWalk.getRawMode(T_HEAD) != treeWalk
-							.getRawMode(T_INDEX)
-							|| !treeWalk.idEqual(T_HEAD, T_INDEX)) {
-						staged = Staged.MODIFIED;
-					}
-				}
-			}
-
-		}
-
-		private void extractContainerProperties() throws IOException {
-			TreeWalk treeWalk = createHeadVsIndexTreeWalk();
-			if (treeWalk == null)
-				return;
-
-			if (treeWalk.next())
-				tracked = true;
-			else
-				return;
-
-			// TODO: Also read ignores from .git/info/excludes et al.
-			if (Team.isIgnoredHint(resource)) {
-				ignored = true;
-				return;
-			}
-
-			// TODO: Compute dirty state for folder, using ContainerTreeIterator
-			// and ContainerDiffFilter
-
-		}
-
-		private void extractProjectProperties() throws IOException {
-			branch = repository.getBranch();
-			tracked = true;
-
-			// TODO: Compute dirty state for folder, using ContainerTreeIterator
-			// and ContainerDiffFilter
-
-		}
-
-		/**
-		 * Adds a filter to the specified tree walk limiting the results to only
-		 * those matching the resource specified by
-		 * <code>resourceToFilterBy</code>
-		 * <p>
-		 * If the resource does not exists in the current repository, or it has
-		 * an empty path (it is the project itself), the filter is not added,
-		 * and the method returns <code>null</code>.
-		 *
-		 * @param treeWalk
-		 *            the tree walk to add the filter to
-		 * @param resourceToFilterBy
-		 *            the resource to filter by
-		 *
-		 * @return <code>true</code> if the filter could be added,
-		 *         <code>false</code> otherwise
-		 */
-		private boolean addResourceFilter(final TreeWalk treeWalk,
-				final IResource resourceToFilterBy) {
-			Set<String> repositoryPaths = Collections.singleton(mapping
-					.getRepoRelativePath(resourceToFilterBy));
-			if (repositoryPaths.isEmpty() || repositoryPaths.contains(""))
-				return false;
-
-			treeWalk.setFilter(PathFilterGroup
-					.createFromStrings(repositoryPaths));
-			return true;
-		}
-
-		/**
-		 * Helper method to create a new tree walk between HEAD and the index.
-		 *
-		 * @return the created tree walk, or null if it could not be created
-		 * @throws IOException
-		 *             if there were errors when creating the tree walk
-		 */
-		private TreeWalk createHeadVsIndexTreeWalk() throws IOException {
-			final TreeWalk treeWalk = new TreeWalk(repository);
-			if (!addResourceFilter(treeWalk, resource))
-				return null;
-
-			treeWalk.setRecursive(treeWalk.getFilter().shouldBeRecursive());
-			treeWalk.reset();
-
-			if (headId != null)
-				treeWalk.addTree(new RevWalk(repository).parseTree(headId));
-			else
-				treeWalk.addTree(new EmptyTreeIterator());
-
-			treeWalk.addTree(new DirCacheIterator(DirCache.read(repository)));
-			return treeWalk;
-		}
-
-		public String getName() {
-			return resource.getName();
-		}
-
-		public int getType() {
-			return resource.getType();
-		}
-
-		public String getBranch() {
-			return branch;
-		}
-
-		public boolean isTracked() {
-			return tracked;
-		}
-
-		public boolean isIgnored() {
-			return ignored;
-		}
-
-		public boolean isDirty() {
-			return dirty;
-		}
-
-		public Staged staged() {
-			return staged;
-		}
-
-		public boolean hasConflicts() {
-			return conflicts;
-		}
-
-		public boolean isAssumeValid() {
-			return assumeValid;
 		}
 	}
 
@@ -570,11 +330,13 @@ public class GitLightweightDecorator extends LabelProvider implements
 				}
 
 				// Conflicts override everything
-				if (store.getBoolean(UIPreferences.DECORATOR_SHOW_CONFLICTS_ICON)
+				if (store
+						.getBoolean(UIPreferences.DECORATOR_SHOW_CONFLICTS_ICON)
 						&& resource.hasConflicts())
 					overlay = conflictImage;
 
-			} else if (store.getBoolean(UIPreferences.DECORATOR_SHOW_UNTRACKED_ICON)) {
+			} else if (store
+					.getBoolean(UIPreferences.DECORATOR_SHOW_UNTRACKED_ICON)) {
 				overlay = untrackedImage;
 			}
 
@@ -714,6 +476,14 @@ public class GitLightweightDecorator extends LabelProvider implements
 		try { // Compute the changed resources by looking at the delta
 			event.getDelta().accept(new IResourceDeltaVisitor() {
 				public boolean visit(IResourceDelta delta) throws CoreException {
+
+					// If the file has changed but not in a way that we care
+					// about (e.g. marker changes to files) then ignore
+					if (delta.getKind() == IResourceDelta.CHANGED
+							&& (delta.getFlags() & INTERESTING_CHANGES) == 0) {
+						return true;
+					}
+
 					final IResource resource = delta.getResource();
 
 					// If the resource is not part of a project under Git
@@ -724,6 +494,7 @@ public class GitLightweightDecorator extends LabelProvider implements
 						// Ignore the change
 						return true;
 					}
+
 					if (resource.getType() == IResource.ROOT) {
 						// Continue with the delta
 						return true;
@@ -735,33 +506,32 @@ public class GitLightweightDecorator extends LabelProvider implements
 							return false;
 					}
 
-					// If the file has changed but not in a way that we care
-					// about
-					// (e.g. marker changes to files) then ignore the change
-					if (delta.getKind() == IResourceDelta.CHANGED
-							&& (delta.getFlags() & INTERESTING_CHANGES) == 0) {
-						return true;
-					}
-
 					// All seems good, schedule the resource for update
 					resourcesToUpdate.add(resource);
-					return true;
+
+					if (delta.getKind() == IResourceDelta.CHANGED
+							&& (delta.getFlags() & IResourceDelta.OPEN) > 1)
+						return false; // Don't recurse when opening projects
+					else
+						return true;
 				}
 			}, true /* includePhantoms */);
 		} catch (final CoreException e) {
 			handleException(null, e);
 		}
 
-		// If deep decorator calculation is enabled in the preferences we
-		// walk the ancestor tree of each of the changed resources and add
+		if (resourcesToUpdate.isEmpty())
+			return;
+
+		// If ancestor-decoration is enabled in the preferences we walk
+		// the ancestor tree of each of the changed resources and add
 		// their parents to the update set
 		final IPreferenceStore store = Activator.getDefault()
 				.getPreferenceStore();
-		if (store.getBoolean(UIPreferences.DECORATOR_CALCULATE_DIRTY)) {
+		if (store.getBoolean(UIPreferences.DECORATOR_RECOMPUTE_ANCESTORS)) {
 			final IResource[] changedResources = resourcesToUpdate
 					.toArray(new IResource[resourcesToUpdate.size()]);
-			for (int i = 0; i < changedResources.length; i++) {
-				IResource current = changedResources[i];
+			for (IResource current : changedResources) {
 				while (current.getType() != IResource.ROOT) {
 					current = current.getParent();
 					resourcesToUpdate.add(current);

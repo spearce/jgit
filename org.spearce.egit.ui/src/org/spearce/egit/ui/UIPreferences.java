@@ -53,7 +53,9 @@ public class UIPreferences {
 	public final static String THEME_CommitMessageFont = "org.spearce.egit.ui.CommitMessageFont";
 
 	/** */
-	public final static String DECORATOR_CALCULATE_DIRTY = "decorator_calculate_dirty";
+	public final static String DECORATOR_RECOMPUTE_ANCESTORS = "decorator_recompute_ancestors";
+	/** */
+	public final static String DECORATOR_RECURSIVE_LIMIT = "decorator_recursive_limit";
 	/** */
 	public final static String DECORATOR_FILETEXT_DECORATION = "decorator_filetext_decoration";
 	/** */

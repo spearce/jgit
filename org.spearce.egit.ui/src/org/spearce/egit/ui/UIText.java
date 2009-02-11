@@ -935,7 +935,19 @@ public class UIText extends NLS {
 	public static String DecoratorPreferencesPage_addVariablesAction;
 
 	/** */
-	public static String DecoratorPreferencesPage_computeDeep;
+	public static String DecoratorPreferencesPage_recomputeAncestorDecorations;
+
+	/** */
+	public static String DecoratorPreferencesPage_recomputeAncestorDecorationsTooltip;
+
+	/** */
+	public static String DecoratorPreferencesPage_computeRecursiveLimit;
+
+	/** */
+	public static String DecoratorPreferencesPage_computeRecursiveLimitTooltip;
+
+	/** */
+	public static String DecoratorPreferencesPage_invalidInput;
 
 	/** */
 	public static String DecoratorPreferencesPage_description;

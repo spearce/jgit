@@ -35,7 +35,9 @@ public class PluginPreferenceInitializer extends AbstractPreferenceInitializer {
 		prefs.setDefault(UIPreferences.RESOURCEHISTORY_SHOW_REV_COMMENT, true);
 		prefs.setDefault(UIPreferences.RESOURCEHISTORY_SHOW_TOOLTIPS, false);
 
-		prefs.setDefault(UIPreferences.DECORATOR_CALCULATE_DIRTY, true);
+		prefs.setDefault(UIPreferences.DECORATOR_RECOMPUTE_ANCESTORS, true);
+		prefs.setDefault(UIPreferences.DECORATOR_RECURSIVE_LIMIT,
+				Integer.MAX_VALUE);
 		prefs.setDefault(UIPreferences.DECORATOR_FILETEXT_DECORATION,
 				UIText.DecoratorPreferencesPage_fileFormatDefault);
 		prefs.setDefault(UIPreferences.DECORATOR_FOLDERTEXT_DECORATION,
