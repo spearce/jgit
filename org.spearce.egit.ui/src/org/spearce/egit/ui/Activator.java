@@ -10,9 +10,11 @@ package org.spearce.egit.ui;
 
 import java.net.Authenticator;
 import java.net.ProxySelector;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.eclipse.core.net.proxy.IProxyService;
@@ -27,6 +29,8 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.jobs.ISchedulingRule;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jface.util.IPropertyChangeListener;
+import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jsch.core.IJSchService;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
@@ -44,7 +48,22 @@ import org.spearce.jgit.transport.SshSessionFactory;
  * This is a plugin singleton mostly controlling logging.
  */
 public class Activator extends AbstractUIPlugin {
+
+	/**
+	 *  The one and only instance
+	 */
 	private static Activator plugin;
+
+	/**
+	 * Property listeners for plugin specific events
+	 */
+	private static List<IPropertyChangeListener> propertyChangeListeners =
+		new ArrayList<IPropertyChangeListener>(5);
+
+	/**
+	 * Property constant indicating the decorator configuration has changed.
+	 */
+	public static final String DECORATORS_CHANGED = "org.spearce.egit.ui.DECORATORS_CHANGED"; //$NON-NLS-1$
 
 	/**
 	 * @return the {@link Activator} singleton.
@@ -165,6 +184,39 @@ public class Activator extends AbstractUIPlugin {
 	private void setupRepoIndexRefresh() {
 		refreshJob = new RIRefresh();
 		Repository.addAnyRepositoryChangedListener(refreshJob);
+	}
+
+	/**
+	 * Register for changes made to Team properties.
+	 *
+	 * @param listener
+	 *            The listener to register
+	 */
+	public static synchronized void addPropertyChangeListener(
+			IPropertyChangeListener listener) {
+		propertyChangeListeners.add(listener);
+	}
+
+	/**
+	 * Remove a Team property changes.
+	 *
+	 * @param listener
+	 *            The listener to remove
+	 */
+	public static synchronized void removePropertyChangeListener(
+			IPropertyChangeListener listener) {
+		propertyChangeListeners.remove(listener);
+	}
+
+	/**
+	 * Broadcast a Team property change.
+	 *
+	 * @param event
+	 *            The event to broadcast
+	 */
+	public static synchronized void broadcastPropertyChange(PropertyChangeEvent event) {
+		for (IPropertyChangeListener listener : propertyChangeListeners)
+			listener.propertyChange(event);
 	}
 
 	static class RIRefresh extends Job implements RepositoryListener {
