@@ -36,4 +36,19 @@ public interface IDecoratableResource {
 	 *         applicable
 	 */
 	String getBranch();
+
+	/**
+	 * Returns whether or not the resource is tracked by Git
+	 *
+	 * @return whether or not the resource is tracked by Git
+	 */
+	boolean isTracked();
+
+	/**
+	 * Returns whether or not the resource is ignored, either by a global team
+	 * ignore in Eclipse, or by .git/info/exclude et al.
+	 *
+	 * @return whether or not the resource is ignored
+	 */
+	boolean isIgnored();
 }

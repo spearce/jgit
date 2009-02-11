@@ -988,6 +988,12 @@ public class UIText extends NLS {
 	/** */
 	public static String DecoratorPreferencesPage_labelDecorationsLink;
 
+	/** */
+	public static String DecoratorPreferencesPage_iconsShowTracked;
+
+	/** */
+	public static String DecoratorPreferencesPage_iconsShowUntracked;
+
 	static {
 		initializeMessages(UIText.class.getPackage().getName() + ".uitext",
 				UIText.class);

@@ -60,6 +60,10 @@ public class UIPreferences {
 	public final static String DECORATOR_FOLDERTEXT_DECORATION = "decorator_foldertext_decoration";
 	/** */
 	public final static String DECORATOR_PROJECTTEXT_DECORATION = "decorator_projecttext_decoration";
+	/** */
+	public final static String DECORATOR_SHOW_TRACKED_ICON = "decorator_show_tracked_icon";
+	/** */
+	public final static String DECORATOR_SHOW_UNTRACKED_ICON = "decorator_show_untracked_icon";
 
 	/**
 	 * Get the preference values associated with a fixed integer array.

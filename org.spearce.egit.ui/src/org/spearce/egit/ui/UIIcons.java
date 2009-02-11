@@ -24,8 +24,8 @@ public class UIIcons {
 	/** Decoration for resource removed from the index but not commit. */
 	public static final ImageDescriptor OVR_PENDING_REMOVE;
 
-	/** Decoration for resource tracked and committed in git. */
-	public static final ImageDescriptor OVR_SHARED;
+	/** Decoration for resource not being tracked by Git */
+	public static final ImageDescriptor OVR_UNTRACKED;
 
 	/** Decoration for tracked resource with a merge conflict.  */
 	public static final ImageDescriptor OVR_CONFLICT;
@@ -86,7 +86,7 @@ public class UIIcons {
 		base = init();
 		OVR_PENDING_ADD = map("ovr/pending_add.gif");
 		OVR_PENDING_REMOVE = map("ovr/pending_remove.gif");
-		OVR_SHARED = map("ovr/shared.gif");
+		OVR_UNTRACKED = map("ovr/untracked.gif");
 		OVR_CONFLICT = map("ovr/conflict.gif");
 		OVR_ASSUMEVALID = map("ovr/assumevalid.gif");
 		ELCL16_FIND = map("elcl16/find.gif");

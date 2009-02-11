@@ -44,6 +44,9 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
@@ -83,7 +86,11 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 
 	private Text projectTextFormat;
 
-	private Button showDirty;
+	private Button computeDeepDirtyState;
+
+	private Button showTracked;
+
+	private Button showUntracked;
 
 	private Preview preview;
 
@@ -93,10 +100,16 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 
 	static {
 		final PreviewResource project = new PreviewResource(
-				"Project", IResource.PROJECT, "master"); //$NON-NLS-1$1
+				"Project", IResource.PROJECT, "master", true, false); //$NON-NLS-1$1
 		final ArrayList<PreviewResource> children = new ArrayList<PreviewResource>();
-		children.add(new PreviewResource("folder", IResource.FOLDER, null)); //$NON-NLS-1$
-		children.add(new PreviewResource("file.txt", IResource.FILE, null)); //$NON-NLS-1$
+		children.add(new PreviewResource(
+				"folder", IResource.FOLDER, null, true, false)); //$NON-NLS-1$
+		children.add(new PreviewResource(
+				"file.txt", IResource.FILE, null, true, false)); //$NON-NLS-1$
+		children.add(new PreviewResource(
+				"untracked.txt", IResource.FILE, null, false, false)); //$NON-NLS-1$
+		children.add(new PreviewResource(
+				"ignored.txt", IResource.FILE, null, false, true)); //$NON-NLS-1$
 		project.children = children;
 		PREVIEW_FILESYSTEM_ROOT = Collections.singleton(project);
 	}
@@ -160,7 +173,7 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 		Composite composite = SWTUtils.createHVFillComposite(parent,
 				SWTUtils.MARGINS_DEFAULT);
 
-		showDirty = SWTUtils.createCheckBox(composite,
+		computeDeepDirtyState = SWTUtils.createCheckBox(composite,
 				UIText.DecoratorPreferencesPage_computeDeep);
 
 		return composite;
@@ -202,6 +215,11 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 		Composite imageGroup = SWTUtils.createHVFillComposite(parent,
 				SWTUtils.MARGINS_DEFAULT, 2);
 
+		showTracked = SWTUtils.createCheckBox(imageGroup,
+				UIText.DecoratorPreferencesPage_iconsShowTracked);
+		showUntracked = SWTUtils.createCheckBox(imageGroup,
+				UIText.DecoratorPreferencesPage_iconsShowUntracked);
+
 		return imageGroup;
 	}
 
@@ -241,6 +259,9 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 	private void initializeValues() {
 		final IPreferenceStore store = getPreferenceStore();
 
+		computeDeepDirtyState.setSelection(store
+				.getBoolean(UIPreferences.DECORATOR_CALCULATE_DIRTY));
+
 		fileTextFormat.setText(store
 				.getString(UIPreferences.DECORATOR_FILETEXT_DECORATION));
 		folderTextFormat.setText(store
@@ -248,8 +269,20 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 		projectTextFormat.setText(store
 				.getString(UIPreferences.DECORATOR_PROJECTTEXT_DECORATION));
 
-		showDirty.setSelection(store
-				.getBoolean(UIPreferences.DECORATOR_CALCULATE_DIRTY));
+		showTracked.setSelection(store
+				.getBoolean(UIPreferences.DECORATOR_SHOW_TRACKED_ICON));
+		showUntracked.setSelection(store
+				.getBoolean(UIPreferences.DECORATOR_SHOW_UNTRACKED_ICON));
+
+		SelectionListener selectionListener = new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				preview.refresh();
+			}
+		};
+
+		computeDeepDirtyState.addSelectionListener(selectionListener);
+		showTracked.addSelectionListener(selectionListener);
+		showUntracked.addSelectionListener(selectionListener);
 
 		setValid(true);
 	}
@@ -287,6 +320,9 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 	 */
 	private boolean performOk(IPreferenceStore store) {
 
+		store.setValue(UIPreferences.DECORATOR_CALCULATE_DIRTY,
+				computeDeepDirtyState.getSelection());
+
 		store.setValue(UIPreferences.DECORATOR_FILETEXT_DECORATION,
 				fileTextFormat.getText());
 		store.setValue(UIPreferences.DECORATOR_FOLDERTEXT_DECORATION,
@@ -294,8 +330,10 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 		store.setValue(UIPreferences.DECORATOR_PROJECTTEXT_DECORATION,
 				projectTextFormat.getText());
 
-		store.setValue(UIPreferences.DECORATOR_CALCULATE_DIRTY, showDirty
+		store.setValue(UIPreferences.DECORATOR_SHOW_TRACKED_ICON, showTracked
 				.getSelection());
+		store.setValue(UIPreferences.DECORATOR_SHOW_UNTRACKED_ICON,
+				showUntracked.getSelection());
 
 		return true;
 	}
@@ -308,6 +346,9 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 		super.performDefaults();
 		IPreferenceStore store = getPreferenceStore();
 
+		computeDeepDirtyState.setSelection(store
+				.getDefaultBoolean(UIPreferences.DECORATOR_CALCULATE_DIRTY));
+
 		fileTextFormat.setText(store
 				.getDefaultString(UIPreferences.DECORATOR_FILETEXT_DECORATION));
 		folderTextFormat
@@ -317,8 +358,11 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 				.setText(store
 						.getDefaultString(UIPreferences.DECORATOR_PROJECTTEXT_DECORATION));
 
-		showDirty.setSelection(store
-				.getDefaultBoolean(UIPreferences.DECORATOR_CALCULATE_DIRTY));
+		showTracked.setSelection(store
+				.getDefaultBoolean(UIPreferences.DECORATOR_SHOW_TRACKED_ICON));
+		showUntracked
+				.setSelection(store
+						.getDefaultBoolean(UIPreferences.DECORATOR_SHOW_UNTRACKED_ICON));
 	}
 
 	/**
@@ -602,19 +646,26 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 	}
 
 	private static class PreviewResource implements IDecoratableResource {
-		public final String name;
+		private final String name;
 
-		public final String branch;
+		private final String branch;
 
-		public final int type;
+		private final int type;
 
-		public Collection children;
+		private Collection children;
 
-		public PreviewResource(String name, int type, String branch) {
+		private boolean tracked;
+
+		private boolean ignored;
+
+		public PreviewResource(String name, int type, String branch,
+				boolean tracked, boolean ignored) {
 			this.name = name;
 			this.branch = branch;
 			this.type = type;
 			this.children = Collections.EMPTY_LIST;
+			this.tracked = tracked;
+			this.ignored = ignored;
 		}
 
 		public String getName() {
@@ -627,6 +678,14 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 
 		public String getBranch() {
 			return branch;
+		}
+
+		public boolean isTracked() {
+			return tracked;
+		}
+
+		public boolean isIgnored() {
+			return ignored;
 		}
 	}
 

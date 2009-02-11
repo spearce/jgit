@@ -15,6 +15,7 @@ package org.spearce.egit.ui.internal.decorators;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -34,6 +35,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.IDecoration;
@@ -41,7 +43,11 @@ import org.eclipse.jface.viewers.ILightweightLabelDecorator;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.LabelProviderChangedEvent;
 import org.eclipse.osgi.util.TextProcessor;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.team.core.Team;
+import org.eclipse.team.ui.ISharedImages;
+import org.eclipse.team.ui.TeamImages;
 import org.eclipse.team.ui.TeamUI;
 import org.eclipse.ui.IContributorResourceAdapter;
 import org.eclipse.ui.PlatformUI;
@@ -51,13 +57,22 @@ import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryChangeListener;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.Activator;
+import org.spearce.egit.ui.UIIcons;
 import org.spearce.egit.ui.UIPreferences;
 import org.spearce.egit.ui.UIText;
+import org.spearce.jgit.dircache.DirCache;
+import org.spearce.jgit.dircache.DirCacheIterator;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.IndexChangedEvent;
+import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.RefsChangedEvent;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.RepositoryChangedEvent;
 import org.spearce.jgit.lib.RepositoryListener;
+import org.spearce.jgit.revwalk.RevWalk;
+import org.spearce.jgit.treewalk.EmptyTreeIterator;
+import org.spearce.jgit.treewalk.TreeWalk;
+import org.spearce.jgit.treewalk.filter.PathFilterGroup;
 
 /**
  * Supplies annotations for displayed resources
@@ -144,7 +159,7 @@ public class GitLightweightDecorator extends LabelProvider implements
 		if (!resource.exists() && !resource.isPhantom())
 			return;
 
-		// Make sure we're dealing with a Git project
+		// Make sure we're dealing with a project under Git revision control
 		final RepositoryMapping mapping = RepositoryMapping
 				.getMapping(resource);
 		if (mapping == null)
@@ -171,14 +186,80 @@ public class GitLightweightDecorator extends LabelProvider implements
 
 	private class DecoratableResourceAdapter implements IDecoratableResource {
 
-		private IResource resource;
-		private String branch;
+		private final IResource resource;
 
-		public DecoratableResourceAdapter(IResource resourceToWrap) throws IOException {
+		private final RepositoryMapping mapping;
+
+		private final Repository repository;
+
+		private final ObjectId headId;
+
+		private String branch = "";
+
+		private boolean tracked = false;
+
+		private boolean ignored = false;
+
+		public DecoratableResourceAdapter(IResource resourceToWrap)
+				throws IOException {
 			resource = resourceToWrap;
-			RepositoryMapping mapping = RepositoryMapping.getMapping(resource);
-			Repository repository = mapping.getRepository();
+			mapping = RepositoryMapping.getMapping(resource);
+			repository = mapping.getRepository();
+			headId = repository.resolve(Constants.HEAD);
+
+			initializeValues();
+		}
+
+		/**
+		 * Initialize the various values that are used for making decoration
+		 * decisions later on.
+		 *
+		 * We might as well pre-load these now, instead of using lazy
+		 * initialization, because they are all read by the decorator when
+		 * building variable bindings and computing the preferred overlay.
+		 *
+		 * @throws IOException
+		 */
+		private void initializeValues() throws IOException {
+
+			// Resolve current branch
 			branch = repository.getBranch();
+
+			// Resolve tracked state
+			if (getType() == IResource.PROJECT) {
+				tracked = true;
+			} else {
+				final TreeWalk treeWalk = new TreeWalk(repository);
+
+				Set<String> repositoryPaths = Collections.singleton(mapping
+						.getRepoRelativePath(resource));
+				if (!(repositoryPaths.isEmpty() || repositoryPaths.contains(""))) {
+					treeWalk.setFilter(PathFilterGroup
+							.createFromStrings(repositoryPaths));
+					treeWalk.setRecursive(treeWalk.getFilter()
+							.shouldBeRecursive());
+					treeWalk.reset();
+
+					if (headId != null)
+						treeWalk.addTree(new RevWalk(repository)
+								.parseTree(headId));
+					else
+						treeWalk.addTree(new EmptyTreeIterator());
+
+					treeWalk.addTree(new DirCacheIterator(DirCache
+							.read(repository)));
+					if (treeWalk.next()) {
+						tracked = true;
+					}
+				}
+			}
+
+			// Resolve ignored state (currently only reads the global Eclipse
+			// ignores)
+			// TODO: Also read ignores from .git/info/excludes et al.
+			if (Team.isIgnoredHint(resource)) {
+				ignored = true;
+			}
 		}
 
 		public String getName() {
@@ -192,6 +273,14 @@ public class GitLightweightDecorator extends LabelProvider implements
 		public String getBranch() {
 			return branch;
 		}
+
+		public boolean isTracked() {
+			return tracked;
+		}
+
+		public boolean isIgnored() {
+			return ignored;
+		}
 	}
 
 	/**
@@ -203,12 +292,44 @@ public class GitLightweightDecorator extends LabelProvider implements
 	 */
 	public static class DecorationHelper {
 
-		private IPreferenceStore store;
-
 		/** */
 		public static final String BINDING_RESOURCE_NAME = "name"; //$NON-NLS-1$
+
 		/** */
 		public static final String BINDING_BRANCH_NAME = "branch"; //$NON-NLS-1$
+
+		private IPreferenceStore store;
+
+		/**
+		 * Define a cached image descriptor which only creates the image data
+		 * once
+		 */
+		private static class CachedImageDescriptor extends ImageDescriptor {
+			ImageDescriptor descriptor;
+
+			ImageData data;
+
+			public CachedImageDescriptor(ImageDescriptor descriptor) {
+				this.descriptor = descriptor;
+			}
+
+			public ImageData getImageData() {
+				if (data == null) {
+					data = descriptor.getImageData();
+				}
+				return data;
+			}
+		}
+
+		private static ImageDescriptor trackedImage;
+
+		private static ImageDescriptor untrackedImage;
+
+		static {
+			trackedImage = new CachedImageDescriptor(TeamImages
+					.getImageDescriptor(ISharedImages.IMG_CHECKEDIN_OVR));
+			untrackedImage = new CachedImageDescriptor(UIIcons.OVR_UNTRACKED);
+		}
 
 		/**
 		 * Constructs a decorator using the rules from the given
@@ -233,6 +354,12 @@ public class GitLightweightDecorator extends LabelProvider implements
 		 */
 		public void decorate(IDecoration decoration,
 				IDecoratableResource resource) {
+			decorateText(decoration, resource);
+			decorateIcons(decoration, resource);
+		}
+
+		private void decorateText(IDecoration decoration,
+				IDecoratableResource resource) {
 			String format = "";
 			switch (resource.getType()) {
 			case IResource.FILE:
@@ -256,9 +383,24 @@ public class GitLightweightDecorator extends LabelProvider implements
 			decorate(decoration, format, bindings);
 		}
 
+		private void decorateIcons(IDecoration decoration,
+				IDecoratableResource resource) {
+			if (resource.isIgnored())
+				return;
+
+			if (resource.isTracked()) {
+				if (store.getBoolean(UIPreferences.DECORATOR_SHOW_TRACKED_ICON))
+					decoration.addOverlay(trackedImage);
+			} else if (store
+					.getBoolean(UIPreferences.DECORATOR_SHOW_UNTRACKED_ICON)) {
+				decoration.addOverlay(untrackedImage);
+			}
+		}
+
 		/**
-		 * Decorates the given <code>decoration</code>, using the given
-		 * <code>format</code>, and mapped using <code>bindings</code>
+		 * Decorates the given <code>decoration</code>, using the specified text
+		 * <code>format</code>, and mapped using the variable bindings from
+		 * <code>bindings</code>
 		 *
 		 * @param decoration
 		 *            the decoration to decorate
