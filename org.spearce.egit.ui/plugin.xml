@@ -200,6 +200,14 @@
 		  id="org.spearce.egit.ui.keyword.git">
 	    </keywordReference>
       </page>
+	  <page name="%GitPreferences_DecoratorPreferencePage_name"
+	    category="org.spearce.egit.ui.GitPreferences"
+            class="org.spearce.egit.ui.internal.preferences.GitDecoratorPreferencePage"
+	    id="org.spearce.egit.ui.internal.preferences.GitDecoratorPreferencePage" >
+	    <keywordReference
+		  id="org.spearce.egit.ui.keyword.git">
+	    </keywordReference>
+      </page>
    </extension>
 
    <extension point="org.eclipse.ui.propertyPages">
@@ -233,10 +241,10 @@
             lightweight="true"
             adaptable="true"
             label="%Decorator_name"
-            class="org.spearce.egit.ui.internal.decorators.GitResourceDecorator"
+            class="org.spearce.egit.ui.internal.decorators.GitLightweightDecorator"
             state="true"
             location="BOTTOM_RIGHT"
-            id="org.spearce.egit.ui.internal.decorators.GitResourceDecorator">
+            id="org.spearce.egit.ui.internal.decorators.GitLightweightDecorator">
             <enablement>
               <objectClass name="org.eclipse.core.resources.IResource"/>
             </enablement>

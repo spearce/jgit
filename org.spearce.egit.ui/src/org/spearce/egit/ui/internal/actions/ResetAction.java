@@ -19,7 +19,7 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.spearce.egit.core.op.ResetOperation;
 import org.spearce.egit.core.op.ResetOperation.ResetType;
-import org.spearce.egit.ui.internal.decorators.GitResourceDecorator;
+import org.spearce.egit.ui.internal.decorators.GitLightweightDecorator;
 import org.spearce.egit.ui.internal.dialogs.BranchSelectionDialog;
 import org.spearce.jgit.lib.Repository;
 
@@ -55,7 +55,7 @@ public class ResetAction extends RepositoryAction {
 					throws InvocationTargetException {
 						try {
 							new ResetOperation(repository, refName, type).run(monitor);
-							GitResourceDecorator.refresh();
+							GitLightweightDecorator.refresh();
 						} catch (CoreException ce) {
 							ce.printStackTrace();
 							throw new InvocationTargetException(ce);

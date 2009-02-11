@@ -446,9 +446,6 @@ public class UIText extends NLS {
 	public static String RefSpecPage_annotatedTagsNoTags;
 
 	/** */
-	public static String Decorator_failedLazyLoading;
-
-	/** */
 	public static String QuickDiff_failedLoading;
 
 	/** */
@@ -927,6 +924,66 @@ public class UIText extends NLS {
 
 	/** */
 	public static String HistoryPage_ShowAllVersionsForFolder;
+
+	/** */
+	public static String Decorator_exceptionMessage;
+
+	/** */
+	public static String DecoratorPreferencesPage_addVariablesTitle;
+
+	/** */
+	public static String DecoratorPreferencesPage_addVariablesAction;
+
+	/** */
+	public static String DecoratorPreferencesPage_computeDeep;
+
+	/** */
+	public static String DecoratorPreferencesPage_description;
+
+	/** */
+	public static String DecoratorPreferencesPage_decorationSettings;
+
+	/** */
+	public static String DecoratorPreferencesPage_preview;
+
+	/** */
+	public static String DecoratorPreferencesPage_fileFormatLabel;
+
+	/** */
+	public static String DecoratorPreferencesPage_folderFormatLabel;
+
+	/** */
+	public static String DecoratorPreferencesPage_projectFormatLabel;
+
+	/** */
+	public static String DecoratorPreferencesPage_fileFormatDefault;
+
+	/** */
+	public static String DecoratorPreferencesPage_projectFormatDefault;
+
+	/** */
+	public static String DecoratorPreferencesPage_folderFormatDefault;
+
+	/** */
+	public static String DecoratorPreferencesPage_generalTabFolder;
+
+	/** */
+	public static String DecoratorPreferencesPage_nameResourceVariable;
+
+	/** */
+	public static String DecoratorPreferencesPage_selectFormats;
+
+	/** */
+	public static String DecoratorPreferencesPage_selectVariablesToAdd;
+
+	/** */
+	public static String DecoratorPreferencesPage_textLabel;
+
+	/** */
+	public static String DecoratorPreferencesPage_iconLabel;
+
+	/** */
+	public static String DecoratorPreferencesPage_labelDecorationsLink;
 
 	static {
 		initializeMessages(UIText.class.getPackage().getName() + ".uitext",

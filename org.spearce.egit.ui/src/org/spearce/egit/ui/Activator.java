@@ -33,6 +33,7 @@ import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jsch.core.IJSchService;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.themes.ITheme;
 import org.osgi.framework.BundleContext;
@@ -77,6 +78,21 @@ public class Activator extends AbstractUIPlugin {
 	 */
 	public static String getPluginId() {
 		return getDefault().getBundle().getSymbolicName();
+	}
+
+	/**
+	 * Returns the standard display to be used. The method first checks, if the
+	 * thread calling this method has an associated display. If so, this display
+	 * is returned. Otherwise the method returns the default display.
+	 *
+	 * @return the display to use
+	 */
+	public static Display getStandardDisplay() {
+		Display display = Display.getCurrent();
+		if (display == null) {
+			display = Display.getDefault();
+		}
+		return display;
 	}
 
 	/**

@@ -19,7 +19,7 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.swt.widgets.Display;
 import org.spearce.egit.core.op.BranchOperation;
-import org.spearce.egit.ui.internal.decorators.GitResourceDecorator;
+import org.spearce.egit.ui.internal.decorators.GitLightweightDecorator;
 import org.spearce.egit.ui.internal.dialogs.BranchSelectionDialog;
 import org.spearce.jgit.lib.Repository;
 
@@ -56,7 +56,7 @@ public class BranchAction extends RepositoryAction {
 				throws InvocationTargetException {
 					try {
 						new BranchOperation(repository, refName).run(monitor);
-						GitResourceDecorator.refresh();
+						GitLightweightDecorator.refresh();
 					} catch (final CoreException ce) {
 						ce.printStackTrace();
 						Display.getDefault().asyncExec(new Runnable() {

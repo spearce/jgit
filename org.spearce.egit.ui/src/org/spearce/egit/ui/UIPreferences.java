@@ -52,6 +52,15 @@ public class UIPreferences {
 	/** */
 	public final static String THEME_CommitMessageFont = "org.spearce.egit.ui.CommitMessageFont";
 
+	/** */
+	public final static String DECORATOR_CALCULATE_DIRTY = "decorator_calculate_dirty";
+	/** */
+	public final static String DECORATOR_FILETEXT_DECORATION = "decorator_filetext_decoration";
+	/** */
+	public final static String DECORATOR_FOLDERTEXT_DECORATION = "decorator_foldertext_decoration";
+	/** */
+	public final static String DECORATOR_PROJECTTEXT_DECORATION = "decorator_projecttext_decoration";
+
 	/**
 	 * Get the preference values associated with a fixed integer array.
 	 * 
