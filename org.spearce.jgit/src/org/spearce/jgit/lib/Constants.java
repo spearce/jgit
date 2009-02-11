@@ -246,9 +246,6 @@ public final class Constants {
 	/** Default value for the user name if no other information is available */
 	public static final String UNKNOWN_USER_DEFAULT = "unknown-user";
 
-	/** Beginning of the common "Signed-off-by: " commit message line */
-	public static final String SIGNED_OFF_BY_TAG = "Signed-off-by: ";
-
 	/**
 	 * Create a new digest function for objects.
 	 * 

@@ -33,8 +33,6 @@ import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -178,18 +176,6 @@ public class CommitDialog extends Dialog {
 		committerText.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).create());
 		if (committer != null)
 			committerText.setText(committer);
-		committerText.addModifyListener(new ModifyListener() {
-			public void modifyText(ModifyEvent e) {
-				if (signedOffButton.getSelection()) {
-					// the commit message is signed
-					// the signature must be updated
-					String oldCommitText = commitText.getText();
-					oldCommitText = removeLastLine(oldCommitText);
-					oldCommitText = signOff(oldCommitText);
-					commitText.setText(oldCommitText);
-				}
-			}
-		});
 
 		amendingButton = new Button(container, SWT.CHECK);
 		if (amending) {
@@ -228,29 +214,6 @@ public class CommitDialog extends Dialog {
 		signedOffButton.setText(UIText.CommitDialog_AddSOB);
 		signedOffButton.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).span(2, 1).create());
 
-		signedOffButton.addSelectionListener(new SelectionListener() {
-			public void widgetSelected(SelectionEvent arg0) {
-				if (signedOffButton.getSelection()) {
-					// add signed off line
-					commitText.setText(signOff(commitText.getText()));
-				} else {
-					// remove signed off line
-					commitText.setText(removeLastLine(commitText.getText()));
-				}
-			}
-
-			public void widgetDefaultSelected(SelectionEvent arg0) {
-				// Empty
-			}
-		});
-
-		commitText.addModifyListener(new ModifyListener() {
-			public void modifyText(ModifyEvent e) {
-				updateSignedOffButton();
-			}
-		});
-		updateSignedOffButton();
-
 		Table resourcesTable = new Table(container, SWT.H_SCROLL | SWT.V_SCROLL
 				| SWT.FULL_SELECTION | SWT.MULTI | SWT.CHECK | SWT.BORDER);
 		resourcesTable.setLayoutData(GridDataFactory.fillDefaults().hint(600,
@@ -276,55 +239,6 @@ public class CommitDialog extends Dialog {
 
 		container.pack();
 		return container;
-	}
-
-	private void updateSignedOffButton() {
-		signedOffButton.setSelection(getLastLine(commitText.getText()).equals(getSignedOff()));
-	}
-
-	private String getSignedOff() {
-		return Constants.SIGNED_OFF_BY_TAG + committerText.getText();
-	}
-
-	private String signOff(String input) {
-		String output = input;
-		if (!output.endsWith(Text.DELIMITER))
-			output += Text.DELIMITER;
-
-		// if the last line is not a signed off (amend a commit), had a line break
-		if (!getLastLine(output).startsWith(Constants.SIGNED_OFF_BY_TAG))
-			output += Text.DELIMITER;
-		output += getSignedOff();
-		return output;
-	}
-
-	private String getLastLine(String input) {
-		String output = removeLastLineBreak(input);
-		int breakLength = Text.DELIMITER.length();
-
-		// get the last line
-		int lastIndexOfLineBreak = output.lastIndexOf(Text.DELIMITER);
-		return lastIndexOfLineBreak == -1 ? output : output.substring(lastIndexOfLineBreak + breakLength, output.length());
-	}
-
-	private String removeLastLine(String input) {
-		String output = removeLastLineBreak(input);
-
-		// remove the last line if possible
-		int lastIndexOfLineBreak = output.lastIndexOf(Text.DELIMITER);
-		return lastIndexOfLineBreak == -1 ? "" : output.substring(0, lastIndexOfLineBreak); //$NON-NLS-1$
-	}
-
-	private String removeLastLineBreak(String input) {
-		String output = input;
-		int breakLength = Text.DELIMITER.length();
-
-		// remove last line break if exist
-		int lastIndexOfLineBreak = output.lastIndexOf(Text.DELIMITER);
-		if (lastIndexOfLineBreak != -1 && lastIndexOfLineBreak == output.length() - breakLength)
-			output = output.substring(0, output.length() - breakLength);
-
-		return output;
 	}
 
 	private Menu getContextMenu() {
@@ -416,7 +330,7 @@ public class CommitDialog extends Dialog {
 	 * @return The message the user entered
 	 */
 	public String getCommitMessage() {
-		return commitMessage.replaceAll(Text.DELIMITER, "\n"); //$NON-NLS-1$;
+		return commitMessage;
 	}
 
 	/**
