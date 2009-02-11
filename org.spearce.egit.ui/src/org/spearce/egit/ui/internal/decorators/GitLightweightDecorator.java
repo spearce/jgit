@@ -13,6 +13,7 @@
 
 package org.spearce.egit.ui.internal.decorators;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,6 +45,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.team.ui.TeamUI;
 import org.eclipse.ui.IContributorResourceAdapter;
 import org.eclipse.ui.PlatformUI;
+import org.spearce.egit.core.GitException;
 import org.spearce.egit.core.internal.util.ExceptionCollector;
 import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryChangeListener;
@@ -157,17 +159,26 @@ public class GitLightweightDecorator extends LabelProvider implements
 		if (activator == null)
 			return;
 
-		DecorationHelper helper = new DecorationHelper(activator
-				.getPreferenceStore());
-		helper.decorate(decoration, new DecoratableResourceAdapter(resource));
+		try {
+			DecorationHelper helper = new DecorationHelper(activator
+					.getPreferenceStore());
+			helper.decorate(decoration,
+					new DecoratableResourceAdapter(resource));
+		} catch (IOException e) {
+			handleException(resource, GitException.wrapException(e));
+		}
 	}
 
 	private class DecoratableResourceAdapter implements IDecoratableResource {
 
 		private IResource resource;
+		private String branch;
 
-		public DecoratableResourceAdapter(IResource resourceToWrap) {
+		public DecoratableResourceAdapter(IResource resourceToWrap) throws IOException {
 			resource = resourceToWrap;
+			RepositoryMapping mapping = RepositoryMapping.getMapping(resource);
+			Repository repository = mapping.getRepository();
+			branch = repository.getBranch();
 		}
 
 		public String getName() {
@@ -176,6 +187,10 @@ public class GitLightweightDecorator extends LabelProvider implements
 
 		public int getType() {
 			return resource.getType();
+		}
+
+		public String getBranch() {
+			return branch;
 		}
 	}
 
@@ -192,6 +207,8 @@ public class GitLightweightDecorator extends LabelProvider implements
 
 		/** */
 		public static final String BINDING_RESOURCE_NAME = "name"; //$NON-NLS-1$
+		/** */
+		public static final String BINDING_BRANCH_NAME = "branch"; //$NON-NLS-1$
 
 		/**
 		 * Constructs a decorator using the rules from the given
@@ -234,6 +251,7 @@ public class GitLightweightDecorator extends LabelProvider implements
 
 			Map<String, String> bindings = new HashMap<String, String>();
 			bindings.put(BINDING_RESOURCE_NAME, resource.getName());
+			bindings.put(BINDING_BRANCH_NAME, resource.getBranch());
 
 			decorate(decoration, format, bindings);
 		}

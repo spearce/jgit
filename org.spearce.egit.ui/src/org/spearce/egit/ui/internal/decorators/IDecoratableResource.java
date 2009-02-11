@@ -28,4 +28,12 @@ public interface IDecoratableResource {
 	 * @return the name of the resource
 	 */
 	String getName();
+
+	/**
+	 * Gets the current branch of the resource if applicable
+	 *
+	 * @return the name of the current branch, or <code>null</code> if not
+	 *         applicable
+	 */
+	String getBranch();
 }

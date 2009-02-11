@@ -971,6 +971,9 @@ public class UIText extends NLS {
 	public static String DecoratorPreferencesPage_nameResourceVariable;
 
 	/** */
+	public static String DecoratorPreferencesPage_bindingBranchName;
+
+	/** */
 	public static String DecoratorPreferencesPage_selectFormats;
 
 	/** */

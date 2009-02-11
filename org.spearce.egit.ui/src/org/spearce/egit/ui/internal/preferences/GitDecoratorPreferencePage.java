@@ -93,10 +93,10 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 
 	static {
 		final PreviewResource project = new PreviewResource(
-				"Project", IResource.PROJECT); //$NON-NLS-1$1
+				"Project", IResource.PROJECT, "master"); //$NON-NLS-1$1
 		final ArrayList<PreviewResource> children = new ArrayList<PreviewResource>();
-		children.add(new PreviewResource("folder", IResource.FOLDER)); //$NON-NLS-1$
-		children.add(new PreviewResource("file.txt", IResource.FILE)); //$NON-NLS-1$
+		children.add(new PreviewResource("folder", IResource.FOLDER, null)); //$NON-NLS-1$
+		children.add(new PreviewResource("file.txt", IResource.FILE, null)); //$NON-NLS-1$
 		project.children = children;
 		PREVIEW_FILESYSTEM_ROOT = Collections.singleton(project);
 	}
@@ -456,6 +456,8 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 		Map<String, String> bindings = new HashMap<String, String>();
 		bindings.put(DecorationHelper.BINDING_RESOURCE_NAME,
 				UIText.DecoratorPreferencesPage_nameResourceVariable);
+		bindings.put(DecorationHelper.BINDING_BRANCH_NAME,
+				UIText.DecoratorPreferencesPage_bindingBranchName);
 		return bindings;
 	}
 
@@ -478,8 +480,8 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 		private DecorationHelper fHelper;
 
 		public Preview(Composite composite) {
-			reloadDecorationHelper(); // Has to happen before the tree control
-										// is constructed
+			// Has to happen before the tree control is constructed
+			reloadDecorationHelper();
 			SWTUtils.createLabel(composite,
 					UIText.DecoratorPreferencesPage_preview);
 			fImageCache = new LocalResourceManager(JFaceResources
@@ -602,12 +604,15 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 	private static class PreviewResource implements IDecoratableResource {
 		public final String name;
 
+		public final String branch;
+
 		public final int type;
 
 		public Collection children;
 
-		public PreviewResource(String name, int type) {
+		public PreviewResource(String name, int type, String branch) {
 			this.name = name;
+			this.branch = branch;
 			this.type = type;
 			this.children = Collections.EMPTY_LIST;
 		}
@@ -618,6 +623,10 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 
 		public int getType() {
 			return type;
+		}
+
+		public String getBranch() {
+			return branch;
 		}
 	}
 
