@@ -171,7 +171,7 @@ public class CommitAction extends RepositoryAction {
 		}
 
 		try {
-			commitMessage = doCommits(commitDialog, commitMessage, treeMap);
+			doCommits(commitDialog, commitMessage, treeMap);
 		} catch (IOException e) {
 			throw new TeamException("Committing changes", e);
 		}
@@ -180,7 +180,7 @@ public class CommitAction extends RepositoryAction {
 		}
 	}
 
-	private String doCommits(CommitDialog commitDialog, String commitMessage,
+	private void doCommits(CommitDialog commitDialog, String commitMessage,
 			HashMap<Repository, Tree> treeMap) throws IOException, TeamException {
 
 		final String author = commitDialog.getAuthor();
@@ -208,11 +208,6 @@ public class CommitAction extends RepositoryAction {
 			}
 			Commit commit = new Commit(repo, parentIds);
 			commit.setTree(tree);
-			commitMessage = commitMessage.replaceAll("\r", "\n");
-			if (commitDialog.isSignedOff())
-				commitMessage += "\n\nSigned-off-by: " + committerIdent.getName() + " <"
-								+ committerIdent.getEmailAddress() + ">";
-
 			commit.setMessage(commitMessage);
 			commit.setAuthor(new PersonIdent(authorIdent, commitDate, timeZone));
 			commit.setCommitter(new PersonIdent(committerIdent, commitDate, timeZone));
@@ -228,7 +223,6 @@ public class CommitAction extends RepositoryAction {
 						+ " to commit " + commit.getCommitId() + ".");
 			}
 		}
-		return commitMessage;
 	}
 
 	private void prepareTrees(IFile[] selectedItems,
