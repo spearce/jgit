@@ -76,14 +76,6 @@ public class WindowCache {
 
 	private static int openByteCount;
 
-	private static int hits;
-
-	private static int reqs;
-
-	private static int opens;
-
-	private static int closes;
-
 	static {
 		maxByteCount = 10 * MB;
 		windowSizeShift = bits(8 * KB);
@@ -91,22 +83,6 @@ public class WindowCache {
 		mmap = false;
 		cache = new ByteWindow[cacheTableSize()];
 		clearedWindowQueue = new ReferenceQueue<Object>();
-	}
-
-	static synchronized String statString() {
-		int maxChain = 0, tot = 0;
-		for (ByteWindow<?> e : cache) {
-			int n = 0;
-			for (; e != null; e = e.chainNext) {
-				n++;
-				tot++;
-			}
-			maxChain = Math.max(maxChain, n);
-		}
-		return "WindowCache[ hits: " + (hits * 100 / reqs) + "%"
-				+ "; windows: " + tot + " maxChain: " + maxChain + "; kb:"
-				+ (openByteCount / KB) + "; cache: " + cache.length + " fds: "
-				+ (opens - closes) + "," + opens + "," + closes + " ]";
 	}
 
 	private static int cacheTableSize() {
@@ -215,7 +191,6 @@ public class WindowCache {
 	 */
 	public static synchronized final void get(final WindowCursor curs,
 			final WindowedFile wp, final long position) throws IOException {
-		reqs++;
 		final int id = (int) (position >> windowSizeShift);
 		final int idx = hash(wp, id);
 		for (ByteWindow<?> e = cache[idx]; e != null; e = e.chainNext) {
@@ -223,7 +198,6 @@ public class WindowCache {
 				if ((curs.handle = e.get()) != null) {
 					curs.window = e;
 					makeMostRecent(e);
-					hits++;
 					return;
 				}
 
@@ -234,7 +208,6 @@ public class WindowCache {
 
 		if (wp.openCount == 0) {
 			try {
-				opens++;
 				wp.openCount = 1;
 				wp.cacheOpen();
 			} catch (IOException ioe) {
@@ -340,7 +313,6 @@ public class WindowCache {
 	private static void unlinkSize(final ByteWindow<?> e) {
 		if (e.sizeActive) {
 			if (--e.provider.openCount == 0) {
-				closes++;
 				e.provider.cacheClose();
 			}
 			openByteCount -= e.size;
