@@ -79,6 +79,9 @@ class PackIndexV1 extends PackIndex {
 			}
 		}
 		objectCnt = idxHeader[255];
+
+		packChecksum = new byte[20];
+		NB.readFully(fd, packChecksum, 0, packChecksum.length);
 	}
 
 	long getObjectCount() {

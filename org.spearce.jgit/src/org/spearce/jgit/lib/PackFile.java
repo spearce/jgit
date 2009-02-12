@@ -42,6 +42,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -265,6 +266,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	}
 
 	private void onOpenPack() throws IOException {
+		final PackIndex idx = idx();
 		final WindowCursor curs = new WindowCursor();
 		long position = 0;
 		final byte[] sig = new byte[Constants.PACK_SIGNATURE.length];
@@ -287,11 +289,18 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 
 		pack.readFully(position, intbuf, curs);
 		final long packCnt = NB.decodeUInt32(intbuf, 0);
-		final long idxCnt = idx().getObjectCount();
+		final long idxCnt = idx.getObjectCount();
 		if (idxCnt != packCnt)
 			throw new IOException("Pack index"
 					+ " object count mismatch; expected " + packCnt
 					+ " found " + idxCnt + ": " + pack.getName());
+
+		final byte[] csumbuf = new byte[20];
+		pack.readFully(pack.length() - 20, csumbuf, curs);
+		if (!Arrays.equals(csumbuf, idx.packChecksum))
+			throw new IOException("Pack index mismatch; pack SHA-1 is "
+					+ ObjectId.fromRaw(csumbuf).name() + ", index expects "
+					+ ObjectId.fromRaw(idx.packChecksum).name());
 	}
 
 	private PackedObjectLoader reader(final WindowCursor curs,

@@ -112,6 +112,9 @@ public abstract class PackIndex implements Iterable<PackIndex.MutableEntry> {
 		return true;
 	}
 
+	/** Footer checksum applied on the bottom of the pack file. */
+	protected byte[] packChecksum;
+
 	/**
 	 * Determine if an object is contained within the pack file.
 	 * 
