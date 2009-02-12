@@ -43,6 +43,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedOutputStream;
@@ -57,9 +58,18 @@ import org.spearce.jgit.util.NB;
  * objects are similar.
  */
 public class PackFile implements Iterable<PackIndex.MutableEntry> {
+	/** Sorts PackFiles to be most recently created to least recently created. */
+	public static Comparator<PackFile> SORT = new Comparator<PackFile>() {
+		public int compare(final PackFile a, final PackFile b) {
+			return b.packLastModified - a.packLastModified;
+		}
+	};
+
 	private final File idxFile;
 
 	private final WindowedFile pack;
+
+	private int packLastModified;
 
 	private PackIndex loadedIdx;
 
@@ -75,6 +85,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	 */
 	public PackFile(final File idxFile, final File packFile) {
 		this.idxFile = idxFile;
+		this.packLastModified = (int) (packFile.lastModified() >> 10);
 		pack = new WindowedFile(packFile) {
 			@Override
 			protected void onOpen() throws IOException {

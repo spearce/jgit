@@ -823,6 +823,7 @@ public class Repository {
 			scanForPacks(new File(d, "pack"), p);
 		final PackFile[] arr = new PackFile[p.size()];
 		p.toArray(arr);
+		Arrays.sort(arr, PackFile.SORT);
 		synchronized (this) {
 			packFileList = arr;
 		}
