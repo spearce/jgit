@@ -42,6 +42,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedOutputStream;
@@ -56,9 +57,11 @@ import org.spearce.jgit.util.NB;
  * objects are similar.
  */
 public class PackFile implements Iterable<PackIndex.MutableEntry> {
+	private final File idxFile;
+
 	private final WindowedFile pack;
 
-	private final PackIndex idx;
+	private PackIndex loadedIdx;
 
 	private PackReverseIndex reverseIdx;
 
@@ -69,21 +72,22 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	 *            path of the <code>.idx</code> file listing the contents.
 	 * @param packFile
 	 *            path of the <code>.pack</code> file holding the data.
-	 * @throws IOException
-	 *             the index file cannot be accessed at this time.
 	 */
-	public PackFile(final File idxFile, final File packFile) throws IOException {
+	public PackFile(final File idxFile, final File packFile) {
+		this.idxFile = idxFile;
 		pack = new WindowedFile(packFile) {
 			@Override
 			protected void onOpen() throws IOException {
 				readPackHeader();
 			}
 		};
-		try {
-			idx = PackIndex.open(idxFile);
-		} catch (IOException ioe) {
-			throw ioe;
+	}
+
+	private synchronized PackIndex idx() throws IOException {
+		if (loadedIdx == null) {
+			loadedIdx = PackIndex.open(idxFile);
 		}
+		return loadedIdx;
 	}
 
 	final PackedObjectLoader resolveBase(final WindowCursor curs, final long ofs)
@@ -106,9 +110,11 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	 * @param id
 	 *            the object to look for. Must not be null.
 	 * @return true if the object is in this pack; false otherwise.
+	 * @throws IOException
+	 *             the index file cannot be loaded into memory.
 	 */
-	public boolean hasObject(final AnyObjectId id) {
-		return idx.hasObject(id);
+	public boolean hasObject(final AnyObjectId id) throws IOException {
+		return idx().hasObject(id);
 	}
 
 	/**
@@ -125,7 +131,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	 */
 	public PackedObjectLoader get(final WindowCursor curs, final AnyObjectId id)
 			throws IOException {
-		final long offset = idx.findOffset(id);
+		final long offset = idx().findOffset(id);
 		return 0 < offset ? reader(curs, offset) : null;
 	}
 
@@ -135,6 +141,9 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	public void close() {
 		UnpackedObjectCache.purge(pack);
 		pack.close();
+		synchronized (this) {
+			loadedIdx = null;
+		}
 	}
 
 	/**
@@ -150,7 +159,11 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	 * @see PackIndex#iterator()
 	 */
 	public Iterator<PackIndex.MutableEntry> iterator() {
-		return idx.iterator();
+		try {
+			return idx().iterator();
+		} catch (IOException e) {
+			return Collections.<PackIndex.MutableEntry> emptyList().iterator();
+		}
 	}
 
 	/**
@@ -158,9 +171,11 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	 * relies on pack index, giving number of effectively available objects.
 	 * 
 	 * @return number of objects in index of this pack, likewise in this pack
+	 * @throws IOException
+	 *             the index file cannot be loaded into memory.
 	 */
-	long getObjectCount() {
-		return idx.getObjectCount();
+	long getObjectCount() throws IOException {
+		return idx().getObjectCount();
 	}
 
 	/**
@@ -170,8 +185,10 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	 * @param offset
 	 *            start offset of object to find
 	 * @return object id for this offset, or null if no object was found
+	 * @throws IOException
+	 *             the index file cannot be loaded into memory.
 	 */
-	ObjectId findObjectForOffset(final long offset) {
+	ObjectId findObjectForOffset(final long offset) throws IOException {
 		return getReverseIdx().findObject(offset);
 	}
 
@@ -196,6 +213,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		final long dataOffset = loader.dataOffset;
 		final int cnt = (int) (findEndOffset(objectOffset) - dataOffset);
 		final WindowCursor curs = loader.curs;
+		final PackIndex idx = idx();
 
 		if (idx.hasCRC32Support()) {
 			final CRC32 crc = new CRC32();
@@ -231,8 +249,8 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		}
 	}
 
-	boolean supportsFastCopyRawData() {
-		return idx.hasCRC32Support();
+	boolean supportsFastCopyRawData() throws IOException {
+		return idx().hasCRC32Support();
 	}
 
 
@@ -258,11 +276,12 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		position += 4;
 
 		pack.readFully(position, intbuf, curs);
-		final long objectCnt = NB.decodeUInt32(intbuf, 0);
-		if (idx.getObjectCount() != objectCnt)
+		final long packCnt = NB.decodeUInt32(intbuf, 0);
+		final long idxCnt = idx().getObjectCount();
+		if (idxCnt != packCnt)
 			throw new IOException("Pack index"
-					+ " object count mismatch; expected " + objectCnt
-					+ " found " + idx.getObjectCount() + ": " + pack.getName());
+					+ " object count mismatch; expected " + packCnt
+					+ " found " + idxCnt + ": " + pack.getName());
 	}
 
 	private PackedObjectLoader reader(final WindowCursor curs,
@@ -315,14 +334,14 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	}
 
 	private long findEndOffset(final long startOffset)
-			throws CorruptObjectException {
+			throws IOException, CorruptObjectException {
 		final long maxOffset = pack.length() - Constants.OBJECT_ID_LENGTH;
 		return getReverseIdx().findNextOffset(startOffset, maxOffset);
 	}
 
-	private synchronized PackReverseIndex getReverseIdx() {
+	private synchronized PackReverseIndex getReverseIdx() throws IOException {
 		if (reverseIdx == null)
-			reverseIdx = new PackReverseIndex(idx);
+			reverseIdx = new PackReverseIndex(idx());
 		return reverseIdx;
 	}
 }

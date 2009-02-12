@@ -103,8 +103,10 @@ abstract class PackedObjectLoader extends ObjectLoader {
 	 * @return true if this loader is capable of fast raw-data copying basing on
 	 *         compressed data checksum; false if raw-data copying needs
 	 *         uncompressing and compressing data
+	 * @throws IOException
+	 *             the index file format cannot be determined.
 	 */
-	public boolean supportsFastCopyRawData() {
+	public boolean supportsFastCopyRawData() throws IOException {
 		return pack.supportsFastCopyRawData();
 	}
 

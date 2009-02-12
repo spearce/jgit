@@ -248,8 +248,15 @@ public class Repository {
 		final PackFile[] packs = packs();
 		int k = packs.length;
 		while (k > 0) {
-			if (packs[--k].hasObject(objectId))
-				return true;
+			try {
+				if (packs[--k].hasObject(objectId))
+					return true;
+			} catch (IOException e) {
+				// Assume that means the pack is invalid, and such
+				// packs are treated as though they are empty.
+				//
+				continue;
+			}
 		}
 		return toFile(objectId).isFile();
 	}
@@ -848,13 +855,7 @@ public class Repository {
 						continue SCAN;
 				}
 
-				try {
-					packList.add(new PackFile(idxFile, packFile));
-				} catch (IOException ioe) {
-					// Whoops. That's not a pack!
-					//
-					ioe.printStackTrace();
-				}
+				packList.add(new PackFile(idxFile, packFile));
 			}
 		}
 	}
