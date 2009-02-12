@@ -452,6 +452,63 @@ public class RepositoryConfig {
 	 * @param name
 	 *            parameter name, e.g. "filemode"
 	 * @param value
+	 *            parameter value
+	 */
+	public void setInt(final String section, final String subsection,
+			final String name, final int value) {
+		final String s;
+
+		if ((value % (1024 * 1024 * 1024)) == 0)
+			s = String.valueOf(value / (1024 * 1024 * 1024)) + " g";
+		else if ((value % (1024 * 1024)) == 0)
+			s = String.valueOf(value / (1024 * 1024)) + " m";
+		else if ((value % 1024) == 0)
+			s = String.valueOf(value / 1024) + " k";
+		else
+			s = String.valueOf(value);
+
+		setString(section, subsection, name, s);
+	}
+
+	/**
+	 * Add or modify a configuration value. The parameters will result in a
+	 * configuration entry like this.
+	 *
+	 * <pre>
+	 * [section &quot;subsection&quot;]
+	 *         name = value
+	 * </pre>
+	 *
+	 * @param section
+	 *            section name, e.g "branch"
+	 * @param subsection
+	 *            optional subsection value, e.g. a branch name
+	 * @param name
+	 *            parameter name, e.g. "filemode"
+	 * @param value
+	 *            parameter value
+	 */
+	public void setBoolean(final String section, final String subsection,
+			final String name, final boolean value) {
+		setString(section, subsection, name, value ? "true" : "false");
+	}
+
+	/**
+	 * Add or modify a configuration value. The parameters will result in a
+	 * configuration entry like this.
+	 *
+	 * <pre>
+	 * [section &quot;subsection&quot;]
+	 *         name = value
+	 * </pre>
+	 *
+	 * @param section
+	 *            section name, e.g "branch"
+	 * @param subsection
+	 *            optional subsection value, e.g. a branch name
+	 * @param name
+	 *            parameter name, e.g. "filemode"
+	 * @param value
 	 *            parameter value, e.g. "true"
 	 */
 	public void setString(final String section, final String subsection,
