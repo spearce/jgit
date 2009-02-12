@@ -68,6 +68,10 @@ public class RemoteConfig {
 
 	private static final String KEY_TAGOPT = "tagopt";
 
+	private static final String KEY_MIRROR = "mirror";
+
+	private static final boolean DEFAULT_MIRROR = false;
+
 	/** Default value for {@link #getUploadPack()} if not specified. */
 	public static final String DEFAULT_UPLOAD_PACK = "git-upload-pack";
 
@@ -113,6 +117,8 @@ public class RemoteConfig {
 	private String receivepack;
 
 	private TagOpt tagopt;
+
+	private boolean mirror;
 
 	/**
 	 * Parse a remote block from an existing configuration file.
@@ -163,6 +169,7 @@ public class RemoteConfig {
 
 		val = rc.getString(SECTION, name, KEY_TAGOPT);
 		tagopt = TagOpt.fromOption(val);
+		mirror = rc.getBoolean(SECTION, name, KEY_MIRROR, DEFAULT_MIRROR);
 	}
 
 	/**
@@ -192,14 +199,27 @@ public class RemoteConfig {
 		set(rc, KEY_UPLOADPACK, getUploadPack(), DEFAULT_UPLOAD_PACK);
 		set(rc, KEY_RECEIVEPACK, getReceivePack(), DEFAULT_RECEIVE_PACK);
 		set(rc, KEY_TAGOPT, getTagOpt().option(), TagOpt.AUTO_FOLLOW.option());
+		set(rc, KEY_MIRROR, mirror, DEFAULT_MIRROR);
 	}
 
 	private void set(final RepositoryConfig rc, final String key,
 			final String currentValue, final String defaultValue) {
 		if (defaultValue.equals(currentValue))
-			rc.unsetString(SECTION, getName(), key);
+			unset(rc, key);
 		else
 			rc.setString(SECTION, getName(), key, currentValue);
+	}
+
+	private void set(final RepositoryConfig rc, final String key,
+			final boolean currentValue, final boolean defaultValue) {
+		if (defaultValue == currentValue)
+			unset(rc, key);
+		else
+			rc.setBoolean(SECTION, getName(), key, currentValue);
+	}
+
+	private void unset(final RepositoryConfig rc, final String key) {
+		rc.unsetString(SECTION, getName(), key);
 	}
 
 	/**
@@ -381,5 +401,23 @@ public class RemoteConfig {
 	 */
 	public void setTagOpt(final TagOpt option) {
 		tagopt = option != null ? option : TagOpt.AUTO_FOLLOW;
+	}
+
+	/**
+	 * @return true if pushing to the remote automatically deletes remote refs
+	 *         which don't exist on the source side.
+	 */
+	public boolean isMirror() {
+		return mirror;
+	}
+
+	/**
+	 * Set the mirror flag to automatically delete remote refs.
+	 *
+	 * @param m
+	 *            true to automatically delete remote refs during push.
+	 */
+	public void setMirror(final boolean m) {
+		mirror = m;
 	}
 }
