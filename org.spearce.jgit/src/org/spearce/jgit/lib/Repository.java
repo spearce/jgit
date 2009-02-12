@@ -878,25 +878,6 @@ public class Repository {
 	}
 
 	/**
-	 * @return name of topmost Stacked Git patch.
-	 * @throws IOException
-	 */
-	public String getPatch() throws IOException {
-		final File ptr = new File(getDirectory(),"patches/"+getBranch()+"/applied");
-		final BufferedReader br = new BufferedReader(new FileReader(ptr));
-		String last=null;
-		try {
-			String line;
-			while ((line=br.readLine())!=null) {
-				last = line;
-			}
-		} finally {
-			br.close();
-		}
-		return last;
-	}
-
-	/**
 	 * @return name of current branch
 	 * @throws IOException
 	 */
