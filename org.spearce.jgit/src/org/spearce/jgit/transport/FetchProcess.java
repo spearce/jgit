@@ -59,6 +59,7 @@ import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
+import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.revwalk.ObjectWalk;
 import org.spearce.jgit.revwalk.RevWalk;
 
@@ -152,6 +153,8 @@ class FetchProcess {
 		}
 
 		final RevWalk walk = new RevWalk(transport.local);
+		if (transport.isRemoveDeletedRefs())
+			deleteStaleTrackingRefs(result, walk);
 		for (TrackingRefUpdate u : localUpdates) {
 			try {
 				u.update(walk);
@@ -364,6 +367,51 @@ class FetchProcess {
 	private TrackingRefUpdate createUpdate(final RefSpec spec,
 			final ObjectId newId) throws IOException {
 		return new TrackingRefUpdate(transport.local, spec, newId, "fetch");
+	}
+
+	private void deleteStaleTrackingRefs(final FetchResult result,
+			final RevWalk walk) throws TransportException {
+		final Repository db = transport.local;
+		for (final Ref ref : db.getAllRefs().values()) {
+			final String refname = ref.getName();
+			for (final RefSpec spec : toFetch) {
+				if (spec.matchDestination(refname)) {
+					final RefSpec s = spec.expandFromDestination(refname);
+					if (result.getAdvertisedRef(s.getSource()) == null) {
+						deleteTrackingRef(result, db, walk, s, ref);
+					}
+				}
+			}
+		}
+	}
+
+	private void deleteTrackingRef(final FetchResult result,
+			final Repository db, final RevWalk walk, final RefSpec spec,
+			final Ref localRef) throws TransportException {
+		final String name = localRef.getName();
+		try {
+			final TrackingRefUpdate u = new TrackingRefUpdate(db, name, spec
+					.getSource(), true, ObjectId.zeroId(), "deleted");
+			result.add(u);
+			if (transport.isDryRun()){
+				return;
+			}
+			u.delete(walk);
+			switch (u.getResult()) {
+			case NEW:
+			case NO_CHANGE:
+			case FAST_FORWARD:
+			case FORCED:
+				break;
+			default:
+				throw new TransportException(transport.getURI(),
+						"Cannot delete stale tracking ref " + name + ": "
+								+ u.getResult().name());
+			}
+		} catch (IOException e) {
+			throw new TransportException(transport.getURI(),
+					"Cannot delete stale tracking ref " + name, e);
+		}
 	}
 
 	private static boolean isTag(final Ref r) {

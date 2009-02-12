@@ -355,6 +355,9 @@ public abstract class Transport {
 	/** Should an incoming (fetch) transfer validate objects? */
 	private boolean checkFetchedObjects;
 
+	/** Should refs no longer on the source be pruned from the destination? */
+	private boolean removeDeletedRefs;
+
 	/**
 	 * Create a new transport instance.
 	 * 
@@ -513,6 +516,30 @@ public abstract class Transport {
 	 */
 	public void setPushThin(final boolean pushThin) {
 		this.pushThin = pushThin;
+	}
+
+	/**
+	 * @return true if destination refs should be removed if they no longer
+	 *         exist at the source repository.
+	 */
+	public boolean isRemoveDeletedRefs() {
+		return removeDeletedRefs;
+	}
+
+	/**
+	 * Set whether or not to remove refs which no longer exist in the source.
+	 * <p>
+	 * If true, refs at the destination repository (local for fetch, remote for
+	 * push) are deleted if they no longer exist on the source side (remote for
+	 * fetch, local for push).
+	 * <p>
+	 * False by default, as this may cause data to become unreachable, and
+	 * eventually be deleted on the next GC.
+	 *
+	 * @param remove true to remove refs that no longer exist.
+	 */
+	public void setRemoveDeletedRefs(final boolean remove) {
+		removeDeletedRefs = remove;
 	}
 
 	/**

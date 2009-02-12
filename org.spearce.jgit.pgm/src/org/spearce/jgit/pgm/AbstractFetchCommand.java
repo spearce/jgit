@@ -39,6 +39,7 @@ package org.spearce.jgit.pgm;
 
 import org.kohsuke.args4j.Option;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.transport.FetchResult;
 import org.spearce.jgit.transport.TrackingRefUpdate;
@@ -75,9 +76,12 @@ abstract class AbstractFetchCommand extends TextBuiltin {
 		final RefUpdate.Result r = u.getResult();
 		if (r == RefUpdate.Result.LOCK_FAILURE)
 			return "[lock fail]";
-
 		if (r == RefUpdate.Result.IO_FAILURE)
 			return "[i/o error]";
+		if (r == RefUpdate.Result.REJECTED)
+			return "[rejected]";
+		if (ObjectId.zeroId().equals(u.getNewObjectId()))
+			return "[deleted]";
 
 		if (r == RefUpdate.Result.NEW) {
 			if (u.getRemoteName().startsWith(Constants.R_HEADS))
@@ -99,8 +103,6 @@ abstract class AbstractFetchCommand extends TextBuiltin {
 			return aOld + ".." + aNew;
 		}
 
-		if (r == RefUpdate.Result.REJECTED)
-			return "[rejected]";
 		if (r == RefUpdate.Result.NO_CHANGE)
 			return "[up to date]";
 		return "[" + r.name() + "]";
