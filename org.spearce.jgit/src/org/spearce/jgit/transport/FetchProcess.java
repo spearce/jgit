@@ -69,9 +69,6 @@ class FetchProcess {
 	/** List of things we want to fetch from the remote repository. */
 	private final Collection<RefSpec> toFetch;
 
-	/** How to handle annotated tags, if any are advertised. */
-	private final TagOpt tagopt;
-
 	/** Set of refs we will actually wind up asking to obtain. */
 	private final HashMap<ObjectId, Ref> askFor = new HashMap<ObjectId, Ref>();
 
@@ -86,10 +83,9 @@ class FetchProcess {
 
 	private FetchConnection conn;
 
-	FetchProcess(final Transport t, final Collection<RefSpec> f, final TagOpt o) {
+	FetchProcess(final Transport t, final Collection<RefSpec> f) {
 		transport = t;
 		toFetch = f;
-		tagopt = o;
 	}
 
 	void execute(final ProgressMonitor monitor, final FetchResult result)
@@ -114,6 +110,7 @@ class FetchProcess {
 			}
 
 			Collection<Ref> additionalTags = Collections.<Ref> emptyList();
+			final TagOpt tagopt = transport.getTagOpt();
 			if (tagopt == TagOpt.AUTO_FOLLOW)
 				additionalTags = expandAutoFollowTags();
 			else if (tagopt == TagOpt.FETCH_TAGS)
