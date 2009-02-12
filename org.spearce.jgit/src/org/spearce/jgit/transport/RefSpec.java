@@ -135,24 +135,6 @@ public class RefSpec {
 		}
 	}
 
-	/**
-	 * Expand a wildcard specification.
-	 * 
-	 * @param p
-	 *            the wildcard specification we should base ourselves on.
-	 * @param name
-	 *            actual name that matched the source of <code>p</code>.
-	 */
-	protected RefSpec(final RefSpec p, final String name) {
-		final String pdst = p.getDestination();
-		if (p.getSource() == null || pdst == null)
-			throw new IllegalArgumentException("Cannot expand from " + p);
-		force = p.isForceUpdate();
-		srcName = name;
-		dstName = pdst.substring(0, pdst.length() - 1)
-				+ name.substring(p.getSource().length() - 1);
-	}
-
 	private RefSpec(final RefSpec p) {
 		force = p.isForceUpdate();
 		wildcard = p.isWildcard();
@@ -349,7 +331,16 @@ public class RefSpec {
 	 *         wildcard.
 	 */
 	public RefSpec expandFromSource(final String r) {
-		return isWildcard() ? new RefSpec(this, r) : this;
+		return isWildcard() ? new RefSpec(this).expandFromSourceImp(r) : this;
+	}
+
+	private RefSpec expandFromSourceImp(final String name) {
+		final String psrc = srcName, pdst = dstName;
+		wildcard = false;
+		srcName = name;
+		dstName = pdst.substring(0, pdst.length() - 1)
+				+ name.substring(psrc.length() - 1);
+		return this;
 	}
 
 	/**
@@ -366,7 +357,49 @@ public class RefSpec {
 	 *         wildcard.
 	 */
 	public RefSpec expandFromSource(final Ref r) {
-		return isWildcard() ? new RefSpec(this, r.getName()) : this;
+		return expandFromSource(r.getName());
+	}
+
+	/**
+	 * Expand this specification to exactly match a ref name.
+	 * <p>
+	 * Callers must first verify the passed ref name matches this specification,
+	 * otherwise expansion results may be unpredictable.
+	 *
+	 * @param r
+	 *            a ref name that matched our destination specification. Could
+	 *            be a wildcard also.
+	 * @return a new specification expanded from provided ref name. Result
+	 *         specification is wildcard if and only if provided ref name is
+	 *         wildcard.
+	 */
+	public RefSpec expandFromDestination(final String r) {
+		return isWildcard() ? new RefSpec(this).expandFromDstImp(r) : this;
+	}
+
+	private RefSpec expandFromDstImp(final String name) {
+		final String psrc = srcName, pdst = dstName;
+		wildcard = false;
+		srcName = psrc.substring(0, psrc.length() - 1)
+				+ name.substring(pdst.length() - 1);
+		dstName = name;
+		return this;
+	}
+
+	/**
+	 * Expand this specification to exactly match a ref.
+	 * <p>
+	 * Callers must first verify the passed ref matches this specification,
+	 * otherwise expansion results may be unpredictable.
+	 *
+	 * @param r
+	 *            a ref that matched our destination specification.
+	 * @return a new specification expanded from provided ref name. Result
+	 *         specification is wildcard if and only if provided ref name is
+	 *         wildcard.
+	 */
+	public RefSpec expandFromDestination(final Ref r) {
+		return expandFromDestination(r.getName());
 	}
 
 	private boolean match(final String refName, final String s) {

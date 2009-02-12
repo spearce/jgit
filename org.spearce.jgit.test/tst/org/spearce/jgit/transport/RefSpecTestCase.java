@@ -232,4 +232,26 @@ public class RefSpecTestCase extends TestCase {
 		assertEquals("HEAD", a.toString());
 		assertEquals("refs/heads/*:refs/remotes/origin/*", b.toString());
 	}
+
+	public void testExpandFromDestination_NonWildcard() {
+		final String src = "refs/heads/master";
+		final String dst = "refs/remotes/origin/master";
+		final RefSpec a = new RefSpec(src + ":" + dst);
+		final RefSpec r = a.expandFromDestination(dst);
+		assertSame(a, r);
+		assertFalse(r.isWildcard());
+		assertEquals(src, r.getSource());
+		assertEquals(dst, r.getDestination());
+	}
+
+	public void testExpandFromDestination_Wildcard() {
+		final String src = "refs/heads/master";
+		final String dst = "refs/remotes/origin/master";
+		final RefSpec a = new RefSpec("refs/heads/*:refs/remotes/origin/*");
+		final RefSpec r = a.expandFromDestination(dst);
+		assertNotSame(a, r);
+		assertFalse(r.isWildcard());
+		assertEquals(src, r.getSource());
+		assertEquals(dst, r.getDestination());
+	}
 }
