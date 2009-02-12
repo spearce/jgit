@@ -401,11 +401,11 @@ public class RefUpdate {
 		if (getName().startsWith(Constants.R_HEADS)) {
 			final Ref head = db.readRef(Constants.HEAD);
 			if (head != null && getName().equals(head.getName()))
-				return Result.REJECTED_CURRENT_BRANCH;
+				return result = Result.REJECTED_CURRENT_BRANCH;
 		}
 
 		try {
-			return updateImpl(walk, new DeleteStore());
+			return result = updateImpl(walk, new DeleteStore());
 		} catch (IOException x) {
 			result = Result.IO_FAILURE;
 			throw x;
