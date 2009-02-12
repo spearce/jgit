@@ -88,6 +88,10 @@ public class WindowedFile {
 	 */
 	public WindowedFile(final File file) {
 		fPath = file;
+
+		// Multiply by 31 here so we can more directly combine with another
+		// value in WindowCache.hash(), without doing the multiply there.
+		//
 		hash = System.identityHashCode(this) * 31;
 		length = Long.MAX_VALUE;
 	}

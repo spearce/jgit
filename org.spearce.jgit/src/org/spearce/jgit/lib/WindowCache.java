@@ -362,6 +362,9 @@ public class WindowCache {
 	}
 
 	private static int hash(final WindowedFile wp, final int id) {
+		// wp.hash was already "stirred up" a bit by * 31 when
+		// it was created. Its reasonable to just add here.
+		//
 		return ((wp.hash + id) >>> 1) % cache.length;
 	}
 
