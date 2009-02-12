@@ -89,7 +89,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		pack = new WindowedFile(packFile) {
 			@Override
 			protected void onOpen() throws IOException {
-				readPackHeader();
+				onOpenPack();
 			}
 		};
 	}
@@ -264,8 +264,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		return idx().hasCRC32Support();
 	}
 
-
-	private void readPackHeader() throws IOException {
+	private void onOpenPack() throws IOException {
 		final WindowCursor curs = new WindowCursor();
 		long position = 0;
 		final byte[] sig = new byte[Constants.PACK_SIGNATURE.length];
