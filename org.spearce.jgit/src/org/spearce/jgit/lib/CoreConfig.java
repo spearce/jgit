@@ -45,6 +45,7 @@ import java.util.zip.Deflater;
  */
 public class CoreConfig {
 	private static final int DEFAULT_COMPRESSION = Deflater.DEFAULT_COMPRESSION;
+	private static final int DEFAULT_INDEXVERSION = 2;
 
 	private final int compression;
 
@@ -52,7 +53,7 @@ public class CoreConfig {
 
 	CoreConfig(final RepositoryConfig rc) {
 		compression = rc.getInt("core", "compression", DEFAULT_COMPRESSION);
-		packIndexVersion = rc.getInt("pack", "indexversion", 0);
+		packIndexVersion = rc.getInt("pack", "indexversion", DEFAULT_INDEXVERSION);
 	}
 
 	/**

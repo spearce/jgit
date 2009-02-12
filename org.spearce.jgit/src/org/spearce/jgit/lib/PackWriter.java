@@ -237,6 +237,7 @@ public class PackWriter {
 		initMonitor = imonitor;
 		writeMonitor = wmonitor;
 		this.deflater = new Deflater(db.getConfig().getCore().getCompression());
+		outputVersion = repo.getConfig().getCore().getPackIndexVersion();
 	}
 
 	/**

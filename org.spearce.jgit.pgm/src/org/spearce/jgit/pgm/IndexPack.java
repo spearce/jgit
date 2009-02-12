@@ -49,13 +49,15 @@ class IndexPack extends TextBuiltin {
 	private boolean fixThin;
 
 	@Option(name = "--index-version", usage = "index file format to create")
-	private int indexVersion;
+	private int indexVersion = -1;
 
 	@Argument(index = 0, required = true, metaVar = "base")
 	private File base;
 
 	@Override
 	protected void run() throws Exception {
+		if (indexVersion == -1)
+			indexVersion = db.getConfig().getCore().getPackIndexVersion();
 		final BufferedInputStream in;
 		final org.spearce.jgit.transport.IndexPack ip;
 		in = new BufferedInputStream(System.in);
