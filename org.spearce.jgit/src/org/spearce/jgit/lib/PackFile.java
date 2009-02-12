@@ -65,8 +65,6 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	/**
 	 * Construct a reader for an existing, pre-indexed packfile.
 	 * 
-	 * @param parentRepo
-	 *            Git repository holding this pack file
 	 * @param idxFile
 	 *            path of the <code>.idx</code> file listing the contents.
 	 * @param packFile
@@ -74,8 +72,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	 * @throws IOException
 	 *             the index file cannot be accessed at this time.
 	 */
-	public PackFile(final Repository parentRepo, final File idxFile,
-			final File packFile) throws IOException {
+	public PackFile(final File idxFile, final File packFile) throws IOException {
 		pack = new WindowedFile(packFile) {
 			@Override
 			protected void onOpen() throws IOException {

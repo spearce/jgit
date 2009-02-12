@@ -471,7 +471,7 @@ public class PackWriterTest extends RepositoryTestCase {
 		indexer.setKeepEmpty(true);
 		indexer.setFixThin(thin);
 		indexer.index(new TextProgressMonitor());
-		pack = new PackFile(db, indexFile, packFile);
+		pack = new PackFile(indexFile, packFile);
 	}
 
 	private void verifyObjectsOrder(final ObjectId objectsOrder[]) {

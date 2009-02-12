@@ -800,7 +800,7 @@ public class Repository {
 			final PackFile[] cur = packFileList;
 			final PackFile[] arr = new PackFile[cur.length + 1];
 			System.arraycopy(cur, 0, arr, 1, cur.length);
-			arr[0] = new PackFile(this, idx, pack);
+			arr[0] = new PackFile(idx, pack);
 			packFileList = arr;
 		}
 	}
@@ -849,7 +849,7 @@ public class Repository {
 				}
 
 				try {
-					packList.add(new PackFile(this, idxFile, packFile));
+					packList.add(new PackFile(idxFile, packFile));
 				} catch (IOException ioe) {
 					// Whoops. That's not a pack!
 					//
