@@ -127,13 +127,22 @@ public class QuotedStringGitPathStyleTest extends TestCase {
 	}
 
 	public void testDequote_OctalAll() {
-		for (int i = 0; i < 256; i++) {
-			String s = Integer.toOctalString(i);
-			while (s.length() < 3) {
-				s = "0" + s;
-			}
-			assertDequote("" + (char) i, "\\" + s);
+		for (int i = 0; i < 127; i++) {
+			assertDequote("" + (char) i, octalEscape(i));
 		}
+		for (int i = 128; i < 256; i++) {
+			int f = 0xC0 | (i >> 6);
+			int s = 0x80 | (i & 0x3f);
+			assertDequote("" + (char) i, octalEscape(f)+octalEscape(s));
+		}
+	}
+
+	private String octalEscape(int i) {
+		String s = Integer.toOctalString(i);
+		while (s.length() < 3) {
+			s = "0" + s;
+		}
+		return "\\"+s;
 	}
 
 	public void testQuote_OctalAll() {
