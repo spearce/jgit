@@ -13,15 +13,17 @@
 
 package org.spearce.egit.ui.internal.decorators;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.team.core.Team;
+import org.spearce.egit.core.AdaptableFileTreeIterator;
 import org.spearce.egit.core.ContainerTreeIterator;
 import org.spearce.egit.core.ContainerTreeIterator.ResourceEntry;
 import org.spearce.egit.core.project.RepositoryMapping;
@@ -39,6 +41,7 @@ import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.revwalk.RevWalk;
 import org.spearce.jgit.treewalk.EmptyTreeIterator;
 import org.spearce.jgit.treewalk.TreeWalk;
+import org.spearce.jgit.treewalk.WorkingTreeIterator;
 import org.spearce.jgit.treewalk.filter.AndTreeFilter;
 import org.spearce.jgit.treewalk.filter.PathFilterGroup;
 import org.spearce.jgit.treewalk.filter.TreeFilter;
@@ -210,13 +213,21 @@ class DecoratableResourceAdapter implements IDecoratableResource {
 		}
 
 		private boolean shouldRecurse(TreeWalk treeWalk) {
-			final ContainerTreeIterator workspaceIterator = treeWalk.getTree(
-					T_WORKSPACE, ContainerTreeIterator.class);
-			final ResourceEntry resourceEntry = workspaceIterator != null ? workspaceIterator
-					.getResourceEntry()
-					: null;
-			IResource visitingResource = resourceEntry.getResource();
+			final WorkingTreeIterator workspaceIterator = treeWalk.getTree(
+					T_WORKSPACE, WorkingTreeIterator.class);
 
+			if (workspaceIterator instanceof AdaptableFileTreeIterator)
+				return true;
+
+			ResourceEntry resourceEntry = null;
+			if (workspaceIterator != null)
+				resourceEntry = ((ContainerTreeIterator) workspaceIterator)
+						.getResourceEntry();
+
+			if (resourceEntry == null)
+				return true;
+
+			IResource visitingResource = resourceEntry.getResource();
 			if (targetDepth == -1) {
 				if (visitingResource.equals(resource)
 						|| visitingResource.getParent().equals(resource))
@@ -319,14 +330,16 @@ class DecoratableResourceAdapter implements IDecoratableResource {
 
 		// Working directory
 		IProject project = resource.getProject();
-		IWorkspace workspace = resource.getWorkspace();
-		if (repository.getWorkDir().equals(project.getLocation().toFile()))
-			treeWalk.addTree(new ContainerTreeIterator(project));
-		else
-			treeWalk.addTree(new ContainerTreeIterator(workspace.getRoot()));
+		IWorkspaceRoot workspaceRoot = resource.getWorkspace().getRoot();
+		File repoRoot = repository.getWorkDir();
 
-		// TODO: Add fallback for projects with the repository more than
-		// one parent up, for example by using a stack of DummyIterators
+		if (repoRoot.equals(project.getLocation().toFile()))
+			treeWalk.addTree(new ContainerTreeIterator(project));
+		else if (repoRoot.equals(workspaceRoot.getLocation().toFile()))
+			treeWalk.addTree(new ContainerTreeIterator(workspaceRoot));
+		else
+			treeWalk.addTree(new AdaptableFileTreeIterator(repoRoot,
+					workspaceRoot));
 
 		return treeWalk;
 	}
