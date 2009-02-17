@@ -88,7 +88,22 @@ public class ContainerTreeIterator extends WorkingTreeIterator {
 		init(entries());
 	}
 
-	private ContainerTreeIterator(final WorkingTreeIterator p,
+	/**
+	 * Construct a new iterator from a container in the workspace, with a given
+	 * parent iterator.
+	 * <p>
+	 * The iterator will support traversal over the named container, but only if
+	 * it is contained within a project which has the Git repository provider
+	 * connected and this resource is mapped into a Git repository. During the
+	 * iteration the paths will be automatically generated to match the proper
+	 * repository paths for this container's children.
+	 *
+	 * @param p
+	 *            the parent iterator we were created from.
+	 * @param base
+	 *            the part of the workspace the iterator will walk over.
+	 */
+	public ContainerTreeIterator(final WorkingTreeIterator p,
 			final IContainer base) {
 		super(p);
 		node = base;

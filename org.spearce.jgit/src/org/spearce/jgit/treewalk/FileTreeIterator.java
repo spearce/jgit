@@ -100,7 +100,10 @@ public class FileTreeIterator extends WorkingTreeIterator {
 		return r;
 	}
 
-	static class FileEntry extends Entry {
+	/**
+	 * Wrapper for a standard Java IO file
+	 */
+	static public class FileEntry extends Entry {
 		final File file;
 
 		private final FileMode mode;
@@ -150,6 +153,15 @@ public class FileTreeIterator extends WorkingTreeIterator {
 		@Override
 		public InputStream openInputStream() throws IOException {
 			return new FileInputStream(file);
+		}
+
+		/**
+		 * Get the underlying file of this entry.
+		 *
+		 * @return the underlying file of this entry
+		 */
+		public File getFile() {
+			return file;
 		}
 	}
 }
