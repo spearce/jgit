@@ -7,7 +7,14 @@
       plugin="org.spearce.egit">
 
    <description url="http://www.jgit.org">
-      An Eclipse Git Plugin in pure Java.
+An Eclipse Git Plugin in pure Java.
+
+@buildId@
+
+Changes on @branch@ since @refversion@:
+
+<![CDATA[@shortlog@]]>
+
    </description>
 
    <copyright>
