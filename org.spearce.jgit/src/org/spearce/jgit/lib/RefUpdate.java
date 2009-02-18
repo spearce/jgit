@@ -197,7 +197,7 @@ public class RefUpdate {
 	 *            the new value.
 	 */
 	public void setNewObjectId(final AnyObjectId id) {
-		newValue = id.toObjectId();
+		newValue = id.copy();
 	}
 
 	/**

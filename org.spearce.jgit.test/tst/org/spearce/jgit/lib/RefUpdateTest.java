@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.spearce.jgit.lib.RefUpdate.Result;
+import org.spearce.jgit.revwalk.RevCommit;
 
 public class RefUpdateTest extends RepositoryTestCase {
 
@@ -62,6 +63,23 @@ public class RefUpdateTest extends RepositoryTestCase {
 		assertEquals(exists, db.getAllRefs().containsKey(ref.getName()));
 		assertEquals(expected, ref.delete());
 		assertEquals(!removed, db.getAllRefs().containsKey(ref.getName()));
+	}
+
+	public void testNoCacheObjectIdSubclass() throws IOException {
+		final String newRef = "refs/heads/abc";
+		final RefUpdate ru = updateRef(newRef);
+		final RevCommit newid = new RevCommit(ru.getNewObjectId()) {
+			// empty
+		};
+		ru.setNewObjectId(newid);
+		ru.update();
+		final Ref r = db.getAllRefs().get(newRef);
+		assertNotNull(r);
+		assertEquals(newRef, r.getName());
+		assertNotNull(r.getObjectId());
+		assertNotSame(newid, r.getObjectId());
+		assertSame(ObjectId.class, r.getObjectId().getClass());
+		assertEquals(newid.copy(), r.getObjectId());
 	}
 
 	public void testLooseDelete() throws IOException {
