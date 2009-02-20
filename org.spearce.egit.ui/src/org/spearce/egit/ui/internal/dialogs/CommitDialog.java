@@ -179,14 +179,16 @@ public class CommitDialog extends Dialog {
 		if (committer != null)
 			committerText.setText(committer);
 		committerText.addModifyListener(new ModifyListener() {
+			String oldCommitter = committerText.getText();
 			public void modifyText(ModifyEvent e) {
 				if (signedOffButton.getSelection()) {
 					// the commit message is signed
 					// the signature must be updated
-					String oldCommitText = commitText.getText();
-					oldCommitText = removeLastLine(oldCommitText);
-					oldCommitText = signOff(oldCommitText);
-					commitText.setText(oldCommitText);
+					String newCommitter = committerText.getText();
+					String oldSignOff = getSignedOff(oldCommitter);
+					String newSignOff = getSignedOff(newCommitter);
+					commitText.setText(replaceSignOff(commitText.getText(), oldSignOff, newSignOff));
+					oldCommitter = newCommitter;
 				}
 			}
 		});
@@ -230,12 +232,16 @@ public class CommitDialog extends Dialog {
 
 		signedOffButton.addSelectionListener(new SelectionListener() {
 			public void widgetSelected(SelectionEvent arg0) {
+				String curText = commitText.getText();
 				if (signedOffButton.getSelection()) {
 					// add signed off line
-					commitText.setText(signOff(commitText.getText()));
+					commitText.setText(signOff(curText));
 				} else {
 					// remove signed off line
-					commitText.setText(removeLastLine(commitText.getText()));
+					curText = replaceSignOff(curText, getSignedOff(), "");
+					if (curText.endsWith(Text.DELIMITER + Text.DELIMITER))
+						curText = curText.substring(0, curText.length() - Text.DELIMITER.length());
+					commitText.setText(curText);
 				}
 			}
 
@@ -279,11 +285,19 @@ public class CommitDialog extends Dialog {
 	}
 
 	private void updateSignedOffButton() {
-		signedOffButton.setSelection(getLastLine(commitText.getText()).equals(getSignedOff()));
+		String curText = commitText.getText();
+		if (!curText.endsWith(Text.DELIMITER))
+			curText += Text.DELIMITER;
+
+		signedOffButton.setSelection(curText.indexOf(getSignedOff() + Text.DELIMITER) != -1);
 	}
 
 	private String getSignedOff() {
-		return Constants.SIGNED_OFF_BY_TAG + committerText.getText();
+		return getSignedOff(committerText.getText());
+	}
+
+	private String getSignedOff(String signer) {
+		return Constants.SIGNED_OFF_BY_TAG + signer;
 	}
 
 	private String signOff(String input) {
@@ -299,23 +313,6 @@ public class CommitDialog extends Dialog {
 	}
 
 	private String getLastLine(String input) {
-		String output = removeLastLineBreak(input);
-		int breakLength = Text.DELIMITER.length();
-
-		// get the last line
-		int lastIndexOfLineBreak = output.lastIndexOf(Text.DELIMITER);
-		return lastIndexOfLineBreak == -1 ? output : output.substring(lastIndexOfLineBreak + breakLength, output.length());
-	}
-
-	private String removeLastLine(String input) {
-		String output = removeLastLineBreak(input);
-
-		// remove the last line if possible
-		int lastIndexOfLineBreak = output.lastIndexOf(Text.DELIMITER);
-		return lastIndexOfLineBreak == -1 ? "" : output.substring(0, lastIndexOfLineBreak); //$NON-NLS-1$
-	}
-
-	private String removeLastLineBreak(String input) {
 		String output = input;
 		int breakLength = Text.DELIMITER.length();
 
@@ -324,7 +321,25 @@ public class CommitDialog extends Dialog {
 		if (lastIndexOfLineBreak != -1 && lastIndexOfLineBreak == output.length() - breakLength)
 			output = output.substring(0, output.length() - breakLength);
 
-		return output;
+		// get the last line
+		lastIndexOfLineBreak = output.lastIndexOf(Text.DELIMITER);
+		return lastIndexOfLineBreak == -1 ? output : output.substring(lastIndexOfLineBreak + breakLength, output.length());
+	}
+
+	private String replaceSignOff(String input, String oldSignOff, String newSignOff) {
+		assert input != null;
+		assert oldSignOff != null;
+		assert newSignOff != null;
+
+		String curText = input;
+		if (!curText.endsWith(Text.DELIMITER))
+			curText += Text.DELIMITER;
+
+		int indexOfSignOff = curText.indexOf(oldSignOff + Text.DELIMITER);
+		if (indexOfSignOff == -1)
+			return input;
+
+		return input.substring(0, indexOfSignOff) + newSignOff + input.substring(indexOfSignOff + oldSignOff.length(), input.length());
 	}
 
 	private Menu getContextMenu() {
