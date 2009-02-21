@@ -154,6 +154,9 @@ public class CloneOperation implements IRunnableWithProgress {
 					remoteConfig.addFetchRefSpec(wcrs.expandFromSource(ref));
 		}
 
+		// we're setting up for a clone with a checkout
+		local.getConfig().setBoolean("core", null, "bare", false);
+
 		remoteConfig.update(local.getConfig());
 		local.getConfig().save();
 	}
