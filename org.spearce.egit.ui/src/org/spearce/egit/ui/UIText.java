@@ -1022,7 +1022,6 @@ public class UIText extends NLS {
 	public static String DecoratorPreferencesPage_iconsShowAssumeValid;
 
 	static {
-		initializeMessages(UIText.class.getPackage().getName() + ".uitext",
-				UIText.class);
+		initializeMessages("org.spearce.egit.ui.uitext", UIText.class);
 	}
 }
