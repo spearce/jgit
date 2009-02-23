@@ -99,8 +99,12 @@ class Clone extends AbstractFetchCommand {
 		}
 		if (gitdir == null)
 			gitdir = new File(localName, ".git");
+
 		db = new Repository(gitdir);
 		db.create();
+		db.getConfig().setBoolean("core", null, "bare", false);
+		db.getConfig().save();
+
 		out.println("Initialized empty Git repository in "
 				+ gitdir.getAbsolutePath());
 		out.flush();
