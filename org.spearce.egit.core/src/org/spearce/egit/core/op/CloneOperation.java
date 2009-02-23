@@ -32,6 +32,7 @@ import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.RepositoryConfig;
 import org.spearce.jgit.lib.Tree;
 import org.spearce.jgit.lib.WorkDirCheckout;
 import org.spearce.jgit.transport.FetchResult;
@@ -158,6 +159,17 @@ public class CloneOperation implements IRunnableWithProgress {
 		local.getConfig().setBoolean("core", null, "bare", false);
 
 		remoteConfig.update(local.getConfig());
+
+		// branch is like 'Constants.R_HEADS + branchName', we need only
+		// the 'branchName' part
+		String branchName = branch.substring(Constants.R_HEADS.length());
+
+		// setup the default remote branch for branchName
+		local.getConfig().setString(RepositoryConfig.BRANCH_SECTION,
+				branchName, "remote", remoteName);
+		local.getConfig().setString(RepositoryConfig.BRANCH_SECTION,
+				branchName, "merge", branch);
+
 		local.getConfig().save();
 	}
 
