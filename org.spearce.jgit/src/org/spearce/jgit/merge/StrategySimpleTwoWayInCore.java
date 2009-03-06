@@ -115,7 +115,7 @@ public class StrategySimpleTwoWayInCore extends MergeStrategy {
 				final int modeO = tw.getRawMode(T_OURS);
 				final int modeT = tw.getRawMode(T_THEIRS);
 				if (modeO == modeT && tw.idEqual(T_OURS, T_THEIRS)) {
-					same();
+					add(T_OURS, DirCacheEntry.STAGE_0);
 					continue;
 				}
 
@@ -124,8 +124,24 @@ public class StrategySimpleTwoWayInCore extends MergeStrategy {
 					add(T_THEIRS, DirCacheEntry.STAGE_0);
 				else if (modeB == modeT && tw.idEqual(T_BASE, T_THEIRS))
 					add(T_OURS, DirCacheEntry.STAGE_0);
-				else {
-					conflict();
+				else if (tw.isSubtree()) {
+					if (nonTree(modeB)) {
+						add(T_BASE, DirCacheEntry.STAGE_1);
+						hasConflict = true;
+					}
+					if (nonTree(modeO)) {
+						add(T_OURS, DirCacheEntry.STAGE_2);
+						hasConflict = true;
+					}
+					if (nonTree(modeT)) {
+						add(T_THEIRS, DirCacheEntry.STAGE_3);
+						hasConflict = true;
+					}
+					tw.enterSubtree();
+				} else {
+					add(T_BASE, DirCacheEntry.STAGE_1);
+					add(T_OURS, DirCacheEntry.STAGE_2);
+					add(T_THEIRS, DirCacheEntry.STAGE_3);
 					hasConflict = true;
 				}
 			}
@@ -143,14 +159,8 @@ public class StrategySimpleTwoWayInCore extends MergeStrategy {
 			}
 		}
 
-		private void same() throws IOException {
-			add(T_OURS, DirCacheEntry.STAGE_0);
-		}
-
-		private void conflict() throws IOException {
-			add(T_BASE, DirCacheEntry.STAGE_1);
-			add(T_OURS, DirCacheEntry.STAGE_2);
-			add(T_THEIRS, DirCacheEntry.STAGE_3);
+		private static boolean nonTree(final int mode) {
+			return mode != 0 && !FileMode.TREE.equals(mode);
 		}
 
 		private void add(final int tree, final int stage) throws IOException {
