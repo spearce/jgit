@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.spearce.jgit.lib.AnyObjectId;
+import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.WindowCursor;
 import org.spearce.jgit.treewalk.AbstractTreeIterator;
@@ -133,6 +134,8 @@ public class DirCacheBuilder extends BaseDirCacheEditor {
 	 *            UTF-8 encoded prefix to mount the tree's entries at. If the
 	 *            path does not end with '/' one will be automatically inserted
 	 *            as necessary.
+	 * @param stage
+	 *            stage of the entries when adding them.
 	 * @param db
 	 *            repository the tree(s) will be read from during recursive
 	 *            traversal. This must be the same repository that the resulting
@@ -146,8 +149,8 @@ public class DirCacheBuilder extends BaseDirCacheEditor {
 	 * @throws IOException
 	 *             a tree cannot be read to iterate through its entries.
 	 */
-	public void addTree(final byte[] pathPrefix, final Repository db,
-			final AnyObjectId tree) throws IOException {
+	public void addTree(final byte[] pathPrefix, final int stage,
+			final Repository db, final AnyObjectId tree) throws IOException {
 		final TreeWalk tw = new TreeWalk(db);
 		tw.reset();
 		final WindowCursor curs = new WindowCursor();
@@ -159,16 +162,16 @@ public class DirCacheBuilder extends BaseDirCacheEditor {
 		}
 		tw.setRecursive(true);
 		if (tw.next()) {
-			final DirCacheEntry newEntry = toEntry(tw);
+			final DirCacheEntry newEntry = toEntry(stage, tw);
 			beforeAdd(newEntry);
 			fastAdd(newEntry);
 			while (tw.next())
-				fastAdd(toEntry(tw));
+				fastAdd(toEntry(stage, tw));
 		}
 	}
 
-	private DirCacheEntry toEntry(final TreeWalk tw) {
-		final DirCacheEntry e = new DirCacheEntry(tw.getRawPath());
+	private DirCacheEntry toEntry(final int stage, final TreeWalk tw) {
+		final DirCacheEntry e = new DirCacheEntry(tw.getRawPath(), stage);
 		final AbstractTreeIterator i;
 
 		i = tw.getTree(0, AbstractTreeIterator.class);
@@ -184,6 +187,8 @@ public class DirCacheBuilder extends BaseDirCacheEditor {
 	}
 
 	private void beforeAdd(final DirCacheEntry newEntry) {
+		if (FileMode.TREE.equals(newEntry.getRawMode()))
+			throw bad(newEntry, "Adding subtree not allowed");
 		if (sorted && entryCnt > 0) {
 			final DirCacheEntry lastEntry = entries[entryCnt - 1];
 			final int cr = DirCache.cmp(lastEntry, newEntry);

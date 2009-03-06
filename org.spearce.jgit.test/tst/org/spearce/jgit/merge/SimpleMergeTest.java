@@ -36,10 +36,20 @@
  */
 package org.spearce.jgit.merge;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import org.spearce.jgit.dircache.DirCache;
+import org.spearce.jgit.dircache.DirCacheBuilder;
+import org.spearce.jgit.dircache.DirCacheEntry;
+import org.spearce.jgit.lib.Commit;
+import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.ObjectWriter;
+import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.RepositoryTestCase;
+import org.spearce.jgit.treewalk.TreeWalk;
 
 public class SimpleMergeTest extends RepositoryTestCase {
 
@@ -82,5 +92,88 @@ public class SimpleMergeTest extends RepositoryTestCase {
 		Merger ourMerger = MergeStrategy.SIMPLE_TWO_WAY_IN_CORE.newMerger(db);
 		boolean merge = ourMerger.merge(new ObjectId[] { db.resolve("f"), db.resolve("g") });
 		assertFalse(merge);
+	}
+
+	public void testTrivialTwoWay_validSubtreeSort() throws Exception {
+		final DirCache treeB = DirCache.read(db);
+		final DirCache treeO = DirCache.read(db);
+		final DirCache treeT = DirCache.read(db);
+		{
+			final DirCacheBuilder b = treeB.builder();
+			final DirCacheBuilder o = treeO.builder();
+			final DirCacheBuilder t = treeT.builder();
+
+			b.add(makeEntry("libelf-po/a", FileMode.REGULAR_FILE));
+			b.add(makeEntry("libelf/c", FileMode.REGULAR_FILE));
+
+			o.add(makeEntry("Makefile", FileMode.REGULAR_FILE));
+			o.add(makeEntry("libelf-po/a", FileMode.REGULAR_FILE));
+			o.add(makeEntry("libelf/c", FileMode.REGULAR_FILE));
+
+			t.add(makeEntry("libelf-po/a", FileMode.REGULAR_FILE));
+			t.add(makeEntry("libelf/c", FileMode.REGULAR_FILE, "blah"));
+
+			b.finish();
+			o.finish();
+			t.finish();
+		}
+
+		final ObjectWriter ow = new ObjectWriter(db);
+		final ObjectId b = commit(ow, treeB, new ObjectId[] {});
+		final ObjectId o = commit(ow, treeO, new ObjectId[] { b });
+		final ObjectId t = commit(ow, treeT, new ObjectId[] { b });
+
+		Merger ourMerger = MergeStrategy.SIMPLE_TWO_WAY_IN_CORE.newMerger(db);
+		boolean merge = ourMerger.merge(new ObjectId[] { o, t });
+		assertTrue(merge);
+
+		final TreeWalk tw = new TreeWalk(db);
+		tw.setRecursive(true);
+		tw.reset(ourMerger.getResultTreeId());
+
+		assertTrue(tw.next());
+		assertEquals("Makefile", tw.getPathString());
+		assertCorrectId(treeO, tw);
+
+		assertTrue(tw.next());
+		assertEquals("libelf-po/a", tw.getPathString());
+		assertCorrectId(treeO, tw);
+
+		assertTrue(tw.next());
+		assertEquals("libelf/c", tw.getPathString());
+		assertCorrectId(treeT, tw);
+
+		assertFalse(tw.next());
+	}
+
+	private void assertCorrectId(final DirCache treeT, final TreeWalk tw) {
+		assertEquals(treeT.getEntry(tw.getPathString()).getObjectId(), tw
+				.getObjectId(0));
+	}
+
+	private ObjectId commit(final ObjectWriter ow, final DirCache treeB,
+			final ObjectId[] parentIds) throws Exception {
+		final Commit c = new Commit(db);
+		c.setTreeId(treeB.writeTree(ow));
+		c.setAuthor(new PersonIdent("A U Thor", "a.u.thor", 1L, 0));
+		c.setCommitter(c.getAuthor());
+		c.setParentIds(parentIds);
+		c.setMessage("Tree " + c.getTreeId().name());
+		return ow.writeCommit(c);
+	}
+
+	private DirCacheEntry makeEntry(final String path, final FileMode mode)
+			throws Exception {
+		return makeEntry(path, mode, path);
+	}
+
+	private DirCacheEntry makeEntry(final String path, final FileMode mode,
+			final String content) throws Exception {
+		final DirCacheEntry ent = new DirCacheEntry(path);
+		ent.setFileMode(mode);
+		final byte[] contentBytes = Constants.encode(content);
+		ent.setObjectId(new ObjectWriter(db).computeBlobSha1(
+				contentBytes.length, new ByteArrayInputStream(contentBytes)));
+		return ent;
 	}
 }

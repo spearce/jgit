@@ -43,6 +43,7 @@ import org.spearce.jgit.dircache.DirCache;
 import org.spearce.jgit.dircache.DirCacheBuilder;
 import org.spearce.jgit.dircache.DirCacheEntry;
 import org.spearce.jgit.errors.UnmergedPathException;
+import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.treewalk.AbstractTreeIterator;
@@ -143,27 +144,29 @@ public class StrategySimpleTwoWayInCore extends MergeStrategy {
 		}
 
 		private void same() throws IOException {
-			if (tw.isSubtree())
-				builder.addTree(tw.getRawPath(), db, tw.getObjectId(1));
-			else
-				add(T_OURS, DirCacheEntry.STAGE_0);
+			add(T_OURS, DirCacheEntry.STAGE_0);
 		}
 
-		private void conflict() {
+		private void conflict() throws IOException {
 			add(T_BASE, DirCacheEntry.STAGE_1);
 			add(T_OURS, DirCacheEntry.STAGE_2);
 			add(T_THEIRS, DirCacheEntry.STAGE_3);
 		}
 
-		private void add(final int tree, final int stage) {
+		private void add(final int tree, final int stage) throws IOException {
 			final AbstractTreeIterator i = getTree(tree);
 			if (i != null) {
-				final DirCacheEntry e;
+				if (FileMode.TREE.equals(tw.getRawMode(tree))) {
+					builder.addTree(tw.getRawPath(), stage, db, tw
+							.getObjectId(tree));
+				} else {
+					final DirCacheEntry e;
 
-				e = new DirCacheEntry(tw.getRawPath(), stage);
-				e.setObjectIdFromRaw(i.idBuffer(), i.idOffset());
-				e.setFileMode(tw.getFileMode(tree));
-				builder.add(e);
+					e = new DirCacheEntry(tw.getRawPath(), stage);
+					e.setObjectIdFromRaw(i.idBuffer(), i.idOffset());
+					e.setFileMode(tw.getFileMode(tree));
+					builder.add(e);
+				}
 			}
 		}
 
