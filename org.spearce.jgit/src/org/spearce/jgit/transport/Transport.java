@@ -51,6 +51,7 @@ import java.util.Map;
 
 import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.errors.TransportException;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.NullProgressMonitor;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
@@ -243,10 +244,24 @@ public abstract class Transport {
 		final Collection<RefSpec> procRefs = expandPushWildcardsFor(db, specs);
 
 		for (final RefSpec spec : procRefs) {
-			final String srcRef = spec.getSource();
+			String srcRef = spec.getSource();
+			final Ref src = db.getRef(srcRef);
+			if (src != null)
+				srcRef = src.getName();
+			String remoteName = spec.getDestination();
 			// null destination (no-colon in ref-spec) is a special case
-			final String remoteName = (spec.getDestination() == null ? spec
-					.getSource() : spec.getDestination());
+			if (remoteName == null) {
+				remoteName = srcRef;
+			} else {
+				if (!remoteName.startsWith(Constants.R_REFS)) {
+					// null source is another special case (delete)
+					if (srcRef != null) {
+						// assume the same type of ref at the destination
+						String srcPrefix = srcRef.substring(0, srcRef.indexOf('/', Constants.R_REFS.length()));
+						remoteName = srcPrefix + "/" + remoteName;
+					}
+				}
+			}
 			final boolean forceUpdate = spec.isForceUpdate();
 			final String localName = findTrackingRefName(remoteName, fetchSpecs);
 
