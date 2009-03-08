@@ -189,7 +189,13 @@ public class WindowCache {
 	 *             the window was not found in the cache and the given provider
 	 *             was unable to load the window on demand.
 	 */
-	public static synchronized final void get(final WindowCursor curs,
+	public static final void get(final WindowCursor curs,
+			final WindowedFile wp, final long position) throws IOException {
+		getImpl(curs, wp, position);
+		curs.window.ensureLoaded(curs.handle);
+	}
+
+	private static synchronized final void getImpl(final WindowCursor curs,
 			final WindowedFile wp, final long position) throws IOException {
 		final int id = (int) (position >> windowSizeShift);
 		final int idx = hash(wp, id);
@@ -252,6 +258,12 @@ public class WindowCache {
 		e.chainNext = cache[idx];
 		cache[idx] = e;
 		insertLRU(e);
+	}
+
+	static synchronized void markLoaded(final ByteWindow w) {
+		if (--w.provider.openCount == 0) {
+			w.provider.cacheClose();
+		}
 	}
 
 	private static void makeMostRecent(ByteWindow<?> e) {

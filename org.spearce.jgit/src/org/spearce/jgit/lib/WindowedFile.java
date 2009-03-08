@@ -348,5 +348,6 @@ public class WindowedFile {
 		final byte[] b = new byte[size];
 		curs.window = new ByteArrayWindow(this, pos, windowId, b);
 		curs.handle = b;
+		openCount++; // Until the window loads, we must stay open.
 	}
 }

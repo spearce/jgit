@@ -107,4 +107,8 @@ final class ByteBufferWindow extends ByteWindow<ByteBuffer> {
 		while (!inf.finished() && !inf.needsInput())
 			inf.inflate(verifyGarbageBuffer, 0, verifyGarbageBuffer.length);
 	}
+
+	void ensureLoaded(final ByteBuffer ref) {
+		// Do nothing.
+	}
 }

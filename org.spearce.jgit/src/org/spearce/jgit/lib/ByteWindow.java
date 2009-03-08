@@ -217,4 +217,6 @@ abstract class ByteWindow<T> extends SoftReference<T> {
 
 	abstract void inflateVerify(T ref, int pos, Inflater inf)
 			throws DataFormatException;
+
+	abstract void ensureLoaded(T ref);
 }
