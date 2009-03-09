@@ -18,6 +18,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 
+import org.eclipse.compare.CompareUI;
+import org.eclipse.compare.ITypedElement;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.dialogs.Dialog;
@@ -52,9 +54,17 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.team.core.RepositoryProvider;
+import org.eclipse.team.core.history.IFileHistory;
+import org.eclipse.team.core.history.IFileRevision;
+import org.eclipse.team.internal.ui.history.FileRevisionTypedElement;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
+import org.spearce.egit.core.GitProvider;
+import org.spearce.egit.core.internal.storage.GitFileHistoryProvider;
 import org.spearce.egit.core.project.RepositoryMapping;
 import org.spearce.egit.ui.UIText;
+import org.spearce.egit.ui.internal.GitCompareFileRevisionEditorInput;
+import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.GitIndex;
 import org.spearce.jgit.lib.PersonIdent;
@@ -261,6 +271,8 @@ public class CommitDialog extends Dialog {
 				| SWT.FULL_SELECTION | SWT.MULTI | SWT.CHECK | SWT.BORDER);
 		resourcesTable.setLayoutData(GridDataFactory.fillDefaults().hint(600,
 				200).span(2,1).grab(true, true).create());
+
+		resourcesTable.addSelectionListener(new CommitItemSelectionListener());
 
 		resourcesTable.setHeaderVisible(true);
 		TableColumn statCol = new TableColumn(resourcesTable, SWT.LEFT);
@@ -501,6 +513,50 @@ public class CommitDialog extends Dialog {
 			}
 
 			filesViewer.setComparator(new CommitViewerComparator(comparator));
+		}
+
+	}
+
+	class CommitItemSelectionListener extends SelectionAdapter {
+
+		public void widgetDefaultSelected(SelectionEvent e) {
+			IStructuredSelection selection = (IStructuredSelection) filesViewer.getSelection();
+
+			CommitItem commitItem = (CommitItem) selection.getFirstElement();
+			if (commitItem == null) {
+				return;
+			}
+
+			IProject project = commitItem.file.getProject();
+			RepositoryMapping mapping = RepositoryMapping.getMapping(project);
+			if (mapping == null) {
+				return;
+			}
+			Repository repository = mapping.getRepository();
+
+			Commit headCommit;
+			try {
+				headCommit = repository.mapCommit(Constants.HEAD);
+			} catch (IOException e1) {
+				headCommit = null;
+			}
+			if (headCommit == null) {
+				return;
+			}
+
+			GitProvider provider = (GitProvider) RepositoryProvider.getProvider(project);
+			GitFileHistoryProvider fileHistoryProvider = (GitFileHistoryProvider) provider.getFileHistoryProvider();
+
+			IFileHistory fileHistory = fileHistoryProvider.getFileHistoryFor(commitItem.file, 0, null);
+
+			IFileRevision baseFile = fileHistory.getFileRevision(headCommit.getCommitId().name());
+			IFileRevision nextFile = fileHistoryProvider.getWorkspaceFileRevision(commitItem.file);
+
+			ITypedElement base = new FileRevisionTypedElement(baseFile);
+			ITypedElement next = new FileRevisionTypedElement(nextFile);
+
+			GitCompareFileRevisionEditorInput input = new GitCompareFileRevisionEditorInput(base, next, null);
+			CompareUI.openCompareDialog(input);
 		}
 
 	}
