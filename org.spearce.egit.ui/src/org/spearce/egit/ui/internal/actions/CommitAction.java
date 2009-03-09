@@ -175,7 +175,7 @@ public class CommitAction extends RepositoryAction {
 		} catch (IOException e) {
 			throw new TeamException("Committing changes", e);
 		}
-		for (IProject proj : getSelectedProjects()) {
+		for (IProject proj : getProjectsForSelectedResources()) {
 			RepositoryMapping.getMapping(proj).fireRepositoryChanged();
 		}
 	}
@@ -230,7 +230,7 @@ public class CommitAction extends RepositoryAction {
 			UnsupportedEncodingException {
 		if (selectedItems.length == 0) {
 			// amending commit - need to put something into the map
-			for (IProject proj : getSelectedProjects()) {
+			for (IProject proj : getProjectsForSelectedResources()) {
 				Repository repo = RepositoryMapping.getMapping(proj).getRepository();
 				if (!treeMap.containsKey(repo))
 					treeMap.put(repo, repo.mapTree(Constants.HEAD));
