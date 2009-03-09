@@ -244,29 +244,32 @@ public abstract class Transport {
 		final Collection<RefSpec> procRefs = expandPushWildcardsFor(db, specs);
 
 		for (final RefSpec spec : procRefs) {
-			String srcRef = spec.getSource();
-			final Ref src = db.getRef(srcRef);
-			if (src != null)
-				srcRef = src.getName();
-			String remoteName = spec.getDestination();
-			// null destination (no-colon in ref-spec) is a special case
-			if (remoteName == null) {
-				remoteName = srcRef;
-			} else {
-				if (!remoteName.startsWith(Constants.R_REFS)) {
-					// null source is another special case (delete)
-					if (srcRef != null) {
-						// assume the same type of ref at the destination
-						String srcPrefix = srcRef.substring(0, srcRef.indexOf('/', Constants.R_REFS.length()));
-						remoteName = srcPrefix + "/" + remoteName;
-					}
-				}
-			}
-			final boolean forceUpdate = spec.isForceUpdate();
-			final String localName = findTrackingRefName(remoteName, fetchSpecs);
+			String srcSpec = spec.getSource();
+			final Ref srcRef = db.getRef(srcSpec);
+			if (srcRef != null)
+				srcSpec = srcRef.getName();
 
-			final RemoteRefUpdate rru = new RemoteRefUpdate(db, srcRef,
-					remoteName, forceUpdate, localName, null);
+			String destSpec = spec.getDestination();
+			if (destSpec == null) {
+				// No destination (no-colon in ref-spec), DWIMery assumes src
+				//
+				destSpec = srcSpec;
+			}
+
+			if (srcRef != null && !destSpec.startsWith(Constants.R_REFS)) {
+				// Assume the same kind of ref at the destination, e.g.
+				// "refs/heads/foo:master", DWIMery assumes master is also
+				// under "refs/heads/".
+				//
+				final String n = srcRef.getName();
+				final int kindEnd = n.indexOf('/', Constants.R_REFS.length());
+				destSpec = n.substring(0, kindEnd + 1) + destSpec;
+			}
+
+			final boolean forceUpdate = spec.isForceUpdate();
+			final String localName = findTrackingRefName(destSpec, fetchSpecs);
+			final RemoteRefUpdate rru = new RemoteRefUpdate(db, srcSpec,
+					destSpec, forceUpdate, localName, null);
 			result.add(rru);
 		}
 		return result;
