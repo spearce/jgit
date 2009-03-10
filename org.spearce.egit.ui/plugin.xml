@@ -108,6 +108,13 @@
                label="%CommitAction_label"
                menubarPath="team.main/group1"
                tooltip="%CommitAction_tooltip"/>
+	 <action
+	       class="org.spearce.egit.ui.internal.actions.CompareWithIndexAction"
+	       id="org.spearce.egit.ui.internal.actions.CompareWithIndexAction"
+	       label="%CompareWithIndexAction_label"
+	       menubarPath="compareWithMenu/gitCompareWithGroup"
+	       tooltip="&amp;CompareWithIndexAction_tooltip">
+	 </action>
 	  </objectContribution>
 	  <objectContribution
          id="org.spearce.egit.ui.resetto"

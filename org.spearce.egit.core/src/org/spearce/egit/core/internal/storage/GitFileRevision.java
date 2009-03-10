@@ -49,6 +49,17 @@ public abstract class GitFileRevision extends FileRevision {
 		return new CommitFileRevision(db, commit, path, blobId);
 	}
 
+	/**
+	 * @param db
+	 *            the repository which contains the index to use.
+	 * @param path
+	 *            path of the resource in the index
+	 * @return revision implementation for the given path in the index
+	 */
+	public static GitFileRevision inIndex(final Repository db, final String path) {
+		return new IndexFileRevision(db, path);
+	}
+
 	private final String path;
 
 	GitFileRevision(final String fileName) {

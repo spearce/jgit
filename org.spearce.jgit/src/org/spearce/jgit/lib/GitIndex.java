@@ -170,6 +170,30 @@ public class GitIndex {
 	}
 
 	/**
+	 * Add the content of a file to the index.
+	 *
+	 * @param wd
+	 *            workdir
+	 * @param f
+	 *            the file
+	 * @param content
+	 *            content of the file
+	 * @return a new or updated index entry for the path represented by f
+	 * @throws IOException
+	 */
+	public Entry add(File wd, File f, byte[] content) throws IOException {
+		byte[] key = makeKey(wd, f);
+		Entry e = entries.get(key);
+		if (e == null) {
+			e = new Entry(key, f, 0, content);
+			entries.put(key, e);
+		} else {
+			e.update(f, content);
+		}
+		return e;
+	}
+
+	/**
 	 * Remove a path from the index.
 	 *
 	 * @param wd
@@ -360,6 +384,25 @@ public class GitIndex {
 			flags = (short) ((stage << 12) | name.length); // TODO: fix flags
 		}
 
+		Entry(byte[] key, File f, int stage, byte[] newContent)
+				throws IOException {
+			ctime = f.lastModified() * 1000000L;
+			mtime = ctime; // we use same here
+			dev = -1;
+			ino = -1;
+			if (config_filemode() && File_canExecute(f))
+				mode = FileMode.EXECUTABLE_FILE.getBits();
+			else
+				mode = FileMode.REGULAR_FILE.getBits();
+			uid = -1;
+			gid = -1;
+			size = newContent.length;
+			ObjectWriter writer = new ObjectWriter(db);
+			sha1 = writer.writeBlob(newContent);
+			name = key;
+			flags = (short) ((stage << 12) | name.length); // TODO: fix flags
+		}
+
 		Entry(TreeEntry f, int stage) {
 			ctime = -1; // hmm
 			mtime = -1;
@@ -430,6 +473,28 @@ public class GitIndex {
 					modified = true;
 				sha1 = newsha1;
 			}
+			return modified;
+		}
+
+		/**
+		 * Update this index entry with stat and SHA-1 information if it looks
+		 * like the file has been modified in the workdir.
+		 *
+		 * @param f
+		 *            file in work dir
+		 * @param newContent
+		 *            the new content of the file
+		 * @return true if a change occurred
+		 * @throws IOException
+		 */
+		public boolean update(File f, byte[] newContent) throws IOException {
+			boolean modified = false;
+			size = newContent.length;
+			ObjectWriter writer = new ObjectWriter(db);
+			ObjectId newsha1 = sha1 = writer.writeBlob(newContent);
+			if (!newsha1.equals(sha1))
+				modified = true;
+			sha1 = newsha1;
 			return modified;
 		}
 

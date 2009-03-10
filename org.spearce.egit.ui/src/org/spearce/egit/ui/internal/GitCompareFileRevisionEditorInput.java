@@ -11,7 +11,6 @@ package org.spearce.egit.ui.internal;
 import java.lang.reflect.InvocationTargetException;
 
 import org.eclipse.compare.CompareConfiguration;
-import org.eclipse.compare.CompareEditorInput;
 import org.eclipse.compare.IEditableContent;
 import org.eclipse.compare.IResourceProvider;
 import org.eclipse.compare.ITypedElement;
@@ -34,13 +33,14 @@ import org.eclipse.team.internal.ui.TeamUIPlugin;
 import org.eclipse.team.internal.ui.Utils;
 import org.eclipse.team.internal.ui.history.FileRevisionTypedElement;
 import org.eclipse.team.internal.ui.synchronize.LocalResourceTypedElement;
+import org.eclipse.team.ui.synchronize.SaveableCompareEditorInput;
 import org.eclipse.ui.IWorkbenchPage;
 
 /**
  * The input provider for the compare editor when working on resources
  * under Git control.
  */
-public class GitCompareFileRevisionEditorInput extends CompareEditorInput {
+public class GitCompareFileRevisionEditorInput extends SaveableCompareEditorInput {
 
 	private ITypedElement left;
 	private ITypedElement right;
@@ -52,7 +52,7 @@ public class GitCompareFileRevisionEditorInput extends CompareEditorInput {
 	 * @param page
 	 */
 	public GitCompareFileRevisionEditorInput(ITypedElement left, ITypedElement right, IWorkbenchPage page) {
-		super(new CompareConfiguration());
+		super(new CompareConfiguration(), page);
 		this.left = left;
 		this.right = right;
 	}
@@ -90,9 +90,18 @@ public class GitCompareFileRevisionEditorInput extends CompareEditorInput {
 	}
 
 	private boolean isLeftEditable(ICompareInput input) {
-		Object left = input.getLeft();
-		if (left instanceof IEditableContent) {
-			return ((IEditableContent) left).isEditable();
+		Object tmpLeft = input.getLeft();
+		return isEditable(tmpLeft);
+	}
+
+	private boolean isRightEditable(ICompareInput input) {
+		Object tmpRight = input.getRight();
+		return isEditable(tmpRight);
+	}
+
+	private boolean isEditable(Object object) {
+		if (object instanceof IEditableContent) {
+			return ((IEditableContent) object).isEditable();
 		}
 		return false;
 	}
@@ -326,12 +335,9 @@ public class GitCompareFileRevisionEditorInput extends CompareEditorInput {
 		return TeamUIMessages.CompareFileRevisionEditorInput_2;
 	}
 
-//	/* (non-Javadoc)
-//	 * @see org.eclipse.team.ui.synchronize.LocalResourceCompareEditorInput#fireInputChange()
-//	 */
-//	protected void fireInputChange() {
-//		((DiffNode)getCompareResult()).fireChange();
-//	}
+	@Override
+	protected void fireInputChange() {
+	}
 //
 //	/* (non-Javadoc)
 //	 * @see org.eclipse.team.ui.synchronize.SaveableCompareEditorInput#contentsCreated()
@@ -359,10 +365,12 @@ public class GitCompareFileRevisionEditorInput extends CompareEditorInput {
 		return null;
 	}
 
-	protected Object prepareInput(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+	@Override
+	protected ICompareInput prepareCompareInput(IProgressMonitor monitor)
+			throws InvocationTargetException, InterruptedException {
 		ICompareInput input = createCompareInput();
 		getCompareConfiguration().setLeftEditable(isLeftEditable(input));
-		getCompareConfiguration().setRightEditable(false);
+		getCompareConfiguration().setRightEditable(isRightEditable(input));
 		ensureContentsCached(getLeftRevision(), getRightRevision(), monitor);
 		initLabels(input);
 		setTitle(NLS.bind(TeamUIMessages.SyncInfoCompareInput_title, new String[] { input.getName() }));
