@@ -253,7 +253,7 @@ public class WindowCache {
 		releaseMemory();
 		runClearedWindowQueue();
 
-		wp.allocWindow(curs, id, ((long) id) << windowSizeShift, wsz);
+		wp.allocWindow(curs, id, (position >>> windowSizeShift) << windowSizeShift, wsz);
 		final ByteWindow<?> e = curs.window;
 		e.chainNext = cache[idx];
 		cache[idx] = e;
