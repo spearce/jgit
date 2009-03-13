@@ -172,6 +172,7 @@ public abstract class RevObject extends ObjectId {
 	public String toString() {
 		final StringBuilder s = new StringBuilder();
 		s.append(Constants.typeString(getType()));
+		s.append(' ');
 		s.append(name());
 		s.append(' ');
 		appendCoreFlags(s);

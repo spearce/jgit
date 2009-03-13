@@ -139,7 +139,7 @@ public class RevCommit extends RevObject {
 	}
 	
 	@Override
-	public int getType() {
+	public final int getType() {
 		return Constants.OBJ_COMMIT;
 	}
 
@@ -393,6 +393,7 @@ public class RevCommit extends RevObject {
 	public String toString() {
 		final StringBuilder s = new StringBuilder();
 		s.append(Constants.typeString(getType()));
+		s.append(' ');
 		s.append(name());
 		s.append(' ');
 		s.append(commitTime);

@@ -99,7 +99,7 @@ public class RevTag extends RevObject {
 	}
 
 	@Override
-	public int getType() {
+	public final int getType() {
 		return Constants.OBJ_TAG;
 	}
 

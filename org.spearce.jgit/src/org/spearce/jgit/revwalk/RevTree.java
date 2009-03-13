@@ -58,7 +58,7 @@ public class RevTree extends RevObject {
 	}
 	
 	@Override
-	public int getType() {
+	public final int getType() {
 		return Constants.OBJ_TREE;
 	}
 }
