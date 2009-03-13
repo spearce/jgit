@@ -510,6 +510,25 @@ public class RevWalk implements Iterable<RevCommit> {
 	}
 
 	/**
+	 * Locate a reference to a blob without loading it.
+	 * <p>
+	 * The blob may or may not exist in the repository. It is impossible to tell
+	 * from this method's return value.
+	 *
+	 * @param id
+	 *            name of the blob object.
+	 * @return reference to the blob object. Never null.
+	 */
+	public RevBlob lookupBlob(final AnyObjectId id) {
+		RevBlob c = (RevBlob) objects.get(id);
+		if (c == null) {
+			c = new RevBlob(id);
+			objects.add(c);
+		}
+		return c;
+	}
+
+	/**
 	 * Locate a reference to a tree without loading it.
 	 * <p>
 	 * The tree may or may not exist in the repository. It is impossible to tell
