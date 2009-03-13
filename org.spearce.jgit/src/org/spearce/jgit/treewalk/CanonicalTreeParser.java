@@ -145,8 +145,19 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 
 	/** @return this iterator, or its parent, if the tree is at eof. */
 	public CanonicalTreeParser next() {
-		next(1);
-		return eof() && parent != null ? (CanonicalTreeParser) parent : this;
+		CanonicalTreeParser p = this;
+		for (;;) {
+			p.next(1);
+			if (p.eof() && p.parent != null) {
+				// Parent was left pointing at the entry for us; advance
+				// the parent to the next entry, possibly unwinding many
+				// levels up the tree.
+				//
+				p = (CanonicalTreeParser) p.parent;
+				continue;
+			}
+			return p;
+		}
 	}
 
 	/**
@@ -192,8 +203,31 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 			final ObjectId me = idBuffer.toObjectId();
 			throw new IncorrectObjectTypeException(me, Constants.TYPE_TREE);
 		}
+		return createSubtreeIterator0(repo, idBuffer, curs);
+	}
+
+	/**
+	 * Back door to quickly create a subtree iterator for any subtree.
+	 * <p>
+	 * Don't use this unless you are ObjectWalk. The method is meant to be
+	 * called only once the current entry has been identified as a tree and its
+	 * identity has been converted into an ObjectId.
+	 *
+	 * @param repo
+	 *            repository to load the tree data from.
+	 * @param id
+	 *            ObjectId of the tree to open.
+	 * @param curs
+	 *            window cursor to use during repository access.
+	 * @return a new parser that walks over the current subtree.
+	 * @throws IOException
+	 *             a loose object or pack file could not be read.
+	 */
+	public final CanonicalTreeParser createSubtreeIterator0(
+			final Repository repo, final AnyObjectId id, final WindowCursor curs)
+			throws IOException {
 		final CanonicalTreeParser p = new CanonicalTreeParser(this);
-		p.reset(repo, idBuffer, curs);
+		p.reset(repo, id, curs);
 		return p;
 	}
 

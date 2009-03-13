@@ -82,7 +82,7 @@ public class ObjectWalk extends RevWalk {
 
 	private boolean fromTreeWalk;
 
-	private boolean enterSubtree;
+	private RevTree nextSubtree;
 
 	/**
 	 * Create a new revision and object walker for a given repository.
@@ -239,50 +239,52 @@ public class ObjectWalk extends RevWalk {
 			IncorrectObjectTypeException, IOException {
 		fromTreeWalk = false;
 
-		if (enterSubtree) {
-			treeWalk = treeWalk.createSubtreeIterator(db, idBuffer, curs);
-			enterSubtree = false;
+		if (nextSubtree != null) {
+			treeWalk = treeWalk.createSubtreeIterator0(db, nextSubtree, curs);
+			nextSubtree = null;
 		}
 
-		for (; !treeWalk.eof(); treeWalk = treeWalk.next()) {
+		while (!treeWalk.eof()) {
 			final FileMode mode = treeWalk.getEntryFileMode();
 			final int sType = mode.getObjectType();
 
 			switch (sType) {
 			case Constants.OBJ_BLOB: {
 				treeWalk.getEntryObjectId(idBuffer);
-				final RevObject o = lookupAny(idBuffer, sType);
+				final RevBlob o = lookupBlob(idBuffer);
 				if ((o.flags & SEEN) != 0)
-					continue;
+					break;
 				o.flags |= SEEN;
 				if ((o.flags & UNINTERESTING) != 0
 						&& !hasRevSort(RevSort.BOUNDARY))
-					continue;
+					break;
 				fromTreeWalk = true;
 				return o;
 			}
 			case Constants.OBJ_TREE: {
 				treeWalk.getEntryObjectId(idBuffer);
-				final RevObject o = lookupAny(idBuffer, sType);
+				final RevTree o = lookupTree(idBuffer);
 				if ((o.flags & SEEN) != 0)
-					continue;
+					break;
 				o.flags |= SEEN;
 				if ((o.flags & UNINTERESTING) != 0
 						&& !hasRevSort(RevSort.BOUNDARY))
-					continue;
-				enterSubtree = true;
+					break;
+				nextSubtree = o;
 				fromTreeWalk = true;
 				return o;
 			}
 			default:
 				if (FileMode.GITLINK.equals(mode))
-					continue;
+					break;
 				treeWalk.getEntryObjectId(idBuffer);
 				throw new CorruptObjectException("Invalid mode " + mode
 						+ " for " + idBuffer.name() + " "
 						+ treeWalk.getEntryPathString() + " in " + currentTree
 						+ ".");
 			}
+
+			treeWalk = treeWalk.next();
 		}
 
 		for (;;) {
@@ -361,7 +363,7 @@ public class ObjectWalk extends RevWalk {
 	public void dispose() {
 		super.dispose();
 		pendingObjects = new BlockObjQueue();
-		enterSubtree = false;
+		nextSubtree = null;
 		currentTree = null;
 	}
 
@@ -369,7 +371,7 @@ public class ObjectWalk extends RevWalk {
 	protected void reset(final int retainFlags) {
 		super.reset(retainFlags);
 		pendingObjects = new BlockObjQueue();
-		enterSubtree = false;
+		nextSubtree = null;
 	}
 
 	private void addObject(final RevObject o) {
@@ -387,34 +389,36 @@ public class ObjectWalk extends RevWalk {
 		tree.flags |= UNINTERESTING;
 
 		treeWalk = treeWalk.resetRoot(db, tree, curs);
-		for (;!treeWalk.eof(); treeWalk = treeWalk.next()) {
+		while (!treeWalk.eof()) {
 			final FileMode mode = treeWalk.getEntryFileMode();
 			final int sType = mode.getObjectType();
 
 			switch (sType) {
 			case Constants.OBJ_BLOB: {
 				treeWalk.getEntryObjectId(idBuffer);
-				lookupAny(idBuffer, sType).flags |= UNINTERESTING;
-				continue;
+				lookupBlob(idBuffer).flags |= UNINTERESTING;
+				break;
 			}
 			case Constants.OBJ_TREE: {
 				treeWalk.getEntryObjectId(idBuffer);
-				final RevObject subtree = lookupAny(idBuffer, sType);
-				if ((subtree.flags & UNINTERESTING) == 0) {
-					subtree.flags |= UNINTERESTING;
-					treeWalk = treeWalk.createSubtreeIterator(db, idBuffer,
-							curs);
+				final RevTree t = lookupTree(idBuffer);
+				if ((t.flags & UNINTERESTING) == 0) {
+					t.flags |= UNINTERESTING;
+					treeWalk = treeWalk.createSubtreeIterator0(db, t, curs);
+					continue;
 				}
-				continue;
+				break;
 			}
 			default:
 				if (FileMode.GITLINK.equals(mode))
-					continue;
+					break;
 				treeWalk.getEntryObjectId(idBuffer);
 				throw new CorruptObjectException("Invalid mode " + mode
 						+ " for " + idBuffer.name() + " "
 						+ treeWalk.getEntryPathString() + " in " + tree + ".");
 			}
+
+			treeWalk = treeWalk.next();
 		}
 	}
 }
