@@ -765,10 +765,10 @@ public class PackWriter {
 			throws MissingObjectException, IOException,
 			IncorrectObjectTypeException {
 		final ObjectWalk walker = new ObjectWalk(db);
-		walker.sort(RevSort.TOPO, true);
+		walker.sort(RevSort.TOPO);
 		walker.sort(RevSort.COMMIT_TIME_DESC, true);
 		if (thin)
-			walker.sort(RevSort.BOUNDARY);
+			walker.sort(RevSort.BOUNDARY, true);
 
 		for (ObjectId id : interestingObjects) {
 			RevObject o = walker.parseAny(id);
