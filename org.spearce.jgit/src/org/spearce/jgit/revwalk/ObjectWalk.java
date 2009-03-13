@@ -255,8 +255,7 @@ public class ObjectWalk extends RevWalk {
 				if ((o.flags & SEEN) != 0)
 					break;
 				o.flags |= SEEN;
-				if ((o.flags & UNINTERESTING) != 0
-						&& !hasRevSort(RevSort.BOUNDARY))
+				if (shouldSkipObject(o))
 					break;
 				fromTreeWalk = true;
 				return o;
@@ -267,8 +266,7 @@ public class ObjectWalk extends RevWalk {
 				if ((o.flags & SEEN) != 0)
 					break;
 				o.flags |= SEEN;
-				if ((o.flags & UNINTERESTING) != 0
-						&& !hasRevSort(RevSort.BOUNDARY))
+				if (shouldSkipObject(o))
 					break;
 				nextSubtree = o;
 				fromTreeWalk = true;
@@ -294,7 +292,7 @@ public class ObjectWalk extends RevWalk {
 			if ((o.flags & SEEN) != 0)
 				continue;
 			o.flags |= SEEN;
-			if ((o.flags & UNINTERESTING) != 0 && !hasRevSort(RevSort.BOUNDARY))
+			if (shouldSkipObject(o))
 				continue;
 			if (o instanceof RevTree) {
 				currentTree = (RevTree) o;
@@ -302,6 +300,10 @@ public class ObjectWalk extends RevWalk {
 			}
 			return o;
 		}
+	}
+
+	private final boolean shouldSkipObject(final RevObject o) {
+		return (o.flags & UNINTERESTING) != 0 && !hasRevSort(RevSort.BOUNDARY);
 	}
 
 	/**
