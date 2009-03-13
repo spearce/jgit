@@ -90,6 +90,7 @@ class StartGenerator extends Generator {
 			return mbg.next();
 		}
 
+		final boolean uninteresting = q.anybodyHasFlag(RevWalk.UNINTERESTING);
 		boolean boundary = walker.hasRevSort(RevSort.BOUNDARY);
 
 		if (!boundary && walker instanceof ObjectWalk) {
@@ -99,7 +100,7 @@ class StartGenerator extends Generator {
 			//
 			boundary = true;
 		}
-		if (boundary && !q.anybodyHasFlag(RevWalk.UNINTERESTING)) {
+		if (boundary && !uninteresting) {
 			// If we were not fed uninteresting commits we will never
 			// construct a boundary. There is no reason to include the
 			// extra overhead associated with that in our pipeline.
@@ -107,16 +108,19 @@ class StartGenerator extends Generator {
 			boundary = false;
 		}
 
+		final DateRevQueue pending;
 		int pendingOutputType = 0;
-		if (!(q instanceof DateRevQueue))
-			q = new DateRevQueue(q);
+		if (q instanceof DateRevQueue)
+			pending = (DateRevQueue)q;
+		else
+			pending = new DateRevQueue(q);
 		if (tf != TreeFilter.ALL) {
 			rf = AndRevFilter.create(rf, new RewriteTreeFilter(w, tf));
 			pendingOutputType |= HAS_REWRITE | NEEDS_REWRITE;
 		}
 
 		walker.queue = q;
-		g = new PendingGenerator(w, (DateRevQueue) q, rf, pendingOutputType);
+		g = new PendingGenerator(w, pending, rf, pendingOutputType);
 
 		if (boundary) {
 			// Because the boundary generator may produce uninteresting
@@ -143,6 +147,17 @@ class StartGenerator extends Generator {
 			g = new LIFORevQueue(g);
 		if (boundary)
 			g = new BoundaryGenerator(w, g);
+		else if (uninteresting) {
+			// Try to protect ourselves from uninteresting commits producing
+			// due to clock skew in the commit time stamps. Delay such that
+			// we have a chance at coloring enough of the graph correctly,
+			// and then strip any UNINTERESTING nodes that may have leaked
+			// through early.
+			//
+			if (pending.peek() != null)
+				g = new DelayRevQueue(g);
+			g = new FixUninterestingGenerator(g);
+		}
 
 		w.pending = g;
 		return g.next();

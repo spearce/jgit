@@ -69,7 +69,7 @@ class PendingGenerator extends Generator {
 	 * constant to 1 additional commit due to the use of a pre-increment
 	 * operator when accessing the value.
 	 */
-	private static final int OVER_SCAN = 5 + 1;
+	static final int OVER_SCAN = 5 + 1;
 
 	/** A commit near the end of time, to initialize {@link #last} with. */
 	private static final RevCommit INIT_LAST;
