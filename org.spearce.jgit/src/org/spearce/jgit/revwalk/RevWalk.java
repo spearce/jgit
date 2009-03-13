@@ -187,7 +187,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		idBuffer = new MutableObjectId();
 		objects = new ObjectIdSubclassMap<RevObject>();
 		roots = new ArrayList<RevCommit>();
-		queue = new FIFORevQueue();
+		queue = new DateRevQueue();
 		pending = new StartGenerator(this);
 		sorting = EnumSet.of(RevSort.NONE);
 		filter = RevFilter.ALL;
@@ -915,7 +915,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 		curs.release();
 		roots.clear();
-		queue = new FIFORevQueue();
+		queue = new DateRevQueue();
 		pending = new StartGenerator(this);
 	}
 
@@ -934,7 +934,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		objects.clear();
 		curs.release();
 		roots.clear();
-		queue = new FIFORevQueue();
+		queue = new DateRevQueue();
 		pending = new StartGenerator(this);
 	}
 

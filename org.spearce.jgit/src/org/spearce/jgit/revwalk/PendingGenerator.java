@@ -62,7 +62,7 @@ class PendingGenerator extends Generator {
 
 	private final RevWalk walker;
 
-	private final AbstractRevQueue pending;
+	private final DateRevQueue pending;
 
 	private final RevFilter filter;
 
@@ -70,7 +70,7 @@ class PendingGenerator extends Generator {
 
 	boolean canDispose;
 
-	PendingGenerator(final RevWalk w, final AbstractRevQueue p,
+	PendingGenerator(final RevWalk w, final DateRevQueue p,
 			final RevFilter f, final int out) {
 		walker = w;
 		pending = p;
@@ -81,9 +81,7 @@ class PendingGenerator extends Generator {
 
 	@Override
 	int outputType() {
-		if (pending instanceof DateRevQueue)
-			return output | SORT_COMMIT_TIME_DESC;
-		return output;
+		return output | SORT_COMMIT_TIME_DESC;
 	}
 
 	@Override

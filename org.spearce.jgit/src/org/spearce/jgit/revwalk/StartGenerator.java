@@ -108,11 +108,7 @@ class StartGenerator extends Generator {
 		}
 
 		int pendingOutputType = 0;
-		if (walker.hasRevSort(RevSort.START_ORDER)
-				&& !(q instanceof FIFORevQueue))
-			q = new FIFORevQueue(q);
-		if (walker.hasRevSort(RevSort.COMMIT_TIME_DESC)
-				&& !(q instanceof DateRevQueue))
+		if (!(q instanceof DateRevQueue))
 			q = new DateRevQueue(q);
 		if (tf != TreeFilter.ALL) {
 			rf = AndRevFilter.create(rf, new RewriteTreeFilter(w, tf));
@@ -120,7 +116,7 @@ class StartGenerator extends Generator {
 		}
 
 		walker.queue = q;
-		g = new PendingGenerator(w, q, rf, pendingOutputType);
+		g = new PendingGenerator(w, (DateRevQueue) q, rf, pendingOutputType);
 
 		if (boundary) {
 			// Because the boundary generator may produce uninteresting

@@ -49,17 +49,6 @@ public enum RevSort {
 	NONE,
 
 	/**
-	 * Maintain the order commits were marked as starting points.
-	 * <p>
-	 * This strategy is largely a FIFO strategy; commits are enumerated in the
-	 * order they were added to the RevWalk by the application. Parents not yet
-	 * visited are added behind all commits already enqueued for visiting.
-	 * <p>
-	 * This strategy should not be combined with {@link #COMMIT_TIME_DESC}.
-	 */
-	START_ORDER,
-
-	/**
 	 * Sort by commit time, descending (newest first, oldest last).
 	 * <p>
 	 * This strategy can be combined with {@link #TOPO}.
