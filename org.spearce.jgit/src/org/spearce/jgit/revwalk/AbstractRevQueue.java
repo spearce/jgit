@@ -115,6 +115,11 @@ abstract class AbstractRevQueue extends Generator {
 		return outputType;
 	}
 
+	protected static void describe(final StringBuilder s, final RevCommit c) {
+		s.append(c.toString());
+		s.append('\n');
+	}
+
 	private static class AlwaysEmptyQueue extends AbstractRevQueue {
 		@Override
 		public void add(RevCommit c) {

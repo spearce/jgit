@@ -167,4 +167,27 @@ public abstract class RevObject extends ObjectId {
 	public void dispose() {
 		// Nothing needs to be done for most objects.
 	}
+
+	@Override
+	public String toString() {
+		final StringBuilder s = new StringBuilder();
+		s.append(Constants.typeString(getType()));
+		s.append(name());
+		s.append(' ');
+		appendCoreFlags(s);
+		return s.toString();
+	}
+
+	/**
+	 * @param s
+	 *            buffer to append a debug description of core RevFlags onto.
+	 */
+	protected void appendCoreFlags(final StringBuilder s) {
+		s.append((flags & RevWalk.TOPO_DELAY) != 0 ? 'o' : '-');
+		s.append((flags & RevWalk.TEMP_MARK) != 0 ? 't' : '-');
+		s.append((flags & RevWalk.REWRITE) != 0 ? 'r' : '-');
+		s.append((flags & RevWalk.UNINTERESTING) != 0 ? 'u' : '-');
+		s.append((flags & RevWalk.SEEN) != 0 ? 's' : '-');
+		s.append((flags & RevWalk.PARSED) != 0 ? 'p' : '-');
+	}
 }

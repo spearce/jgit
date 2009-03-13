@@ -126,13 +126,9 @@ public class DateRevQueue extends AbstractRevQueue {
 	}
 
 	public String toString() {
-		final StringBuffer s = new StringBuffer();
-		for (Entry q = head; q != null; q = q.next) {
-			s.append(q.commit.name());
-			s.append(' ');
-			s.append(q.commit.commitTime);
-			s.append('\n');
-		}
+		final StringBuilder s = new StringBuilder();
+		for (Entry q = head; q != null; q = q.next)
+			describe(s, q.commit);
 		return s.toString();
 	}
 
