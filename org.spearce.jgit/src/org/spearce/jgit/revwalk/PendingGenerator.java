@@ -42,6 +42,7 @@ import java.io.IOException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.StopWalkException;
+import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.revwalk.filter.RevFilter;
 
 /**
@@ -60,6 +61,24 @@ class PendingGenerator extends Generator {
 
 	private static final int UNINTERESTING = RevWalk.UNINTERESTING;
 
+	/**
+	 * Number of additional commits to scan after we think we are done.
+	 * <p>
+	 * This small buffer of commits is scanned to ensure we didn't miss anything
+	 * as a result of clock skew when the commits were made. We need to set our
+	 * constant to 1 additional commit due to the use of a pre-increment
+	 * operator when accessing the value.
+	 */
+	private static final int OVER_SCAN = 5 + 1;
+
+	/** A commit near the end of time, to initialize {@link #last} with. */
+	private static final RevCommit INIT_LAST;
+
+	static {
+		INIT_LAST = new RevCommit(ObjectId.zeroId());
+		INIT_LAST.commitTime = Integer.MAX_VALUE;
+	}
+
 	private final RevWalk walker;
 
 	private final DateRevQueue pending;
@@ -67,6 +86,17 @@ class PendingGenerator extends Generator {
 	private final RevFilter filter;
 
 	private final int output;
+
+	/** Last commit produced to the caller from {@link #next()}. */
+	private RevCommit last = INIT_LAST;
+
+	/**
+	 * Number of commits we have remaining in our over-scan allotment.
+	 * <p>
+	 * Only relevant if there are {@link #UNINTERESTING} commits in the
+	 * {@link #pending} queue.
+	 */
+	private int overScan = OVER_SCAN;
 
 	boolean canDispose;
 
@@ -112,14 +142,27 @@ class PendingGenerator extends Generator {
 				walker.carryFlagsImpl(c);
 
 				if ((c.flags & UNINTERESTING) != 0) {
-					if (pending.everbodyHasFlag(UNINTERESTING))
-						throw StopWalkException.INSTANCE;
-					c.dispose();
+					if (pending.everbodyHasFlag(UNINTERESTING)) {
+						final RevCommit n = pending.peek();
+						if (n != null && n.commitTime >= last.commitTime) {
+							// This is too close to call. The next commit we
+							// would pop is dated after the last one produced.
+							// We have to keep going to ensure that we carry
+							// flags as much as necessary.
+							//
+							overScan = OVER_SCAN;
+						} else if (--overScan == 0)
+							throw StopWalkException.INSTANCE;
+					} else {
+						overScan = OVER_SCAN;
+					}
+					if (canDispose)
+						c.dispose();
 					continue;
 				}
 
 				if (produce)
-					return c;
+					return last = c;
 				else if (canDispose)
 					c.dispose();
 			}
