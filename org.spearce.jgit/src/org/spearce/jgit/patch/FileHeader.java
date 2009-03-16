@@ -68,9 +68,9 @@ public class FileHeader {
 
 	private static final byte[] NEW_MODE = encodeASCII("new mode ");
 
-	protected static final byte[] DELETED_FILE_MODE = encodeASCII("deleted file mode ");
+	static final byte[] DELETED_FILE_MODE = encodeASCII("deleted file mode ");
 
-	protected static final byte[] NEW_FILE_MODE = encodeASCII("new file mode ");
+	static final byte[] NEW_FILE_MODE = encodeASCII("new file mode ");
 
 	private static final byte[] COPY_FROM = encodeASCII("copy from ");
 
@@ -88,7 +88,7 @@ public class FileHeader {
 
 	private static final byte[] DISSIMILARITY_INDEX = encodeASCII("dissimilarity index ");
 
-	protected static final byte[] INDEX = encodeASCII("index ");
+	static final byte[] INDEX = encodeASCII("index ");
 
 	static final byte[] OLD_NAME = encodeASCII("--- ");
 
@@ -220,7 +220,7 @@ public class FileHeader {
 		return getScriptText(new Charset[] { oldCharset, newCharset });
 	}
 
-	protected String getScriptText(Charset[] charsetGuess) {
+	String getScriptText(Charset[] charsetGuess) {
 		if (getHunks().isEmpty()) {
 			// If we have no hunks then we can safely assume the entire
 			// patch is a binary style patch, or a meta-data only style
@@ -562,19 +562,19 @@ public class FileHeader {
 		return ptr;
 	}
 
-	protected void parseOldName(int ptr, final int eol) {
+	void parseOldName(int ptr, final int eol) {
 		oldName = p1(parseName(oldName, ptr + OLD_NAME.length, eol));
 		if (oldName == DEV_NULL)
 			changeType = ChangeType.ADD;
 	}
 
-	protected void parseNewName(int ptr, final int eol) {
+	void parseNewName(int ptr, final int eol) {
 		newName = p1(parseName(newName, ptr + NEW_NAME.length, eol));
 		if (newName == DEV_NULL)
 			changeType = ChangeType.DELETE;
 	}
 
-	protected void parseNewFileMode(int ptr, final int eol) {
+	void parseNewFileMode(int ptr, final int eol) {
 		oldMode = FileMode.MISSING;
 		newMode = parseFileMode(ptr + NEW_FILE_MODE.length, eol);
 		changeType = ChangeType.ADD;
@@ -633,7 +633,7 @@ public class FileHeader {
 		return s > 0 ? r.substring(s + 1) : r;
 	}
 
-	protected FileMode parseFileMode(int ptr, final int end) {
+	FileMode parseFileMode(int ptr, final int end) {
 		int tmp = 0;
 		while (ptr < end - 1) {
 			tmp <<= 3;
@@ -642,7 +642,7 @@ public class FileHeader {
 		return FileMode.fromBits(tmp);
 	}
 
-	protected void parseIndexLine(int ptr, final int end) {
+	void parseIndexLine(int ptr, final int end) {
 		// "index $asha1..$bsha1[ $mode]" where $asha1 and $bsha1
 		// can be unique abbreviations
 		//

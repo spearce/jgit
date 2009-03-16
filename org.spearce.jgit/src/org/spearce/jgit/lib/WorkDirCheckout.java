@@ -56,15 +56,15 @@ import org.spearce.jgit.lib.GitIndex.Entry;
  * Three-way merges are no performed. See {@link #setFailOnConflict(boolean)}.
  */
 public class WorkDirCheckout {
-	protected Repository repo;
+	Repository repo;
 
-	protected File root;
+	File root;
 
-	protected GitIndex index;
+	GitIndex index;
 	
 	private boolean failOnConflict = true;
 
-	protected Tree merge;
+	Tree merge;
 
 	
 	/**
@@ -151,9 +151,9 @@ public class WorkDirCheckout {
 	ArrayList<String> conflicts  = new ArrayList<String>();
 	ArrayList<String> removed = new ArrayList<String>();
 
-	protected Tree head = null;
+	Tree head = null;
 
-	protected HashMap<String, ObjectId> updated = new HashMap<String, ObjectId>();
+	HashMap<String, ObjectId> updated = new HashMap<String, ObjectId>();
 	
 	private void checkoutOutIndexNoHead() throws IOException {
 		new IndexTreeWalker(index, merge, root, new AbstractIndexTreeVisitor() {
@@ -294,7 +294,7 @@ public class WorkDirCheckout {
 		conflicts.removeAll(removed);
 	}
 
-	protected void processEntry(TreeEntry h, TreeEntry m, Entry i,
+	void processEntry(TreeEntry h, TreeEntry m, Entry i,
 			File file) throws IOException {
 				ObjectId iId = (i == null ? null : i.getObjectId());
 				ObjectId mId = (m == null ? null : m.getId());

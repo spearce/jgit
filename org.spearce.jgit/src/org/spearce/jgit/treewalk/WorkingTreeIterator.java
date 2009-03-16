@@ -309,6 +309,13 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 		return e.getMode() == FileMode.TREE ? '/' : '\0';
 	}
 
+	/**
+	 * Constructor helper.
+	 *
+	 * @param list
+	 *            files in the subtree of the work tree this iterator operates
+	 *            on
+	 */
 	protected void init(final Entry[] list) {
 		// Filter out nulls, . and .. as these are not valid tree entries,
 		// also cache the encoded forms of the path names for efficient use

@@ -77,7 +77,7 @@ public class PushResult extends OperationResult {
 		return remoteUpdates.get(refName);
 	}
 
-	protected void setRemoteUpdates(
+	void setRemoteUpdates(
 			final Map<String, RemoteRefUpdate> remoteUpdates) {
 		this.remoteUpdates = remoteUpdates;
 	}

@@ -51,7 +51,7 @@ public abstract class DaemonService {
 
 	private boolean overridable;
 
-	protected DaemonService(final String cmdName, final String cfgName) {
+	DaemonService(final String cmdName, final String cfgName) {
 		command = cmdName.startsWith("git-") ? cmdName : "git-" + cmdName;
 		config = cfgName;
 		overridable = true;
@@ -115,6 +115,6 @@ public abstract class DaemonService {
 			execute(client, db);
 	}
 
-	protected abstract void execute(DaemonClient client, Repository db)
+	abstract void execute(DaemonClient client, Repository db)
 			throws IOException;
 }

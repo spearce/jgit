@@ -50,11 +50,11 @@ public abstract class TreeVisitorWithCurrentDirectory implements TreeVisitor {
 
 	private File currentDirectory;
 
-	protected TreeVisitorWithCurrentDirectory(final File rootDirectory) {
+	TreeVisitorWithCurrentDirectory(final File rootDirectory) {
 		currentDirectory = rootDirectory;
 	}
 
-	protected File getCurrentDirectory() {
+	File getCurrentDirectory() {
 		return currentDirectory;
 	}
 

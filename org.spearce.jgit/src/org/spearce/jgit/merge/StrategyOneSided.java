@@ -77,7 +77,7 @@ public class StrategyOneSided extends MergeStrategy {
 		return new OneSide(db, treeIndex);
 	}
 
-	protected static class OneSide extends Merger {
+	static class OneSide extends Merger {
 		private final int treeIndex;
 
 		protected OneSide(final Repository local, final int index) {

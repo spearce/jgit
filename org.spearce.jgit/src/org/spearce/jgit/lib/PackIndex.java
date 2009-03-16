@@ -243,7 +243,7 @@ public abstract class PackIndex implements Iterable<PackIndex.MutableEntry> {
 	 * 
 	 */
 	public static class MutableEntry {
-		protected final MutableObjectId idBuffer = new MutableObjectId();
+		final MutableObjectId idBuffer = new MutableObjectId();
 
 		long offset;
 
@@ -281,12 +281,12 @@ public abstract class PackIndex implements Iterable<PackIndex.MutableEntry> {
 			return r;
 		}
 
-		protected void ensureId() {
+		void ensureId() {
 			// Override in implementations.
 		}
 	}
 
-	protected abstract class EntriesIterator implements Iterator<MutableEntry> {
+	abstract class EntriesIterator implements Iterator<MutableEntry> {
 		protected final MutableEntry entry = initEntry();
 
 		protected long returnedNumber = 0;

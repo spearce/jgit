@@ -95,7 +95,7 @@ public class OpenSshConfig {
 	/** Cached entries read out of the configuration file. */
 	private Map<String, Host> hosts;
 
-	protected OpenSshConfig(final File h, final File cfg) {
+	OpenSshConfig(final File h, final File cfg) {
 		home = h;
 		configFile = cfg;
 		hosts = Collections.emptyMap();

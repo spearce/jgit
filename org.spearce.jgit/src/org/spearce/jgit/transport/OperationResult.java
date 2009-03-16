@@ -53,11 +53,11 @@ import org.spearce.jgit.lib.Ref;
  */
 public abstract class OperationResult {
 
-	protected Map<String, Ref> advertisedRefs = Collections.emptyMap();
+	Map<String, Ref> advertisedRefs = Collections.emptyMap();
 
-	protected URIish uri;
+	URIish uri;
 
-	protected final SortedMap<String, TrackingRefUpdate> updates = new TreeMap<String, TrackingRefUpdate>();
+	final SortedMap<String, TrackingRefUpdate> updates = new TreeMap<String, TrackingRefUpdate>();
 
 	/**
 	 * Get the URI this result came from.
@@ -122,12 +122,12 @@ public abstract class OperationResult {
 		return updates.get(localName);
 	}
 
-	protected void setAdvertisedRefs(final URIish u, final Map<String, Ref> ar) {
+	void setAdvertisedRefs(final URIish u, final Map<String, Ref> ar) {
 		uri = u;
 		advertisedRefs = ar;
 	}
 
-	protected void add(final TrackingRefUpdate u) {
+	void add(final TrackingRefUpdate u) {
 		updates.put(u.getLocalName(), u);
 	}
 }

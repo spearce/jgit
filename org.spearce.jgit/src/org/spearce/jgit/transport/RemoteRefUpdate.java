@@ -315,15 +315,15 @@ public class RemoteRefUpdate {
 		return message;
 	}
 
-	protected void setStatus(final Status status) {
+	void setStatus(final Status status) {
 		this.status = status;
 	}
 
-	protected void setFastForward(boolean fastForward) {
+	void setFastForward(boolean fastForward) {
 		this.fastForward = fastForward;
 	}
 
-	protected void setMessage(final String message) {
+	void setMessage(final String message) {
 		this.message = message;
 	}
 

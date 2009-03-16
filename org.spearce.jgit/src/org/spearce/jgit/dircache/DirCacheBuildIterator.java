@@ -91,7 +91,7 @@ public class DirCacheBuildIterator extends DirCacheIterator {
 		builder = dcb;
 	}
 
-	protected DirCacheBuildIterator(final DirCacheBuildIterator p,
+	DirCacheBuildIterator(final DirCacheBuildIterator p,
 			final DirCacheTree dct) {
 		super(p, dct);
 		builder = p.builder;

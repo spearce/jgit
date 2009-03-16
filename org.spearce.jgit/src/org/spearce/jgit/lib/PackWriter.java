@@ -931,7 +931,7 @@ public class PackWriter {
 		 * @return true if object is already written; false otherwise.
 		 */
 		boolean isWritten() {
-			return offset != 0;
+			return getOffset() != 0;
 		}
 
 		PackedObjectLoader getReuseLoader() {

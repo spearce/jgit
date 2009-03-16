@@ -238,7 +238,7 @@ public class ObjectId extends AnyObjectId {
 		}
 	}
 
-	protected ObjectId(final int new_1, final int new_2, final int new_3,
+	ObjectId(final int new_1, final int new_2, final int new_3,
 			final int new_4, final int new_5) {
 		w1 = new_1;
 		w2 = new_2;

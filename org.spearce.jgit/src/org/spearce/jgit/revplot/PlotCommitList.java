@@ -171,10 +171,19 @@ public class PlotCommitList<L extends PlotLane> extends
 		return p;
 	}
 
+	/**
+	 * @return a new Lane appropriate for this particular PlotList.
+	 */
 	protected L createLane() {
 		return (L) new PlotLane();
 	}
 
+	/**
+	 * Return colors and other reusable information to the plotter when a lane
+	 * is no longer needed.
+	 * 
+	 * @param lane
+	 */
 	protected void recycleLane(final L lane) {
 		// Nothing.
 	}

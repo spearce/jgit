@@ -307,7 +307,7 @@ public class HunkHeader {
 		}
 	}
 
-	protected void copyLine(final StringBuilder sb, final String[] text,
+	void copyLine(final StringBuilder sb, final String[] text,
 			final int[] offsets, final int fileIdx) {
 		final String s = text[fileIdx];
 		final int start = offsets[fileIdx];
@@ -320,7 +320,7 @@ public class HunkHeader {
 		offsets[fileIdx] = end;
 	}
 
-	protected void skipLine(final String[] text, final int[] offsets,
+	void skipLine(final String[] text, final int[] offsets,
 			final int fileIdx) {
 		final String s = text[fileIdx];
 		final int end = s.indexOf('\n', offsets[fileIdx]);

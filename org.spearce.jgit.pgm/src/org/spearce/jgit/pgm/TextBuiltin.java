@@ -207,18 +207,23 @@ public abstract class TextBuiltin {
 		return db;
 	}
 
-	protected ObjectId resolve(final String s) throws IOException {
+	ObjectId resolve(final String s) throws IOException {
 		final ObjectId r = db.resolve(s);
 		if (r == null)
 			throw die("Not a revision: " + s);
 		return r;
 	}
 
+	/**
+	 * @param why
+	 *            textual explanation
+	 * @return a runtime exception the caller is expected to throw
+	 */
 	protected static Die die(final String why) {
 		return new Die(why);
 	}
 
-	protected String abbreviateRef(String dst, boolean abbreviateRemote) {
+	String abbreviateRef(String dst, boolean abbreviateRemote) {
 		if (dst.startsWith(R_HEADS))
 			dst = dst.substring(R_HEADS.length());
 		else if (dst.startsWith(R_TAGS))

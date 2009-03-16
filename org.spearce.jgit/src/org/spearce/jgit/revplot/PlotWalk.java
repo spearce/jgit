@@ -88,6 +88,10 @@ public class PlotWalk extends RevWalk {
 		return new PlotCommit(id, getTags(id));
 	}
 
+	/**
+	 * @param commitId
+	 * @return return the list of knows tags referring to this commit
+	 */
 	protected Ref[] getTags(final AnyObjectId commitId) {
 		Collection<Ref> list = reverseRefMap.get(commitId);
 		Ref[] tags;
