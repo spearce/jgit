@@ -298,7 +298,7 @@ class FetchProcess {
 
 	private Collection<Ref> expandAutoFollowTags() throws TransportException {
 		final Collection<Ref> additionalTags = new ArrayList<Ref>();
-		final Map<String, Ref> have = transport.local.getAllRefs();
+		final Map<String, Ref> haveRefs = transport.local.getAllRefs();
 		for (final Ref r : conn.getRefs()) {
 			if (!isTag(r))
 				continue;
@@ -307,7 +307,7 @@ class FetchProcess {
 				continue;
 			}
 
-			final Ref local = have.get(r.getName());
+			final Ref local = haveRefs.get(r.getName());
 			if (local != null) {
 				if (!r.getObjectId().equals(local.getObjectId()))
 					wantTag(r);
@@ -321,11 +321,11 @@ class FetchProcess {
 	}
 
 	private void expandFetchTags() throws TransportException {
-		final Map<String, Ref> have = transport.local.getAllRefs();
+		final Map<String, Ref> haveRefs = transport.local.getAllRefs();
 		for (final Ref r : conn.getRefs()) {
 			if (!isTag(r))
 				continue;
-			final Ref local = have.get(r.getName());
+			final Ref local = haveRefs.get(r.getName());
 			if (local == null || !r.getObjectId().equals(local.getObjectId()))
 				wantTag(r);
 		}
