@@ -45,7 +45,7 @@ import org.spearce.jgit.lib.Repository;
 @Command(common = false, usage = "Server side backend for 'jgit push'")
 class ReceivePack extends TextBuiltin {
 	@Argument(index = 0, required = true, metaVar = "DIRECTORY", usage = "Repository to receive into")
-	File gitdir;
+	File dstGitdir;
 
 	@Override
 	protected final boolean requiresRepository() {
@@ -56,11 +56,11 @@ class ReceivePack extends TextBuiltin {
 	protected void run() throws Exception {
 		final org.spearce.jgit.transport.ReceivePack rp;
 
-		if (new File(gitdir, ".git").isDirectory())
-			gitdir = new File(gitdir, ".git");
-		db = new Repository(gitdir);
+		if (new File(dstGitdir, ".git").isDirectory())
+			dstGitdir = new File(dstGitdir, ".git");
+		db = new Repository(dstGitdir);
 		if (!db.getObjectsDirectory().isDirectory())
-			throw die("'" + gitdir.getPath() + "' not a git repository");
+			throw die("'" + dstGitdir.getPath() + "' not a git repository");
 		rp = new org.spearce.jgit.transport.ReceivePack(db);
 		rp.receive(System.in, System.out, System.err);
 	}

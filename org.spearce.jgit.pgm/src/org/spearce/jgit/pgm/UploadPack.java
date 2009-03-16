@@ -45,7 +45,7 @@ import org.spearce.jgit.lib.Repository;
 @Command(common = false, usage = "Server side backend for 'jgit fetch'")
 class UploadPack extends TextBuiltin {
 	@Argument(index = 0, required = true, metaVar = "DIRECTORY", usage = "Repository to read from")
-	File gitdir;
+	File srcGitdir;
 
 	@Override
 	protected final boolean requiresRepository() {
@@ -56,11 +56,11 @@ class UploadPack extends TextBuiltin {
 	protected void run() throws Exception {
 		final org.spearce.jgit.transport.UploadPack rp;
 
-		if (new File(gitdir, ".git").isDirectory())
-			gitdir = new File(gitdir, ".git");
-		db = new Repository(gitdir);
+		if (new File(srcGitdir, ".git").isDirectory())
+			srcGitdir = new File(srcGitdir, ".git");
+		db = new Repository(srcGitdir);
 		if (!db.getObjectsDirectory().isDirectory())
-			throw die("'" + gitdir.getPath() + "' not a git repository");
+			throw die("'" + srcGitdir.getPath() + "' not a git repository");
 		rp = new org.spearce.jgit.transport.UploadPack(db);
 		rp.upload(System.in, System.out, System.err);
 	}
