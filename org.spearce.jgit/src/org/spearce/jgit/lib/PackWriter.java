@@ -447,7 +447,7 @@ public class PackWriter {
 	 * @param uninterestingObjects
 	 *            collection of objects to be marked as uninteresting (end
 	 *            points of graph traversal).
-	 * @param thin
+	 * @param packthin
 	 *            a boolean indicating whether writer may pack objects with
 	 *            delta base object not within set of objects to pack, but
 	 *            belonging to party repository (uninteresting/boundary) as
@@ -464,9 +464,9 @@ public class PackWriter {
 	public void preparePack(
 			final Collection<? extends ObjectId> interestingObjects,
 			final Collection<? extends ObjectId> uninterestingObjects,
-			final boolean thin, final boolean ignoreMissingUninteresting)
+			final boolean packthin, final boolean ignoreMissingUninteresting)
 			throws IOException {
-		this.thin = thin;
+		this.thin = packthin;
 		ObjectWalk walker = setUpWalker(interestingObjects,
 				uninterestingObjects, ignoreMissingUninteresting);
 		findObjectsToPack(walker);
