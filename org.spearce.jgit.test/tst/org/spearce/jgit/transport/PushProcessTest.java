@@ -401,9 +401,9 @@ public class PushProcessTest extends RepositoryTestCase {
 		}
 
 		public void push(ProgressMonitor monitor,
-				Map<String, RemoteRefUpdate> refUpdates)
+				Map<String, RemoteRefUpdate> refsToUpdate)
 				throws TransportException {
-			for (final RemoteRefUpdate rru : refUpdates.values()) {
+			for (final RemoteRefUpdate rru : refsToUpdate.values()) {
 				assertEquals(Status.NOT_ATTEMPTED, rru.getStatus());
 				rru.setStatus(connectionUpdateStatus);
 			}
