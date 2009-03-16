@@ -351,7 +351,7 @@ public class UploadPack {
 			if (line.length() == 0) {
 				if (commonBase.isEmpty() || multiAck)
 					pckOut.writeString("NAK\n");
-
+				pckOut.flush();
 			} else if (line.startsWith("have ") && line.length() == 45) {
 				final ObjectId id = ObjectId.fromString(line.substring(5));
 				if (matchHave(id)) {
