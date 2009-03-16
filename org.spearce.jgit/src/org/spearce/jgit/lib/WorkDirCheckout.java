@@ -259,7 +259,7 @@ public class WorkDirCheckout {
 				if (treeEntry instanceof Tree || auxEntry instanceof Tree) {
 					throw new IllegalArgumentException("Can't pass me a tree!");
 				}
-				processEntry(treeEntry, auxEntry, indexEntry, file);
+				processEntry(treeEntry, auxEntry, indexEntry);
 			}
 	
 			@Override
@@ -294,8 +294,7 @@ public class WorkDirCheckout {
 		conflicts.removeAll(removed);
 	}
 
-	void processEntry(TreeEntry h, TreeEntry m, Entry i,
-			File file) throws IOException {
+	void processEntry(TreeEntry h, TreeEntry m, Entry i) throws IOException {
 				ObjectId iId = (i == null ? null : i.getObjectId());
 				ObjectId mId = (m == null ? null : m.getId());
 				ObjectId hId = (h == null ? null : h.getId());

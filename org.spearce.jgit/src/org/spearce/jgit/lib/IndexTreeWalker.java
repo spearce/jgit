@@ -104,10 +104,10 @@ public class IndexTreeWalker {
 	 * @throws IOException
 	 */
 	public void walk() throws IOException {
-		walk(mainTree, newTree, "");
+		walk(mainTree, newTree);
 	}
 
-	private void walk(Tree tree, Tree auxTree, String curDir) throws IOException {
+	private void walk(Tree tree, Tree auxTree) throws IOException {
 		TreeIterator mi = new TreeIterator(tree, TreeIterator.Order.POSTORDER);
 		TreeIterator ai = new TreeIterator(auxTree, TreeIterator.Order.POSTORDER);
 		TreeEntry m = mi.hasNext() ? mi.next() : null;
@@ -124,7 +124,7 @@ public class IndexTreeWalker {
 			Entry     pi = cmpmi >= 0 && cmpai >= 0 ? i : null;
 
 			if (pi != null)
-				visitEntry(pm, pa, pi, root);
+				visitEntry(pm, pa, pi);
 			else
 				finishVisitTree(pm, pa, curIndexPos, root);
 
@@ -135,7 +135,7 @@ public class IndexTreeWalker {
 	}
 
 	private void visitEntry(TreeEntry t1, TreeEntry t2,
-			Entry i, File root) throws IOException {
+			Entry i) throws IOException {
 
 		assert t1 != null || t2 != null || i != null : "Needs at least one entry";
 		assert root != null : "Needs workdir";
