@@ -21,6 +21,7 @@ org.spearce.jgit.pgm.Version
 
 org.spearce.jgit.pgm.debug.MakeCacheTree
 org.spearce.jgit.pgm.debug.ReadDirCache
+org.spearce.jgit.pgm.debug.RebuildCommitGraph
 org.spearce.jgit.pgm.debug.ShowCacheTree
 org.spearce.jgit.pgm.debug.ShowCommands
 org.spearce.jgit.pgm.debug.ShowDirCache
