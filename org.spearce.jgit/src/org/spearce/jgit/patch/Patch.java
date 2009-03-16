@@ -222,7 +222,7 @@ public class Patch {
 		final FileHeader fh = new FileHeader(buf, start);
 		int ptr = fh.parseGitFileName(start + DIFF_GIT.length, end);
 		if (ptr < 0)
-			return skipFile(buf, start, end);
+			return skipFile(buf, start);
 
 		ptr = fh.parseGitHeaders(ptr, end);
 		ptr = parseHunks(fh, ptr, end);
@@ -236,7 +236,7 @@ public class Patch {
 		final CombinedFileHeader fh = new CombinedFileHeader(buf, start);
 		int ptr = fh.parseGitFileName(start + hdr.length, end);
 		if (ptr < 0)
-			return skipFile(buf, start, end);
+			return skipFile(buf, start);
 
 		ptr = fh.parseGitHeaders(ptr, end);
 		ptr = parseHunks(fh, ptr, end);
@@ -255,7 +255,7 @@ public class Patch {
 		return ptr;
 	}
 
-	private static int skipFile(final byte[] buf, int ptr, final int end) {
+	private static int skipFile(final byte[] buf, int ptr) {
 		ptr = nextLF(buf, ptr);
 		if (match(buf, ptr, OLD_NAME) >= 0)
 			ptr = nextLF(buf, ptr);
@@ -282,7 +282,7 @@ public class Patch {
 
 			if (isHunkHdr(buf, c, end) == fh.getParentCount()) {
 				final HunkHeader h = fh.newHunkHeader(c);
-				h.parseHeader(end);
+				h.parseHeader();
 				c = h.parseBody(this, end);
 				h.endOffset = c;
 				fh.addHunk(h);

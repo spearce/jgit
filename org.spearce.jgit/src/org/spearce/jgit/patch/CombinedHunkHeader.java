@@ -90,7 +90,7 @@ public class CombinedHunkHeader extends HunkHeader {
 	}
 
 	@Override
-	void parseHeader(final int end) {
+	void parseHeader() {
 		// Parse "@@@ -55,12 -163,13 +163,15 @@@ protected boolean"
 		//
 		final byte[] buf = file.buf;

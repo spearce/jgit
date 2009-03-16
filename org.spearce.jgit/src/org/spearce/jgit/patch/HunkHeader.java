@@ -161,7 +161,7 @@ public class HunkHeader {
 		return nContext;
 	}
 
-	void parseHeader(final int end) {
+	void parseHeader() {
 		// Parse "@@ -236,9 +236,9 @@ protected boolean"
 		//
 		final byte[] buf = file.buf;
