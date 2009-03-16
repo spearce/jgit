@@ -126,7 +126,7 @@ public class IndexTreeWalker {
 			if (pi != null)
 				visitEntry(pm, pa, pi);
 			else
-				finishVisitTree(pm, pa, curIndexPos, root);
+				finishVisitTree(pm, pa, curIndexPos);
 
 			if (pm != null) m = mi.hasNext() ? mi.next() : null;
 			if (pa != null) a = ai.hasNext() ? ai.next() : null;
@@ -160,7 +160,7 @@ public class IndexTreeWalker {
 				visitor.visitEntry(t1, i, f);
 	}
 
-	private void finishVisitTree(TreeEntry t1, TreeEntry t2, int curIndexPos, File root)
+	private void finishVisitTree(TreeEntry t1, TreeEntry t2, int curIndexPos)
 			throws IOException {
 
 		assert t1 != null || t2 != null : "Needs at least one entry";
