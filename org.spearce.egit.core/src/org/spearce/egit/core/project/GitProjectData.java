@@ -42,6 +42,7 @@ import org.spearce.egit.core.GitCorePreferences;
 import org.spearce.egit.core.GitProvider;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.WindowCache;
+import org.spearce.jgit.lib.WindowCacheConfig;
 
 /**
  * This class keeps information about how a project is mapped to
@@ -229,12 +230,13 @@ public class GitProjectData {
 	 * Update the settings for the global window cache of the workspace.
 	 */
 	public static void reconfigureWindowCache() {
+		final WindowCacheConfig c = new WindowCacheConfig();
 		Preferences p = Activator.getDefault().getPluginPreferences();
-		int wLimit = p.getInt(GitCorePreferences.core_packedGitLimit);
-		int wSize = p.getInt(GitCorePreferences.core_packedGitWindowSize);
-		boolean mmap = p.getBoolean(GitCorePreferences.core_packedGitMMAP);
-		int dbLimit = p.getInt(GitCorePreferences.core_deltaBaseCacheLimit);
-		WindowCache.reconfigure(wLimit, wSize, mmap, dbLimit);
+		c.setPackedGitLimit(p.getInt(GitCorePreferences.core_packedGitLimit));
+		c.setPackedGitWindowSize(p.getInt(GitCorePreferences.core_packedGitWindowSize));
+		c.setPackedGitMMAP(p.getBoolean(GitCorePreferences.core_packedGitMMAP));
+		c.setDeltaBaseCacheLimit(p.getInt(GitCorePreferences.core_deltaBaseCacheLimit));
+		WindowCache.reconfigure(c);
 	}
 
 	private final IProject project;
