@@ -151,4 +151,20 @@ public class WindowCacheConfig {
 	public void setDeltaBaseCacheLimit(final int newLimit) {
 		deltaBaseCacheLimit = newLimit;
 	}
+
+	/**
+	 * Update properties by setting fields from the configuration.
+	 * <p>
+	 * If a property is not defined in the configuration, then it is left
+	 * unmodified.
+	 *
+	 * @param rc configuration to read properties from.
+	 */
+	public void fromConfig(final RepositoryConfig rc) {
+		setPackedGitOpenFiles(rc.getInt("core", null, "packedgitopenfiles", getPackedGitOpenFiles()));
+		setPackedGitLimit(rc.getInt("core", null, "packedgitlimit", getPackedGitLimit()));
+		setPackedGitWindowSize(rc.getInt("core", null, "packedgitwindowsize", getPackedGitWindowSize()));
+		setPackedGitMMAP(rc.getBoolean("core", null, "packedgitmmap", isPackedGitMMAP()));
+		setDeltaBaseCacheLimit(rc.getInt("core", null, "deltabasecachelimit", getDeltaBaseCacheLimit()));
+	}
 }
