@@ -42,8 +42,6 @@ import java.lang.ref.SoftReference;
 class UnpackedObjectCache {
 	private static final int CACHE_SZ = 1024;
 
-	private static final int MB = 1024 * 1024;
-
 	private static final SoftReference<Entry> DEAD;
 
 	private static int hash(final long position) {
@@ -62,14 +60,15 @@ class UnpackedObjectCache {
 
 	static {
 		DEAD = new SoftReference<Entry>(null);
-		maxByteCount = 10 * MB;
+		maxByteCount = new WindowCacheConfig().getDeltaBaseCacheLimit();
 
 		cache = new Slot[CACHE_SZ];
 		for (int i = 0; i < CACHE_SZ; i++)
 			cache[i] = new Slot();
 	}
 
-	static synchronized void reconfigure(final int dbLimit) {
+	static synchronized void reconfigure(final WindowCacheConfig cfg) {
+		final int dbLimit = cfg.getDeltaBaseCacheLimit();
 		if (maxByteCount != dbLimit) {
 			maxByteCount = dbLimit;
 			releaseMemory();

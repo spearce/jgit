@@ -46,10 +46,6 @@ import java.lang.ref.ReferenceQueue;
  * the other windowed file access classes.
  */
 public class WindowCache {
-	private static final int KB = 1024;
-
-	private static final int MB = 1024 * KB;
-
 	private static final int bits(int newSize) {
 		if (newSize < 4096)
 			throw new IllegalArgumentException("Invalid window size");
@@ -77,10 +73,11 @@ public class WindowCache {
 	private static int openByteCount;
 
 	static {
-		maxByteCount = 10 * MB;
-		windowSizeShift = bits(8 * KB);
+		final WindowCacheConfig c = new WindowCacheConfig();
+		maxByteCount = c.getPackedGitLimit();
+		windowSizeShift = bits(c.getPackedGitWindowSize());
 		windowSize = 1 << windowSizeShift;
-		mmap = false;
+		mmap = c.isPackedGitMMAP();
 		cache = new ByteWindow[cacheTableSize()];
 		clearedWindowQueue = new ReferenceQueue<Object>();
 	}
@@ -104,34 +101,53 @@ public class WindowCache {
 	 *            true to enable use of mmap when creating windows.
 	 * @param deltaBaseCacheLimit
 	 *            number of bytes to hold in the delta base cache.
+	 * @deprecated Use {@link WindowCacheConfig} instead.
 	 */
 	public static void reconfigure(final int packedGitLimit,
 			final int packedGitWindowSize, final boolean packedGitMMAP,
 			final int deltaBaseCacheLimit) {
-		reconfigureImpl(packedGitLimit, packedGitWindowSize, packedGitMMAP);
-		UnpackedObjectCache.reconfigure(deltaBaseCacheLimit);
+		final WindowCacheConfig c = new WindowCacheConfig();
+		c.setPackedGitLimit(packedGitLimit);
+		c.setPackedGitWindowSize(packedGitWindowSize);
+		c.setPackedGitMMAP(packedGitMMAP);
+		c.setDeltaBaseCacheLimit(deltaBaseCacheLimit);
+		reconfigure(c);
 	}
 
-	private static synchronized void reconfigureImpl(final int packedGitLimit,
-			final int packedGitWindowSize, final boolean packedGitMMAP) {
+	/**
+	 * Modify the configuration of the window cache.
+	 * <p>
+	 * The new configuration is applied immediately. If the new limits are
+	 * smaller than what what is currently cached, older entries will be purged
+	 * as soon as possible to allow the cache to meet the new limit.
+	 *
+	 * @param cfg
+	 *            the new window cache configuration.
+	 */
+	public static void reconfigure(final WindowCacheConfig cfg) {
+		reconfigureImpl(cfg);
+		UnpackedObjectCache.reconfigure(cfg);
+	}
+
+	private static synchronized void reconfigureImpl(final WindowCacheConfig cfg) {
 		boolean prune = false;
 		boolean evictAll = false;
 
-		if (maxByteCount < packedGitLimit) {
-			maxByteCount = packedGitLimit;
-		} else if (maxByteCount > packedGitLimit) {
-			maxByteCount = packedGitLimit;
+		if (maxByteCount < cfg.getPackedGitLimit()) {
+			maxByteCount = cfg.getPackedGitLimit();
+		} else if (maxByteCount > cfg.getPackedGitLimit()) {
+			maxByteCount = cfg.getPackedGitLimit();
 			prune = true;
 		}
 
-		if (bits(packedGitWindowSize) != windowSizeShift) {
-			windowSizeShift = bits(packedGitWindowSize);
+		if (bits(cfg.getPackedGitWindowSize()) != windowSizeShift) {
+			windowSizeShift = bits(cfg.getPackedGitWindowSize());
 			windowSize = 1 << windowSizeShift;
 			evictAll = true;
 		}
 
-		if (mmap != packedGitMMAP) {
-			mmap = packedGitMMAP;
+		if (mmap != cfg.isPackedGitMMAP()) {
+			mmap = cfg.isPackedGitMMAP();
 			evictAll = true;
 		}
 

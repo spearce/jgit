@@ -113,8 +113,12 @@ public abstract class RepositoryTestCase extends TestCase {
 	 * Configure JGit before setting up test repositories.
 	 */
 	protected void configure() {
-		packedGitMMAP = "true".equals(System.getProperty("jgit.junit.usemmmap"));
-		WindowCache.reconfigure(128*1024, 8192, packedGitMMAP, 8192);
+		final WindowCacheConfig c = new WindowCacheConfig();
+		c.setPackedGitLimit(128 * WindowCacheConfig.KB);
+		c.setPackedGitWindowSize(8 * WindowCacheConfig.KB);
+		c.setPackedGitMMAP("true".equals(System.getProperty("jgit.junit.usemmmap")));
+		c.setDeltaBaseCacheLimit(8 * WindowCacheConfig.KB);
+		WindowCache.reconfigure(c);
 	}
 
 	/**
