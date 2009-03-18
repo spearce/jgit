@@ -37,13 +37,12 @@
 
 package org.spearce.jgit.revwalk;
 
-import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.revwalk.filter.RevFilter;
 
 public class RevWalkMergeBaseTest extends RevWalkTestCase {
 	public void testNone() throws Exception {
-		final ObjectId c1 = commit(commit(commit()));
-		final ObjectId c2 = commit(commit(commit()));
+		final RevCommit c1 = commit(commit(commit()));
+		final RevCommit c2 = commit(commit(commit()));
 
 		rw.setRevFilter(RevFilter.MERGE_BASE);
 		markStart(c1);
@@ -52,10 +51,10 @@ public class RevWalkMergeBaseTest extends RevWalkTestCase {
 	}
 
 	public void testSimple() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c1 = commit(commit(commit(commit(commit(b)))));
-		final ObjectId c2 = commit(commit(commit(commit(commit(b)))));
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c1 = commit(commit(commit(commit(commit(b)))));
+		final RevCommit c2 = commit(commit(commit(commit(commit(b)))));
 
 		rw.setRevFilter(RevFilter.MERGE_BASE);
 		markStart(c1);
@@ -65,11 +64,11 @@ public class RevWalkMergeBaseTest extends RevWalkTestCase {
 	}
 
 	public void testMultipleHeads_SameBase1() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c1 = commit(commit(commit(commit(commit(b)))));
-		final ObjectId c2 = commit(commit(commit(commit(commit(b)))));
-		final ObjectId c3 = commit(commit(commit(b)));
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c1 = commit(commit(commit(commit(commit(b)))));
+		final RevCommit c2 = commit(commit(commit(commit(commit(b)))));
+		final RevCommit c3 = commit(commit(commit(b)));
 
 		rw.setRevFilter(RevFilter.MERGE_BASE);
 		markStart(c1);
@@ -80,12 +79,12 @@ public class RevWalkMergeBaseTest extends RevWalkTestCase {
 	}
 
 	public void testMultipleHeads_SameBase2() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
-		final ObjectId d1 = commit(commit(commit(commit(commit(b)))));
-		final ObjectId d2 = commit(commit(commit(commit(commit(c)))));
-		final ObjectId d3 = commit(commit(commit(c)));
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
+		final RevCommit d1 = commit(commit(commit(commit(commit(b)))));
+		final RevCommit d2 = commit(commit(commit(commit(commit(c)))));
+		final RevCommit d3 = commit(commit(commit(c)));
 
 		rw.setRevFilter(RevFilter.MERGE_BASE);
 		markStart(d1);
@@ -101,11 +100,11 @@ public class RevWalkMergeBaseTest extends RevWalkTestCase {
 		// clean merge base for d,e as they each merged the parents b,c
 		// in different orders.
 		//
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(a);
-		final ObjectId d = commit(b, c);
-		final ObjectId e = commit(c, b);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(a);
+		final RevCommit d = commit(b, c);
+		final RevCommit e = commit(c, b);
 
 		rw.setRevFilter(RevFilter.MERGE_BASE);
 		markStart(d);

@@ -37,14 +37,12 @@
 
 package org.spearce.jgit.revwalk;
 
-import org.spearce.jgit.lib.ObjectId;
-
 public class RevWalkSortTest extends RevWalkTestCase {
 	public void testSort_Default() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(1, a);
-		final ObjectId c = commit(1, b);
-		final ObjectId d = commit(1, c);
+		final RevCommit a = commit();
+		final RevCommit b = commit(1, a);
+		final RevCommit c = commit(1, b);
+		final RevCommit d = commit(1, c);
 
 		markStart(d);
 		assertCommit(d, rw.next());
@@ -55,10 +53,10 @@ public class RevWalkSortTest extends RevWalkTestCase {
 	}
 
 	public void testSort_COMMIT_TIME_DESC() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
-		final ObjectId d = commit(c);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
+		final RevCommit d = commit(c);
 
 		rw.sort(RevSort.COMMIT_TIME_DESC);
 		markStart(d);
@@ -70,10 +68,10 @@ public class RevWalkSortTest extends RevWalkTestCase {
 	}
 
 	public void testSort_REVERSE() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
-		final ObjectId d = commit(c);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
+		final RevCommit d = commit(c);
 
 		rw.sort(RevSort.REVERSE);
 		markStart(d);
@@ -88,10 +86,10 @@ public class RevWalkSortTest extends RevWalkTestCase {
 		// Despite being out of order time-wise, a strand-of-pearls must
 		// still maintain topological order.
 		//
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(-5, b);
-		final ObjectId d = commit(10, c);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(-5, b);
+		final RevCommit d = commit(10, c);
 		assertTrue(parse(a).getCommitTime() < parse(d).getCommitTime());
 		assertTrue(parse(c).getCommitTime() < parse(b).getCommitTime());
 
@@ -107,11 +105,11 @@ public class RevWalkSortTest extends RevWalkTestCase {
 	public void testSort_COMMIT_TIME_DESC_OutOfOrder2() throws Exception {
 		// c1 is back dated before its parent.
 		//
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c1 = commit(-5, b);
-		final ObjectId c2 = commit(10, b);
-		final ObjectId d = commit(c1, c2);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c1 = commit(-5, b);
+		final RevCommit c2 = commit(10, b);
+		final RevCommit d = commit(c1, c2);
 
 		rw.sort(RevSort.COMMIT_TIME_DESC);
 		markStart(d);
@@ -126,11 +124,11 @@ public class RevWalkSortTest extends RevWalkTestCase {
 	public void testSort_TOPO() throws Exception {
 		// c1 is back dated before its parent.
 		//
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c1 = commit(-5, b);
-		final ObjectId c2 = commit(10, b);
-		final ObjectId d = commit(c1, c2);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c1 = commit(-5, b);
+		final RevCommit c2 = commit(10, b);
+		final RevCommit d = commit(c1, c2);
 
 		rw.sort(RevSort.TOPO);
 		markStart(d);
@@ -145,11 +143,11 @@ public class RevWalkSortTest extends RevWalkTestCase {
 	public void testSort_TOPO_REVERSE() throws Exception {
 		// c1 is back dated before its parent.
 		//
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c1 = commit(-5, b);
-		final ObjectId c2 = commit(10, b);
-		final ObjectId d = commit(c1, c2);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c1 = commit(-5, b);
+		final RevCommit c2 = commit(10, b);
+		final RevCommit d = commit(c1, c2);
 
 		rw.sort(RevSort.TOPO);
 		rw.sort(RevSort.REVERSE, true);

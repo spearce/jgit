@@ -40,7 +40,6 @@ package org.spearce.jgit.revwalk;
 import java.util.Date;
 
 import org.spearce.jgit.lib.Commit;
-import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.RepositoryTestCase;
@@ -50,7 +49,7 @@ import org.spearce.jgit.lib.Tree;
 public abstract class RevWalkTestCase extends RepositoryTestCase {
 	protected ObjectWriter ow;
 
-	protected ObjectId emptyTree;
+	protected RevTree emptyTree;
 
 	protected long nowTick;
 
@@ -59,20 +58,20 @@ public abstract class RevWalkTestCase extends RepositoryTestCase {
 	public void setUp() throws Exception {
 		super.setUp();
 		ow = new ObjectWriter(db);
-		emptyTree = ow.writeTree(new Tree(db));
-		nowTick = 1236977987000L;
 		rw = new RevWalk(db);
+		emptyTree = rw.parseTree(ow.writeTree(new Tree(db)));
+		nowTick = 1236977987000L;
 	}
 
 	protected void tick(final int secDelta) {
 		nowTick += secDelta * 1000L;
 	}
 
-	protected ObjectId commit(final ObjectId... parents) throws Exception {
+	protected RevCommit commit(final RevCommit... parents) throws Exception {
 		return commit(1, parents);
 	}
 
-	protected ObjectId commit(final int secDelta, final ObjectId... parents)
+	protected RevCommit commit(final int secDelta, final RevCommit... parents)
 			throws Exception {
 		tick(secDelta);
 		final Commit c = new Commit(db);
@@ -81,22 +80,23 @@ public abstract class RevWalkTestCase extends RepositoryTestCase {
 		c.setAuthor(new PersonIdent(jauthor, new Date(nowTick)));
 		c.setCommitter(new PersonIdent(jcommitter, new Date(nowTick)));
 		c.setMessage("");
-		return ow.writeCommit(c);
+		return rw.lookupCommit(ow.writeCommit(c));
 	}
 
-	protected RevCommit parse(final ObjectId commitId) throws Exception {
-		return rw.parseCommit(commitId);
+	protected <T extends RevObject> T parse(final T t) throws Exception {
+		rw.parse(t);
+		return t;
 	}
 
-	protected void markStart(final ObjectId commitId) throws Exception {
-		rw.markStart(parse(commitId));
+	protected void markStart(final RevCommit commit) throws Exception {
+		rw.markStart(commit);
 	}
 
-	protected void markUninteresting(final ObjectId commitId) throws Exception {
-		rw.markUninteresting(parse(commitId));
+	protected void markUninteresting(final RevCommit commit) throws Exception {
+		rw.markUninteresting(commit);
 	}
 
-	protected void assertCommit(final ObjectId commitId, final RevCommit commit) {
-		assertEquals(commitId.name(), commit != null ? commit.name() : null);
+	protected void assertCommit(final RevCommit exp, final RevCommit act) {
+		assertSame(exp, act);
 	}
 }

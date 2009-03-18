@@ -42,7 +42,6 @@ import java.io.IOException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.StopWalkException;
-import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.revwalk.filter.AndRevFilter;
 import org.spearce.jgit.revwalk.filter.NotRevFilter;
 import org.spearce.jgit.revwalk.filter.OrRevFilter;
@@ -52,9 +51,9 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 	private static final MyAll MY_ALL = new MyAll();
 
 	public void testFilter_ALL() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
 
 		rw.setRevFilter(RevFilter.ALL);
 		markStart(c);
@@ -65,9 +64,9 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 	}
 
 	public void testFilter_Negate_ALL() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
 
 		rw.setRevFilter(RevFilter.ALL.negate());
 		markStart(c);
@@ -75,9 +74,9 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 	}
 
 	public void testFilter_NOT_ALL() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
 
 		rw.setRevFilter(NotRevFilter.create(RevFilter.ALL));
 		markStart(c);
@@ -85,9 +84,9 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 	}
 
 	public void testFilter_NONE() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
 
 		rw.setRevFilter(RevFilter.NONE);
 		markStart(c);
@@ -95,9 +94,9 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 	}
 
 	public void testFilter_NOT_NONE() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
 
 		rw.setRevFilter(NotRevFilter.create(RevFilter.NONE));
 		markStart(c);
@@ -108,9 +107,9 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 	}
 
 	public void testFilter_ALL_And_NONE() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
 
 		rw.setRevFilter(AndRevFilter.create(RevFilter.ALL, RevFilter.NONE));
 		markStart(c);
@@ -118,9 +117,9 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 	}
 
 	public void testFilter_NONE_And_ALL() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
 
 		rw.setRevFilter(AndRevFilter.create(RevFilter.NONE, RevFilter.ALL));
 		markStart(c);
@@ -128,9 +127,9 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 	}
 
 	public void testFilter_ALL_Or_NONE() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
 
 		rw.setRevFilter(OrRevFilter.create(RevFilter.ALL, RevFilter.NONE));
 		markStart(c);
@@ -141,9 +140,9 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 	}
 
 	public void testFilter_NONE_Or_ALL() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
 
 		rw.setRevFilter(OrRevFilter.create(RevFilter.NONE, RevFilter.ALL));
 		markStart(c);
@@ -154,9 +153,9 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 	}
 
 	public void testFilter_MY_ALL_And_NONE() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
 
 		rw.setRevFilter(AndRevFilter.create(MY_ALL, RevFilter.NONE));
 		markStart(c);
@@ -164,9 +163,9 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 	}
 
 	public void testFilter_NONE_And_MY_ALL() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
 
 		rw.setRevFilter(AndRevFilter.create(RevFilter.NONE, MY_ALL));
 		markStart(c);
@@ -174,9 +173,9 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 	}
 
 	public void testFilter_MY_ALL_Or_NONE() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
 
 		rw.setRevFilter(OrRevFilter.create(MY_ALL, RevFilter.NONE));
 		markStart(c);
@@ -187,9 +186,9 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 	}
 
 	public void testFilter_NONE_Or_MY_ALL() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c = commit(b);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c = commit(b);
 
 		rw.setRevFilter(OrRevFilter.create(RevFilter.NONE, MY_ALL));
 		markStart(c);
@@ -200,12 +199,12 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 	}
 
 	public void testFilter_NO_MERGES() throws Exception {
-		final ObjectId a = commit();
-		final ObjectId b = commit(a);
-		final ObjectId c1 = commit(b);
-		final ObjectId c2 = commit(b);
-		final ObjectId d = commit(c1, c2);
-		final ObjectId e = commit(d);
+		final RevCommit a = commit();
+		final RevCommit b = commit(a);
+		final RevCommit c1 = commit(b);
+		final RevCommit c2 = commit(b);
+		final RevCommit d = commit(c1, c2);
+		final RevCommit e = commit(d);
 
 		rw.setRevFilter(RevFilter.NO_MERGES);
 		markStart(e);
