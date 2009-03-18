@@ -38,6 +38,7 @@
 package org.spearce.jgit.revwalk;
 
 import org.spearce.jgit.revwalk.filter.RevFilter;
+import org.spearce.jgit.treewalk.filter.TreeFilter;
 
 public class RevWalkMergeBaseTest extends RevWalkTestCase {
 	public void testNone() throws Exception {
@@ -48,6 +49,22 @@ public class RevWalkMergeBaseTest extends RevWalkTestCase {
 		markStart(c1);
 		markStart(c2);
 		assertNull(rw.next());
+	}
+
+	public void testDisallowTreeFilter() throws Exception {
+		final RevCommit c1 = commit();
+		final RevCommit c2 = commit();
+
+		rw.setRevFilter(RevFilter.MERGE_BASE);
+		rw.setTreeFilter(TreeFilter.ANY_DIFF);
+		markStart(c1);
+		markStart(c2);
+		try {
+			assertNull(rw.next());
+			fail("did not throw IllegalStateException");
+		} catch (IllegalStateException ise) {
+			// expected result
+		}
 	}
 
 	public void testSimple() throws Exception {
