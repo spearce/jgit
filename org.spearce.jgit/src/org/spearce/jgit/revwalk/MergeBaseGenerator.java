@@ -73,6 +73,10 @@ class MergeBaseGenerator extends Generator {
 
 	private int branchMask;
 
+	private int recarryTest;
+
+	private int recarryMask;
+
 	MergeBaseGenerator(final RevWalk w) {
 		walker = w;
 		pending = new DateRevQueue();
@@ -91,6 +95,12 @@ class MergeBaseGenerator extends Generator {
 			// will be available for reuse when the walk resets.
 			//
 			walker.freeFlag(branchMask);
+
+			// Setup the condition used by carryOntoOne to detect a late
+			// merge base and produce it on the next round.
+			//
+			recarryTest = branchMask | POPPED;
+			recarryMask = branchMask | POPPED | MERGE_BASE;
 		}
 	}
 
@@ -187,8 +197,7 @@ class MergeBaseGenerator extends Generator {
 		final boolean haveAll = (p.flags & carry) == carry;
 		p.flags |= carry;
 
-		if ((p.flags & POPPED) != 0 && (carry & MERGE_BASE) == 0
-				&& (p.flags & branchMask) == branchMask) {
+		if ((p.flags & recarryMask) == recarryTest) {
 			// We were popped without being a merge base, but we just got
 			// voted to be one. Inject ourselves back at the front of the
 			// pending queue and tell all of our ancestors they are within
