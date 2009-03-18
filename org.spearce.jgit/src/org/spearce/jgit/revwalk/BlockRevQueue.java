@@ -104,7 +104,7 @@ abstract class BlockRevQueue extends AbstractRevQueue {
 	}
 
 	static final class Block {
-		private static final int BLOCK_SIZE = 256;
+		static final int BLOCK_SIZE = 256;
 
 		/** Next block in our chain of blocks; null if we are the last. */
 		Block next;
