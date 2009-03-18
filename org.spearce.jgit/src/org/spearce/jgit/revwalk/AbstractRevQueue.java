@@ -133,7 +133,7 @@ abstract class AbstractRevQueue extends Generator {
 
 		@Override
 		boolean anybodyHasFlag(int f) {
-			return true;
+			return false;
 		}
 
 		@Override
