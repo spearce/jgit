@@ -70,17 +70,17 @@ public abstract class RevObject extends ObjectId {
 	 * 
 	 * @return unique hash of this object.
 	 */
-	public ObjectId getId() {
+	public final ObjectId getId() {
 		return this;
 	}
 
 	@Override
-	public boolean equals(final ObjectId o) {
+	public final boolean equals(final ObjectId o) {
 		return this == o;
 	}
 
 	@Override
-	public boolean equals(final Object o) {
+	public final boolean equals(final Object o) {
 		return this == o;
 	}
 
@@ -91,7 +91,7 @@ public abstract class RevObject extends ObjectId {
 	 *            the flag to test.
 	 * @return true if the flag has been added to this object; false if not.
 	 */
-	public boolean has(final RevFlag flag) {
+	public final boolean has(final RevFlag flag) {
 		return (flags & flag.mask) != 0;
 	}
 
@@ -103,7 +103,7 @@ public abstract class RevObject extends ObjectId {
 	 * @return true if any flag in the set has been added to this object; false
 	 *         if not.
 	 */
-	public boolean hasAny(final RevFlagSet set) {
+	public final boolean hasAny(final RevFlagSet set) {
 		return (flags & set.mask) != 0;
 	}
 
@@ -115,7 +115,7 @@ public abstract class RevObject extends ObjectId {
 	 * @return true if all flags of the set have been added to this object;
 	 *         false if some or none have been added.
 	 */
-	public boolean hasAll(final RevFlagSet set) {
+	public final boolean hasAll(final RevFlagSet set) {
 		return (flags & set.mask) == set.mask;
 	}
 
@@ -127,7 +127,7 @@ public abstract class RevObject extends ObjectId {
 	 * @param flag
 	 *            the flag to mark on this object, for later testing.
 	 */
-	public void add(final RevFlag flag) {
+	public final void add(final RevFlag flag) {
 		flags |= flag.mask;
 	}
 
@@ -137,7 +137,7 @@ public abstract class RevObject extends ObjectId {
 	 * @param set
 	 *            the set of flags to mark on this object, for later testing.
 	 */
-	public void add(final RevFlagSet set) {
+	public final void add(final RevFlagSet set) {
 		flags |= set.mask;
 	}
 
@@ -149,7 +149,7 @@ public abstract class RevObject extends ObjectId {
 	 * @param flag
 	 *            the flag to remove from this object.
 	 */
-	public void remove(final RevFlag flag) {
+	public final void remove(final RevFlag flag) {
 		flags &= ~flag.mask;
 	}
 
@@ -159,7 +159,7 @@ public abstract class RevObject extends ObjectId {
 	 * @param set
 	 *            the flag to remove from this object.
 	 */
-	public void remove(final RevFlagSet set) {
+	public final void remove(final RevFlagSet set) {
 		flags &= ~set.mask;
 	}
 
