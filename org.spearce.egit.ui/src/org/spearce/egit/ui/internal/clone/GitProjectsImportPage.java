@@ -508,7 +508,7 @@ public class GitProjectsImportPage extends WizardPage {
 							UIText.WizardProjectsImportPage_SearchingMessage,
 							100);
 					selectedProjects = new ProjectRecord[0];
-					Collection files = new ArrayList();
+					Collection<File> files = new ArrayList<File>();
 					monitor.worked(10);
 					if (directory.isDirectory()) {
 
@@ -516,14 +516,14 @@ public class GitProjectsImportPage extends WizardPage {
 								null, monitor)) {
 							return;
 						}
-						Iterator filesIterator = files.iterator();
+						Iterator<File> filesIterator = files.iterator();
 						selectedProjects = new ProjectRecord[files.size()];
 						int index = 0;
 						monitor.worked(50);
 						monitor
 								.subTask(UIText.WizardProjectsImportPage_ProcessingMessage);
 						while (filesIterator.hasNext()) {
-							File file = (File) filesIterator.next();
+							File file = filesIterator.next();
 							selectedProjects[index] = new ProjectRecord(file);
 							index++;
 						}
@@ -562,8 +562,8 @@ public class GitProjectsImportPage extends WizardPage {
 	 *            The monitor to report to
 	 * @return boolean <code>true</code> if the operation was completed.
 	 */
-	private boolean collectProjectFilesFromDirectory(Collection files,
-			File directory, Set directoriesVisited, IProgressMonitor monitor) {
+	private boolean collectProjectFilesFromDirectory(Collection<File> files,
+			File directory, Set<String> directoriesVisited, IProgressMonitor monitor) {
 
 		if (monitor.isCanceled()) {
 			return false;
@@ -577,7 +577,7 @@ public class GitProjectsImportPage extends WizardPage {
 
 		// Initialize recursion guard for recursive symbolic links
 		if (directoriesVisited == null) {
-			directoriesVisited = new HashSet();
+			directoriesVisited = new HashSet<String>();
 			try {
 				directoriesVisited.add(directory.getCanonicalPath());
 			} catch (IOException exception) {
@@ -759,13 +759,13 @@ public class GitProjectsImportPage extends WizardPage {
 	 *         workspace
 	 */
 	public ProjectRecord[] getValidProjects() {
-		List validProjects = new ArrayList();
+		List<ProjectRecord> validProjects = new ArrayList<ProjectRecord>();
 		for (int i = 0; i < selectedProjects.length; i++) {
 			if (!isProjectInWorkspace(selectedProjects[i].getProjectName())) {
 				validProjects.add(selectedProjects[i]);
 			}
 		}
-		return (ProjectRecord[]) validProjects
+		return validProjects
 				.toArray(new ProjectRecord[validProjects.size()]);
 	}
 

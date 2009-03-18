@@ -366,7 +366,7 @@ public class CommitDialog extends Dialog {
 				}
 				try {
 					ArrayList<GitIndex> changedIndexes = new ArrayList<GitIndex>();
-					for (Iterator<Object> it = sel.iterator(); it.hasNext();) {
+					for (Iterator<?> it = sel.iterator(); it.hasNext();) {
 						CommitItem commitItem = (CommitItem) it.next();
 
 						IProject project = commitItem.file.getProject();
