@@ -45,6 +45,8 @@ public class WindowCacheConfig {
 	/** 1024 {@link #KB} (number of bytes in one mebibyte/megabyte) */
 	public static final int MB = 1024 * KB;
 
+	private int packedGitOpenFiles;
+
 	private int packedGitLimit;
 
 	private int packedGitWindowSize;
@@ -55,10 +57,28 @@ public class WindowCacheConfig {
 
 	/** Create a default configuration. */
 	public WindowCacheConfig() {
+		packedGitOpenFiles = 128;
 		packedGitLimit = 10 * MB;
 		packedGitWindowSize = 8 * KB;
 		packedGitMMAP = false;
 		deltaBaseCacheLimit = 10 * MB;
+	}
+
+	/**
+	 * @return maximum number of streams to open at a time. Open packs count
+	 *         against the process limits. <b>Default is 128.</b>
+	 */
+	public int getPackedGitOpenFiles() {
+		return packedGitOpenFiles;
+	}
+
+	/**
+	 * @param fdLimit
+	 *            maximum number of streams to open at a time. Open packs count
+	 *            against the process limits
+	 */
+	public void setPackedGitOpenFiles(final int fdLimit) {
+		packedGitOpenFiles = fdLimit;
 	}
 
 	/**

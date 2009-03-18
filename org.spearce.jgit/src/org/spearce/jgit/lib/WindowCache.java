@@ -54,6 +54,8 @@ public class WindowCache {
 		return Integer.numberOfTrailingZeros(newSize);
 	}
 
+	private static int maxFileCount;
+
 	private static int maxByteCount;
 
 	private static int windowSize;
@@ -70,10 +72,13 @@ public class WindowCache {
 
 	private static ByteWindow lruTail;
 
+	private static int openFileCount;
+
 	private static int openByteCount;
 
 	static {
 		final WindowCacheConfig c = new WindowCacheConfig();
+		maxFileCount = c.getPackedGitOpenFiles();
 		maxByteCount = c.getPackedGitLimit();
 		windowSizeShift = bits(c.getPackedGitWindowSize());
 		windowSize = 1 << windowSizeShift;
@@ -132,6 +137,13 @@ public class WindowCache {
 	private static synchronized void reconfigureImpl(final WindowCacheConfig cfg) {
 		boolean prune = false;
 		boolean evictAll = false;
+
+		if (maxFileCount < cfg.getPackedGitOpenFiles())
+			maxFileCount = cfg.getPackedGitOpenFiles();
+		else if (maxFileCount > cfg.getPackedGitOpenFiles()) {
+			maxFileCount = cfg.getPackedGitOpenFiles();
+			prune = true;
+		}
 
 		if (maxByteCount < cfg.getPackedGitLimit()) {
 			maxByteCount = cfg.getPackedGitLimit();
@@ -230,15 +242,21 @@ public class WindowCache {
 
 		if (wp.openCount == 0) {
 			try {
+				openFileCount++;
+				releaseMemory();
+				runClearedWindowQueue();
 				wp.openCount = 1;
 				wp.cacheOpen();
 			} catch (IOException ioe) {
+				openFileCount--;
 				wp.openCount = 0;
 				throw ioe;
 			} catch (RuntimeException ioe) {
+				openFileCount--;
 				wp.openCount = 0;
 				throw ioe;
 			} catch (Error ioe) {
+				openFileCount--;
 				wp.openCount = 0;
 				throw ioe;
 			} finally {
@@ -278,6 +296,7 @@ public class WindowCache {
 
 	static synchronized void markLoaded(final ByteWindow w) {
 		if (--w.provider.openCount == 0) {
+			openFileCount--;
 			w.provider.cacheClose();
 		}
 	}
@@ -291,11 +310,15 @@ public class WindowCache {
 
 	private static void releaseMemory() {
 		ByteWindow<?> e = lruTail;
-		while (openByteCount > maxByteCount && e != null) {
+		while (isOverLimit() && e != null) {
 			final ByteWindow<?> p = e.lruPrev;
 			clear(e);
 			e = p;
 		}
+	}
+
+	private static boolean isOverLimit() {
+		return openByteCount > maxByteCount || openFileCount > maxFileCount;
 	}
 
 	/**
@@ -341,6 +364,7 @@ public class WindowCache {
 	private static void unlinkSize(final ByteWindow<?> e) {
 		if (e.sizeActive) {
 			if (--e.provider.openCount == 0) {
+				openFileCount--;
 				e.provider.cacheClose();
 			}
 			openByteCount -= e.size;
