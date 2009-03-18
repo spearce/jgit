@@ -37,15 +37,23 @@
 
 package org.spearce.jgit.revwalk;
 
+import java.util.Collections;
 import java.util.Date;
 
+import org.spearce.jgit.dircache.DirCache;
+import org.spearce.jgit.dircache.DirCacheBuilder;
+import org.spearce.jgit.dircache.DirCacheEntry;
 import org.spearce.jgit.lib.Commit;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.FileMode;
+import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.RepositoryTestCase;
 import org.spearce.jgit.lib.Tag;
 import org.spearce.jgit.lib.Tree;
+import org.spearce.jgit.treewalk.TreeWalk;
+import org.spearce.jgit.treewalk.filter.PathFilterGroup;
 
 /** Support for tests of the {@link RevWalk} class. */
 public abstract class RevWalkTestCase extends RepositoryTestCase {
@@ -60,9 +68,13 @@ public abstract class RevWalkTestCase extends RepositoryTestCase {
 	public void setUp() throws Exception {
 		super.setUp();
 		ow = new ObjectWriter(db);
-		rw = new RevWalk(db);
+		rw = createRevWalk();
 		emptyTree = rw.parseTree(ow.writeTree(new Tree(db)));
 		nowTick = 1236977987000L;
+	}
+
+	protected RevWalk createRevWalk() {
+		return new RevWalk(db);
 	}
 
 	protected void tick(final int secDelta) {
@@ -74,15 +86,61 @@ public abstract class RevWalkTestCase extends RepositoryTestCase {
 				.getBytes(Constants.CHARACTER_ENCODING)));
 	}
 
+	protected DirCacheEntry file(final String path, final RevBlob blob)
+			throws Exception {
+		final DirCacheEntry e = new DirCacheEntry(path);
+		e.setFileMode(FileMode.REGULAR_FILE);
+		e.setObjectId(blob);
+		return e;
+	}
+
+	protected RevTree tree(final DirCacheEntry... entries) throws Exception {
+		final DirCache dc = DirCache.newInCore();
+		final DirCacheBuilder b = dc.builder();
+		for (final DirCacheEntry e : entries)
+			b.add(e);
+		b.finish();
+		return rw.lookupTree(dc.writeTree(ow));
+	}
+
+	protected RevObject get(final RevTree tree, final String path)
+			throws Exception {
+		final TreeWalk tw = new TreeWalk(db);
+		tw.setFilter(PathFilterGroup.createFromStrings(Collections
+				.singleton(path)));
+		tw.reset(tree);
+		while (tw.next()) {
+			if (tw.isSubtree() && !path.equals(tw.getPathString())) {
+				tw.enterSubtree();
+				continue;
+			}
+			final ObjectId entid = tw.getObjectId(0);
+			final FileMode entmode = tw.getFileMode(0);
+			return rw.lookupAny(entid, entmode.getObjectType());
+		}
+		fail("Can't find " + path + " in tree " + tree.name());
+		return null; // never reached.
+	}
+
 	protected RevCommit commit(final RevCommit... parents) throws Exception {
-		return commit(1, parents);
+		return commit(1, emptyTree, parents);
+	}
+
+	protected RevCommit commit(final RevTree tree, final RevCommit... parents)
+			throws Exception {
+		return commit(1, tree, parents);
 	}
 
 	protected RevCommit commit(final int secDelta, final RevCommit... parents)
 			throws Exception {
+		return commit(secDelta, emptyTree, parents);
+	}
+
+	protected RevCommit commit(final int secDelta, final RevTree tree,
+			final RevCommit... parents) throws Exception {
 		tick(secDelta);
 		final Commit c = new Commit(db);
-		c.setTreeId(emptyTree);
+		c.setTreeId(tree);
 		c.setParentIds(parents);
 		c.setAuthor(new PersonIdent(jauthor, new Date(nowTick)));
 		c.setCommitter(new PersonIdent(jcommitter, new Date(nowTick)));
