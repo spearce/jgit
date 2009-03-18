@@ -40,9 +40,11 @@ package org.spearce.jgit.revwalk;
 import java.util.Date;
 
 import org.spearce.jgit.lib.Commit;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectWriter;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.RepositoryTestCase;
+import org.spearce.jgit.lib.Tag;
 import org.spearce.jgit.lib.Tree;
 
 /** Support for tests of the {@link RevWalk} class. */
@@ -67,6 +69,11 @@ public abstract class RevWalkTestCase extends RepositoryTestCase {
 		nowTick += secDelta * 1000L;
 	}
 
+	protected RevBlob blob(final String content) throws Exception {
+		return rw.lookupBlob(ow.writeBlob(content
+				.getBytes(Constants.CHARACTER_ENCODING)));
+	}
+
 	protected RevCommit commit(final RevCommit... parents) throws Exception {
 		return commit(1, parents);
 	}
@@ -81,6 +88,17 @@ public abstract class RevWalkTestCase extends RepositoryTestCase {
 		c.setCommitter(new PersonIdent(jcommitter, new Date(nowTick)));
 		c.setMessage("");
 		return rw.lookupCommit(ow.writeCommit(c));
+	}
+
+	protected RevTag tag(final String name, final RevObject dst)
+			throws Exception {
+		final Tag t = new Tag(db);
+		t.setType(Constants.typeString(dst.getType()));
+		t.setObjId(dst.toObjectId());
+		t.setTag(name);
+		t.setTagger(new PersonIdent(jcommitter, new Date(nowTick)));
+		t.setMessage("");
+		return (RevTag) rw.lookupAny(ow.writeTag(t), Constants.OBJ_TAG);
 	}
 
 	protected <T extends RevObject> T parse(final T t) throws Exception {
