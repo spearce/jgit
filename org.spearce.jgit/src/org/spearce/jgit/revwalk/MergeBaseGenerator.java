@@ -184,7 +184,9 @@ class MergeBaseGenerator extends Generator {
 	}
 
 	private boolean carryOntoOne(final RevCommit p, final int carry) {
+		final boolean haveAll = (p.flags & carry) == carry;
 		p.flags |= carry;
+
 		if ((p.flags & POPPED) != 0 && (carry & MERGE_BASE) == 0
 				&& (p.flags & branchMask) == branchMask) {
 			// We were popped without being a merge base, but we just got
@@ -197,6 +199,11 @@ class MergeBaseGenerator extends Generator {
 			carryOntoHistory(p, branchMask | MERGE_BASE);
 			return true;
 		}
-		return false;
+
+		// If we already had all carried flags, our parents do too.
+		// Return true to stop the caller from running down this leg
+		// of the revision graph any further.
+		//
+		return haveAll;
 	}
 }
