@@ -64,7 +64,7 @@ public class NoClosingBracketException extends InvalidPatternException {
 	private static String createMessage(final int indexOfOpeningBracket,
 			final String openingBracket, final String closingBracket) {
 		return String.format("No closing %s found for %s at index %s.",
-				closingBracket, openingBracket, new Integer(
-						indexOfOpeningBracket));
+				closingBracket, openingBracket,
+				Integer.valueOf(indexOfOpeningBracket));
 	}
 }
