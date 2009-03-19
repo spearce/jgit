@@ -183,8 +183,9 @@ public class ObjectIdMap<V> extends AbstractMap<ObjectId, V> {
 	}
 
 	public void putAll(Map<? extends ObjectId, ? extends V> arg0) {
-		for (ObjectId k : arg0.keySet()) {
-			V v=arg0.get(k);
+		for (Map.Entry<? extends ObjectId, ? extends V> entry : arg0.entrySet()) {
+			final ObjectId k = entry.getKey();
+			final V v = entry.getValue();
 			put(k,v);
 		}
 	}

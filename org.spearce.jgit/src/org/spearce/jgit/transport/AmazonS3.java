@@ -572,9 +572,10 @@ public class AmazonS3 {
 	private void authorize(final HttpURLConnection c) throws IOException {
 		final Map<String, List<String>> reqHdr = c.getRequestProperties();
 		final SortedMap<String, String> sigHdr = new TreeMap<String, String>();
-		for (final String hdr : reqHdr.keySet()) {
+		for (final Map.Entry<String, List<String>> entry : reqHdr.entrySet()) {
+			final String hdr = entry.getKey();
 			if (isSignedHeader(hdr))
-				sigHdr.put(hdr.toLowerCase(), toCleanString(reqHdr.get(hdr)));
+				sigHdr.put(hdr.toLowerCase(), toCleanString(entry.getValue()));
 		}
 
 		final StringBuilder s = new StringBuilder();
