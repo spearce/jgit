@@ -152,7 +152,7 @@ public class Repository {
 				for (String alt=ar.readLine(); alt!=null; alt=ar.readLine()) {
 					readObjectsDirs(FS.resolve(objectsDir, alt), ret);
 				}
-			} catch (Exception e) {
+			} finally {
 				ar.close();
 			}
 		}
