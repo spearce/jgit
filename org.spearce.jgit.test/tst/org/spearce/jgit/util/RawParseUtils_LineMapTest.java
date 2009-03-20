@@ -45,44 +45,48 @@ public class RawParseUtils_LineMapTest extends TestCase {
 	public void testEmpty() {
 		final IntList map = RawParseUtils.lineMap(new byte[] {}, 0, 0);
 		assertNotNull(map);
-		assertEquals(1, map.size());
-		assertEquals(Integer.MIN_VALUE, map.get(0));
-	}
-
-	public void testOneBlankLine() {
-		final IntList map = RawParseUtils.lineMap(new byte[] { '\n' }, 0, 1);
 		assertEquals(2, map.size());
 		assertEquals(Integer.MIN_VALUE, map.get(0));
 		assertEquals(0, map.get(1));
 	}
 
-	public void testTwoLineFooBar() throws UnsupportedEncodingException {
-		final byte[] buf = "foo\nbar\n".getBytes("ISO-8859-1");
-		final IntList map = RawParseUtils.lineMap(buf, 0, buf.length);
+	public void testOneBlankLine() {
+		final IntList map = RawParseUtils.lineMap(new byte[] { '\n' }, 0, 1);
 		assertEquals(3, map.size());
 		assertEquals(Integer.MIN_VALUE, map.get(0));
 		assertEquals(0, map.get(1));
+		assertEquals(1, map.get(2));
+	}
+
+	public void testTwoLineFooBar() throws UnsupportedEncodingException {
+		final byte[] buf = "foo\nbar\n".getBytes("ISO-8859-1");
+		final IntList map = RawParseUtils.lineMap(buf, 0, buf.length);
+		assertEquals(4, map.size());
+		assertEquals(Integer.MIN_VALUE, map.get(0));
+		assertEquals(0, map.get(1));
 		assertEquals(4, map.get(2));
+		assertEquals(buf.length, map.get(3));
 	}
 
 	public void testTwoLineNoLF() throws UnsupportedEncodingException {
 		final byte[] buf = "foo\nbar".getBytes("ISO-8859-1");
 		final IntList map = RawParseUtils.lineMap(buf, 0, buf.length);
-		assertEquals(3, map.size());
+		assertEquals(4, map.size());
 		assertEquals(Integer.MIN_VALUE, map.get(0));
 		assertEquals(0, map.get(1));
 		assertEquals(4, map.get(2));
+		assertEquals(buf.length, map.get(3));
 	}
 
 	public void testFourLineBlanks() throws UnsupportedEncodingException {
 		final byte[] buf = "foo\n\n\nbar\n".getBytes("ISO-8859-1");
 		final IntList map = RawParseUtils.lineMap(buf, 0, buf.length);
-		assertEquals(5, map.size());
+		assertEquals(6, map.size());
 		assertEquals(Integer.MIN_VALUE, map.get(0));
 		assertEquals(0, map.get(1));
 		assertEquals(4, map.get(2));
 		assertEquals(5, map.get(3));
 		assertEquals(6, map.get(4));
+		assertEquals(buf.length, map.get(5));
 	}
-
 }

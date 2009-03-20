@@ -329,6 +329,9 @@ public final class RawParseUtils {
 	 * Using a 1 indexed list means that line numbers can be directly accessed
 	 * from the list, so <code>list.get(1)</code> (aka get line 1) returns
 	 * <code>ptr</code>.
+	 * <p>
+	 * The last element (index <code>map.size()-1</code>) always contains
+	 * <code>end</code>.
 	 *
 	 * @param buf
 	 *            buffer to scan.
@@ -348,6 +351,7 @@ public final class RawParseUtils {
 		map.fillTo(1, Integer.MIN_VALUE);
 		for (; ptr < end; ptr = nextLF(buf, ptr))
 			map.add(ptr);
+		map.add(end);
 		return map;
 	}
 
