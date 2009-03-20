@@ -63,6 +63,18 @@ public class RefSpecTestCase extends TestCase {
 		assertFalse(rs.matchDestination(r));
 	}
 
+	public void testSplitLastColon() {
+		final String lhs = ":m:a:i:n:t";
+		final String rhs = "refs/heads/maint";
+		final RefSpec rs = new RefSpec(lhs + ":" + rhs);
+		assertFalse(rs.isForceUpdate());
+		assertFalse(rs.isWildcard());
+		assertEquals(lhs, rs.getSource());
+		assertEquals(rhs, rs.getDestination());
+		assertEquals(lhs + ":" + rhs, rs.toString());
+		assertEquals(rs, new RefSpec(rs.toString()));
+	}
+
 	public void testForceMasterMaster() {
 		final String sn = "refs/heads/master";
 		final RefSpec rs = new RefSpec("+" + sn + ":" + sn);

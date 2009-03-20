@@ -115,7 +115,7 @@ public class RefSpec {
 			s = s.substring(1);
 		}
 
-		final int c = s.indexOf(':');
+		final int c = s.lastIndexOf(':');
 		if (c == 0) {
 			s = s.substring(1);
 			if (isWildcard(s))
