@@ -128,12 +128,10 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 			hostname = "localhost";
 		}
 
-		final File globalConfig = writeTrashFile("global.config", "");
 		final File localConfig = writeTrashFile("local.config", "");
 		System.clearProperty(Constants.OS_USER_NAME_KEY);
 
-		RepositoryConfig globalRepositoryConfig = new RepositoryConfig(null, globalConfig);
-		RepositoryConfig localRepositoryConfig = new RepositoryConfig(globalRepositoryConfig, localConfig);
+		RepositoryConfig localRepositoryConfig = new RepositoryConfig(userGitConfig, localConfig);
 		fakeSystemReader.values.clear();
 
 		String authorName;
@@ -164,8 +162,8 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 		assertEquals("author@email", authorEmail);
 
 		// the values are defined in the global configuration
-		globalRepositoryConfig.setString("user", null, "name", "global username");
-		globalRepositoryConfig.setString("user", null, "email", "author@globalemail");
+		userGitConfig.setString("user", null, "name", "global username");
+		userGitConfig.setString("user", null, "email", "author@globalemail");
 		authorName = localRepositoryConfig.getAuthorName();
 		authorEmail = localRepositoryConfig.getAuthorEmail();
 		assertEquals("global username", authorName);

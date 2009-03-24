@@ -37,11 +37,14 @@
 
 package org.spearce.jgit.util;
 
+import org.spearce.jgit.lib.RepositoryConfig;
+
 /**
  * Interface to read values from the system.
  * <p>
  * When writing unit tests, extending this interface with a custom class
- * permits to simulate an access to a system variable or property.
+ * permits to simulate an access to a system variable or property and
+ * permits to control the user's global configuration.
  * </p>
  */
 public interface SystemReader {
@@ -56,4 +59,9 @@ public interface SystemReader {
 	 * @return value of the system property
 	 */
 	String getProperty(String key);
+
+	/**
+	 * @return the git configuration found in the user home
+	 */
+	RepositoryConfig openUserConfig();
 }

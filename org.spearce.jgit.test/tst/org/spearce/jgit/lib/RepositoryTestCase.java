@@ -89,11 +89,18 @@ public abstract class RepositoryTestCase extends TestCase {
 
 	protected static class FakeSystemReader implements SystemReader {
 		Map<String, String> values = new HashMap<String, String>();
+		RepositoryConfig userGitConfig;
 		public String getenv(String variable) {
 			return values.get(variable);
 		}
 		public String getProperty(String key) {
 			return values.get(key);
+		}
+		public RepositoryConfig openUserConfig() {
+			return userGitConfig;
+		}
+		public void setUserGitConfig(RepositoryConfig userGitConfig) {
+			this.userGitConfig = userGitConfig;
 		}
 	}
 
@@ -227,6 +234,13 @@ public abstract class RepositoryTestCase extends TestCase {
 	}
 
 	protected Repository db;
+
+	/**
+	 * mock user's global configuration used instead ~/.gitconfig.
+	 * This configuration can be modified by the tests without any
+	 * effect for ~/.gitconfig.
+	 */
+	protected RepositoryConfig userGitConfig;
 	private static Thread shutdownhook;
 	private static List<Runnable> shutDownCleanups = new ArrayList<Runnable>();
 	private static int testcount;
@@ -257,6 +271,11 @@ public abstract class RepositoryTestCase extends TestCase {
 			};
 			Runtime.getRuntime().addShutdownHook(shutdownhook);
 		}
+
+		final File userGitConfigFile = new File(trash_git, "usergitconfig").getAbsoluteFile();
+		userGitConfig = new RepositoryConfig(null, userGitConfigFile);
+		fakeSystemReader.setUserGitConfig(userGitConfig);
+
 		db = new Repository(trash_git);
 		db.create();
 

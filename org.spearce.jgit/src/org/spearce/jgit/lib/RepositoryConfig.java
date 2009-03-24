@@ -73,12 +73,12 @@ import org.spearce.jgit.util.SystemReader;
 public class RepositoryConfig {
 	/**
 	 * Obtain a new configuration instance for ~/.gitconfig.
-	 * 
+	 *
 	 * @return a new configuration instance to read the user's global
 	 *         configuration file from their home directory.
 	 */
 	public static RepositoryConfig openUserConfig() {
-		return new RepositoryConfig(null, new File(FS.userHome(), ".gitconfig"));
+		return systemReader.openUserConfig();
 	}
 
 	private final RepositoryConfig baseConfig;
@@ -112,6 +112,9 @@ public class RepositoryConfig {
 		}
 		public String getProperty(String key) {
 			return System.getProperty(key);
+		}
+		public RepositoryConfig openUserConfig() {
+			return new RepositoryConfig(null, new File(FS.userHome(), ".gitconfig"));
 		}
 	};
 
