@@ -845,6 +845,12 @@ public class UIText extends NLS {
 	public static String WindowCachePreferencePage_packedGitMMAP;
 
 	/** */
+	public static String BranchSelectionDialog_TitleCheckout;
+
+	/** */
+	public static String BranchSelectionDialog_TitleReset;
+
+	/** */
 	public static String BranchSelectionDialog_OkReset;
 
 	/** */

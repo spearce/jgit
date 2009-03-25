@@ -94,6 +94,11 @@ public class BranchSelectionDialog extends Dialog {
 			buildResetGroup();
 		}
 
+		String rawTitle = showResetType ? UIText.BranchSelectionDialog_TitleReset
+				: UIText.BranchSelectionDialog_TitleCheckout;
+		getShell().setText(
+				NLS.bind(rawTitle, new Object[] { repo.getDirectory() }));
+
 		try {
 			fillTreeWithBranches(null);
 		} catch (IOException e) {
