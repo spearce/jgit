@@ -40,6 +40,7 @@ package org.spearce.jgit.lib;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -354,6 +355,37 @@ public class PackWriterTest extends RepositoryTestCase {
 		assertTrue(sizePack4 > sizePack4Thin);
 	}
 
+	public void testWriteIndex() throws Exception {
+		writer.setIndexVersion(2);
+		writeVerifyPack4(false);
+
+		// Validate that IndexPack came up with the right CRC32 value.
+		final PackIndex idx1 = PackIndex.open(indexFile);
+		assertTrue(idx1 instanceof PackIndexV2);
+		assertEquals(0x4743F1E4L, idx1.findCRC32(ObjectId
+				.fromString("82c6b885ff600be425b4ea96dee75dca255b69e7")));
+
+		// Validate that an index written by PackWriter is the same.
+		final File idx2File = new File(indexFile.getAbsolutePath() + ".2");
+		final FileOutputStream is = new FileOutputStream(idx2File);
+		try {
+			writer.writeIndex(is);
+		} finally {
+			is.close();
+		}
+		final PackIndex idx2 = PackIndex.open(idx2File);
+		assertTrue(idx2 instanceof PackIndexV2);
+		assertEquals(idx1.getObjectCount(), idx2.getObjectCount());
+		assertEquals(idx1.getOffset64Count(), idx2.getOffset64Count());
+
+		for (int i = 0; i < idx1.getObjectCount(); i++) {
+			final ObjectId id = idx1.getObjectId(i);
+			assertEquals(id, idx2.getObjectId(i));
+			assertEquals(idx1.findOffset(id), idx2.findOffset(id));
+			assertEquals(idx1.findCRC32(id), idx2.findCRC32(id));
+		}
+	}
+
 	// TODO: testWritePackDeltasCycle()
 	// TODO: testWritePackDeltasDepth()
 
@@ -470,6 +502,7 @@ public class PackWriterTest extends RepositoryTestCase {
 		final IndexPack indexer = new IndexPack(db, is, packBase);
 		indexer.setKeepEmpty(true);
 		indexer.setFixThin(thin);
+		indexer.setIndexVersion(2);
 		indexer.index(new TextProgressMonitor());
 		pack = new PackFile(indexFile, packFile);
 	}
