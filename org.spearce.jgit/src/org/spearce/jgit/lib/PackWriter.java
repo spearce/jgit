@@ -644,13 +644,10 @@ public class PackWriter {
 	}
 
 	private void writeHeader() throws IOException {
-		out.write(Constants.PACK_SIGNATURE);
-
-		NB.encodeInt32(buf, 0, PACK_VERSION_GENERATED);
-		out.write(buf, 0, 4);
-
-		NB.encodeInt32(buf, 0, getObjectsNumber());
-		out.write(buf, 0, 4);
+		System.arraycopy(Constants.PACK_SIGNATURE, 0, buf, 0, 4);
+		NB.encodeInt32(buf, 4, PACK_VERSION_GENERATED);
+		NB.encodeInt32(buf, 8, getObjectsNumber());
+		out.write(buf, 0, 12);
 	}
 
 	private void writeObjects() throws IOException {
