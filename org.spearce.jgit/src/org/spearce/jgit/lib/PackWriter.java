@@ -47,7 +47,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
@@ -699,12 +698,15 @@ public class PackWriter {
 		} else {
 			final ObjectLoader loader = db.openObject(windowCursor, otp);
 			final byte[] data = loader.getCachedBytes();
-			final DeflaterOutputStream deflaterOut = new DeflaterOutputStream(
-					out, deflater);
 			writeObjectHeader(otp.getType(), data.length);
-			deflaterOut.write(data);
-			deflaterOut.finish();
 			deflater.reset();
+			deflater.setInput(data, 0, data.length);
+			deflater.finish();
+			do {
+				final int n = deflater.deflate(buf, 0, buf.length);
+				if (n > 0)
+					out.write(buf, 0, n);
+			} while (!deflater.finished());
 		}
 	}
 
