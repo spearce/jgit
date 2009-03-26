@@ -72,17 +72,9 @@ public class CountingOutputStream extends FilterOutputStream {
 	/**
 	 * Return number of already written bytes.
 	 *
-	 * @return number of written bytes since last reset (object is reset upon
-	 *         creation)
+	 * @return number of written bytes since stream start.
 	 */
 	public long getCount() {
 		return count;
-	}
-
-	/**
-	 * Reset counter to zero value.
-	 */
-	public void reset() {
-		count = 0;
 	}
 }
