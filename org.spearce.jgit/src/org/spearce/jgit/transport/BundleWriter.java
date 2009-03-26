@@ -166,7 +166,8 @@ public class BundleWriter {
 		inc.addAll(include.values());
 		for (final RevCommit r : assume)
 			exc.add(r.getId());
-		packWriter.preparePack(inc, exc, exc.size() > 0, true);
+		packWriter.setThin(exc.size() > 0);
+		packWriter.preparePack(inc, exc);
 
 		final Writer w = new OutputStreamWriter(os, Constants.CHARSET);
 		w.write(TransportBundle.V2_BUNDLE_SIGNATURE);

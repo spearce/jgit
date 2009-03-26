@@ -201,7 +201,8 @@ class BasePackPushConnection extends BasePackConnection implements
 				newObjects.add(r.getNewObjectId());
 		}
 
-		writer.preparePack(newObjects, remoteObjects, thinPack, true);
+		writer.setThin(thinPack);
+		writer.preparePack(newObjects, remoteObjects);
 		writer.writePack(out);
 	}
 

@@ -473,8 +473,9 @@ public class PackWriterTest extends RepositoryTestCase {
 			final Collection<ObjectId> uninterestings, final boolean thin,
 			final boolean ignoreMissingUninteresting)
 			throws MissingObjectException, IOException {
-		writer.preparePack(interestings, uninterestings, thin,
-				ignoreMissingUninteresting);
+		writer.setThin(thin);
+		writer.setIgnoreMissingUninteresting(ignoreMissingUninteresting);
+		writer.preparePack(interestings, uninterestings);
 		writer.writePack(cos);
 		verifyOpenPack(thin);
 	}

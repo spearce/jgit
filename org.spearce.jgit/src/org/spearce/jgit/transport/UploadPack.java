@@ -464,7 +464,8 @@ public class UploadPack {
 		final PackWriter pw;
 		pw = new PackWriter(db, pm, NullProgressMonitor.INSTANCE);
 		pw.setDeltaBaseAsOffset(options.contains(OPTION_OFS_DELTA));
-		pw.preparePack(wantAll, commonBase, thin, true);
+		pw.setThin(thin);
+		pw.preparePack(wantAll, commonBase);
 		if (options.contains(OPTION_INCLUDE_TAG)) {
 			for (final Ref r : refs.values()) {
 				final RevObject o;

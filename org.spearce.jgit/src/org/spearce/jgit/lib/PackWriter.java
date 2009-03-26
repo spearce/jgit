@@ -75,7 +75,7 @@ import org.spearce.jgit.util.NB;
  * Typical usage consists of creating instance intended for some pack,
  * configuring options, preparing the list of objects by calling
  * {@link #preparePack(Iterator)} or
- * {@link #preparePack(Collection, Collection, boolean, boolean)}, and finally
+ * {@link #preparePack(Collection, Collection)}, and finally
  * producing the stream with {@link #writePack(OutputStream)}.
  * </p>
  * <p>
@@ -96,7 +96,7 @@ public class PackWriter {
 	 * Title of {@link ProgressMonitor} task used during counting objects to
 	 * pack.
 	 *
-	 * @see #preparePack(Collection, Collection, boolean, boolean)
+	 * @see #preparePack(Collection, Collection)
 	 */
 	public static final String COUNTING_OBJECTS_PROGRESS = "Counting objects";
 
@@ -191,18 +191,20 @@ public class PackWriter {
 
 	private boolean thin;
 
+	private boolean ignoreMissingUninteresting = true;
+
 	/**
 	 * Create writer for specified repository.
 	 * <p>
 	 * Objects for packing are specified in {@link #preparePack(Iterator)} or
-	 * {@link #preparePack(Collection, Collection, boolean, boolean)}.
+	 * {@link #preparePack(Collection, Collection)}.
 	 *
 	 * @param repo
 	 *            repository where objects are stored.
 	 * @param monitor
 	 *            operations progress monitor, used within
 	 *            {@link #preparePack(Iterator)},
-	 *            {@link #preparePack(Collection, Collection, boolean, boolean)}
+	 *            {@link #preparePack(Collection, Collection)}
 	 *            , or {@link #writePack(OutputStream)}.
 	 */
 	public PackWriter(final Repository repo, final ProgressMonitor monitor) {
@@ -213,15 +215,14 @@ public class PackWriter {
 	 * Create writer for specified repository.
 	 * <p>
 	 * Objects for packing are specified in {@link #preparePack(Iterator)} or
-	 * {@link #preparePack(Collection, Collection, boolean, boolean)}.
+	 * {@link #preparePack(Collection, Collection)}.
 	 *
 	 * @param repo
 	 *            repository where objects are stored.
 	 * @param imonitor
 	 *            operations progress monitor, used within
 	 *            {@link #preparePack(Iterator)},
-	 *            {@link #preparePack(Collection, Collection, boolean, boolean)}
-	 *            ;
+	 *            {@link #preparePack(Collection, Collection)}
 	 * @param wmonitor
 	 *            operations progress monitor, used within
 	 *            {@link #writePack(OutputStream)}.
@@ -254,7 +255,7 @@ public class PackWriter {
 	 * use it if possible. Normally, only deltas with base to another object
 	 * existing in set of objects to pack will be used. Exception is however
 	 * thin-pack (see
-	 * {@link #preparePack(Collection, Collection, boolean, boolean)} and
+	 * {@link #preparePack(Collection, Collection)} and
 	 * {@link #preparePack(Iterator)}) where base object must exist on other
 	 * side machine.
 	 * <p>
@@ -362,6 +363,45 @@ public class PackWriter {
 		this.maxDeltaDepth = maxDeltaDepth;
 	}
 
+	/** @return true if this writer is producing a thin pack. */
+	public boolean isThin() {
+		return thin;
+	}
+
+	/**
+	 * @param packthin
+	 *            a boolean indicating whether writer may pack objects with
+	 *            delta base object not within set of objects to pack, but
+	 *            belonging to party repository (uninteresting/boundary) as
+	 *            determined by set; this kind of pack is used only for
+	 *            transport; true - to produce thin pack, false - otherwise.
+	 */
+	public void setThin(final boolean packthin) {
+		thin = packthin;
+	}
+
+	/**
+	 * @return true to ignore objects that are uninteresting and also not found
+	 *         on local disk; false to throw a {@link MissingObjectException}
+	 *         out of {@link #preparePack(Collection, Collection)} if an
+	 *         uninteresting object is not in the source repository. By default,
+	 *         true, permitting gracefully ignoring of uninteresting objects.
+	 */
+	public boolean isIgnoreMissingUninteresting() {
+		return ignoreMissingUninteresting;
+	}
+
+	/**
+	 * @param ignore
+	 *            true if writer should ignore non existing uninteresting
+	 *            objects during construction set of objects to pack; false
+	 *            otherwise - non existing uninteresting objects may cause
+	 *            {@link MissingObjectException}
+	 */
+	public void setIgnoreMissingUninteresting(final boolean ignore) {
+		ignoreMissingUninteresting = ignore;
+	}
+
 	/**
 	 * Set the pack index file format version this instance will create.
 	 *
@@ -442,28 +482,15 @@ public class PackWriter {
 	 * @param uninterestingObjects
 	 *            collection of objects to be marked as uninteresting (end
 	 *            points of graph traversal).
-	 * @param packthin
-	 *            a boolean indicating whether writer may pack objects with
-	 *            delta base object not within set of objects to pack, but
-	 *            belonging to party repository (uninteresting/boundary) as
-	 *            determined by set; this kind of pack is used only for
-	 *            transport; true - to produce thin pack, false - otherwise.
-	 * @param ignoreMissingUninteresting
-	 *            true if writer should ignore non existing uninteresting
-	 *            objects during construction set of objects to pack; false
-	 *            otherwise - non existing uninteresting objects may cause
-	 *            {@link MissingObjectException}
 	 * @throws IOException
 	 *             when some I/O problem occur during reading objects.
 	 */
 	public void preparePack(
 			final Collection<? extends ObjectId> interestingObjects,
-			final Collection<? extends ObjectId> uninterestingObjects,
-			final boolean packthin, final boolean ignoreMissingUninteresting)
+			final Collection<? extends ObjectId> uninterestingObjects)
 			throws IOException {
-		this.thin = packthin;
 		ObjectWalk walker = setUpWalker(interestingObjects,
-				uninterestingObjects, ignoreMissingUninteresting);
+				uninterestingObjects);
 		findObjectsToPack(walker);
 	}
 
@@ -497,7 +524,7 @@ public class PackWriter {
 	 * Create an index file to match the pack file just written.
 	 * <p>
 	 * This method can only be invoked after {@link #preparePack(Iterator)} or
-	 * {@link #preparePack(Collection, Collection, boolean, boolean)} has been
+	 * {@link #preparePack(Collection, Collection)} has been
 	 * invoked and completed successfully. Writing a corresponding index is an
 	 * optional feature that not all pack users may require.
 	 *
@@ -755,8 +782,7 @@ public class PackWriter {
 
 	private ObjectWalk setUpWalker(
 			final Collection<? extends ObjectId> interestingObjects,
-			final Collection<? extends ObjectId> uninterestingObjects,
-			final boolean ignoreMissingUninteresting)
+			final Collection<? extends ObjectId> uninterestingObjects)
 			throws MissingObjectException, IOException,
 			IncorrectObjectTypeException {
 		final ObjectWalk walker = new ObjectWalk(db);
