@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2009, Google Inc.
  * Copyright (C) 2008, Marek Zawirski <marek.zawirski@gmail.com>
  *
  * All rights reserved.
@@ -35,46 +36,66 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.spearce.jgit.util;
+package org.spearce.jgit.lib;
 
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.MessageDigest;
+import java.util.zip.CRC32;
 
-/**
- * Counting output stream decoration. Counts bytes written to stream.
- */
-public class CountingOutputStream extends FilterOutputStream {
+/** Custom output stream to support {@link PackWriter}. */
+final class PackOutputStream extends OutputStream {
+	private final OutputStream out;
+
+	private final CRC32 crc = new CRC32();
+
+	private final MessageDigest md = Constants.newMessageDigest();
+
 	private long count;
 
-	/**
-	 * Create counting stream being decorated to provided real output stream.
-	 *
-	 * @param out
-	 *            output stream where data should be written
-	 */
-	public CountingOutputStream(OutputStream out) {
-		super(out);
+	PackOutputStream(final OutputStream out) {
+		this.out = out;
 	}
 
 	@Override
-	public void write(int b) throws IOException {
+	public void write(final int b) throws IOException {
 		out.write(b);
+		crc.update(b);
+		md.update((byte) b);
 		count++;
 	}
 
 	@Override
-	public void write(byte[] b, int off, int len) throws IOException {
+	public void write(final byte[] b, final int off, final int len)
+			throws IOException {
 		out.write(b, off, len);
+		crc.update(b, off, len);
+		md.update(b, off, len);
 		count += len;
 	}
 
-	/**
-	 * Return number of already written bytes.
-	 *
-	 * @return number of written bytes since stream start.
-	 */
-	public long getCount() {
+	@Override
+	public void flush() throws IOException {
+		out.flush();
+	}
+
+	/** @return total number of bytes written since stream start. */
+	long length() {
 		return count;
+	}
+
+	/** @return obtain the current CRC32 register. */
+	int getCRC32() {
+		return (int) crc.getValue();
+	}
+
+	/** Reinitialize the CRC32 register for a new region. */
+	void resetCRC32() {
+		crc.reset();
+	}
+
+	/** @return obtain the current SHA-1 digest. */
+	byte[] getDigest() {
+		return md.digest();
 	}
 }

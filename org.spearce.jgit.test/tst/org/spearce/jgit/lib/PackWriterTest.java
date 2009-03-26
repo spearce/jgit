@@ -57,7 +57,6 @@ import org.spearce.jgit.lib.PackIndex.MutableEntry;
 import org.spearce.jgit.revwalk.RevObject;
 import org.spearce.jgit.revwalk.RevWalk;
 import org.spearce.jgit.transport.IndexPack;
-import org.spearce.jgit.util.CountingOutputStream;
 import org.spearce.jgit.util.JGitTestUtil;
 
 public class PackWriterTest extends RepositoryTestCase {
@@ -72,7 +71,7 @@ public class PackWriterTest extends RepositoryTestCase {
 
 	private ByteArrayOutputStream os;
 
-	private CountingOutputStream cos;
+	private PackOutputStream cos;
 
 	private File packBase;
 
@@ -85,7 +84,7 @@ public class PackWriterTest extends RepositoryTestCase {
 	public void setUp() throws Exception {
 		super.setUp();
 		os = new ByteArrayOutputStream();
-		cos = new CountingOutputStream(os);
+		cos = new PackOutputStream(os);
 		packBase = new File(trash, "tmp_pack");
 		packFile = new File(trash, "tmp_pack.pack");
 		indexFile = new File(trash, "tmp_pack.idx");
@@ -309,11 +308,11 @@ public class PackWriterTest extends RepositoryTestCase {
 	 */
 	public void testWritePack2SizeDeltasVsNoDeltas() throws Exception {
 		testWritePack2();
-		final long sizePack2NoDeltas = cos.getCount();
+		final long sizePack2NoDeltas = cos.length();
 		tearDown();
 		setUp();
 		testWritePack2DeltasReuseRefs();
-		final long sizePack2DeltasRefs = cos.getCount();
+		final long sizePack2DeltasRefs = cos.length();
 
 		assertTrue(sizePack2NoDeltas > sizePack2DeltasRefs);
 	}
@@ -328,11 +327,11 @@ public class PackWriterTest extends RepositoryTestCase {
 	 */
 	public void testWritePack2SizeOffsetsVsRefs() throws Exception {
 		testWritePack2DeltasReuseRefs();
-		final long sizePack2DeltasRefs = cos.getCount();
+		final long sizePack2DeltasRefs = cos.length();
 		tearDown();
 		setUp();
 		testWritePack2DeltasReuseOffsets();
-		final long sizePack2DeltasOffsets = cos.getCount();
+		final long sizePack2DeltasOffsets = cos.length();
 
 		assertTrue(sizePack2DeltasRefs > sizePack2DeltasOffsets);
 	}
@@ -346,11 +345,11 @@ public class PackWriterTest extends RepositoryTestCase {
 	 */
 	public void testWritePack4SizeThinVsNoThin() throws Exception {
 		testWritePack4();
-		final long sizePack4 = cos.getCount();
+		final long sizePack4 = cos.length();
 		tearDown();
 		setUp();
 		testWritePack4ThinPack();
-		final long sizePack4Thin = cos.getCount();
+		final long sizePack4Thin = cos.length();
 
 		assertTrue(sizePack4 > sizePack4Thin);
 	}

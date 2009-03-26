@@ -40,7 +40,6 @@ package org.spearce.jgit.lib;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,7 +56,6 @@ import org.spearce.jgit.revwalk.RevFlag;
 import org.spearce.jgit.revwalk.RevObject;
 import org.spearce.jgit.revwalk.RevSort;
 import org.spearce.jgit.transport.PackedObjectInfo;
-import org.spearce.jgit.util.CountingOutputStream;
 import org.spearce.jgit.util.NB;
 
 /**
@@ -166,9 +164,7 @@ public class PackWriter {
 
 	private final Repository db;
 
-	private DigestOutputStream out;
-
-	private CountingOutputStream countingOut;
+	private PackOutputStream out;
 
 	private final Deflater deflater;
 
@@ -563,8 +559,7 @@ public class PackWriter {
 
 		if (!(packStream instanceof BufferedOutputStream))
 			packStream = new BufferedOutputStream(packStream);
-		countingOut = new CountingOutputStream(packStream);
-		out = new DigestOutputStream(countingOut, Constants.newMessageDigest());
+		out = new PackOutputStream(packStream);
 
 		writeMonitor.beginTask(WRITING_OBJECTS_PROGRESS, getObjectsNumber());
 		writeHeader();
@@ -687,11 +682,13 @@ public class PackWriter {
 
 		assert !otp.isWritten();
 
-		otp.setOffset(countingOut.getCount());
+		out.resetCRC32();
+		otp.setOffset(out.length());
 		if (otp.isDeltaRepresentation())
 			writeDeltaObject(otp);
 		else
 			writeWholeObject(otp);
+		otp.setCRC(out.getCRC32());
 
 		writeMonitor.update(1);
 	}
@@ -753,8 +750,7 @@ public class PackWriter {
 	}
 
 	private void writeChecksum() throws IOException {
-		out.on(false);
-		packcsum = out.getMessageDigest().digest();
+		packcsum = out.getDigest();
 		out.write(packcsum);
 	}
 
