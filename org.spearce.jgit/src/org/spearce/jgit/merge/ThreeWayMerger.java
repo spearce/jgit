@@ -40,11 +40,16 @@ package org.spearce.jgit.merge;
 import java.io.IOException;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
+import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.revwalk.RevTree;
+import org.spearce.jgit.treewalk.AbstractTreeIterator;
 
 /** A merge of 2 trees, using a common base ancestor tree. */
 public abstract class ThreeWayMerger extends Merger {
+	private RevTree baseTree;
+
 	/**
 	 * Create a new merge instance for a repository.
 	 *
@@ -53,6 +58,29 @@ public abstract class ThreeWayMerger extends Merger {
 	 */
 	protected ThreeWayMerger(final Repository local) {
 		super(local);
+	}
+
+	/**
+	 * Set the common ancestor tree.
+	 *
+	 * @param id
+	 *            common base treeish; null to automatically compute the common
+	 *            base from the input commits during
+	 *            {@link #merge(AnyObjectId, AnyObjectId)}.
+	 * @throws IncorrectObjectTypeException
+	 *             the object is not a treeish.
+	 * @throws MissingObjectException
+	 *             the object does not exist.
+	 * @throws IOException
+	 *             the object could not be read.
+	 */
+	public void setBase(final AnyObjectId id) throws MissingObjectException,
+			IncorrectObjectTypeException, IOException {
+		if (id != null) {
+			baseTree = walk.parseTree(id);
+		} else {
+			baseTree = null;
+		}
 	}
 
 	/**
@@ -85,5 +113,18 @@ public abstract class ThreeWayMerger extends Merger {
 		if (tips.length != 2)
 			return false;
 		return super.merge(tips);
+	}
+
+	/**
+	 * Create an iterator to walk the merge base.
+	 *
+	 * @return an iterator over the caller-specified merge base, or the natural
+	 *         merge base of the two input commits.
+	 * @throws IOException
+	 */
+	protected AbstractTreeIterator mergeBase() throws IOException {
+		if (baseTree != null)
+			return openTree(baseTree);
+		return mergeBase(0, 1);
 	}
 }

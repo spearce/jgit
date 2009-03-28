@@ -91,7 +91,7 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 	 *             a loose object or pack file could not be read.
 	 */
 	public CanonicalTreeParser(final byte[] prefix, final Repository repo,
-			final ObjectId treeId, final WindowCursor curs)
+			final AnyObjectId treeId, final WindowCursor curs)
 			throws IncorrectObjectTypeException, IOException {
 		super(prefix);
 		reset(repo, treeId, curs);

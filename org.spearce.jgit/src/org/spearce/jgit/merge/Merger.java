@@ -179,9 +179,25 @@ public abstract class Merger {
 					+ sourceCommits[bIdx].name() + "found:" + "\n  "
 					+ base.name() + "\n  " + base2.name());
 		}
+		return openTree(base.getTree());
+	}
+
+	/**
+	 * Open an iterator over a tree.
+	 *
+	 * @param treeId
+	 *            the tree to scan; must be a tree (not a treeish).
+	 * @return an iterator for the tree.
+	 * @throws IncorrectObjectTypeException
+	 *             the input object is not a tree.
+	 * @throws IOException
+	 *             the tree object is not found or cannot be read.
+	 */
+	protected AbstractTreeIterator openTree(final AnyObjectId treeId)
+			throws IncorrectObjectTypeException, IOException {
 		final WindowCursor curs = new WindowCursor();
 		try {
-			return new CanonicalTreeParser(null, db, base.getTree(), curs);
+			return new CanonicalTreeParser(null, db, treeId, curs);
 		} finally {
 			curs.release();
 		}
