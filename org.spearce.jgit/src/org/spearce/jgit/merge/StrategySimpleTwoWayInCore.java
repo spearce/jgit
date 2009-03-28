@@ -60,8 +60,8 @@ import org.spearce.jgit.treewalk.NameConflictTreeWalk;
  * trees will cause a merge conflict, as this strategy does not attempt to merge
  * file contents.
  */
-public class StrategySimpleTwoWayInCore extends MergeStrategy {
-	static final MergeStrategy INSTANCE = new StrategySimpleTwoWayInCore();
+public class StrategySimpleTwoWayInCore extends ThreeWayMergeStrategy {
+	static final ThreeWayMergeStrategy INSTANCE = new StrategySimpleTwoWayInCore();
 
 	/** Create a new instance of the strategy. */
 	protected StrategySimpleTwoWayInCore() {
@@ -74,11 +74,11 @@ public class StrategySimpleTwoWayInCore extends MergeStrategy {
 	}
 
 	@Override
-	public Merger newMerger(final Repository db) {
+	public ThreeWayMerger newMerger(final Repository db) {
 		return new InCoreMerger(db);
 	}
 
-	private static class InCoreMerger extends Merger {
+	private static class InCoreMerger extends ThreeWayMerger {
 		private static final int T_BASE = 0;
 
 		private static final int T_OURS = 1;
@@ -101,9 +101,6 @@ public class StrategySimpleTwoWayInCore extends MergeStrategy {
 
 		@Override
 		protected boolean mergeImpl() throws IOException {
-			if (sourceTrees.length != 2)
-				return false;
-
 			tw.reset();
 			tw.addTree(mergeBase(0, 1));
 			tw.addTree(sourceTrees[0]);
