@@ -37,7 +37,6 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 	private IResource resource;
 
 	static Map<Repository,String> baseline = new WeakHashMap<Repository,String>();
-	static Map<GitDocument,Repository> doc2repo = new WeakHashMap<GitDocument, Repository>();
 
 	/**
 	 * Create the GitQuickDiffProvider instance
@@ -48,7 +47,6 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 
 	public void dispose() {
 		Activator.trace("(GitQuickDiffProvider) dispose");
-		doc2repo.remove(document);
 		if (document != null)
 			document.dispose();
 	}
@@ -96,11 +94,7 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 	 */
 	public static void setBaselineReference(final Repository repository, final String baseline) throws IOException {
 		GitQuickDiffProvider.baseline.put(repository, baseline);
-		for (Map.Entry<GitDocument, Repository> i : doc2repo.entrySet()) {
-			if (i.getValue() == repository) {
-				i.getKey().populate();
-			}
-		}
+		GitDocument.refreshRelevant(repository);
 	}
 
 }

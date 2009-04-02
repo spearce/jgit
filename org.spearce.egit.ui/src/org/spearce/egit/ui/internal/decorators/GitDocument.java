@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
+ * Copyright (C) 2008, 2009 Robin Rosenberg <robin.rosenberg@dewire.com>
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -8,6 +8,8 @@
 package org.spearce.egit.ui.internal.decorators;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import org.eclipse.core.resources.IEncodedStorage;
 import org.eclipse.core.resources.IProject;
@@ -29,6 +31,7 @@ import org.spearce.jgit.lib.TreeEntry;
 
 class GitDocument extends Document implements RepositoryListener {
 	private final IResource resource;
+	static Map<GitDocument,Repository> doc2repo = new WeakHashMap<GitDocument, Repository>();
 
 	static GitDocument create(final IResource resource) throws IOException {
 		GitDocument ret = null;
@@ -41,7 +44,7 @@ class GitDocument extends Document implements RepositoryListener {
 
 	private GitDocument(IResource resource) {
 		this.resource = resource;
-		GitQuickDiffProvider.doc2repo.put(this, getRepository());
+		GitDocument.doc2repo.put(this, getRepository());
 	}
 
 	void populate() throws IOException {
@@ -93,6 +96,7 @@ class GitDocument extends Document implements RepositoryListener {
 	}
 
 	void dispose() {
+		doc2repo.remove(this);
 		Repository repository = getRepository();
 		if (repository != null)
 			repository.removeRepositoryChangedListener(this);
@@ -116,5 +120,20 @@ class GitDocument extends Document implements RepositoryListener {
 		if (mapping != null)
 			return mapping.getRepository();
 		return null;
+	}
+
+	/**
+	 * A change occurred to a repository. Update any GitDocument instances
+	 * referring to such repositories.
+	 *
+	 * @param repository Repository which changed
+	 * @throws IOException
+	 */
+	static void refreshRelevant(final Repository repository) throws IOException {
+		for (Map.Entry<GitDocument, Repository> i : doc2repo.entrySet()) {
+			if (i.getValue() == repository) {
+				i.getKey().populate();
+			}
+		}
 	}
 }
