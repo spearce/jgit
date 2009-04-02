@@ -75,7 +75,7 @@ public abstract class RevObject extends ObjectId {
 	}
 
 	@Override
-	public final boolean equals(final ObjectId o) {
+	public final boolean equals(final AnyObjectId o) {
 		return this == o;
 	}
 
