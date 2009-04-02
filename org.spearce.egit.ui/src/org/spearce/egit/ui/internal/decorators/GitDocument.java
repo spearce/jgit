@@ -39,6 +39,9 @@ class GitDocument extends Document implements RepositoryListener {
 		if (RepositoryProvider.getProvider(resource.getProject()) instanceof GitProvider) {
 			ret = new GitDocument(resource);
 			ret.populate();
+			final Repository repository = ret.getRepository();
+			if (repository != null)
+				repository.addRepositoryChangedListener(ret);
 		}
 		return ret;
 	}
@@ -57,7 +60,6 @@ class GitDocument extends Document implements RepositoryListener {
 			return;
 		final String gitPath = mapping.getRepoRelativePath(resource);
 		final Repository repository = getRepository();
-		repository.addRepositoryChangedListener(this);
 		String baseline = GitQuickDiffProvider.baseline.get(repository);
 		if (baseline == null)
 			baseline = Constants.HEAD;
