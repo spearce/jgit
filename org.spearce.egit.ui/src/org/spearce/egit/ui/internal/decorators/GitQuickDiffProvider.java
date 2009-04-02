@@ -42,6 +42,7 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 	 * Create the GitQuickDiffProvider instance
 	 */
 	public GitQuickDiffProvider() {
+		Activator.trace("(GitQuickDiffProvider) constructor");
 		// Empty
 	}
 
@@ -77,6 +78,7 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 	}
 
 	public void setActiveEditor(ITextEditor editor) {
+		Activator.trace("(GitQuickDiffProvider) setActiveEditor: " + editor.getTitle());
 		IEditorInput editorInput = editor.getEditorInput();
 		resource = ResourceUtil.getResource(editorInput);
 	}

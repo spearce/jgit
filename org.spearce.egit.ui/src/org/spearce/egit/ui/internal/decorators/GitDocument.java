@@ -34,6 +34,7 @@ class GitDocument extends Document implements RepositoryListener {
 	static Map<GitDocument,Repository> doc2repo = new WeakHashMap<GitDocument, Repository>();
 
 	static GitDocument create(final IResource resource) throws IOException {
+		Activator.trace("(GitDocument) create: " + resource);
 		GitDocument ret = null;
 		if (RepositoryProvider.getProvider(resource.getProject()) instanceof GitProvider) {
 			ret = new GitDocument(resource);
@@ -48,6 +49,7 @@ class GitDocument extends Document implements RepositoryListener {
 	}
 
 	void populate() throws IOException {
+		Activator.trace("(GitDocument) populate: " + resource);
 		set("");
 		final IProject project = resource.getProject();
 		RepositoryMapping mapping = RepositoryMapping.getMapping(project);
@@ -68,7 +70,7 @@ class GitDocument extends Document implements RepositoryListener {
 		}
 		TreeEntry blobEnry = baselineTree.findBlobMember(gitPath);
 		if (blobEnry != null) {
-			Activator.trace("(GitQuickDiffProvider) compareTo: " + baseline);
+			Activator.trace("(GitDocument) compareTo: " + baseline);
 			ObjectLoader loader = repository.openBlob(blobEnry.getId());
 			byte[] bytes = loader.getBytes();
 			String charset;
@@ -89,13 +91,14 @@ class GitDocument extends Document implements RepositoryListener {
 			// to the content. We don't do that here.
 			String s = new String(bytes, charset);
 			set(s);
-			Activator.trace("(GitQuickDiffProvider) has reference doc, size=" + s.length() + " bytes");
+			Activator.trace("(GitDocument) has reference doc, size=" + s.length() + " bytes");
 		} else {
-			Activator.trace("(GitQuickDiffProvider) no revision.");
+			Activator.trace("(GitDocument) no revision.");
 		}
 	}
 
 	void dispose() {
+		Activator.trace("(GitDocument) dispose: " + resource);
 		doc2repo.remove(this);
 		Repository repository = getRepository();
 		if (repository != null)
