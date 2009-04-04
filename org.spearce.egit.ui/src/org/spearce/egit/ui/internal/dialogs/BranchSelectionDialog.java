@@ -150,6 +150,7 @@ public class BranchSelectionDialog extends Dialog {
 		TreeItem curSubItem = null;
 		String curPrefix = null;
 		String curSubPrefix = null;
+		TreeItem itemToSelect = null;
 
 		for (String ref : branches) {
 			String shortName = ref;
@@ -217,7 +218,12 @@ public class BranchSelectionDialog extends Dialog {
 			}
 			else item.setText(shortName);
 			if (ref.equals(select))
-				branchTree.select(item);
+				itemToSelect = item;
+			branchTree.setLinesVisible(true);
+		}
+		if (itemToSelect != null) {
+			branchTree.select(itemToSelect);
+			branchTree.showItem(itemToSelect);
 		}
 	}
 
