@@ -28,13 +28,7 @@ public class CoreText extends NLS {
 	public static String ConnectProviderOperation_connecting;
 
 	/** */
-	public static String ConnectProviderOperation_creating;
-
-	/** */
-	public static String ConnectProviderOperation_recordingMapping;
-
-	/** */
-	public static String ConnectProviderOperation_updatingCache;
+	public static String ConnectProviderOperation_ConnectingProject;
 
 	/** */
 	public static String DisconnectProviderOperation_disconnecting;

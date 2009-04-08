@@ -35,7 +35,7 @@ public class T0001_ConnectProviderOperationTest extends GitTestCase {
 	public void testNoRepository() throws CoreException {
 
 		ConnectProviderOperation operation = new ConnectProviderOperation(
-				project.getProject(), null);
+				project.getProject());
 		operation.run(null);
 
 		// We are shared because we declared as shared
@@ -43,12 +43,15 @@ public class T0001_ConnectProviderOperationTest extends GitTestCase {
 		assertTrue(!gitDir.exists());
 	}
 
-	public void testNewRepository() throws CoreException {
+	public void testNewRepository() throws CoreException, IOException {
 
 		File gitDir = new File(project.getProject().getWorkspace().getRoot()
 				.getRawLocation().toFile(), ".git");
+		Repository repository = new Repository(gitDir);
+		repository.create();
+		repository.close();
 		ConnectProviderOperation operation = new ConnectProviderOperation(
-				project.getProject(), gitDir);
+				project.getProject());
 		operation.run(null);
 
 		assertTrue(RepositoryProvider.isShared(project.getProject()));
@@ -90,7 +93,7 @@ public class T0001_ConnectProviderOperationTest extends GitTestCase {
 		assertEquals(RefUpdate.Result.NEW, lck.forceUpdate());
 
 		ConnectProviderOperation operation = new ConnectProviderOperation(
-				project.getProject(), null);
+				project.getProject());
 		operation.run(null);
 
 		final boolean f[] = new boolean[1];

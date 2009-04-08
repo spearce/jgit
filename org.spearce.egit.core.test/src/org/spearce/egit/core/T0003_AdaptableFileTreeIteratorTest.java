@@ -44,7 +44,7 @@ public class T0003_AdaptableFileTreeIteratorTest extends GitTestCase {
 		fileWriter.close();
 
 		final ConnectProviderOperation operation = new ConnectProviderOperation(
-				project.getProject(), null);
+				project.getProject());
 		operation.run(null);
 	}
 

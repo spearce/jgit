@@ -8,8 +8,6 @@
  *******************************************************************************/
 package org.spearce.egit.core.op;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
 
 import org.eclipse.core.resources.IProject;
@@ -19,6 +17,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
+import org.eclipse.osgi.util.NLS;
 import org.eclipse.team.core.RepositoryProvider;
 import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.CoreText;
@@ -26,29 +25,31 @@ import org.spearce.egit.core.GitProvider;
 import org.spearce.egit.core.project.GitProjectData;
 import org.spearce.egit.core.project.RepositoryFinder;
 import org.spearce.egit.core.project.RepositoryMapping;
-import org.spearce.jgit.lib.Repository;
 
 /**
- * Connects Eclipse to an existing Git repository, or creates a new one.
+ * Connects Eclipse to an existing Git repository
  */
 public class ConnectProviderOperation implements IWorkspaceRunnable {
-	private final IProject project;
-
-	private final File newGitDir;
+	private final IProject[] projects;
 
 	/**
 	 * Create a new connection operation to execute within the workspace.
 	 * 
 	 * @param proj
 	 *            the project to connect to the Git team provider.
-	 * @param newdir
-	 *            git repository to create if the user requested a new
-	 *            repository be constructed for this project; null to scan for
-	 *            an existing repository and connect to that.
 	 */
-	public ConnectProviderOperation(final IProject proj, final File newdir) {
-		project = proj;
-		newGitDir = newdir;
+	public ConnectProviderOperation(final IProject proj) {
+		this(new IProject[] { proj });
+	}
+
+	/**
+	 * Create a new connection operation to execute within the workspace.
+	 *
+	 * @param projects
+	 *            the projects to connect to the Git team provider.
+	 */
+	public ConnectProviderOperation(final IProject[] projects) {
+		this.projects = projects;
 	}
 
 	public void run(IProgressMonitor m) throws CoreException {
@@ -56,63 +57,42 @@ public class ConnectProviderOperation implements IWorkspaceRunnable {
 			m = new NullProgressMonitor();
 		}
 
-		m.beginTask(CoreText.ConnectProviderOperation_connecting, 100);
+		m.beginTask(CoreText.ConnectProviderOperation_connecting,
+				100 * projects.length);
 		try {
-			final Collection<RepositoryMapping> repos = new ArrayList<RepositoryMapping>();
 
-			if (newGitDir != null) {
-				try {
-					final Repository db;
-
-					m.subTask(CoreText.ConnectProviderOperation_creating);
-					Activator.trace("Creating repository " + newGitDir);
-
-					db = new Repository(newGitDir);
-					db.create();
-					repos.add(new RepositoryMapping(project, db.getDirectory()));
-					db.close();
-
-					// If we don't refresh the project directory right
-					// now we won't later know that a .git directory
-					// exists within it and we won't mark the .git
-					// directory as a team-private member. Failure
-					// to do so might allow someone to delete
-					// the .git directory without us stopping them.
-					//
-					project.refreshLocal(IResource.DEPTH_ONE,
-							new SubProgressMonitor(m, 10));
-
+			for (IProject project : projects) {
+				m.setTaskName(NLS.bind(
+						CoreText.ConnectProviderOperation_ConnectingProject,
+						project.getName()));
+				Activator.trace("Locating repository for " + project); //$NON-NLS-1$
+				Collection<RepositoryMapping> repos = new RepositoryFinder(
+						project).find(new SubProgressMonitor(m, 40));
+				if (repos.size() == 1) {
+					GitProjectData projectData = new GitProjectData(project);
+					try {
+						projectData.setRepositoryMappings(repos);
+						projectData.store();
+					} catch (CoreException ce) {
+						GitProjectData.delete(project);
+						throw ce;
+					} catch (RuntimeException ce) {
+						GitProjectData.delete(project);
+						throw ce;
+					}
+					RepositoryProvider
+							.map(project, GitProvider.class.getName());
+					projectData = GitProjectData.get(project);
+					project.refreshLocal(IResource.DEPTH_INFINITE,
+							new SubProgressMonitor(m, 50));
 					m.worked(10);
-				} catch (Throwable err) {
-					throw Activator.error(
-							CoreText.ConnectProviderOperation_creating, err);
+				} else {
+					Activator
+							.trace("Attempted to share project without repository ignored :" //$NON-NLS-1$
+									+ project);
+					m.worked(60);
 				}
-			} else {
-				Activator.trace("Finding existing repositories.");
-				repos.addAll(new RepositoryFinder(project)
-						.find(new SubProgressMonitor(m, 20)));
 			}
-
-			m.subTask(CoreText.ConnectProviderOperation_recordingMapping);
-			GitProjectData projectData = new GitProjectData(project);
-			projectData.setRepositoryMappings(repos);
-			projectData.store();
-
-			try {
-				RepositoryProvider.map(project, GitProvider.class.getName());
-			} catch (CoreException ce) {
-				GitProjectData.delete(project);
-				throw ce;
-			} catch (RuntimeException ce) {
-				GitProjectData.delete(project);
-				throw ce;
-			}
-
-			projectData = GitProjectData.get(project);
-			project.refreshLocal(IResource.DEPTH_INFINITE,
-					new SubProgressMonitor(m, 50));
-
-			m.subTask(CoreText.ConnectProviderOperation_updatingCache);
 		} finally {
 			m.done();
 		}

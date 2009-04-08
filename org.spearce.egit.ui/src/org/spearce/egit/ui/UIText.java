@@ -68,22 +68,31 @@ public class UIText extends NLS {
 	public static String GenericOperationFailed;
 
 	/** */
+	public static String ExistingOrNewPage_CreateButton;
+
+	/** */
 	public static String ExistingOrNewPage_title;
 
 	/** */
 	public static String ExistingOrNewPage_description;
 
 	/** */
-	public static String ExistingOrNewPage_groupHeader;
+	public static String ExistingOrNewPage_ErrorFailedToCreateRepository;
 
 	/** */
-	public static String ExistingOrNewPage_useExisting;
+	public static String ExistingOrNewPage_ErrorFailedToRefreshRepository;
 
 	/** */
-	public static String ExistingOrNewPage_createNew;
+	public static String ExistingOrNewPage_HeaderPath;
 
 	/** */
-	public static String ExistingOrNewPage_createInParent;
+	public static String ExistingOrNewPage_HeaderProject;
+
+	/** */
+	public static String ExistingOrNewPage_HeaderRepository;
+
+	/** */
+	public static String ExistingOrNewPage_SymbolicValueEmptyMapping;
 
 	/** */
 	public static String GitCloneWizard_title;

@@ -8,7 +8,6 @@
  *******************************************************************************/
 package org.spearce.egit.ui.internal.sharing;
 
-import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 
 import org.eclipse.core.resources.IProject;
@@ -20,6 +19,7 @@ import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.team.ui.IConfigurationWizard;
+import org.eclipse.team.ui.IConfigurationWizardExtension;
 import org.eclipse.ui.IWorkbench;
 import org.spearce.egit.core.op.ConnectProviderOperation;
 import org.spearce.egit.ui.Activator;
@@ -27,16 +27,13 @@ import org.spearce.egit.ui.UIText;
 
 /**
  * The dialog used for activating Team>Share, i.e. to create a new
- * Git repository or associate a project with one.
+ * Git repository or associate projects with one.
  */
-public class SharingWizard extends Wizard implements IConfigurationWizard {
-	private IProject project;
+public class SharingWizard extends Wizard implements IConfigurationWizard,
+		IConfigurationWizardExtension {
+	IProject[] projects;
 
-	private boolean create;
-
-	private File newGitDir;
-
-	private boolean useParent;
+	private ExistingOrNewPage existingPage;
 
 	/**
 	 * Construct the Git Sharing Wizard for connecting Git project to Eclipse
@@ -46,39 +43,23 @@ public class SharingWizard extends Wizard implements IConfigurationWizard {
 		setNeedsProgressMonitor(true);
 	}
 
-	public void init(final IWorkbench workbench, final IProject p) {
-		project = p;
-		calculateNewGitDir();
+	public void init(IWorkbench workbench, IProject[] p) {
+		this.projects = new IProject[p.length];
+		System.arraycopy(p, 0, this.projects, 0, p.length);
 	}
 
-	private void calculateNewGitDir() {
-		File pdir = project.getLocation().toFile();
-		if (useParent)
-			pdir = pdir.getParentFile();
-		newGitDir = new File(pdir, ".git");
+	public void init(final IWorkbench workbench, final IProject p) {
+		projects = new IProject[] { p };
 	}
 
 	public void addPages() {
-		addPage(new ExistingOrNewPage(this));
-	}
-
-	boolean canCreateNew() {
-		return !newGitDir.exists();
-	}
-
-	void setCreateNew() {
-		if (canCreateNew()) {
-			create = true;
-		}
-	}
-
-	void setUseExisting() {
-		create = false;
+		existingPage = new ExistingOrNewPage(this);
+		addPage(existingPage);
 	}
 
 	public boolean performFinish() {
 		final ConnectProviderOperation op = new ConnectProviderOperation(
-				project, create ? newGitDir : null);
+				existingPage.getProjects());
 		try {
 			getContainer().run(true, false, new IRunnableWithProgress() {
 				public void run(final IProgressMonitor monitor)
@@ -110,8 +91,8 @@ public class SharingWizard extends Wizard implements IConfigurationWizard {
 		}
 	}
 
-	void setUseParent(boolean selection) {
-		useParent = selection;
-		calculateNewGitDir();
+	@Override
+	public boolean canFinish() {
+		return existingPage.isPageComplete();
 	}
 }

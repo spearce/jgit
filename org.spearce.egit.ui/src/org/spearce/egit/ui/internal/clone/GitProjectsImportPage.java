@@ -711,7 +711,7 @@ public class GitProjectsImportPage extends WizardPage {
 					monitor, openTicks));
 			if (share) {
 				ConnectProviderOperation connectProviderOperation = new ConnectProviderOperation(
-						project, null);
+						project);
 				connectProviderOperation
 						.run(new SubProgressMonitor(monitor, 20));
 			}
