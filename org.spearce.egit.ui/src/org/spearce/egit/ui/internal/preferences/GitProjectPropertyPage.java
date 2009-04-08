@@ -94,7 +94,13 @@ public class GitProjectPropertyPage extends PropertyPage {
 
 		final ObjectId objectId = repository
 				.resolve(repository.getFullBranch());
-		id.setText(objectId.name());
+		if (objectId == null) {
+			if (repository.getAllRefs().size() == 0)
+				id.setText("None (empty repository)");
+			else
+				id.setText("None (unborn branch)");
+		} else
+			id.setText(objectId.name());
 	}
 
 	/**
