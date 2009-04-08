@@ -106,7 +106,6 @@ public class CoreText extends NLS {
 	public static String PushOperation_taskNameNormalRun;
 
 	static {
-		final Class c = CoreText.class;
-		initializeMessages(c.getPackage().getName() + ".coretext", c);
+		initializeMessages("org.spearce.egit.core.coretext", CoreText.class);
 	}
 }
