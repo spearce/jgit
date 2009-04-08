@@ -234,4 +234,11 @@ public class RepositoryMapping {
 
 		return ((GitProvider)rp).getData().getRepositoryMapping(resource);
 	}
+
+	/**
+	 * @return the name of the .git directory
+	 */
+	public String getGitDir() {
+		return gitdirPath;
+	}
 }
