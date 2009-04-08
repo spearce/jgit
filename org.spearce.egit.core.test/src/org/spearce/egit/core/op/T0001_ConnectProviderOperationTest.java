@@ -89,19 +89,6 @@ public class T0001_ConnectProviderOperationTest extends GitTestCase {
 		lck.setNewObjectId(id);
 		assertEquals(RefUpdate.Result.NEW, lck.forceUpdate());
 
-		// helper asserts, this is not what we are really testing
-		assertTrue("blob missing", new File(gitDir,
-				"objects/2e/2439c32d01f0ef39644d561945e8f4b2239489").exists());
-
-		assertTrue("tree missing", new File(gitDir,
-				"objects/87/a105cc4bc0a79885d07ec560c3eee49438acf0").exists());
-		assertTrue("tree missing", new File(gitDir,
-				"objects/08/ccc3d91a14d337a45f355d3d63bd97fd5e4db9").exists());
-		assertTrue("tree missing", new File(gitDir,
-				"objects/9d/aeec817090098f05eeca858e3a552d78b0a346").exists());
-		assertTrue("commit missing", new File(gitDir,
-				"objects/09/6f1a84091b90b6d9fb12f95848da69496305c1").exists());
-
 		ConnectProviderOperation operation = new ConnectProviderOperation(
 				project.getProject(), null);
 		operation.run(null);
@@ -125,5 +112,8 @@ public class T0001_ConnectProviderOperationTest extends GitTestCase {
 			Thread.sleep(1000);
 		}
 		System.out.println("DONE");
+
+		assertNotNull(RepositoryProvider.getProvider(project.getProject()));
+
 	}
 }
