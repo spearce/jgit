@@ -98,6 +98,27 @@ public class UIText extends NLS {
 	public static String GitCloneWizard_errorCannotCreate;
 
 	/** */
+	public static String GitProjectPropertyPage_LabelBranch;
+
+	/** */
+	public static String GitProjectPropertyPage_LabelGitDir;
+
+	/** */
+	public static String GitProjectPropertyPage_LabelId;
+
+	/** */
+	public static String GitProjectPropertyPage_LabelState;
+
+	/** */
+	public static String GitProjectPropertyPage_LabelWorkdir;
+
+	/** */
+	public static String GitProjectPropertyPage_ValueEmptyRepository;
+
+	/** */
+	public static String GitProjectPropertyPage_ValueUnbornBranch;
+
+	/** */
 	public static String RepositorySelectionPage_sourceSelectionTitle;
 
 	/** */

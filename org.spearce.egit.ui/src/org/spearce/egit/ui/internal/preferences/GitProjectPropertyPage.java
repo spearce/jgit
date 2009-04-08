@@ -21,6 +21,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.dialogs.PropertyPage;
 import org.spearce.egit.core.project.RepositoryMapping;
+import org.spearce.egit.ui.UIText;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Repository;
 
@@ -53,11 +54,11 @@ public class GitProjectPropertyPage extends PropertyPage {
 		layout.verticalSpacing = 0;
 		composite.setLayout(layout);
 
-		gitDir = createLabeledReadOnlyText(composite, "Git directory:");
-		workDir = createLabeledReadOnlyText(composite, "Working directory:");
-		branch = createLabeledReadOnlyText(composite, "Branch:");
-		id = createLabeledReadOnlyText(composite, "Id:");
-		state = createLabeledReadOnlyText(composite, "Current state:");
+		gitDir = createLabeledReadOnlyText(composite, UIText.GitProjectPropertyPage_LabelGitDir);
+		workDir = createLabeledReadOnlyText(composite, UIText.GitProjectPropertyPage_LabelWorkdir);
+		branch = createLabeledReadOnlyText(composite, UIText.GitProjectPropertyPage_LabelBranch);
+		id = createLabeledReadOnlyText(composite, UIText.GitProjectPropertyPage_LabelId);
+		state = createLabeledReadOnlyText(composite, UIText.GitProjectPropertyPage_LabelState);
 
 		// Get the project that is the source of this property page
 		IProject project = null;
@@ -96,9 +97,9 @@ public class GitProjectPropertyPage extends PropertyPage {
 				.resolve(repository.getFullBranch());
 		if (objectId == null) {
 			if (repository.getAllRefs().size() == 0)
-				id.setText("None (empty repository)");
+				id.setText(UIText.GitProjectPropertyPage_ValueEmptyRepository);
 			else
-				id.setText("None (unborn branch)");
+				id.setText(UIText.GitProjectPropertyPage_ValueUnbornBranch);
 		} else
 			id.setText(objectId.name());
 	}
