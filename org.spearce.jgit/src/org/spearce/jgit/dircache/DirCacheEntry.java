@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
 import java.util.Arrays;
 
 import org.spearce.jgit.lib.AnyObjectId;
@@ -113,17 +114,19 @@ public class DirCacheEntry {
 	final byte[] path;
 
 	DirCacheEntry(final byte[] sharedInfo, final int infoAt,
-			final InputStream in) throws IOException {
+			final InputStream in, final MessageDigest md) throws IOException {
 		info = sharedInfo;
 		infoOffset = infoAt;
 
 		NB.readFully(in, info, infoOffset, INFO_LEN);
+		md.update(info, infoOffset, INFO_LEN);
 
 		int pathLen = NB.decodeUInt16(info, infoOffset + P_FLAGS) & NAME_MASK;
 		int skipped = 0;
 		if (pathLen < NAME_MASK) {
 			path = new byte[pathLen];
 			NB.readFully(in, path, 0, pathLen);
+			md.update(path, 0, pathLen);
 		} else {
 			final ByteArrayOutputStream tmp = new ByteArrayOutputStream();
 			{
@@ -142,6 +145,8 @@ public class DirCacheEntry {
 			path = tmp.toByteArray();
 			pathLen = path.length;
 			skipped = 1; // we already skipped 1 '\0' above to break the loop.
+			md.update(path, 0, pathLen);
+			md.update((byte) 0);
 		}
 
 		// Index records are padded out to the next 8 byte alignment
@@ -149,7 +154,11 @@ public class DirCacheEntry {
 		//
 		final int actLen = INFO_LEN + pathLen;
 		final int expLen = (actLen + 8) & ~7;
-		NB.skipFully(in, expLen - actLen - skipped);
+		final int padLen = expLen - actLen - skipped;
+		if (padLen > 0) {
+			NB.skipFully(in, padLen);
+			md.update(nullpad, 0, padLen);
+		}
 	}
 
 	/**

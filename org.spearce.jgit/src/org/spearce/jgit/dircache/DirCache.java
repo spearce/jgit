@@ -47,6 +47,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.Comparator;
 
 import org.spearce.jgit.errors.CorruptObjectException;
@@ -344,11 +345,13 @@ public class DirCache {
 	private void readFrom(final FileInputStream inStream) throws IOException,
 			CorruptObjectException {
 		final BufferedInputStream in = new BufferedInputStream(inStream);
+		final MessageDigest md = Constants.newMessageDigest();
 
 		// Read the index header and verify we understand it.
 		//
 		final byte[] hdr = new byte[20];
 		NB.readFully(in, hdr, 0, 12);
+		md.update(hdr, 0, 12);
 		if (!is_DIRC(hdr))
 			throw new CorruptObjectException("Not a DIRC file.");
 		final int ver = NB.decodeInt32(hdr, 4);
@@ -363,7 +366,7 @@ public class DirCache {
 		final byte[] infos = new byte[INFO_LEN * entryCnt];
 		sortedEntries = new DirCacheEntry[entryCnt];
 		for (int i = 0; i < entryCnt; i++)
-			sortedEntries[i] = new DirCacheEntry(infos, i * INFO_LEN, in);
+			sortedEntries[i] = new DirCacheEntry(infos, i * INFO_LEN, in, md);
 		lastModified = liveFile.lastModified();
 
 		// After the file entries are index extensions, and then a footer.
@@ -381,8 +384,10 @@ public class DirCache {
 			switch (NB.decodeInt32(hdr, 0)) {
 			case EXT_TREE: {
 				final byte[] raw = new byte[NB.decodeInt32(hdr, 4)];
+				md.update(hdr, 0, 8);
 				NB.skipFully(in, 8);
 				NB.readFully(in, raw, 0, raw.length);
+				md.update(raw, 0, raw.length);
 				tree = new DirCacheTree(raw, new MutableInteger(), null);
 				break;
 			}
@@ -404,6 +409,11 @@ public class DirCache {
 							+ "' not supported by this version.");
 				}
 			}
+		}
+
+		final byte[] exp = md.digest();
+		if (!Arrays.equals(exp, hdr)) {
+			throw new CorruptObjectException("DIRC checksum mismatch");
 		}
 	}
 
