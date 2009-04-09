@@ -45,7 +45,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.util.Comparator;
@@ -344,13 +343,11 @@ public class DirCache {
 
 	private void readFrom(final FileInputStream inStream) throws IOException,
 			CorruptObjectException {
-		final FileChannel fd = inStream.getChannel();
-		final long sizeOnDisk = fd.size();
 		final BufferedInputStream in = new BufferedInputStream(inStream);
 
 		// Read the index header and verify we understand it.
 		//
-		final byte[] hdr = new byte[12];
+		final byte[] hdr = new byte[20];
 		NB.readFully(in, hdr, 0, 12);
 		if (!is_DIRC(hdr))
 			throw new CorruptObjectException("Not a DIRC file.");
@@ -369,13 +366,22 @@ public class DirCache {
 			sortedEntries[i] = new DirCacheEntry(infos, i * INFO_LEN, in);
 		lastModified = liveFile.lastModified();
 
-		// After the file entries are index extensions.
+		// After the file entries are index extensions, and then a footer.
 		//
-		while (fd.position() - in.available() < sizeOnDisk - 20) {
-			NB.readFully(in, hdr, 0, 8);
+		for (;;) {
+			in.mark(21);
+			NB.readFully(in, hdr, 0, 20);
+			if (in.read() < 0) {
+				// No extensions present; the file ended where we expected.
+				//
+				break;
+			}
+			in.reset();
+
 			switch (NB.decodeInt32(hdr, 0)) {
 			case EXT_TREE: {
 				final byte[] raw = new byte[NB.decodeInt32(hdr, 4)];
+				NB.skipFully(in, 8);
 				NB.readFully(in, raw, 0, raw.length);
 				tree = new DirCacheTree(raw, new MutableInteger(), null);
 				break;
