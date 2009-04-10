@@ -37,6 +37,9 @@
 
 package org.spearce.jgit.dircache;
 
+import java.io.IOException;
+
+import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.lib.RepositoryTestCase;
 
 public class DirCacheTreeTest extends RepositoryTestCase {
@@ -146,5 +149,35 @@ public class DirCacheTreeTest extends RepositoryTestCase {
 		assertEquals(0, acTree.getChildCount());
 		assertEquals(acLast - acFirst + 1, acTree.getEntrySpan());
 		assertFalse(acTree.isValid());
+	}
+
+	/**
+	 * We had bugs related to buffer size in the DirCache. This test creates an
+	 * index larger than the default BufferedInputStream buffer size. This made
+	 * the DirCache unable to read the extensions when index size exceeded the
+	 * buffer size (in some cases at least).
+	 * 
+	 * @throws CorruptObjectException
+	 * @throws IOException
+	 */
+	public void testWriteReadTree() throws CorruptObjectException, IOException {
+		final DirCache dc = DirCache.lock(db);
+
+		final String A = String.format("a%2000s", "a");
+		final String B = String.format("b%2000s", "b");
+		final String[] paths = { A + ".", A + "." + B, A + "/" + B, A + "0" + B };
+		final DirCacheEntry[] ents = new DirCacheEntry[paths.length];
+		for (int i = 0; i < paths.length; i++)
+			ents[i] = new DirCacheEntry(paths[i]);
+
+		final DirCacheBuilder b = dc.builder();
+		for (int i = 0; i < ents.length; i++)
+			b.add(ents[i]);
+
+		b.commit();
+		DirCache read = DirCache.read(db);
+
+		assertEquals(paths.length, read.getEntryCount());
+		assertEquals(1, read.getCacheTree(true).getChildCount());
 	}
 }
