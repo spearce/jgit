@@ -103,7 +103,9 @@ class DefaultSshSessionFactory extends SshSessionFactory {
 			session.setPassword(pass);
 		else if (!hc.isBatchMode())
 			session.setUserInfo(new AWT_UserInfo());
-
+		final String strictHostKeyCheckingPolicy = hc.getStrictHostKeyChecking();
+		if (strictHostKeyCheckingPolicy != null)
+			session.setConfig("StrictHostKeyChecking", strictHostKeyCheckingPolicy);
 		final String pauth = hc.getPreferredAuthentications();
 		if (pauth != null)
 			session.setConfig("PreferredAuthentications", pauth);

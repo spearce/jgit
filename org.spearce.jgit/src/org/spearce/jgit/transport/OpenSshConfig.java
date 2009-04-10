@@ -221,6 +221,11 @@ public class OpenSshConfig {
 				for (final Host c : current)
 					if (c.batchMode == null)
 						c.batchMode = yesno(dequote(argValue));
+			} else if ("StrictHostKeyChecking".equalsIgnoreCase(keyword)) {
+				String value = dequote(argValue);
+				for (final Host c : current)
+					if (c.strictHostKeyChecking == null)
+						c.strictHostKeyChecking = value;
 			}
 		}
 
@@ -298,6 +303,8 @@ public class OpenSshConfig {
 
 		Boolean batchMode;
 
+		String strictHostKeyChecking;
+
 		void copyFrom(final Host src) {
 			if (hostName == null)
 				hostName = src.hostName;
@@ -311,6 +318,18 @@ public class OpenSshConfig {
 				preferredAuthentications = src.preferredAuthentications;
 			if (batchMode == null)
 				batchMode = src.batchMode;
+			if (strictHostKeyChecking == null)
+				strictHostKeyChecking = src.strictHostKeyChecking;
+		}
+
+		/**
+		 * @return the value StrictHostKeyChecking property, the valid values
+		 *         are "yes" (unknown hosts are not accepted), "no" (unknown
+		 *         hosts are always accepted), and "ask" (user should be asked
+		 *         before accepting the host)
+		 */
+		public String getStrictHostKeyChecking() {
+			return strictHostKeyChecking;
 		}
 
 		/**
