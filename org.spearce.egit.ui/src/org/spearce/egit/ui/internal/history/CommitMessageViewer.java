@@ -181,12 +181,18 @@ class CommitMessageViewer extends TextViewer {
 		makeGrayText(d, styles);
 		d.append("\n");
 		String msg = commit.getFullMessage();
-		if (fill)
-			msg = msg.replaceAll("([\\w.; \t])\n(\\w)","$1 $2");
+		Pattern p = Pattern.compile("\n([A-Z](?:[A-Za-z]+-)+by: [^\n]+)");
+		if (fill) {
+			Matcher spm = p.matcher(msg);
+			if (spm.find()) {
+				String subMsg = msg.substring(0, spm.end());
+				msg = subMsg.replaceAll("([\\w.,; \t])\n(\\w)", "$1 $2")
+						+ msg.substring(spm.end());
+			}
+		}
 		int h0 = d.length();
 		d.append(msg);
 
-		Pattern p = Pattern.compile("\n([A-Z](?:[A-Za-z]+-)+by: [^\n]+)");
 		Matcher matcher = p.matcher(msg);
 		while (matcher.find()) {
 			styles.add(new StyleRange(h0 + matcher.start(), matcher.end()-matcher.start(), null,  null, SWT.ITALIC));
