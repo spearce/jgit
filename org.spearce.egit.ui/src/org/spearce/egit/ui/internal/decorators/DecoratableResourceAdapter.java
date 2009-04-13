@@ -354,8 +354,12 @@ class DecoratableResourceAdapter implements IDecoratableResource {
 		// so we need to check to see if this is the case here, and possibly
 		// fix the timestamp of the resource to match the resolution of the
 		// index.
-		if (tIndex % 1000 == 0) {
-			return tIndex == (tWorkspaceResource - (tWorkspaceResource % 1000));
+		// It also appears the timestamp in Java on Linux may also be rounded
+		// in which case the index timestamp may have subseconds, but not
+		// the timestamp from the workspace resource.
+		// If either timestamp looks rounded we skip the subscond part.
+		if (tIndex % 1000 == 0 || tWorkspaceResource % 1000 == 0) {
+			return tIndex / 1000 == tWorkspaceResource / 1000;
 		} else {
 			return tIndex == tWorkspaceResource;
 		}
