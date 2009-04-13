@@ -59,6 +59,7 @@ import org.eclipse.team.core.history.IFileHistory;
 import org.eclipse.team.core.history.IFileRevision;
 import org.eclipse.team.internal.ui.history.FileRevisionTypedElement;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
+import org.spearce.egit.core.Activator;
 import org.spearce.egit.core.GitProvider;
 import org.spearce.egit.core.internal.storage.GitFileHistoryProvider;
 import org.spearce.egit.core.project.RepositoryMapping;
@@ -434,6 +435,8 @@ public class CommitDialog extends Dialog {
 			}
 
 		} catch (Exception e) {
+			Activator.logError("Problem in finding file status", e);
+			prefix = e.getMessage();
 		}
 
 		return prefix;

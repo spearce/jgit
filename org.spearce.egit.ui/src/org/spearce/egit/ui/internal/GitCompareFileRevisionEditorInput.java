@@ -35,6 +35,7 @@ import org.eclipse.team.internal.ui.history.FileRevisionTypedElement;
 import org.eclipse.team.internal.ui.synchronize.LocalResourceTypedElement;
 import org.eclipse.team.ui.synchronize.SaveableCompareEditorInput;
 import org.eclipse.ui.IWorkbenchPage;
+import org.spearce.egit.core.Activator;
 
 /**
  * The input provider for the compare editor when working on resources
@@ -327,6 +328,7 @@ public class GitCompareFileRevisionEditorInput extends SaveableCompareEditorInpu
 						return TeamUIMessages.CompareFileRevisionEditorInput_1;
 					}
 				} catch (CoreException e) {
+					Activator.logError("Problem getting content identifier", e);
 				}
 			} else {
 				return fileRevisionElement.getContentIdentifier();
