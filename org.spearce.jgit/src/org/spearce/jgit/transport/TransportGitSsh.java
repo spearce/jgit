@@ -64,7 +64,7 @@ import com.jcraft.jsch.Session;
  * assumes there are Git specific smarts on the remote side to perform object
  * enumeration, save file modification and hook execution.
  */
-class TransportGitSsh extends PackTransport {
+public class TransportGitSsh extends SshTransport implements PackTransport {
 	static boolean canHandle(final URIish uri) {
 		if (!uri.isRemote())
 			return false;

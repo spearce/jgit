@@ -114,8 +114,9 @@ class WalkPushConnection extends BaseConnection implements PushConnection {
 
 	WalkPushConnection(final WalkTransport walkTransport,
 			final WalkRemoteObjectDatabase w) {
-		local = walkTransport.local;
-		uri = walkTransport.getURI();
+		Transport t = (Transport)walkTransport;
+		local = t.local;
+		uri = t.getURI();
 		dest = w;
 	}
 

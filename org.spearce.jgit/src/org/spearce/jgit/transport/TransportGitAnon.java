@@ -55,7 +55,7 @@ import org.spearce.jgit.lib.Repository;
  * the IANA registered port 9418. It is a popular means for distributing open
  * source projects, as there are no authentication or authorization overheads.
  */
-class TransportGitAnon extends PackTransport {
+class TransportGitAnon extends TcpTransport implements PackTransport {
 	static final int GIT_PORT = Daemon.DEFAULT_PORT;
 
 	static boolean canHandle(final URIish uri) {

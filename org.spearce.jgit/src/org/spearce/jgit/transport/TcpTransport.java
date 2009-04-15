@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2009, Shawn O. Pearce <spearce@spearce.org>
  * Copyright (C) 2009, JetBrains s.r.o.
  *
  * All rights reserved.
@@ -37,18 +37,25 @@
  */
 package org.spearce.jgit.transport;
 
+import org.spearce.jgit.lib.Repository;
+
 /**
- * Marker interface for an object transport walking transport.
- * <p>
- * Implementations of WalkTransport transfer individual objects one at a time
- * from the loose objects directory, or entire packs if the source side does not
- * have the object as a loose object.
- * <p>
- * WalkTransports are not as efficient as {@link PackTransport} instances, but
- * can be useful in situations where a pack transport is not acceptable.
- * 
- * @see WalkFetchConnection
+ * The base class for transports based on TCP sockets. This class
+ * holds settings common for all TCP based transports.
  */
-public interface WalkTransport {
-	// no methods in marker interface
+public abstract class TcpTransport extends Transport {
+	/**
+	 * Create a new transport instance.
+	 *
+	 * @param local
+	 *            the repository this instance will fetch into, or push out of.
+	 *            This must be the repository passed to
+	 *            {@link #open(Repository, URIish)}.
+	 * @param uri
+	 *            the URI used to access the remote repository. This must be the
+	 *            URI passed to {@link #open(Repository, URIish)}.
+	 */
+	protected TcpTransport(Repository local, URIish uri) {
+		super(local, uri);
+	}
 }

@@ -60,7 +60,7 @@ import org.spearce.jgit.util.FS;
  * {@link TransportGitSsh} implementation causes the remote side to run a C Git
  * process.
  */
-class TransportLocal extends PackTransport {
+class TransportLocal extends Transport implements PackTransport {
 	private static final String PWD = ".";
 
 	static boolean canHandle(final URIish uri) {

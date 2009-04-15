@@ -40,6 +40,7 @@ package org.spearce.jgit.transport;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Repository;
 
@@ -50,7 +51,7 @@ import org.spearce.jgit.lib.Repository;
  * transport to opening at most one FetchConnection before needing to recreate
  * the transport instance.
  */
-public class TransportBundleStream extends TransportBundle {
+public class TransportBundleStream extends Transport implements TransportBundle {
 	private InputStream src;
 
 	/**
@@ -84,10 +85,16 @@ public class TransportBundleStream extends TransportBundle {
 		if (src == null)
 			throw new TransportException(uri, "Only one fetch supported");
 		try {
-			return new BundleFetchConnection(src);
+			return new BundleFetchConnection(this, src);
 		} finally {
 			src = null;
 		}
+	}
+
+	@Override
+	public PushConnection openPush() throws NotSupportedException {
+		throw new NotSupportedException(
+				"Push is not supported for bundle transport");
 	}
 
 	@Override

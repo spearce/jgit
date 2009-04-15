@@ -47,7 +47,7 @@ import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.util.FS;
 
-class TransportBundleFile extends TransportBundle {
+class TransportBundleFile extends Transport implements TransportBundle {
 	static boolean canHandle(final URIish uri) {
 		if (uri.getHost() != null || uri.getPort() > 0 || uri.getUser() != null
 				|| uri.getPass() != null || uri.getPath() == null)
@@ -77,6 +77,18 @@ class TransportBundleFile extends TransportBundle {
 		} catch (FileNotFoundException err) {
 			throw new TransportException(uri, "not found");
 		}
-		return new BundleFetchConnection(src);
+		return new BundleFetchConnection(this, src);
 	}
+
+	@Override
+	public PushConnection openPush() throws NotSupportedException {
+		throw new NotSupportedException(
+				"Push is not supported for bundle transport");
+	}
+
+	@Override
+	public void close() {
+		// Resources must be established per-connection.
+	}
+
 }

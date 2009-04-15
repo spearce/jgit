@@ -73,7 +73,7 @@ abstract class BasePackConnection extends BaseConnection {
 	protected final URIish uri;
 
 	/** A transport connected to {@link #uri}. */
-	protected final PackTransport transport;
+	protected final Transport transport;
 
 	/** Buffered input stream reading from the remote. */
 	protected InputStream in;
@@ -97,9 +97,9 @@ abstract class BasePackConnection extends BaseConnection {
 	protected final Set<ObjectId> additionalHaves = new HashSet<ObjectId>();
 
 	BasePackConnection(final PackTransport packTransport) {
-		local = packTransport.local;
-		uri = packTransport.uri;
-		transport = packTransport;
+		transport = (Transport)packTransport;
+		local = transport.local;
+		uri = transport.uri;
 	}
 
 	protected void init(final InputStream myIn, final OutputStream myOut) {

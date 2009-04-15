@@ -128,8 +128,8 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 
 	BasePackFetchConnection(final PackTransport packTransport) {
 		super(packTransport);
-		includeTags = packTransport.getTagOpt() != TagOpt.NO_TAGS;
-		thinPack = packTransport.isFetchThin();
+		includeTags = transport.getTagOpt() != TagOpt.NO_TAGS;
+		thinPack = transport.isFetchThin();
 
 		walk = new RevWalk(local);
 		reachableCommits = new RevCommitList<RevCommit>();

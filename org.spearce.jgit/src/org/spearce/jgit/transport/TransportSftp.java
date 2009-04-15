@@ -87,7 +87,7 @@ import com.jcraft.jsch.SftpException;
  * 
  * @see WalkFetchConnection
  */
-class TransportSftp extends WalkTransport {
+public class TransportSftp extends SshTransport implements WalkTransport {
 	static boolean canHandle(final URIish uri) {
 		return uri.isRemote() && "sftp".equals(uri.getScheme());
 	}

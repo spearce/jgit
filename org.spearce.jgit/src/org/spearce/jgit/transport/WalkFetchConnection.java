@@ -167,7 +167,8 @@ class WalkFetchConnection extends BaseFetchConnection {
 	 */
 	private final HashMap<ObjectId, List<Throwable>> fetchErrors;
 
-	WalkFetchConnection(final WalkTransport wt, final WalkRemoteObjectDatabase w) {
+	WalkFetchConnection(final WalkTransport t, final WalkRemoteObjectDatabase w) {
+		Transport wt = (Transport)t;
 		local = wt.local;
 		objCheck = wt.isCheckFetchedObjects() ? new ObjectChecker() : null;
 

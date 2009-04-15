@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2009, JetBrains s.r.o.
  *
  * All rights reserved.
  *
@@ -34,13 +35,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package org.spearce.jgit.transport;
 
-import org.spearce.jgit.lib.Repository;
-
 /**
- * Canonical implementation of an object transport using Git pack transfers.
+ * Marker interface an object transport using Git pack transfers.
  * <p>
  * Implementations of PackTransport setup connections and move objects back and
  * forth by creating pack files on the source side and indexing them on the
@@ -49,8 +47,6 @@ import org.spearce.jgit.lib.Repository;
  * @see BasePackFetchConnection
  * @see BasePackPushConnection
  */
-abstract class PackTransport extends Transport {
-	PackTransport(final Repository local, final URIish u) {
-		super(local, u);
-	}
+public interface PackTransport {
+	// no methods in marker interface
 }

@@ -69,7 +69,7 @@ import org.spearce.jgit.util.HttpSupport;
  * 
  * @see WalkFetchConnection
  */
-class TransportHttp extends WalkTransport {
+public class TransportHttp extends HttpTransport implements WalkTransport {
 	static boolean canHandle(final URIish uri) {
 		if (!uri.isRemote())
 			return false;
@@ -104,6 +104,13 @@ class TransportHttp extends WalkTransport {
 		final WalkFetchConnection r = new WalkFetchConnection(this, c);
 		r.available(c.readAdvertisedRefs());
 		return r;
+	}
+
+	@Override
+	public PushConnection openPush() throws NotSupportedException,
+			TransportException {
+		final String s = getURI().getScheme();
+		throw new NotSupportedException("Push not supported over " + s + ".");
 	}
 
 	@Override

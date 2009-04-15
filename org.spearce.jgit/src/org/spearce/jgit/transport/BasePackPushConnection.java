@@ -88,8 +88,8 @@ class BasePackPushConnection extends BasePackConnection implements
 
 	private boolean writePack;
 
-	BasePackPushConnection(final PackTransport transport) {
-		super(transport);
+	BasePackPushConnection(final PackTransport packTransport) {
+		super(packTransport);
 		thinPack = transport.isPushThin();
 	}
 

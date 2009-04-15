@@ -85,7 +85,7 @@ import org.spearce.jgit.util.FS;
  * @see WalkFetchConnection
  * @see WalkPushConnection
  */
-class TransportAmazonS3 extends WalkTransport {
+public class TransportAmazonS3 extends HttpTransport implements WalkTransport {
 	static final String S3_SCHEME = "amazon-s3";
 
 	static boolean canHandle(final URIish uri) {
