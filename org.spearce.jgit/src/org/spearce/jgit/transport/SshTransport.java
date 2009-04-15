@@ -37,13 +37,27 @@
  */
 package org.spearce.jgit.transport;
 
+import java.net.ConnectException;
+import java.net.UnknownHostException;
+
+import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Repository;
 
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+
 /**
- * The base class for transports that use SSH protocol. This class
- * allows customizing SSH connection settings.
+ * The base class for transports that use SSH protocol. This class allows
+ * customizing SSH connection settings.
  */
 public abstract class SshTransport extends TcpTransport {
+
+	private SshSessionFactory sch;
+
+	/**
+	 * The open SSH session
+	 */
+	protected Session sock;
 
 	/**
 	 * Create a new transport instance.
@@ -58,5 +72,71 @@ public abstract class SshTransport extends TcpTransport {
 	 */
 	protected SshTransport(Repository local, URIish uri) {
 		super(local, uri);
+		sch = SshSessionFactory.getInstance();
+	}
+
+	/**
+	 * Set SSH session factory instead of the default one for this instance of
+	 * the transport.
+	 *
+	 * @param factory
+	 *            a factory to set, must not be null
+	 * @throws IllegalStateException
+	 *             if session has been already created.
+	 */
+	public void setSshSessionFactory(SshSessionFactory factory) {
+		if (factory == null)
+			throw new NullPointerException("The factory must not be null");
+		if (sock != null)
+			throw new IllegalStateException(
+					"An SSH session has been already created");
+		sch = factory;
+	}
+
+	/**
+	 * @return the SSH session factory that will be used for creating SSH sessions
+	 */
+	public SshSessionFactory getSshSessionFactory() {
+		return sch;
+	}
+
+
+	/**
+	 * Initialize SSH session
+	 *
+	 * @throws TransportException
+	 *             in case of error with opening SSH session
+	 */
+	protected void initSession() throws TransportException {
+		if (sock != null)
+			return;
+
+		final String user = uri.getUser();
+		final String pass = uri.getPass();
+		final String host = uri.getHost();
+		final int port = uri.getPort();
+		try {
+			sock = sch.getSession(user, pass, host, port);
+			if (!sock.isConnected())
+				sock.connect();
+		} catch (JSchException je) {
+			final Throwable c = je.getCause();
+			if (c instanceof UnknownHostException)
+				throw new TransportException(uri, "unknown host");
+			if (c instanceof ConnectException)
+				throw new TransportException(uri, c.getMessage());
+			throw new TransportException(uri, je.getMessage(), je);
+		}
+	}
+
+	@Override
+	public void close() {
+		if (sock != null) {
+			try {
+				sch.releaseSession(sock);
+			} finally {
+				sock = null;
+			}
+		}
 	}
 }

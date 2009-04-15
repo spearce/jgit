@@ -41,8 +41,6 @@ package org.spearce.jgit.transport;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.ConnectException;
-import java.net.UnknownHostException;
 
 import org.spearce.jgit.errors.NoRemoteRepositoryException;
 import org.spearce.jgit.errors.TransportException;
@@ -51,7 +49,6 @@ import org.spearce.jgit.util.QuotedString;
 
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
 
 /**
  * Transport through an SSH tunnel.
@@ -80,15 +77,10 @@ public class TransportGitSsh extends SshTransport implements PackTransport {
 		return false;
 	}
 
-	private final SshSessionFactory sch;
-
-	private Session sock;
-
 	OutputStream errStream;
 
 	TransportGitSsh(final Repository local, final URIish uri) {
 		super(local, uri);
-		sch = SshSessionFactory.getInstance();
 	}
 
 	@Override
@@ -99,17 +91,6 @@ public class TransportGitSsh extends SshTransport implements PackTransport {
 	@Override
 	public PushConnection openPush() throws TransportException {
 		return new SshPushConnection();
-	}
-
-	@Override
-	public void close() {
-		if (sock != null) {
-			try {
-				sch.releaseSession(sock);
-			} finally {
-				sock = null;
-			}
-		}
 	}
 
 	private static void sqMinimal(final StringBuilder cmd, final String val) {
@@ -135,27 +116,6 @@ public class TransportGitSsh extends SshTransport implements PackTransport {
 			cmd.append(QuotedString.BOURNE.quote(val));
 	}
 
-	private void initSession() throws TransportException {
-		if (sock != null)
-			return;
-
-		final String user = uri.getUser();
-		final String pass = uri.getPass();
-		final String host = uri.getHost();
-		final int port = uri.getPort();
-		try {
-			sock = sch.getSession(user, pass, host, port);
-			if (!sock.isConnected())
-				sock.connect();
-		} catch (JSchException je) {
-			final Throwable c = je.getCause();
-			if (c instanceof UnknownHostException)
-				throw new TransportException(uri, "unknown host");
-			if (c instanceof ConnectException)
-				throw new TransportException(uri, c.getMessage());
-			throw new TransportException(uri, je.getMessage(), je);
-		}
-	}
 
 	ChannelExec exec(final String exe) throws TransportException {
 		initSession();

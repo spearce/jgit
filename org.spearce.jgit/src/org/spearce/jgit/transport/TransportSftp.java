@@ -41,8 +41,6 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.ConnectException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -63,7 +61,6 @@ import org.spearce.jgit.lib.Ref.Storage;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpATTRS;
 import com.jcraft.jsch.SftpException;
 
@@ -92,13 +89,8 @@ public class TransportSftp extends SshTransport implements WalkTransport {
 		return uri.isRemote() && "sftp".equals(uri.getScheme());
 	}
 
-	private final SshSessionFactory sch;
-
-	private Session sock;
-
 	TransportSftp(final Repository local, final URIish uri) {
 		super(local, uri);
-		sch = SshSessionFactory.getInstance();
 	}
 
 	@Override
@@ -115,39 +107,6 @@ public class TransportSftp extends SshTransport implements WalkTransport {
 		final WalkPushConnection r = new WalkPushConnection(this, c);
 		r.available(c.readAdvertisedRefs());
 		return r;
-	}
-
-	@Override
-	public void close() {
-		if (sock != null) {
-			try {
-				sch.releaseSession(sock);
-			} finally {
-				sock = null;
-			}
-		}
-	}
-
-	private void initSession() throws TransportException {
-		if (sock != null)
-			return;
-
-		final String user = uri.getUser();
-		final String pass = uri.getPass();
-		final String host = uri.getHost();
-		final int port = uri.getPort();
-		try {
-			sock = sch.getSession(user, pass, host, port);
-			if (!sock.isConnected())
-				sock.connect();
-		} catch (JSchException je) {
-			final Throwable c = je.getCause();
-			if (c instanceof UnknownHostException)
-				throw new TransportException(uri, "unknown host");
-			if (c instanceof ConnectException)
-				throw new TransportException(uri, c.getMessage());
-			throw new TransportException(uri, je.getMessage(), je);
-		}
 	}
 
 	ChannelSftp newSftp() throws TransportException {
