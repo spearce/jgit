@@ -42,15 +42,6 @@ import java.awt.Container;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.HashSet;
-import java.util.Set;
 
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -58,10 +49,6 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
-import org.spearce.jgit.util.FS;
-
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UIKeyboardInteractive;
 import com.jcraft.jsch.UserInfo;
@@ -76,116 +63,10 @@ import com.jcraft.jsch.UserInfo;
  * If user interactivity is required by SSH (e.g. to obtain a password) AWT is
  * used to display a password input field to the end-user.
  */
-class DefaultSshSessionFactory extends SshSessionFactory {
-	/** IANA assigned port number for SSH. */
-	static final int SSH_PORT = 22;
-
-	private Set<String> loadedIdentities;
-
-	private JSch userJSch;
-
-	private OpenSshConfig config;
-
-	@Override
-	public synchronized Session getSession(String user, String pass,
-			String host, int port) throws JSchException {
-		final OpenSshConfig.Host hc = getConfig().lookup(host);
-		host = hc.getHostName();
-		if (port <= 0)
-			port = hc.getPort();
-		if (user == null)
-			user = hc.getUser();
-
-		final Session session = getUserJSch().getSession(user, host, port);
-		if (hc.getIdentityFile() != null)
-			addIdentity(hc.getIdentityFile());
-		if (pass != null)
-			session.setPassword(pass);
-		else if (!hc.isBatchMode())
+class DefaultSshSessionFactory extends SshConfigSessionFactory {
+	protected void configure(final OpenSshConfig.Host hc, final Session session) {
+		if (!hc.isBatchMode())
 			session.setUserInfo(new AWT_UserInfo());
-		final String strictHostKeyCheckingPolicy = hc.getStrictHostKeyChecking();
-		if (strictHostKeyCheckingPolicy != null)
-			session.setConfig("StrictHostKeyChecking", strictHostKeyCheckingPolicy);
-		final String pauth = hc.getPreferredAuthentications();
-		if (pauth != null)
-			session.setConfig("PreferredAuthentications", pauth);
-		return session;
-	}
-
-	static String userName() {
-		return AccessController.doPrivileged(new PrivilegedAction<String>() {
-			public String run() {
-				return System.getProperty("user.name");
-			}
-		});
-	}
-
-	private JSch getUserJSch() throws JSchException {
-		if (userJSch == null) {
-			loadedIdentities = new HashSet<String>();
-			userJSch = new JSch();
-			knownHosts(userJSch);
-			identities();
-		}
-		return userJSch;
-	}
-
-	private OpenSshConfig getConfig() {
-		if (config == null)
-			config = OpenSshConfig.get();
-		return config;
-	}
-
-	private void knownHosts(final JSch sch) throws JSchException {
-		final File home = FS.userHome();
-		if (home == null)
-			return;
-		final File known_hosts = new File(new File(home, ".ssh"), "known_hosts");
-		try {
-			final FileInputStream in = new FileInputStream(known_hosts);
-			try {
-				sch.setKnownHosts(in);
-			} finally {
-				in.close();
-			}
-		} catch (FileNotFoundException none) {
-			// Oh well. They don't have a known hosts in home.
-		} catch (IOException err) {
-			// Oh well. They don't have a known hosts in home.
-		}
-	}
-
-	private void identities() {
-		final File home = FS.userHome();
-		if (home == null)
-			return;
-		final File sshdir = new File(home, ".ssh");
-		final File[] keys = sshdir.listFiles();
-		if (keys == null)
-			return;
-		for (int i = 0; i < keys.length; i++) {
-			final File pk = keys[i];
-			final String n = pk.getName();
-			if (!n.endsWith(".pub"))
-				continue;
-			final File k = new File(sshdir, n.substring(0, n.length() - 4));
-			if (!k.isFile())
-				continue;
-
-			try {
-				addIdentity(k);
-			} catch (JSchException e) {
-				continue;
-			}
-		}
-	}
-
-	private void addIdentity(final File identityFile) throws JSchException {
-		final String path = identityFile.getAbsolutePath();
-		if (!loadedIdentities.contains(path)) {
-			userJSch.addIdentity(path);
-			loadedIdentities.add(path);
-		}
 	}
 
 	private static class AWT_UserInfo implements UserInfo,
@@ -284,38 +165,5 @@ class DefaultSshSessionFactory extends SshSessionFactory {
 			}
 			return null; // cancel
 		}
-	}
-
-	@Override
-	public OutputStream getErrorStream() {
-		return new OutputStream() {
-			private StringBuilder all = new StringBuilder();
-
-			private StringBuilder sb = new StringBuilder();
-
-			public String toString() {
-				String r = all.toString();
-				while (r.endsWith("\n"))
-					r = r.substring(0, r.length() - 1);
-				return r;
-			}
-
-			@Override
-			public void write(final int b) throws IOException {
-				if (b == '\r') {
-					System.err.print('\r');
-					return;
-				}
-
-				sb.append((char) b);
-
-				if (b == '\n') {
-					final String line = sb.toString();
-					System.err.print(line);
-					all.append(line);
-					sb = new StringBuilder();
-				}
-			}
-		};
 	}
 }

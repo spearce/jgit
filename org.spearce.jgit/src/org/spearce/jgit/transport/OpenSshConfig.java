@@ -44,6 +44,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -62,6 +64,9 @@ import org.spearce.jgit.util.FS;
  * critical options available to {@link SshSessionFactory}.
  */
 public class OpenSshConfig {
+	/** IANA assigned port number for SSH. */
+	static final int SSH_PORT = 22;
+
 	/**
 	 * Obtain the user's configuration data.
 	 * <p>
@@ -129,9 +134,9 @@ public class OpenSshConfig {
 		if (h.hostName == null)
 			h.hostName = hostName;
 		if (h.user == null)
-			h.user = DefaultSshSessionFactory.userName();
+			h.user = OpenSshConfig.userName();
 		if (h.port == 0)
-			h.port = DefaultSshSessionFactory.SSH_PORT;
+			h.port = OpenSshConfig.SSH_PORT;
 		h.patternsApplied = true;
 		return h;
 	}
@@ -275,6 +280,14 @@ public class OpenSshConfig {
 		if (ret.isAbsolute())
 			return ret;
 		return new File(home, path);
+	}
+
+	static String userName() {
+		return AccessController.doPrivileged(new PrivilegedAction<String>() {
+			public String run() {
+				return System.getProperty("user.name");
+			}
+		});
 	}
 
 	/**
