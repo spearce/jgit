@@ -66,7 +66,7 @@ import com.jcraft.jsch.UserInfo;
  * to supply appropriate {@link UserInfo} to the session.
  */
 public abstract class SshConfigSessionFactory extends SshSessionFactory {
-	private Set<String> loadedIdentities;
+	private final Set<String> loadedIdentities = new HashSet<String>();
 
 	private JSch userJSch;
 
@@ -82,7 +82,7 @@ public abstract class SshConfigSessionFactory extends SshSessionFactory {
 		if (user == null)
 			user = hc.getUser();
 
-		final Session session = getUserJSch().getSession(user, host, port);
+		final Session session = createSession(user, host, port);
 		if (hc.getIdentityFile() != null)
 			addIdentity(hc.getIdentityFile());
 		if (pass != null)
@@ -100,6 +100,24 @@ public abstract class SshConfigSessionFactory extends SshSessionFactory {
 	}
 
 	/**
+	 * Create a new JSch session for the requested address.
+	 *
+	 * @param user
+	 *            login to authenticate as.
+	 * @param host
+	 *            server name to connect to.
+	 * @param port
+	 *            port number of the SSH daemon (typically 22).
+	 * @return new session instance, but otherwise unconfigured.
+	 * @throws JSchException
+	 *             the session could not be created.
+	 */
+	protected Session createSession(String user, String host, int port)
+			throws JSchException {
+		return getUserJSch().getSession(user, host, port);
+	}
+
+	/**
 	 * Provide additional configuration for the session based on the host
 	 * information. This method could be used to supply {@link UserInfo}.
 	 *
@@ -110,9 +128,15 @@ public abstract class SshConfigSessionFactory extends SshSessionFactory {
 	 */
 	protected abstract void configure(OpenSshConfig.Host hc, Session session);
 
-	private JSch getUserJSch() throws JSchException {
+	/**
+	 * Obtain the JSch used to create new sessions.
+	 *
+	 * @return the JSch instance to use.
+	 * @throws JSchException
+	 *             the user configuration could not be created.
+	 */
+	protected JSch getUserJSch() throws JSchException {
 		if (userJSch == null) {
-			loadedIdentities = new HashSet<String>();
 			userJSch = new JSch();
 			knownHosts(userJSch);
 			identities();
@@ -173,7 +197,7 @@ public abstract class SshConfigSessionFactory extends SshSessionFactory {
 	private void addIdentity(final File identityFile) throws JSchException {
 		final String path = identityFile.getAbsolutePath();
 		if (!loadedIdentities.contains(path)) {
-			userJSch.addIdentity(path);
+			getUserJSch().addIdentity(path);
 			loadedIdentities.add(path);
 		}
 	}
