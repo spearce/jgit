@@ -2,6 +2,7 @@
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  * Copyright (C) 2009, JetBrains s.r.o.
+ * Copyright (C) 2009, Google, Inc.
  *
  * All rights reserved.
  *
@@ -43,8 +44,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.spearce.jgit.util.FS;
 
@@ -66,9 +67,9 @@ import com.jcraft.jsch.UserInfo;
  * to supply appropriate {@link UserInfo} to the session.
  */
 public abstract class SshConfigSessionFactory extends SshSessionFactory {
-	private final Set<String> loadedIdentities = new HashSet<String>();
+	private final Map<String, JSch> byIdentityFile = new HashMap<String, JSch>();
 
-	private JSch userJSch;
+	private JSch defaultJSch;
 
 	private OpenSshConfig config;
 
@@ -82,9 +83,7 @@ public abstract class SshConfigSessionFactory extends SshSessionFactory {
 		if (user == null)
 			user = hc.getUser();
 
-		final Session session = createSession(user, host, port);
-		if (hc.getIdentityFile() != null)
-			addIdentity(hc.getIdentityFile());
+		final Session session = createSession(hc, user, host, port);
 		if (pass != null)
 			session.setPassword(pass);
 		final String strictHostKeyCheckingPolicy = hc
@@ -102,6 +101,8 @@ public abstract class SshConfigSessionFactory extends SshSessionFactory {
 	/**
 	 * Create a new JSch session for the requested address.
 	 *
+	 * @param hc
+	 *            host configuration
 	 * @param user
 	 *            login to authenticate as.
 	 * @param host
@@ -112,9 +113,10 @@ public abstract class SshConfigSessionFactory extends SshSessionFactory {
 	 * @throws JSchException
 	 *             the session could not be created.
 	 */
-	protected Session createSession(String user, String host, int port)
+	protected Session createSession(final OpenSshConfig.Host hc,
+			final String user, final String host, final int port)
 			throws JSchException {
-		return getUserJSch().getSession(user, host, port);
+		return getJSch(hc).getSession(user, host, port);
 	}
 
 	/**
@@ -131,17 +133,50 @@ public abstract class SshConfigSessionFactory extends SshSessionFactory {
 	/**
 	 * Obtain the JSch used to create new sessions.
 	 *
+	 * @param hc
+	 *            host configuration
 	 * @return the JSch instance to use.
 	 * @throws JSchException
 	 *             the user configuration could not be created.
 	 */
-	protected JSch getUserJSch() throws JSchException {
-		if (userJSch == null) {
-			userJSch = new JSch();
-			knownHosts(userJSch);
-			identities();
+	protected JSch getJSch(final OpenSshConfig.Host hc) throws JSchException {
+		final JSch def = getDefaultJSch();
+		final File identityFile = hc.getIdentityFile();
+		if (identityFile == null) {
+			return def;
 		}
-		return userJSch;
+
+		final String identityKey = identityFile.getAbsolutePath();
+		JSch jsch = byIdentityFile.get(identityKey);
+		if (jsch == null) {
+			jsch = new JSch();
+			jsch.setHostKeyRepository(def.getHostKeyRepository());
+			jsch.addIdentity(identityKey);
+			byIdentityFile.put(identityKey, jsch);
+		}
+		return jsch;
+	}
+
+	private JSch getDefaultJSch() throws JSchException {
+		if (defaultJSch == null) {
+			defaultJSch = createDefaultJSch();
+			for (Object name : defaultJSch.getIdentityNames()) {
+				byIdentityFile.put((String) name, defaultJSch);
+			}
+		}
+		return defaultJSch;
+	}
+
+	/**
+	 * @return the new default JSch implementation.
+	 * @throws JSchException
+	 *             known host keys cannot be loaded.
+	 */
+	protected JSch createDefaultJSch() throws JSchException {
+		final JSch jsch = new JSch();
+		knownHosts(jsch);
+		identities(jsch);
+		return jsch;
 	}
 
 	private OpenSshConfig getConfig() {
@@ -150,7 +185,7 @@ public abstract class SshConfigSessionFactory extends SshSessionFactory {
 		return config;
 	}
 
-	private void knownHosts(final JSch sch) throws JSchException {
+	private static void knownHosts(final JSch sch) throws JSchException {
 		final File home = FS.userHome();
 		if (home == null)
 			return;
@@ -169,36 +204,25 @@ public abstract class SshConfigSessionFactory extends SshSessionFactory {
 		}
 	}
 
-	private void identities() {
+	private static void identities(final JSch sch) {
 		final File home = FS.userHome();
 		if (home == null)
 			return;
 		final File sshdir = new File(home, ".ssh");
-		final File[] keys = sshdir.listFiles();
-		if (keys == null)
-			return;
-		for (int i = 0; i < keys.length; i++) {
-			final File pk = keys[i];
-			final String n = pk.getName();
-			if (!n.endsWith(".pub"))
-				continue;
-			final File k = new File(sshdir, n.substring(0, n.length() - 4));
-			if (!k.isFile())
-				continue;
-
-			try {
-				addIdentity(k);
-			} catch (JSchException e) {
-				continue;
-			}
+		if (sshdir.isDirectory()) {
+			loadIdentity(sch, new File(sshdir, "identity"));
+			loadIdentity(sch, new File(sshdir, "id_rsa"));
+			loadIdentity(sch, new File(sshdir, "id_dsa"));
 		}
 	}
 
-	private void addIdentity(final File identityFile) throws JSchException {
-		final String path = identityFile.getAbsolutePath();
-		if (!loadedIdentities.contains(path)) {
-			getUserJSch().addIdentity(path);
-			loadedIdentities.add(path);
+	private static void loadIdentity(final JSch sch, final File priv) {
+		if (priv.isFile()) {
+			try {
+				sch.addIdentity(priv.getAbsolutePath());
+			} catch (JSchException e) {
+				// Instead, pretend the key doesn't exist.
+			}
 		}
 	}
 
