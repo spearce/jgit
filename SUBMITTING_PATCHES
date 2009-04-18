@@ -12,13 +12,15 @@ Short Version:
 
  - Use a subject prefix of "[PATCH JGIT ...]" or "[PATCH EGIT ...]"
    when sending any patches directly by email.
- - Send by email to the maintainers, cc'ing the git mailing list:
+ - Send by email to the maintainers, cc'ing the git mailing list
+   which is currently used for both Git, JGit/EGit:
 
-   maintainers: "Shawn O. Pearce" <spearce@spearce.org>
-                Robin Rosenberg <robin.rosenberg@dewire.com>
+   maintainers   : "Shawn O. Pearce" <spearce@spearce.org>
+                   Robin Rosenberg <robin.rosenberg@dewire.com>
 
-   git list   : git@vger.kernel.org
+   git list      : git@vger.kernel.org
 
+   git list info : http://vger.kernel.org/vger-lists.html#git    
 
 Long Version:
 
