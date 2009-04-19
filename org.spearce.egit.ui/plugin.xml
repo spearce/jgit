@@ -384,7 +384,7 @@
 		       style="push"
 		       menubarPath="org.spearce.egit.ui.gitmenu/repositoryGroup"
 		       toolbarPath="Normal/additions"
-		       tooltip="Start tracking the selected resources">
+		       tooltip="%TrackAction_tooltip">
 		</action>
       </actionSet>
    </extension>
