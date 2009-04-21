@@ -297,14 +297,16 @@ public class WindowedFile {
 	}
 
 	void cacheClose() {
-		try {
-			fd.close();
-		} catch (IOException err) {
-			// Ignore a close event. We had it open only for reading.
-			// There should not be errors related to network buffers
-			// not flushed, etc.
+		if (fd != null) {
+			try {
+				fd.close();
+			} catch (IOException err) {
+				// Ignore a close event. We had it open only for reading.
+				// There should not be errors related to network buffers
+				// not flushed, etc.
+			}
+			fd = null;
 		}
-		fd = null;
 	}
 
 	void allocWindow(final WindowCursor curs, final int windowId,
