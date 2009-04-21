@@ -75,6 +75,8 @@ public class ObjectDirectory extends ObjectDatabase {
 
 	private final AtomicReference<PackFile[]> packList;
 
+	private volatile long packDirectoryLastModified;
+
 	/**
 	 * Initialize a reference to an on-disk object directory.
 	 *
@@ -257,6 +259,16 @@ public class ObjectDirectory extends ObjectDatabase {
 		}
 	}
 
+	@Override
+	protected boolean tryAgain1() {
+		final PackFile[] old = packList.get();
+		if (packDirectoryLastModified < packDirectory.lastModified()) {
+			scanPacks(old);
+			return true;
+		}
+		return false;
+	}
+
 	private void insertPack(final PackFile pf) {
 		PackFile[] o, n;
 		do {
@@ -389,6 +401,7 @@ public class ObjectDirectory extends ObjectDatabase {
 	}
 
 	private String[] listPackIdx() {
+		packDirectoryLastModified = packDirectory.lastModified();
 		final String[] idxList = packDirectory.list(new FilenameFilter() {
 			public boolean accept(final File baseDir, final String n) {
 				// Must match "pack-[0-9a-f]{40}.idx" to be an index.

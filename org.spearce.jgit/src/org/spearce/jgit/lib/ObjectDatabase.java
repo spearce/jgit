@@ -137,7 +137,7 @@ public abstract class ObjectDatabase {
 				return true;
 			}
 		}
-		return false;
+		return tryAgain1() && hasObject1(objectId);
 	}
 
 	private final boolean hasObjectImpl2(final String objectId) {
@@ -212,6 +212,12 @@ public abstract class ObjectDatabase {
 		}
 		for (final ObjectDatabase alt : getAlternates()) {
 			ldr = alt.openObjectImpl1(curs, objectId);
+			if (ldr != null) {
+				return ldr;
+			}
+		}
+		if (tryAgain1()) {
+			ldr = openObject1(curs, objectId);
 			if (ldr != null) {
 				return ldr;
 			}
@@ -308,6 +314,13 @@ public abstract class ObjectDatabase {
 	void openObjectInAllPacks1(Collection<PackedObjectLoader> out,
 			WindowCursor curs, AnyObjectId objectId) throws IOException {
 		// Assume no pack support
+	}
+
+	/**
+	 * @return true if the fast-half search should be tried again.
+	 */
+	protected boolean tryAgain1() {
+		return false;
 	}
 
 	/**
