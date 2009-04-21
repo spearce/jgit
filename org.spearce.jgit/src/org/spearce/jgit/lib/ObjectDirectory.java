@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.spearce.jgit.errors.PackMismatchException;
 import org.spearce.jgit.util.FS;
 
 /**
@@ -190,38 +191,53 @@ public class ObjectDirectory extends ObjectDatabase {
 	@Override
 	protected ObjectLoader openObject1(final WindowCursor curs,
 			final AnyObjectId objectId) throws IOException {
-		for (final PackFile p : packs()) {
-			try {
-				final ObjectLoader ldr = p.get(curs, objectId);
-				if (ldr != null) {
-					return ldr;
+		PackFile[] pList = packs();
+		SEARCH: for (;;) {
+			for (final PackFile p : pList) {
+				try {
+					final ObjectLoader ldr = p.get(curs, objectId);
+					if (ldr != null) {
+						return ldr;
+					}
+				} catch (PackMismatchException e) {
+					// Pack was modified; refresh the entire pack list.
+					//
+					pList = scanPacks(pList);
+					continue SEARCH;
+				} catch (IOException e) {
+					// Assume the pack is corrupted.
+					//
+					removePack(p);
 				}
-			} catch (IOException e) {
-				// Assume the pack is corrupted.
-				//
-				removePack(p);
-				continue;
 			}
+			return null;
 		}
-		return null;
 	}
 
 	@Override
 	void openObjectInAllPacks1(final Collection<PackedObjectLoader> out,
 			final WindowCursor curs, final AnyObjectId objectId)
 			throws IOException {
-		for (final PackFile p : packs()) {
-			try {
-				final PackedObjectLoader ldr = p.get(curs, objectId);
-				if (ldr != null) {
-					out.add(ldr);
+		PackFile[] pList = packs();
+		SEARCH: for (;;) {
+			for (final PackFile p : pList) {
+				try {
+					final PackedObjectLoader ldr = p.get(curs, objectId);
+					if (ldr != null) {
+						out.add(ldr);
+					}
+				} catch (PackMismatchException e) {
+					// Pack was modified; refresh the entire pack list.
+					//
+					pList = scanPacks(pList);
+					continue SEARCH;
+				} catch (IOException e) {
+					// Assume the pack is corrupted.
+					//
+					removePack(p);
 				}
-			} catch (IOException e) {
-				// Assume the pack is corrupted.
-				//
-				removePack(p);
-				continue;
 			}
+			break SEARCH;
 		}
 	}
 
@@ -350,6 +366,14 @@ public class ObjectDirectory extends ObjectDatabase {
 	private static Map<String, PackFile> reuseMap(final PackFile[] old) {
 		final Map<String, PackFile> forReuse = new HashMap<String, PackFile>();
 		for (final PackFile p : old) {
+			if (p.invalid()) {
+				// The pack instance is corrupted, and cannot be safely used
+				// again. Do not include it in our reuse map.
+				//
+				p.close();
+				continue;
+			}
+
 			final PackFile prior = forReuse.put(p.getPackFile().getName(), p);
 			if (prior != null) {
 				// This should never occur. It should be impossible for us

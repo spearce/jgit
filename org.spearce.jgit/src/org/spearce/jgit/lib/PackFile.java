@@ -73,6 +73,8 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 
 	private int packLastModified;
 
+	private volatile boolean invalid;
+
 	private PackIndex loadedIdx;
 
 	private PackReverseIndex reverseIdx;
@@ -91,14 +93,24 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		pack = new WindowedFile(packFile) {
 			@Override
 			protected void onOpen() throws IOException {
-				onOpenPack();
+				try {
+					onOpenPack();
+				} catch (IOException e) {
+					invalid = true;
+					throw e;
+				}
 			}
 		};
 	}
 
 	private synchronized PackIndex idx() throws IOException {
 		if (loadedIdx == null) {
-			loadedIdx = PackIndex.open(idxFile);
+			try {
+				loadedIdx = PackIndex.open(idxFile);
+			} catch (IOException e) {
+				invalid = true;
+				throw e;
+			}
 		}
 		return loadedIdx;
 	}
@@ -265,6 +277,10 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 
 	boolean supportsFastCopyRawData() throws IOException {
 		return idx().hasCRC32Support();
+	}
+
+	boolean invalid() {
+		return invalid;
 	}
 
 	private void onOpenPack() throws IOException {
