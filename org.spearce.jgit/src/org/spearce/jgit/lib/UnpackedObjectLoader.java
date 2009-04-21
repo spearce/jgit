@@ -46,6 +46,7 @@ import java.util.zip.Inflater;
 
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.util.MutableInteger;
+import org.spearce.jgit.util.NB;
 import org.spearce.jgit.util.RawParseUtils;
 
 /**
@@ -74,17 +75,14 @@ public class UnpackedObjectLoader extends ObjectLoader {
 
 	private static byte[] readCompressed(final Repository db,
 			final AnyObjectId id) throws FileNotFoundException, IOException {
-		final FileInputStream objStream = new FileInputStream(db.toFile(id));
-		final byte[] compressed;
+		final FileInputStream in = new FileInputStream(db.toFile(id));
 		try {
-			compressed = new byte[objStream.available()];
-			int off = 0;
-			while (off < compressed.length)
-				off += objStream.read(compressed, off, compressed.length - off);
+			final byte[] compressed = new byte[(int) in.getChannel().size()];
+			NB.readFully(in, compressed, 0, compressed.length);
+			return compressed;
 		} finally {
-			objStream.close();
+			in.close();
 		}
-		return compressed;
 	}
 
 	/**
