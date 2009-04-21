@@ -137,13 +137,49 @@ public class TransportGitSsh extends SshTransport implements PackTransport {
 			cmd.append(' ');
 			sqAlways(cmd, path);
 			channel.setCommand(cmd.toString());
-			errStream = SshSessionFactory.getInstance().getErrorStream();
+			errStream = createErrorStream();
 			channel.setErrStream(errStream, true);
 			channel.connect();
 			return channel;
 		} catch (JSchException je) {
 			throw new TransportException(uri, je.getMessage(), je);
 		}
+	}
+
+	/**
+	 * @return the error stream for the channel, the stream is used to detect
+	 *         specific error reasons for exceptions.
+	 */
+	private static OutputStream createErrorStream() {
+		return new OutputStream() {
+			private StringBuilder all = new StringBuilder();
+
+			private StringBuilder sb = new StringBuilder();
+
+			public String toString() {
+				String r = all.toString();
+				while (r.endsWith("\n"))
+					r = r.substring(0, r.length() - 1);
+				return r;
+			}
+
+			@Override
+			public void write(final int b) throws IOException {
+				if (b == '\r') {
+					System.err.print('\r');
+					return;
+				}
+
+				sb.append((char) b);
+
+				if (b == '\n') {
+					final String line = sb.toString();
+					System.err.print(line);
+					all.append(line);
+					sb = new StringBuilder();
+				}
+			}
+		};
 	}
 
 	NoRemoteRepositoryException cleanNotFound(NoRemoteRepositoryException nf) {

@@ -38,8 +38,6 @@
 
 package org.spearce.jgit.transport;
 
-import java.io.OutputStream;
-
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
@@ -123,12 +121,4 @@ public abstract class SshSessionFactory {
 		if (session.isConnected())
 			session.disconnect();
 	}
-
-	/**
-	 * Find or create an OutputStream for Ssh to use. For a command line client
-	 * this is probably System.err.
-	 *
-	 * @return an OutputStream to receive the SSH error stream.
-	 */
-	public abstract OutputStream getErrorStream();
 }

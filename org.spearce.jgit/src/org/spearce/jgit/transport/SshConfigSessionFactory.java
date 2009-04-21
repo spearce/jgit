@@ -43,7 +43,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -224,38 +223,5 @@ public abstract class SshConfigSessionFactory extends SshSessionFactory {
 				// Instead, pretend the key doesn't exist.
 			}
 		}
-	}
-
-	@Override
-	public OutputStream getErrorStream() {
-		return new OutputStream() {
-			private StringBuilder all = new StringBuilder();
-
-			private StringBuilder sb = new StringBuilder();
-
-			public String toString() {
-				String r = all.toString();
-				while (r.endsWith("\n"))
-					r = r.substring(0, r.length() - 1);
-				return r;
-			}
-
-			@Override
-			public void write(final int b) throws IOException {
-				if (b == '\r') {
-					System.err.print('\r');
-					return;
-				}
-
-				sb.append((char) b);
-
-				if (b == '\n') {
-					final String line = sb.toString();
-					System.err.print(line);
-					all.append(line);
-					sb = new StringBuilder();
-				}
-			}
-		};
 	}
 }
