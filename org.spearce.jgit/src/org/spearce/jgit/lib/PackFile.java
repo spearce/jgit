@@ -155,6 +155,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		pack.close();
 		synchronized (this) {
 			loadedIdx = null;
+			reverseIdx = null;
 		}
 	}
 
