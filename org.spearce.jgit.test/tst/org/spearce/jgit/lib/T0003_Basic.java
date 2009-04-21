@@ -75,14 +75,13 @@ public class T0003_Basic extends RepositoryTestCase {
 		// open when we create it we won't write the object file out as a loose
 		// object (as it already exists in the pack).
 		//
-		db.closePacks();
-
-		final Tree t = new Tree(db);
-		t.accept(new WriteTree(trash, db), TreeEntry.MODIFIED_ONLY);
+		final Repository newdb = createNewEmptyRepo();
+		final Tree t = new Tree(newdb);
+		t.accept(new WriteTree(trash, newdb), TreeEntry.MODIFIED_ONLY);
 		assertEquals("4b825dc642cb6eb9a060e54bf8d69288fbee4904", t.getId()
 				.name());
-		final File o = new File(new File(new File(trash_git, "objects"), "4b"),
-				"825dc642cb6eb9a060e54bf8d69288fbee4904");
+		final File o = new File(new File(new File(newdb.getDirectory(),
+				"objects"), "4b"), "825dc642cb6eb9a060e54bf8d69288fbee4904");
 		assertTrue("Exists " + o, o.isFile());
 		assertTrue("Read-only " + o, !o.canWrite());
 	}
