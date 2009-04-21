@@ -297,8 +297,6 @@ public abstract class RepositoryTestCase extends TestCase {
 
 		copyFile(JGitTestUtil.getTestResourceFile("packed-refs"), new File(trash_git,"packed-refs"));
 
-		db.scanForPacks();
-
 		fakeSystemReader.values.clear();
 		fakeSystemReader.values.put(Constants.OS_USER_NAME_KEY, Constants.OS_USER_NAME_KEY);
 		fakeSystemReader.values.put(Constants.GIT_AUTHOR_NAME_KEY, Constants.GIT_AUTHOR_NAME_KEY);

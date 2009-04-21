@@ -43,10 +43,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -93,9 +91,7 @@ public class Repository {
 
 	private final RefDatabase refs;
 
-	private File[] objectDirectoryList;
-
-	private PackFile[] packFileList;
+	private final ObjectDirectory objectDatabase;
 
 	private GitIndex index;
 
@@ -113,21 +109,11 @@ public class Repository {
 	 */
 	public Repository(final File d) throws IOException {
 		gitDir = d.getAbsoluteFile();
-		try {
-			objectDirectoryList = readObjectsDirs(
-					FS.resolve(gitDir, "objects"), new ArrayList<File>())
-					.toArray(new File[0]);
-		} catch (IOException e) {
-			IOException ex = new IOException("Cannot find all object dirs for " + gitDir);
-			ex.initCause(e);
-			throw ex;
-		}
 		refs = new RefDatabase(this);
-		packFileList = new PackFile[0];
+		objectDatabase = new ObjectDirectory(FS.resolve(gitDir, "objects"));
 		config = new RepositoryConfig(this);
 
-		final boolean isExisting = objectDirectoryList[0].exists();
-		if (isExisting) {
+		if (objectDatabase.exists()) {
 			getConfig().load();
 			final String repositoryFormatVersion = getConfig().getString(
 					"core", null, "repositoryFormatVersion");
@@ -138,25 +124,6 @@ public class Repository {
 		} else {
 			getConfig().create();
 		}
-		if (isExisting)
-			scanForPacks();
-	}
-
-	private static Collection<File> readObjectsDirs(File objectsDir,
-			Collection<File> ret) throws IOException {
-		ret.add(objectsDir);
-		final File altFile = FS.resolve(objectsDir, "info/alternates");
-		if (altFile.exists()) {
-			BufferedReader ar = new BufferedReader(new FileReader(altFile));
-			try {
-				for (String alt=ar.readLine(); alt!=null; alt=ar.readLine()) {
-					readObjectsDirs(FS.resolve(objectsDir, alt), ret);
-				}
-			} finally {
-				ar.close();
-			}
-		}
-		return ret;
 	}
 
 	/**
@@ -173,10 +140,7 @@ public class Repository {
 
 		gitDir.mkdirs();
 		refs.create();
-
-		objectDirectoryList[0].mkdirs();
-		new File(objectDirectoryList[0], "pack").mkdir();
-		new File(objectDirectoryList[0], "info").mkdir();
+		objectDatabase.create();
 
 		new File(gitDir, "branches").mkdir();
 		new File(gitDir, "remotes").mkdir();
@@ -185,14 +149,6 @@ public class Repository {
 
 		getConfig().create();
 		getConfig().save();
-	}
-
-	private synchronized File[] objectsDirs(){
-		return objectDirectoryList;
-	}
-
-	private synchronized PackFile[] packs(){
-		return packFileList;
 	}
 
 	/**
@@ -206,7 +162,7 @@ public class Repository {
 	 * @return the directory containing the objects owned by this repository.
 	 */
 	public File getObjectsDirectory() {
-		return objectsDirs()[0];
+		return objectDatabase.getDirectory();
 	}
 
 	/**
@@ -227,16 +183,7 @@ public class Repository {
 	 * @return suggested file name
 	 */
 	public File toFile(final AnyObjectId objectId) {
-		final String n = objectId.name();
-		String d=n.substring(0, 2);
-		String f=n.substring(2);
-		final File[] objectsDirs = objectsDirs();
-		for (File objectsDir : objectsDirs) {
-			File ret = new File(new File(objectsDir, d), f);
-			if (ret.exists())
-				return ret;
-		}
-		return new File(new File(objectsDirs[0], d), f);
+		return objectDatabase.fileFor(objectId);
 	}
 
 	/**
@@ -245,20 +192,7 @@ public class Repository {
 	 *         known shared repositories.
 	 */
 	public boolean hasObject(final AnyObjectId objectId) {
-		final PackFile[] packs = packs();
-		int k = packs.length;
-		while (k > 0) {
-			try {
-				if (packs[--k].hasObject(objectId))
-					return true;
-			} catch (IOException e) {
-				// Assume that means the pack is invalid, and such
-				// packs are treated as though they are empty.
-				//
-				continue;
-			}
-		}
-		return toFile(objectId).isFile();
+		return objectDatabase.hasObject(objectId);
 	}
 
 	/**
@@ -291,18 +225,7 @@ public class Repository {
 	 */
 	public ObjectLoader openObject(final WindowCursor curs, final AnyObjectId id)
 			throws IOException {
-		final PackFile[] packs = packs();
-		int k = packs.length;
-		while (k > 0) {
-			final ObjectLoader ol = packs[--k].get(curs, id);
-			if (ol != null)
-				return ol;
-		}
-		try {
-			return new UnpackedObjectLoader(this, id);
-		} catch (FileNotFoundException fnfe) {
-			return null;
-		}
+		return objectDatabase.openObject(curs, id);
 	}
 
 	/**
@@ -339,11 +262,7 @@ public class Repository {
 	void openObjectInAllPacks(final AnyObjectId objectId,
 			final Collection<PackedObjectLoader> resultLoaders,
 			final WindowCursor curs) throws IOException {
-		for (PackFile pack : packs()) {
-			final PackedObjectLoader loader = pack.get(curs, objectId);
-			if (loader != null)
-				resultLoaders.add(loader);
-		}
+		objectDatabase.openObjectInAllPacks(resultLoaders, curs, objectId);
 	}
 
 	/**
@@ -772,13 +691,7 @@ public class Repository {
 	 * Close all resources used by this repository
 	 */
 	public void close() {
-		closePacks();
-	}
-
-	synchronized void closePacks() {
-		for (int k = packFileList.length - 1; k >= 0; k--)
-			packFileList[k].close();
-		packFileList = new PackFile[0];
+		objectDatabase.close();
 	}
 
 	/**
@@ -793,72 +706,7 @@ public class Repository {
 	 *             a Git pack file index.
 	 */
 	public void openPack(final File pack, final File idx) throws IOException {
-		final String p = pack.getName();
-		final String i = idx.getName();
-		if (p.length() != 50 || !p.startsWith("pack-") || !p.endsWith(".pack"))
-		    throw new IllegalArgumentException("Not a valid pack " + pack);
-		if (i.length() != 49 || !i.startsWith("pack-") || !i.endsWith(".idx"))
-		    throw new IllegalArgumentException("Not a valid pack " + idx);
-		if (!p.substring(0,45).equals(i.substring(0,45)))
-			throw new IllegalArgumentException("Pack " + pack
-					+ "does not match index " + idx);
-
-		synchronized (this) {
-			final PackFile[] cur = packFileList;
-			final PackFile[] arr = new PackFile[cur.length + 1];
-			System.arraycopy(cur, 0, arr, 1, cur.length);
-			arr[0] = new PackFile(idx, pack);
-			packFileList = arr;
-		}
-	}
-
-	/**
-	 * Scan the object dirs, including alternates for packs
-	 * to use.
-	 */
-	public void scanForPacks() {
-		final ArrayList<PackFile> p = new ArrayList<PackFile>();
-		p.addAll(Arrays.asList(packs()));
-		for (final File d : objectsDirs())
-			scanForPacks(new File(d, "pack"), p);
-		final PackFile[] arr = new PackFile[p.size()];
-		p.toArray(arr);
-		Arrays.sort(arr, PackFile.SORT);
-		synchronized (this) {
-			packFileList = arr;
-		}
-	}
-
-	private void scanForPacks(final File packDir, Collection<PackFile> packList) {
-		final String[] idxList = packDir.list(new FilenameFilter() {
-			public boolean accept(final File baseDir, final String n) {
-				// Must match "pack-[0-9a-f]{40}.idx" to be an index.
-				return n.length() == 49 && n.endsWith(".idx")
-						&& n.startsWith("pack-");
-			}
-		});
-		if (idxList != null) {
-			SCAN: for (final String indexName : idxList) {
-				final String n = indexName.substring(0, indexName.length() - 4);
-				final File idxFile = new File(packDir, n + ".idx");
-				final File packFile = new File(packDir, n + ".pack");
-
-				if (!packFile.isFile()) {
-					// Sometimes C Git's http fetch transport leaves a
-					// .idx file behind and does not download the .pack.
-					// We have to skip over such useless indexes.
-					//
-					continue;
-				}
-
-				for (final PackFile p : packList) {
-					if (packFile.equals(p.getPackFile()))
-						continue SCAN;
-				}
-
-				packList.add(new PackFile(idxFile, packFile));
-			}
-		}
+		objectDatabase.openPack(pack, idx);
 	}
 
     /**

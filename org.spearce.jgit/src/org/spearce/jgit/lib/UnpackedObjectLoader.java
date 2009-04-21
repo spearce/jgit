@@ -38,6 +38,7 @@
 
 package org.spearce.jgit.lib;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -60,22 +61,25 @@ public class UnpackedObjectLoader extends ObjectLoader {
 	private final byte[] bytes;
 
 	/**
-	 * Construct an ObjectLoader for the specified SHA-1
+	 * Construct an ObjectLoader to read from the file.
 	 *
-	 * @param db
-	 *            repository
+	 * @param path
+	 *            location of the loose object to read.
 	 * @param id
-	 *            SHA-1
+	 *            expected identity of the object being loaded, if known.
+	 * @throws FileNotFoundException
+	 *             the loose object file does not exist.
 	 * @throws IOException
+	 *             the loose object file exists, but is corrupt.
 	 */
-	public UnpackedObjectLoader(final Repository db, final AnyObjectId id)
+	public UnpackedObjectLoader(final File path, final AnyObjectId id)
 			throws IOException {
-		this(readCompressed(db, id), id);
+		this(readCompressed(path), id);
 	}
 
-	private static byte[] readCompressed(final Repository db,
-			final AnyObjectId id) throws FileNotFoundException, IOException {
-		final FileInputStream in = new FileInputStream(db.toFile(id));
+	private static byte[] readCompressed(final File path)
+			throws FileNotFoundException, IOException {
+		final FileInputStream in = new FileInputStream(path);
 		try {
 			final byte[] compressed = new byte[(int) in.getChannel().size()];
 			NB.readFully(in, compressed, 0, compressed.length);

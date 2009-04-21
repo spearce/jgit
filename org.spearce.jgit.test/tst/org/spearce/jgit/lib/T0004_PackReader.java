@@ -89,7 +89,6 @@ public class T0004_PackReader extends RepositoryTestCase {
 				packname + ".pack"));
 		copyFile(new File(todopack, packname + ".idx"), new File(packDir,
 				packname + ".idx"));
-		db.scanForPacks();
 		Tree t;
 
 		t = db
