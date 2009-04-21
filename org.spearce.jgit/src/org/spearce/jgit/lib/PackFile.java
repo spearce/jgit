@@ -51,6 +51,7 @@ import java.util.zip.CheckedOutputStream;
 import java.util.zip.DataFormatException;
 
 import org.spearce.jgit.errors.CorruptObjectException;
+import org.spearce.jgit.errors.PackMismatchException;
 import org.spearce.jgit.util.NB;
 
 /**
@@ -292,16 +293,18 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		final long packCnt = NB.decodeUInt32(intbuf, 0);
 		final long idxCnt = idx.getObjectCount();
 		if (idxCnt != packCnt)
-			throw new IOException("Pack index"
-					+ " object count mismatch; expected " + packCnt
-					+ " found " + idxCnt + ": " + pack.getName());
+			throw new PackMismatchException("Pack object count mismatch:"
+					+ " pack " + packCnt
+					+ " index " + idxCnt
+					+ ": " + pack.getName());
 
 		final byte[] csumbuf = new byte[20];
 		pack.readFully(pack.length() - 20, csumbuf, curs);
 		if (!Arrays.equals(csumbuf, idx.packChecksum))
-			throw new IOException("Pack index mismatch; pack SHA-1 is "
-					+ ObjectId.fromRaw(csumbuf).name() + ", index expects "
-					+ ObjectId.fromRaw(idx.packChecksum).name());
+			throw new PackMismatchException("Pack checksum mismatch:"
+					+ " pack " + ObjectId.fromRaw(csumbuf).name()
+					+ " index " + ObjectId.fromRaw(idx.packChecksum).name()
+					+ ": " + pack.getName());
 	}
 
 	private PackedObjectLoader reader(final WindowCursor curs,
