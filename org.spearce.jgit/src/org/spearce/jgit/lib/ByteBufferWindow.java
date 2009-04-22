@@ -53,12 +53,12 @@ final class ByteBufferWindow extends ByteWindow<ByteBuffer> {
 	 *
 	 * @See ByteWindow
 	 *
-	 * @param o The WindowedFile
+	 * @param o The PackFile
 	 * @param p the file offset.
 	 * @param d Window id
 	 * @param b ByteBuffer storage
 	 */
-	ByteBufferWindow(final WindowedFile o, final long p, final int d,
+	ByteBufferWindow(final PackFile o, final long p, final int d,
 			final ByteBuffer b) {
 		super(o, p, d, b, b.capacity());
 	}

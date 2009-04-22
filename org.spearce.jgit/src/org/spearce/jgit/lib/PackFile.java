@@ -42,6 +42,9 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel.MapMode;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -53,6 +56,7 @@ import java.util.zip.DataFormatException;
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.PackMismatchException;
 import org.spearce.jgit.util.NB;
+import org.spearce.jgit.util.RawParseUtils;
 
 /**
  * A Git version 2 pack file representation. A pack file contains Git objects in
@@ -69,7 +73,16 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 
 	private final File idxFile;
 
-	private final WindowedFile pack;
+	private final File packFile;
+
+	final int hash;
+
+	RandomAccessFile fd;
+
+	long length;
+
+	/** Total number of windows actively in the associated cache. */
+	int openCount;
 
 	private int packLastModified;
 
@@ -89,18 +102,14 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	 */
 	public PackFile(final File idxFile, final File packFile) {
 		this.idxFile = idxFile;
+		this.packFile = packFile;
 		this.packLastModified = (int) (packFile.lastModified() >> 10);
-		pack = new WindowedFile(packFile) {
-			@Override
-			protected void onOpen() throws IOException {
-				try {
-					onOpenPack();
-				} catch (IOException e) {
-					invalid = true;
-					throw e;
-				}
-			}
-		};
+
+		// Multiply by 31 here so we can more directly combine with another
+		// value in WindowCache.hash(), without doing the multiply there.
+		//
+		hash = System.identityHashCode(this) * 31;
+		length = Long.MAX_VALUE;
 	}
 
 	private synchronized PackIndex idx() throws IOException {
@@ -122,7 +131,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 
 	/** @return the File object which locates this pack on disk. */
 	public File getPackFile() {
-		return pack.getFile();
+		return packFile;
 	}
 
 	/**
@@ -164,8 +173,8 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	 * Close the resources utilized by this repository
 	 */
 	public void close() {
-		UnpackedObjectCache.purge(pack);
-		pack.close();
+		UnpackedObjectCache.purge(this);
+		WindowCache.purge(this);
 		synchronized (this) {
 			loadedIdx = null;
 			reverseIdx = null;
@@ -219,17 +228,18 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	}
 
 	final UnpackedObjectCache.Entry readCache(final long position) {
-		return UnpackedObjectCache.get(pack, position);
+		return UnpackedObjectCache.get(this, position);
 	}
 
 	final void saveCache(final long position, final byte[] data, final int type) {
-		UnpackedObjectCache.store(pack, position, data, type);
+		UnpackedObjectCache.store(this, position, data, type);
 	}
 
 	final byte[] decompress(final long position, final int totalSize,
 			final WindowCursor curs) throws DataFormatException, IOException {
 		final byte[] dstbuf = new byte[totalSize];
-		pack.readCompressed(position, dstbuf, curs);
+		if (curs.inflate(this, position, dstbuf, 0) != totalSize)
+			throw new EOFException("Short compressed stream at " + position);
 		return dstbuf;
 	}
 
@@ -245,15 +255,13 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 			final CRC32 crc = new CRC32();
 			int headerCnt = (int) (dataOffset - objectOffset);
 			while (headerCnt > 0) {
-				int toRead = Math.min(headerCnt, buf.length);
-				int read = pack.read(objectOffset, buf, 0, toRead, curs);
-				if (read != toRead)
-					throw new EOFException();
-				crc.update(buf, 0, read);
+				final int toRead = Math.min(headerCnt, buf.length);
+				readFully(objectOffset, buf, 0, toRead, curs);
+				crc.update(buf, 0, toRead);
 				headerCnt -= toRead;
 			}
 			final CheckedOutputStream crcOut = new CheckedOutputStream(out, crc);
-			pack.copyToStream(dataOffset, buf, cnt, crcOut, curs);
+			copyToStream(dataOffset, buf, cnt, crcOut, curs);
 			final long computed = crc.getValue();
 
 			final ObjectId id = findObjectForOffset(objectOffset);
@@ -263,7 +271,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 						+ " in " + getPackFile() + " has bad zlib stream");
 		} else {
 			try {
-				pack.verifyCompressed(dataOffset, curs);
+				curs.inflateVerify(this, dataOffset);
 			} catch (DataFormatException dfe) {
 				final CorruptObjectException coe;
 				coe = new CorruptObjectException("Object at " + dataOffset
@@ -271,7 +279,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 				coe.initCause(dfe);
 				throw coe;
 			}
-			pack.copyToStream(dataOffset, buf, cnt, out, curs);
+			copyToStream(dataOffset, buf, cnt, out, curs);
 		}
 	}
 
@@ -283,44 +291,127 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		return invalid;
 	}
 
+	private void readFully(final long position, final byte[] dstbuf,
+			int dstoff, final int cnt, final WindowCursor curs)
+			throws IOException {
+		if (curs.copy(this, position, dstbuf, dstoff, cnt) != cnt)
+			throw new EOFException();
+	}
+
+	private void copyToStream(long position, final byte[] buf, long cnt,
+			final OutputStream out, final WindowCursor curs)
+			throws IOException, EOFException {
+		while (cnt > 0) {
+			final int toRead = (int) Math.min(cnt, buf.length);
+			readFully(position, buf, 0, toRead, curs);
+			position += toRead;
+			cnt -= toRead;
+			out.write(buf, 0, toRead);
+		}
+	}
+
+	void cacheOpen() throws IOException {
+		fd = new RandomAccessFile(packFile, "r");
+		length = fd.length();
+		try {
+			onOpenPack();
+		} catch (IOException ioe) {
+			invalid = true;
+			cacheClose();
+			throw ioe;
+		} catch (RuntimeException re) {
+			invalid = true;
+			cacheClose();
+			throw re;
+		} catch (Error re) {
+			invalid = true;
+			cacheClose();
+			throw re;
+		}
+	}
+
+	void cacheClose() {
+		if (fd != null) {
+			try {
+				fd.close();
+			} catch (IOException err) {
+				// Ignore a close event. We had it open only for reading.
+				// There should not be errors related to network buffers
+				// not flushed, etc.
+			}
+			fd = null;
+		}
+	}
+
+	void allocWindow(final WindowCursor curs, final int windowId,
+			final long pos, final int size) {
+		if (WindowCache.mmap) {
+			MappedByteBuffer map;
+			try {
+				map = fd.getChannel().map(MapMode.READ_ONLY, pos, size);
+			} catch (IOException e) {
+				// The most likely reason this failed is the JVM has run out
+				// of virtual memory. We need to discard quickly, and try to
+				// force the GC to finalize and release any existing mappings.
+				try {
+					curs.release();
+					System.gc();
+					System.runFinalization();
+					map = fd.getChannel().map(MapMode.READ_ONLY, pos, size);
+				} catch (IOException ioe2) {
+					// Temporarily disable mmap and do buffered disk IO.
+					//
+					map = null;
+					System.err.println("warning: mmap failure: "+ioe2);
+				}
+			}
+			if (map != null) {
+				if (map.hasArray()) {
+					final byte[] b = map.array();
+					final ByteArrayWindow w;
+					w = new ByteArrayWindow(this, pos, windowId, b);
+					w.loaded = true;
+					curs.window = w;
+					curs.handle = b;
+				} else {
+					curs.window = new ByteBufferWindow(this, pos, windowId, map);
+					curs.handle = map;
+				}
+				return;
+			}
+		}
+
+		final byte[] b = new byte[size];
+		curs.window = new ByteArrayWindow(this, pos, windowId, b);
+		curs.handle = b;
+		openCount++; // Until the window loads, we must stay open.
+	}
+
 	private void onOpenPack() throws IOException {
 		final PackIndex idx = idx();
 		final WindowCursor curs = new WindowCursor();
-		long position = 0;
-		final byte[] sig = new byte[Constants.PACK_SIGNATURE.length];
-		final byte[] intbuf = new byte[4];
-		final long vers;
+		final byte[] buf = new byte[20];
 
-		if (pack.read(position, sig, curs) != Constants.PACK_SIGNATURE.length)
+		readFully(0, buf, 0, 12, curs);
+		if (RawParseUtils.match(buf, 0, Constants.PACK_SIGNATURE) != 4)
 			throw new IOException("Not a PACK file.");
-		for (int k = 0; k < Constants.PACK_SIGNATURE.length; k++) {
-			if (sig[k] != Constants.PACK_SIGNATURE[k])
-				throw new IOException("Not a PACK file.");
-		}
-		position += Constants.PACK_SIGNATURE.length;
-
-		pack.readFully(position, intbuf, curs);
-		vers = NB.decodeUInt32(intbuf, 0);
+		final long vers = NB.decodeUInt32(buf, 4);
+		final long packCnt = NB.decodeUInt32(buf, 8);
 		if (vers != 2 && vers != 3)
 			throw new IOException("Unsupported pack version " + vers + ".");
-		position += 4;
 
-		pack.readFully(position, intbuf, curs);
-		final long packCnt = NB.decodeUInt32(intbuf, 0);
-		final long idxCnt = idx.getObjectCount();
-		if (idxCnt != packCnt)
+		if (packCnt != idx.getObjectCount())
 			throw new PackMismatchException("Pack object count mismatch:"
 					+ " pack " + packCnt
-					+ " index " + idxCnt
-					+ ": " + pack.getName());
+					+ " index " + idx.getObjectCount()
+					+ ": " + getPackFile());
 
-		final byte[] csumbuf = new byte[20];
-		pack.readFully(pack.length() - 20, csumbuf, curs);
-		if (!Arrays.equals(csumbuf, idx.packChecksum))
+		readFully(length - 20, buf, 0, 20, curs);
+		if (!Arrays.equals(buf, idx.packChecksum))
 			throw new PackMismatchException("Pack checksum mismatch:"
-					+ " pack " + ObjectId.fromRaw(csumbuf).name()
+					+ " pack " + ObjectId.fromRaw(buf).name()
 					+ " index " + ObjectId.fromRaw(idx.packChecksum).name()
-					+ ": " + pack.getName());
+					+ ": " + getPackFile());
 	}
 
 	private PackedObjectLoader reader(final WindowCursor curs,
@@ -328,7 +419,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		long pos = objOffset;
 		int p = 0;
 		final byte[] ib = curs.tempId;
-		pack.readFully(pos, ib, curs);
+		readFully(pos, ib, 0, 20, curs);
 		int c = ib[p++] & 0xff;
 		final int typeCode = (c >> 4) & 7;
 		long dataSize = c & 15;
@@ -349,7 +440,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 					typeCode, (int) dataSize);
 
 		case Constants.OBJ_OFS_DELTA: {
-			pack.readFully(pos, ib, curs);
+			readFully(pos, ib, 0, 20, curs);
 			p = 0;
 			c = ib[p++] & 0xff;
 			long ofs = c & 127;
@@ -363,7 +454,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 					objOffset, (int) dataSize, objOffset - ofs);
 		}
 		case Constants.OBJ_REF_DELTA: {
-			pack.readFully(pos, ib, curs);
+			readFully(pos, ib, 0, 20, curs);
 			return new DeltaRefPackedObjectLoader(curs, this, pos + ib.length,
 					objOffset, (int) dataSize, ObjectId.fromRaw(ib));
 		}
@@ -374,7 +465,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 
 	private long findEndOffset(final long startOffset)
 			throws IOException, CorruptObjectException {
-		final long maxOffset = pack.length() - Constants.OBJECT_ID_LENGTH;
+		final long maxOffset = length - 20;
 		return getReverseIdx().findNextOffset(startOffset, maxOffset);
 	}
 

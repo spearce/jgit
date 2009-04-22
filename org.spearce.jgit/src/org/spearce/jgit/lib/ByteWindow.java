@@ -64,7 +64,7 @@ abstract class ByteWindow<T> extends SoftReference<T> {
 
 	ByteWindow<?> lruNext;
 
-	final WindowedFile provider;
+	final PackFile provider;
 
 	final int id;
 
@@ -78,19 +78,19 @@ abstract class ByteWindow<T> extends SoftReference<T> {
 	 * Constructor for ByteWindow.
 	 * 
 	 * @param o
-	 *            the WindowedFile providing data access
+	 *            the PackFile providing data access
 	 * @param pos
 	 *            the position in the file the data comes from.
 	 * @param d
-	 *            an id provided by the WindowedFile. See
-	 *            {@link WindowCache#get(WindowCursor, WindowedFile, long)}.
+	 *            an id provided by the PackFile. See
+	 *            {@link WindowCache#get(WindowCursor, PackFile, long)}.
 	 * @param ref
 	 *            the object value required to perform data access.
 	 * @param sz
 	 *            the total number of bytes in this window.
 	 */
 	@SuppressWarnings("unchecked")
-	ByteWindow(final WindowedFile o, final long pos, final int d, final T ref,
+	ByteWindow(final PackFile o, final long pos, final int d, final T ref,
 			final int sz) {
 		super(ref, (ReferenceQueue<T>) WindowCache.clearedWindowQueue);
 		provider = o;
@@ -100,7 +100,7 @@ abstract class ByteWindow<T> extends SoftReference<T> {
 		end = start + size;
 	}
 
-	final boolean contains(final WindowedFile neededFile, final long neededPos) {
+	final boolean contains(final PackFile neededFile, final long neededPos) {
 		return provider == neededFile && start <= neededPos && neededPos < end;
 	}
 

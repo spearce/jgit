@@ -217,14 +217,14 @@ public class WindowCache {
 	 *             the window was not found in the cache and the given provider
 	 *             was unable to load the window on demand.
 	 */
-	public static final void get(final WindowCursor curs,
-			final WindowedFile wp, final long position) throws IOException {
+	public static final void get(final WindowCursor curs, final PackFile wp,
+			final long position) throws IOException {
 		getImpl(curs, wp, position);
 		curs.window.ensureLoaded(curs.handle);
 	}
 
 	private static synchronized final void getImpl(final WindowCursor curs,
-			final WindowedFile wp, final long position) throws IOException {
+			final PackFile wp, final long position) throws IOException {
 		final int id = (int) (position >> windowSizeShift);
 		final int idx = hash(wp, id);
 		for (ByteWindow<?> e = cache[idx]; e != null; e = e.chainNext) {
@@ -333,7 +333,7 @@ public class WindowCache {
 	 *            the window provider whose windows should be removed from the
 	 *            cache.
 	 */
-	public static synchronized final void purge(final WindowedFile wp) {
+	public static synchronized final void purge(final PackFile wp) {
 		for (ByteWindow e : cache) {
 			for (; e != null; e = e.chainNext) {
 				if (e.provider == wp)
@@ -413,15 +413,15 @@ public class WindowCache {
 		lruHead = e;
 	}
 
-	private static int hash(final WindowedFile wp, final int id) {
+	private static int hash(final PackFile wp, final int id) {
 		// wp.hash was already "stirred up" a bit by * 31 when
 		// it was created. Its reasonable to just add here.
 		//
 		return ((wp.hash + id) >>> 1) % cache.length;
 	}
 
-	private static int windowSize(final WindowedFile file, final int id) {
-		final long len = file.length();
+	private static int windowSize(final PackFile file, final int id) {
+		final long len = file.length;
 		final long pos = id << windowSizeShift;
 		return len < pos + windowSize ? (int) (len - pos) : windowSize;
 	}

@@ -53,17 +53,16 @@ final class ByteArrayWindow extends ByteWindow<byte[]> {
 	 * Constructor for ByteWindow.
 	 * 
 	 * @param o
-	 *            the WindowedFile providing data access
+	 *            the PackFile providing data access
 	 * @param p
 	 *            the file offset.
 	 * @param d
-	 *            an id provided by the WindowedFile. See
-	 *            {@link WindowCache#get(WindowCursor, WindowedFile, long)}.
+	 *            an id provided by the PackFile. See
+	 *            {@link WindowCache#get(WindowCursor, PackFile, long)}.
 	 * @param b
 	 *            byte array for storage
 	 */
-	ByteArrayWindow(final WindowedFile o, final long p, final int d,
-			final byte[] b) {
+	ByteArrayWindow(final PackFile o, final long p, final int d, final byte[] b) {
 		super(o, p, d, b, b.length);
 	}
 

@@ -74,9 +74,9 @@ public final class WindowCursor {
 	 *             this cursor does not match the provider or id and the proper
 	 *             window could not be acquired through the provider's cache.
 	 */
-	int copy(final WindowedFile provider, long position, final byte[] dstbuf,
+	int copy(final PackFile provider, long position, final byte[] dstbuf,
 			int dstoff, final int cnt) throws IOException {
-		final long length = provider.length();
+		final long length = provider.length;
 		int need = cnt;
 		while (need > 0 && position < length) {
 			pin(provider, position);
@@ -109,9 +109,8 @@ public final class WindowCursor {
 	 *             the inflater encountered an invalid chunk of data. Data
 	 *             stream corruption is likely.
 	 */
-	int inflate(final WindowedFile provider, long position,
-			final byte[] dstbuf, int dstoff)
-			throws IOException, DataFormatException {
+	int inflate(final PackFile provider, long position, final byte[] dstbuf,
+			int dstoff) throws IOException, DataFormatException {
 		if (inf == null)
 			inf = InflaterCache.get();
 		else
@@ -125,7 +124,7 @@ public final class WindowCursor {
 		}
 	}
 
-	void inflateVerify(final WindowedFile provider, long position)
+	void inflateVerify(final PackFile provider, long position)
 			throws IOException, DataFormatException {
 		if (inf == null)
 			inf = InflaterCache.get();
@@ -140,8 +139,7 @@ public final class WindowCursor {
 		}
 	}
 
-
-	private void pin(final WindowedFile provider, final long position)
+	private void pin(final PackFile provider, final long position)
 			throws IOException {
 		final ByteWindow w = window;
 		if (w == null || !w.contains(provider, position))

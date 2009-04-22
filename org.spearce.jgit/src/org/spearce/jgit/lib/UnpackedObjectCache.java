@@ -75,7 +75,7 @@ class UnpackedObjectCache {
 		}
 	}
 
-	static synchronized Entry get(final WindowedFile pack, final long position) {
+	static synchronized Entry get(final PackFile pack, final long position) {
 		final Slot e = cache[hash(position)];
 		if (e.provider == pack && e.position == position) {
 			final Entry buf = e.data.get();
@@ -87,8 +87,8 @@ class UnpackedObjectCache {
 		return null;
 	}
 
-	static synchronized void store(final WindowedFile pack,
-			final long position, final byte[] data, final int objectType) {
+	static synchronized void store(final PackFile pack, final long position,
+			final byte[] data, final int objectType) {
 		if (data.length > maxByteCount)
 			return; // Too large to cache.
 
@@ -122,7 +122,7 @@ class UnpackedObjectCache {
 		}
 	}
 
-	static synchronized void purge(final WindowedFile file) {
+	static synchronized void purge(final PackFile file) {
 		for (final Slot e : cache) {
 			if (e.provider == file) {
 				clearEntry(e);
@@ -178,7 +178,7 @@ class UnpackedObjectCache {
 
 		Slot lruNext;
 
-		WindowedFile provider;
+		PackFile provider;
 
 		long position;
 
