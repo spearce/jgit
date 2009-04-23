@@ -192,10 +192,12 @@ public class UnpackedObjectLoader extends ObjectLoader {
 			throw new CorruptObjectException(id, "incorrect length");
 	}
 
+	@Override
 	public int getType() {
 		return objectType;
 	}
 
+	@Override
 	public long getSize() {
 		return objectSize;
 	}
