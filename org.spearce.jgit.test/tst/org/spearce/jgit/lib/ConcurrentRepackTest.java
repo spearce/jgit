@@ -41,6 +41,7 @@ package org.spearce.jgit.lib;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
@@ -126,6 +127,45 @@ public class ConcurrentRepackTest extends RepositoryTestCase {
 		//
 		assertEquals(o1.name(), parse(o1).name());
 		assertEquals(o2.name(), parse(o2).name());
+	}
+
+	public void testObjectMovedToNewPack2()
+			throws IncorrectObjectTypeException, IOException {
+		// Create an object and pack it. Then remove that pack and put the
+		// object into a different pack file, with some other object. We
+		// still should be able to access the objects.
+		//
+		final Repository eden = createNewEmptyRepo();
+		final RevObject o1 = writeBlob(eden, "o1");
+		final File[] out1 = pack(eden, o1);
+		assertEquals(o1.name(), parse(o1).name());
+
+		final ObjectLoader load1 = db.openBlob(o1);
+		assertNotNull(load1);
+
+		final RevObject o2 = writeBlob(eden, "o2");
+		pack(eden, o2, o1);
+
+		// Force close, and then delete, the old pack.
+		//
+		whackCache();
+		delete(out1);
+
+		// Now here is the interesting thing... can the loader we made
+		// earlier still resolve the object, even though its underlying
+		// pack is gone, but the object still exists.
+		//
+		final ObjectLoader load2 = db.openBlob(o1);
+		assertNotNull(load2);
+		assertNotSame(load1, load2);
+
+		final byte[] data2 = load2.getCachedBytes();
+		final byte[] data1 = load1.getCachedBytes();
+		assertNotNull(data2);
+		assertNotNull(data1);
+		assertNotSame(data1, data2); // cache should be per-pack, not per object
+		assertTrue(Arrays.equals(data1, data2));
+		assertEquals(load2.getType(), load1.getType());
 	}
 
 	private static void whackCache() {
