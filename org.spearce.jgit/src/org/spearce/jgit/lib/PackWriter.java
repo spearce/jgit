@@ -606,19 +606,25 @@ public class PackWriter {
 					throw new IOException(
 							"Packing cancelled during objects writing");
 				reuseLoaders.clear();
-				db.openObjectInAllPacks(otp, reuseLoaders, windowCursor);
-				if (reuseDeltas) {
-					selectDeltaReuseForObject(otp, reuseLoaders);
-				}
-				// delta reuse is preferred over object reuse
-				if (reuseObjects && !otp.hasReuseLoader()) {
-					selectObjectReuseForObject(otp, reuseLoaders);
-				}
+				searchForReuse(reuseLoaders, otp);
 				initMonitor.update(1);
 			}
 		}
 
 		initMonitor.endTask();
+	}
+
+	private void searchForReuse(
+			final Collection<PackedObjectLoader> reuseLoaders,
+			final ObjectToPack otp) throws IOException {
+		db.openObjectInAllPacks(otp, reuseLoaders, windowCursor);
+		if (reuseDeltas) {
+			selectDeltaReuseForObject(otp, reuseLoaders);
+		}
+		// delta reuse is preferred over object reuse
+		if (reuseObjects && !otp.hasReuseLoader()) {
+			selectObjectReuseForObject(otp, reuseLoaders);
+		}
 	}
 
 	private void selectDeltaReuseForObject(final ObjectToPack otp,
@@ -707,40 +713,69 @@ public class PackWriter {
 
 		out.resetCRC32();
 		otp.setOffset(out.length());
-		if (otp.isDeltaRepresentation())
-			writeDeltaObject(otp);
-		else
-			writeWholeObject(otp);
+
+		final PackedObjectLoader reuse = open(otp);
+		if (reuse != null) {
+			try {
+				if (otp.isDeltaRepresentation()) {
+					writeDeltaObjectReuse(otp, reuse);
+				} else {
+					writeObjectHeader(otp.getType(), reuse.getSize());
+					reuse.copyRawData(out, buf, windowCursor);
+				}
+			} finally {
+				reuse.endCopyRawData();
+			}
+		} else if (otp.isDeltaRepresentation()) {
+			throw new IOException("creating deltas is not implemented");
+		} else {
+			writeWholeObjectDeflate(otp);
+		}
 		otp.setCRC(out.getCRC32());
 
 		writeMonitor.update(1);
 	}
 
-	private void writeWholeObject(final ObjectToPack otp) throws IOException {
-		if (otp.hasReuseLoader()) {
-			final PackedObjectLoader loader = otp.getReuseLoader();
-			writeObjectHeader(otp.getType(), loader.getSize());
-			loader.copyRawData(out, buf, windowCursor);
-			otp.disposeLoader();
-		} else {
-			final ObjectLoader loader = db.openObject(windowCursor, otp);
-			final byte[] data = loader.getCachedBytes();
-			writeObjectHeader(otp.getType(), data.length);
-			deflater.reset();
-			deflater.setInput(data, 0, data.length);
-			deflater.finish();
-			do {
-				final int n = deflater.deflate(buf, 0, buf.length);
-				if (n > 0)
-					out.write(buf, 0, n);
-			} while (!deflater.finished());
+	private PackedObjectLoader open(final ObjectToPack otp) throws IOException {
+		for (;;) {
+			PackedObjectLoader reuse = otp.useLoader();
+			if (reuse == null) {
+				return null;
+			}
+
+			try {
+				reuse.beginCopyRawData();
+				return reuse;
+			} catch (IOException err) {
+				// The pack we found the object in originally is gone, or
+				// it has been overwritten with a different layout.
+				//
+				otp.clearDeltaBase();
+				searchForReuse(new ArrayList<PackedObjectLoader>(), otp);
+				continue;
+			}
 		}
 	}
 
-	private void writeDeltaObject(final ObjectToPack otp) throws IOException {
-		final PackedObjectLoader loader = otp.getReuseLoader();
+	private void writeWholeObjectDeflate(final ObjectToPack otp)
+			throws IOException {
+		final ObjectLoader loader = db.openObject(windowCursor, otp);
+		final byte[] data = loader.getCachedBytes();
+		writeObjectHeader(otp.getType(), data.length);
+		deflater.reset();
+		deflater.setInput(data, 0, data.length);
+		deflater.finish();
+		do {
+			final int n = deflater.deflate(buf, 0, buf.length);
+			if (n > 0)
+				out.write(buf, 0, n);
+		} while (!deflater.finished());
+	}
+
+	private void writeDeltaObjectReuse(final ObjectToPack otp,
+			final PackedObjectLoader reuse) throws IOException {
 		if (deltaBaseAsOffset && otp.getDeltaBase() != null) {
-			writeObjectHeader(Constants.OBJ_OFS_DELTA, loader.getRawSize());
+			writeObjectHeader(Constants.OBJ_OFS_DELTA, reuse.getRawSize());
 
 			final ObjectToPack deltaBase = otp.getDeltaBase();
 			long offsetDiff = otp.getOffset() - deltaBase.getOffset();
@@ -752,12 +787,11 @@ public class PackWriter {
 
 			out.write(buf, pos, buf.length - pos);
 		} else {
-			writeObjectHeader(Constants.OBJ_REF_DELTA, loader.getRawSize());
+			writeObjectHeader(Constants.OBJ_REF_DELTA, reuse.getRawSize());
 			otp.getDeltaBaseId().copyRawTo(buf, 0);
 			out.write(buf, 0, Constants.OBJECT_ID_LENGTH);
 		}
-		loader.copyRawData(out, buf, windowCursor);
-		otp.disposeLoader();
+		reuse.copyRawData(out, buf, windowCursor);
 	}
 
 	private void writeObjectHeader(final int objectType, long dataLength)
@@ -955,8 +989,10 @@ public class PackWriter {
 			return getOffset() != 0;
 		}
 
-		PackedObjectLoader getReuseLoader() {
-			return reuseLoader;
+		PackedObjectLoader useLoader() {
+			final PackedObjectLoader r = reuseLoader;
+			reuseLoader = null;
+			return r;
 		}
 
 		boolean hasReuseLoader() {

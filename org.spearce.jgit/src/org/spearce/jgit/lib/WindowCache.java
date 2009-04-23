@@ -223,6 +223,19 @@ public class WindowCache {
 		curs.window.ensureLoaded(curs.handle);
 	}
 
+	static synchronized final void pin(final PackFile wp) throws IOException {
+		if (++wp.openCount == 1) {
+			openFile(wp);
+		}
+	}
+
+	static synchronized final void unpin(final PackFile wp) {
+		if (--wp.openCount == 0) {
+			openFileCount--;
+			wp.cacheClose();
+		}
+	}
+
 	private static synchronized final void getImpl(final WindowCursor curs,
 			final PackFile wp, final long position) throws IOException {
 		final int id = (int) (position >> windowSizeShift);
@@ -241,27 +254,7 @@ public class WindowCache {
 		}
 
 		if (wp.openCount == 0) {
-			try {
-				openFileCount++;
-				releaseMemory();
-				runClearedWindowQueue();
-				wp.openCount = 1;
-				wp.cacheOpen();
-			} catch (IOException ioe) {
-				openFileCount--;
-				wp.openCount = 0;
-				throw ioe;
-			} catch (RuntimeException ioe) {
-				openFileCount--;
-				wp.openCount = 0;
-				throw ioe;
-			} catch (Error ioe) {
-				openFileCount--;
-				wp.openCount = 0;
-				throw ioe;
-			} finally {
-				wp.openCount--;
-			}
+			openFile(wp);
 
 			// The cacheOpen may have mapped the window we are trying to
 			// map ourselves. Retrying the search ensures that does not
@@ -292,6 +285,30 @@ public class WindowCache {
 		e.chainNext = cache[idx];
 		cache[idx] = e;
 		insertLRU(e);
+	}
+
+	private static void openFile(final PackFile wp) throws IOException {
+		try {
+			openFileCount++;
+			releaseMemory();
+			runClearedWindowQueue();
+			wp.openCount = 1;
+			wp.cacheOpen();
+		} catch (IOException ioe) {
+			openFileCount--;
+			wp.openCount = 0;
+			throw ioe;
+		} catch (RuntimeException ioe) {
+			openFileCount--;
+			wp.openCount = 0;
+			throw ioe;
+		} catch (Error ioe) {
+			openFileCount--;
+			wp.openCount = 0;
+			throw ioe;
+		} finally {
+			wp.openCount--;
+		}
 	}
 
 	static synchronized void markLoaded(final ByteWindow w) {
