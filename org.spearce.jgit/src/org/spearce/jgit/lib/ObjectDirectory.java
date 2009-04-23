@@ -197,8 +197,9 @@ public class ObjectDirectory extends ObjectDatabase {
 		SEARCH: for (;;) {
 			for (final PackFile p : pList) {
 				try {
-					final ObjectLoader ldr = p.get(curs, objectId);
+					final PackedObjectLoader ldr = p.get(curs, objectId);
 					if (ldr != null) {
+						ldr.materialize(curs);
 						return ldr;
 					}
 				} catch (PackMismatchException e) {

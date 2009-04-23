@@ -49,47 +49,39 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 
 	private final int deltaSize;
 
-	DeltaPackedObjectLoader(final WindowCursor curs, final PackFile pr,
-			final long dataOffset, final long objectOffset, final int deltaSz) {
-		super(curs, pr, dataOffset, objectOffset);
+	DeltaPackedObjectLoader(final PackFile pr, final long dataOffset,
+			final long objectOffset, final int deltaSz) {
+		super(pr, dataOffset, objectOffset);
 		objectType = -1;
 		deltaSize = deltaSz;
 	}
 
-	public int getType() throws IOException {
-		if (objectType < 0)
-			getCachedBytes();
-		return objectType;
-	}
-
-	public long getSize() throws IOException {
-		if (objectType < 0)
-			getCachedBytes();
-		return objectSize;
-	}
-
 	@Override
-	public byte[] getCachedBytes() throws IOException {
+	public void materialize(final WindowCursor curs) throws IOException {
+		if (cachedBytes != null) {
+			return;
+		}
+
 		if (objectType != OBJ_COMMIT) {
 			final UnpackedObjectCache.Entry cache = pack.readCache(dataOffset);
 			if (cache != null) {
 				curs.release();
 				objectType = cache.type;
 				objectSize = cache.data.length;
-				return cache.data;
+				cachedBytes = cache.data;
 			}
 		}
 
 		try {
-			final PackedObjectLoader baseLoader = getBaseLoader();
-			final byte[] data = BinaryDelta.apply(baseLoader.getCachedBytes(),
+			final PackedObjectLoader baseLoader = getBaseLoader(curs);
+			baseLoader.materialize(curs);
+			cachedBytes = BinaryDelta.apply(baseLoader.getCachedBytes(),
 					pack.decompress(dataOffset, deltaSize, curs));
 			curs.release();
 			objectType = baseLoader.getType();
-			objectSize = data.length;
+			objectSize = cachedBytes.length;
 			if (objectType != OBJ_COMMIT)
-				pack.saveCache(dataOffset, data, objectType);
-			return data;
+				pack.saveCache(dataOffset, cachedBytes, objectType);
 		} catch (DataFormatException dfe) {
 			final CorruptObjectException coe;
 			coe = new CorruptObjectException("Object at " + dataOffset + " in "
@@ -105,8 +97,11 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 	}
 
 	/**
+	 * @param curs
+	 *            temporary thread storage during data access.
 	 * @return the object loader for the base object
 	 * @throws IOException
 	 */
-	protected abstract PackedObjectLoader getBaseLoader() throws IOException;
+	protected abstract PackedObjectLoader getBaseLoader(WindowCursor curs)
+			throws IOException;
 }

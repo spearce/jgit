@@ -46,30 +46,33 @@ import org.spearce.jgit.errors.CorruptObjectException;
 class WholePackedObjectLoader extends PackedObjectLoader {
 	private static final int OBJ_COMMIT = Constants.OBJ_COMMIT;
 
-	WholePackedObjectLoader(final WindowCursor curs, final PackFile pr,
-			final long dataOffset, final long objectOffset, final int type,
-			final int size) {
-		super(curs, pr, dataOffset, objectOffset);
+	WholePackedObjectLoader(final PackFile pr, final long dataOffset,
+			final long objectOffset, final int type, final int size) {
+		super(pr, dataOffset, objectOffset);
 		objectType = type;
 		objectSize = size;
 	}
 
 	@Override
-	public byte[] getCachedBytes() throws IOException {
+	public void materialize(final WindowCursor curs) throws IOException {
+		if (cachedBytes != null) {
+			return;
+		}
+
 		if (objectType != OBJ_COMMIT) {
 			final UnpackedObjectCache.Entry cache = pack.readCache(dataOffset);
 			if (cache != null) {
 				curs.release();
-				return cache.data;
+				cachedBytes = cache.data;
+				return;
 			}
 		}
 
 		try {
-			final byte[] data = pack.decompress(dataOffset, objectSize, curs);
+			cachedBytes = pack.decompress(dataOffset, objectSize, curs);
 			curs.release();
 			if (objectType != OBJ_COMMIT)
-				pack.saveCache(dataOffset, data, objectType);
-			return data;
+				pack.saveCache(dataOffset, cachedBytes, objectType);
 		} catch (DataFormatException dfe) {
 			final CorruptObjectException coe;
 			coe = new CorruptObjectException("Object at " + dataOffset + " in "

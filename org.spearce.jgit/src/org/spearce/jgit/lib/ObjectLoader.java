@@ -38,7 +38,6 @@
 
 package org.spearce.jgit.lib;
 
-import java.io.IOException;
 
 /**
  * Base class for a set of loaders for different representations of Git objects.
@@ -47,15 +46,13 @@ import java.io.IOException;
 public abstract class ObjectLoader {
 	/**
 	 * @return Git in pack object type, see {@link Constants}.
-	 * @throws IOException
 	 */
-	public abstract int getType() throws IOException;
+	public abstract int getType();
 
 	/**
 	 * @return size of object in bytes
-	 * @throws IOException
 	 */
-	public abstract long getSize() throws IOException;
+	public abstract long getSize();
 
 	/**
 	 * Obtain a copy of the bytes of this object.
@@ -64,10 +61,8 @@ public abstract class ObjectLoader {
 	 * be modified by the caller.
 	 * 
 	 * @return the bytes of this object.
-	 * @throws IOException
-	 *             the object cannot be read.
 	 */
-	public final byte[] getBytes() throws IOException {
+	public final byte[] getBytes() {
 		final byte[] data = getCachedBytes();
 		final byte[] copy = new byte[data.length];
 		System.arraycopy(data, 0, copy, 0, data.length);
@@ -83,25 +78,19 @@ public abstract class ObjectLoader {
 	 * Changes (if made) will affect the cache but not the repository itself.
 	 * 
 	 * @return the cached bytes of this object. Do not modify it.
-	 * @throws IOException
-	 *             the object cannot be read.
 	 */
-	public abstract byte[] getCachedBytes() throws IOException;
+	public abstract byte[] getCachedBytes();
 
 	/**
 	 * @return raw object type from object header, as stored in storage (pack,
 	 *         loose file). This may be different from {@link #getType()} result
 	 *         for packs (see {@link Constants}).
-	 * @throws IOException
-	 *             when type cannot be read from the object header.
 	 */
-	public abstract int getRawType() throws IOException;
+	public abstract int getRawType();
 
 	/**
 	 * @return raw size of object from object header (pack, loose file).
 	 *         Interpretation of this value depends on {@link #getRawType()}.
-	 * @throws IOException
-	 *             when raw size cannot be read from the object header.
 	 */
-	public abstract long getRawSize() throws IOException;
+	public abstract long getRawSize();
 }

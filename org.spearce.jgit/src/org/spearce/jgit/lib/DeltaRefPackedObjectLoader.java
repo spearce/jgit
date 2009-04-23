@@ -46,14 +46,15 @@ import org.spearce.jgit.errors.MissingObjectException;
 class DeltaRefPackedObjectLoader extends DeltaPackedObjectLoader {
 	private final ObjectId deltaBase;
 
-	DeltaRefPackedObjectLoader(final WindowCursor curs, final PackFile pr,
+	DeltaRefPackedObjectLoader(final PackFile pr,
 			final long dataOffset, final long objectOffset, final int deltaSz,
 			final ObjectId base) {
-		super(curs, pr, dataOffset, objectOffset, deltaSz);
+		super(pr, dataOffset, objectOffset, deltaSz);
 		deltaBase = base;
 	}
 
-	protected PackedObjectLoader getBaseLoader() throws IOException {
+	protected PackedObjectLoader getBaseLoader(final WindowCursor curs)
+			throws IOException {
 		final PackedObjectLoader or = pack.get(curs, deltaBase);
 		if (or == null)
 			throw new MissingObjectException(deltaBase, "delta base");
@@ -61,7 +62,7 @@ class DeltaRefPackedObjectLoader extends DeltaPackedObjectLoader {
 	}
 
 	@Override
-	public int getRawType() throws IOException {
+	public int getRawType() {
 		return Constants.OBJ_REF_DELTA;
 	}
 

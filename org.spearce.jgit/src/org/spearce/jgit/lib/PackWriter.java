@@ -720,7 +720,7 @@ public class PackWriter {
 		if (otp.hasReuseLoader()) {
 			final PackedObjectLoader loader = otp.getReuseLoader();
 			writeObjectHeader(otp.getType(), loader.getSize());
-			loader.copyRawData(out, buf);
+			loader.copyRawData(out, buf, windowCursor);
 			otp.disposeLoader();
 		} else {
 			final ObjectLoader loader = db.openObject(windowCursor, otp);
@@ -756,7 +756,7 @@ public class PackWriter {
 			otp.getDeltaBaseId().copyRawTo(buf, 0);
 			out.write(buf, 0, Constants.OBJECT_ID_LENGTH);
 		}
-		loader.copyRawData(out, buf);
+		loader.copyRawData(out, buf, windowCursor);
 		otp.disposeLoader();
 	}
 

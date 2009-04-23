@@ -47,8 +47,6 @@ import java.io.OutputStream;
 abstract class PackedObjectLoader extends ObjectLoader {
 	protected final PackFile pack;
 
-	protected final WindowCursor curs;
-
 	protected final long dataOffset;
 
 	protected final long objectOffset;
@@ -57,26 +55,53 @@ abstract class PackedObjectLoader extends ObjectLoader {
 
 	protected int objectSize;
 
-	PackedObjectLoader(final WindowCursor c, final PackFile pr,
-			final long dataOffset, final long objectOffset) {
-		curs = c;
+	protected byte[] cachedBytes;
+
+	PackedObjectLoader(final PackFile pr, final long dataOffset,
+			final long objectOffset) {
 		pack = pr;
 		this.dataOffset = dataOffset;
 		this.objectOffset = objectOffset;
 	}
 
-	public int getType() throws IOException {
+	/**
+	 * Force this object to be loaded into memory and pinned in this loader.
+	 * <p>
+	 * Once materialized, subsequent get operations for the following methods
+	 * will always succeed without raising an exception, as all information is
+	 * pinned in memory by this loader instance.
+	 * <ul>
+	 * <li>{@link #getType()}</li>
+	 * <li>{@link #getSize()}</li>
+	 * <li>{@link #getBytes()}, {@link #getCachedBytes}</li>
+	 * <li>{@link #getRawSize()}</li>
+	 * <li>{@link #getRawType()}</li>
+	 * </ul>
+	 *
+	 * @param curs
+	 *            temporary thread storage during data access.
+	 * @throws IOException
+	 *             the object cannot be read.
+	 */
+	public abstract void materialize(WindowCursor curs) throws IOException;
+
+	public final int getType() {
 		return objectType;
 	}
 
-	public long getSize() throws IOException {
+	public final long getSize() {
 		return objectSize;
+	}
+
+	@Override
+	public final byte[] getCachedBytes() {
+		return cachedBytes;
 	}
 
 	/**
 	 * @return offset of object data within pack file
 	 */
-	public long getDataOffset() {
+	public final long getDataOffset() {
 		return dataOffset;
 	}
 
@@ -92,11 +117,14 @@ abstract class PackedObjectLoader extends ObjectLoader {
 	 * @param buf
 	 *            temporary buffer used during copying. Recommended size is at
 	 *            least few kB.
+	 * @param curs
+	 *            temporary thread storage during data access.
 	 * @throws IOException
 	 *             when the object cannot be read.
 	 */
-	public void copyRawData(OutputStream out, byte buf[]) throws IOException {
-		pack.copyRawData(this, out, buf);
+	public void copyRawData(OutputStream out, byte buf[], WindowCursor curs)
+			throws IOException {
+		pack.copyRawData(this, out, buf, curs);
 	}
 
 	/**

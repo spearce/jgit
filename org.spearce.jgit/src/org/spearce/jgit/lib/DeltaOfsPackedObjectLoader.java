@@ -46,14 +46,15 @@ import org.spearce.jgit.errors.CorruptObjectException;
 class DeltaOfsPackedObjectLoader extends DeltaPackedObjectLoader {
 	private final long deltaBase;
 
-	DeltaOfsPackedObjectLoader(final WindowCursor curs, final PackFile pr,
+	DeltaOfsPackedObjectLoader(final PackFile pr,
 			final long dataOffset, final long objectOffset, final int deltaSz,
 			final long base) {
-		super(curs, pr, dataOffset, objectOffset, deltaSz);
+		super(pr, dataOffset, objectOffset, deltaSz);
 		deltaBase = base;
 	}
 
-	protected PackedObjectLoader getBaseLoader() throws IOException {
+	protected PackedObjectLoader getBaseLoader(final WindowCursor curs)
+			throws IOException {
 		return pack.resolveBase(curs, deltaBase);
 	}
 

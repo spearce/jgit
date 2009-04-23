@@ -244,11 +244,11 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 	}
 
 	final void copyRawData(final PackedObjectLoader loader,
-			final OutputStream out, final byte buf[]) throws IOException {
+			final OutputStream out, final byte buf[], final WindowCursor curs)
+			throws IOException {
 		final long objectOffset = loader.objectOffset;
 		final long dataOffset = loader.dataOffset;
 		final int cnt = (int) (findEndOffset(objectOffset) - dataOffset);
-		final WindowCursor curs = loader.curs;
 		final PackIndex idx = idx();
 
 		if (idx.hasCRC32Support()) {
@@ -436,8 +436,8 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		case Constants.OBJ_TREE:
 		case Constants.OBJ_BLOB:
 		case Constants.OBJ_TAG:
-			return new WholePackedObjectLoader(curs, this, pos, objOffset,
-					typeCode, (int) dataSize);
+			return new WholePackedObjectLoader(this, pos, objOffset, typeCode,
+					(int) dataSize);
 
 		case Constants.OBJ_OFS_DELTA: {
 			readFully(pos, ib, 0, 20, curs);
@@ -450,12 +450,12 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 				ofs <<= 7;
 				ofs += (c & 127);
 			}
-			return new DeltaOfsPackedObjectLoader(curs, this, pos + p,
-					objOffset, (int) dataSize, objOffset - ofs);
+			return new DeltaOfsPackedObjectLoader(this, pos + p, objOffset,
+					(int) dataSize, objOffset - ofs);
 		}
 		case Constants.OBJ_REF_DELTA: {
 			readFully(pos, ib, 0, 20, curs);
-			return new DeltaRefPackedObjectLoader(curs, this, pos + ib.length,
+			return new DeltaRefPackedObjectLoader(this, pos + ib.length,
 					objOffset, (int) dataSize, ObjectId.fromRaw(ib));
 		}
 		default:
