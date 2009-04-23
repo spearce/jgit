@@ -263,6 +263,66 @@ public class AbbreviatedObjectIdTest extends TestCase {
 		assertFalse(i3.startsWith(a));
 	}
 
+	public void testPrefixCompare_7() {
+		final String sa = "7b6e806";
+		final AbbreviatedObjectId a = AbbreviatedObjectId.fromString(sa);
+
+		final String s1 = "7b6e8067ec96acef9a4184b43210d583b6d2f99a";
+		final ObjectId i1 = ObjectId.fromString(s1);
+		assertEquals(0, a.prefixCompare(i1));
+		assertTrue(i1.startsWith(a));
+
+		final String s2 = "7b6e8167ec86acef9a4184b43210d583b6d2f99a";
+		final ObjectId i2 = ObjectId.fromString(s2);
+		assertTrue(a.prefixCompare(i2) < 0);
+		assertFalse(i2.startsWith(a));
+
+		final String s3 = "7b6e8057eca6acef9a4184b43210d583b6d2f99a";
+		final ObjectId i3 = ObjectId.fromString(s3);
+		assertTrue(a.prefixCompare(i3) > 0);
+		assertFalse(i3.startsWith(a));
+	}
+
+	public void testPrefixCompare_8() {
+		final String sa = "7b6e8067";
+		final AbbreviatedObjectId a = AbbreviatedObjectId.fromString(sa);
+
+		final String s1 = "7b6e8067ec96acef9a4184b43210d583b6d2f99a";
+		final ObjectId i1 = ObjectId.fromString(s1);
+		assertEquals(0, a.prefixCompare(i1));
+		assertTrue(i1.startsWith(a));
+
+		final String s2 = "7b6e8167ec86acef9a4184b43210d583b6d2f99a";
+		final ObjectId i2 = ObjectId.fromString(s2);
+		assertTrue(a.prefixCompare(i2) < 0);
+		assertFalse(i2.startsWith(a));
+
+		final String s3 = "7b6e8057eca6acef9a4184b43210d583b6d2f99a";
+		final ObjectId i3 = ObjectId.fromString(s3);
+		assertTrue(a.prefixCompare(i3) > 0);
+		assertFalse(i3.startsWith(a));
+	}
+
+	public void testPrefixCompare_9() {
+		final String sa = "7b6e8067e";
+		final AbbreviatedObjectId a = AbbreviatedObjectId.fromString(sa);
+
+		final String s1 = "7b6e8067ec96acef9a4184b43210d583b6d2f99a";
+		final ObjectId i1 = ObjectId.fromString(s1);
+		assertEquals(0, a.prefixCompare(i1));
+		assertTrue(i1.startsWith(a));
+
+		final String s2 = "7b6e8167ec86acef9a4184b43210d583b6d2f99a";
+		final ObjectId i2 = ObjectId.fromString(s2);
+		assertTrue(a.prefixCompare(i2) < 0);
+		assertFalse(i2.startsWith(a));
+
+		final String s3 = "7b6e8057eca6acef9a4184b43210d583b6d2f99a";
+		final ObjectId i3 = ObjectId.fromString(s3);
+		assertTrue(a.prefixCompare(i3) > 0);
+		assertFalse(i3.startsWith(a));
+	}
+
 	public void testPrefixCompare_17() {
 		final String sa = "7b6e8067ec96acef9";
 		final AbbreviatedObjectId a = AbbreviatedObjectId.fromString(sa);

@@ -129,7 +129,7 @@ public final class AbbreviatedObjectId {
 			return v;
 		}
 
-		if (nibbles < b) {
+		if (nibbles <= b) {
 			// We have none of the bits required for this word.
 			//
 			return 0;
