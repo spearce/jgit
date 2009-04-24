@@ -39,10 +39,14 @@ package org.spearce.jgit.pgm;
 
 import java.io.File;
 
+import org.kohsuke.args4j.Option;
 import org.spearce.jgit.lib.Repository;
 
 @Command(common = true, usage = "Create an empty git repository")
 class Init extends TextBuiltin {
+	@Option(name = "--bare", usage = "Create a bare repository")
+	private boolean bare;
+
 	@Override
 	protected final boolean requiresRepository() {
 		return false;
@@ -51,9 +55,9 @@ class Init extends TextBuiltin {
 	@Override
 	protected void run() throws Exception {
 		if (gitdir == null)
-			gitdir = new File(".git");
+			gitdir = new File(bare ? "." : ".git");
 		db = new Repository(gitdir);
-		db.create();
+		db.create(bare);
 		out.println("Initialized empty Git repository in "
 				+ gitdir.getAbsolutePath());
 	}

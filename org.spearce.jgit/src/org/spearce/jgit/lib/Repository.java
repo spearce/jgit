@@ -128,16 +128,30 @@ public class Repository {
 
 	/**
 	 * Create a new Git repository initializing the necessary files and
-	 * directories.
+	 * directories. Repository with working tree is created using this method.
 	 *
 	 * @throws IOException
+	 * @see #create(boolean)
 	 */
 	public synchronized void create() throws IOException {
-		if (gitDir.exists()) {
+		create(false);
+	}
+
+	/**
+	 * Create a new Git repository initializing the necessary files and
+	 * directories.
+	 *
+	 * @param bare
+	 *            if true, a bare repository is created.
+	 *
+	 * @throws IOException
+	 *             in case of IO problem
+	 */
+	public void create(boolean bare) throws IOException {
+		if ((bare ? new File(gitDir, "config") : gitDir).exists()) {
 			throw new IllegalStateException("Repository already exists: "
 					+ gitDir);
 		}
-
 		gitDir.mkdirs();
 		refs.create();
 		objectDatabase.create();
@@ -147,8 +161,12 @@ public class Repository {
 		final String master = Constants.R_HEADS + Constants.MASTER;
 		refs.link(Constants.HEAD, master);
 
-		getConfig().create();
-		getConfig().save();
+		RepositoryConfig cfg = getConfig();
+		cfg.create();
+		if (bare) {
+			cfg.setString("core", null, "bare", "true");
+		}
+		cfg.save();
 	}
 
 	/**
