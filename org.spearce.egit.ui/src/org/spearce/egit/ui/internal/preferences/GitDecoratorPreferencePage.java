@@ -727,18 +727,6 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 			// No-op
 		}
 
-		public Color getBackground(Object element) {
-			return getDecoration(element).getBackgroundColor();
-		}
-
-		public Color getForeground(Object element) {
-			return getDecoration(element).getForegroundColor();
-		}
-
-		public Font getFont(Object element) {
-			return getDecoration(element).getFont();
-		}
-
 		public String getText(Object element) {
 			final PreviewDecoration decoration = getDecoration(element);
 			final StringBuffer buffer = new StringBuffer();
@@ -869,12 +857,6 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 
 		private ImageDescriptor overlay = null;
 
-		private Font font;
-
-		private Color backgroundColor;
-
-		private Color foregroundColor;
-
 		/**
 		 * Adds an icon overlay to the decoration
 		 * <p>
@@ -903,15 +885,12 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 		}
 
 		public void setBackgroundColor(Color color) {
-			backgroundColor = color;
 		}
 
 		public void setForegroundColor(Color color) {
-			foregroundColor = color;
 		}
 
 		public void setFont(Font font) {
-			this.font = font;
 		}
 
 		public ImageDescriptor getOverlay() {
@@ -934,16 +913,5 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 			return sb.toString();
 		}
 
-		public Font getFont() {
-			return font;
-		}
-
-		public Color getBackgroundColor() {
-			return backgroundColor;
-		}
-
-		public Color getForegroundColor() {
-			return foregroundColor;
-		}
 	}
 }
