@@ -593,7 +593,7 @@ public class DirCache {
 		int low = 0;
 		int high = entryCnt;
 		do {
-			int mid = (low + high) >> 1;
+			int mid = (low + high) >>> 1;
 			final int cmp = cmp(p, pLen, sortedEntries[mid]);
 			if (cmp < 0)
 				high = mid;

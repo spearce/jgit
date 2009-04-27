@@ -136,7 +136,7 @@ public class Tree extends TreeEntry implements Treeish {
 		int high = entries.length;
 		int low = 0;
 		do {
-			final int mid = (low + high) / 2;
+			final int mid = (low + high) >>> 1;
 			final int cmp = compareNames(entries[mid].getNameUTF8(), nameUTF8,
 					nameStart, nameEnd, TreeEntry.lastChar(entries[mid]), nameUTF8last);
 			if (cmp < 0)
