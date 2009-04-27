@@ -59,6 +59,8 @@ public class GitQuickDiffProvider implements IQuickDiffReferenceProvider {
 	public IDocument getReference(IProgressMonitor monitor)
 			throws CoreException {
 		Activator.trace("(GitQuickDiffProvider) file: " + resource);
+		if (resource == null)
+			return null;
 		RepositoryProvider provider = RepositoryProvider.getProvider(resource
 				.getProject());
 		if (provider != null) {
