@@ -52,7 +52,9 @@ public class GitProvider extends RepositoryProvider {
 
 	public synchronized IMoveDeleteHook getMoveDeleteHook() {
 		if (hook == null) {
-			hook = new GitMoveDeleteHook(getData());
+			GitProjectData _data = getData();
+			if (_data != null)
+				hook = new GitMoveDeleteHook(_data);
 		}
 		return hook;
 	}
