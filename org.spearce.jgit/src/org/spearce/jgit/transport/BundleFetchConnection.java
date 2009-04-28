@@ -60,6 +60,7 @@ import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevFlag;
 import org.spearce.jgit.revwalk.RevObject;
 import org.spearce.jgit.revwalk.RevWalk;
+import org.spearce.jgit.util.NB;
 import org.spearce.jgit.util.RawParseUtils;
 
 /**
@@ -139,9 +140,9 @@ class BundleFetchConnection extends BaseFetchConnection {
 		while (lf < cnt && hdrbuf[lf] != '\n')
 			lf++;
 		bin.reset();
-		bin.skip(lf);
+		NB.skipFully(bin, lf);
 		if (lf < cnt && hdrbuf[lf] == '\n')
-			bin.skip(1);
+			NB.skipFully(bin, 1);
 		return RawParseUtils.decode(Constants.CHARSET, hdrbuf, 0, lf);
 	}
 
