@@ -61,7 +61,7 @@ import org.spearce.jgit.util.SystemReader;
  * Sets up a predefined test repository and has support for creating additional
  * repositories and destroying them when the tests are finished.
  *
- * A system property <em>jgit.junit.usemmmap</em> defines whether memory mapping
+ * A system property <em>jgit.junit.usemmap</em> defines whether memory mapping
  * is used. Memory mapping has an effect on the file system, in that memory
  * mapped files in java cannot be deleted as long as they mapped arrays have not
  * been reclaimed by the garbage collector. The programmer cannot control this
@@ -123,7 +123,7 @@ public abstract class RepositoryTestCase extends TestCase {
 		final WindowCacheConfig c = new WindowCacheConfig();
 		c.setPackedGitLimit(128 * WindowCacheConfig.KB);
 		c.setPackedGitWindowSize(8 * WindowCacheConfig.KB);
-		c.setPackedGitMMAP("true".equals(System.getProperty("jgit.junit.usemmmap")));
+		c.setPackedGitMMAP("true".equals(System.getProperty("jgit.junit.usemmap")));
 		c.setDeltaBaseCacheLimit(8 * WindowCacheConfig.KB);
 		WindowCache.reconfigure(c);
 	}
