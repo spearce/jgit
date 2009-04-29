@@ -69,6 +69,7 @@ abstract class DeltaPackedObjectLoader extends PackedObjectLoader {
 				objectType = cache.type;
 				objectSize = cache.data.length;
 				cachedBytes = cache.data;
+				return;
 			}
 		}
 
