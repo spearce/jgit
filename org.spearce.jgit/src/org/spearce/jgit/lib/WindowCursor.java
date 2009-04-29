@@ -48,14 +48,12 @@ public final class WindowCursor {
 
 	private Inflater inf;
 
-	ByteWindow window;
-
-	Object handle;
+	private ByteWindow window;
 
 	/**
 	 * Copy bytes from the window to a caller supplied buffer.
 	 * 
-	 * @param provider
+	 * @param pack
 	 *            the file the desired window is stored within.
 	 * @param position
 	 *            position within the file to read from.
@@ -74,13 +72,13 @@ public final class WindowCursor {
 	 *             this cursor does not match the provider or id and the proper
 	 *             window could not be acquired through the provider's cache.
 	 */
-	int copy(final PackFile provider, long position, final byte[] dstbuf,
+	int copy(final PackFile pack, long position, final byte[] dstbuf,
 			int dstoff, final int cnt) throws IOException {
-		final long length = provider.length;
+		final long length = pack.length;
 		int need = cnt;
 		while (need > 0 && position < length) {
-			pin(provider, position);
-			final int r = window.copy(handle, position, dstbuf, dstoff, need);
+			pin(pack, position);
+			final int r = window.copy(position, dstbuf, dstoff, need);
 			position += r;
 			dstoff += r;
 			need -= r;
@@ -91,7 +89,7 @@ public final class WindowCursor {
 	/**
 	 * Pump bytes into the supplied inflater as input.
 	 * 
-	 * @param provider
+	 * @param pack
 	 *            the file the desired window is stored within.
 	 * @param position
 	 *            position within the file to read from.
@@ -109,47 +107,53 @@ public final class WindowCursor {
 	 *             the inflater encountered an invalid chunk of data. Data
 	 *             stream corruption is likely.
 	 */
-	int inflate(final PackFile provider, long position, final byte[] dstbuf,
+	int inflate(final PackFile pack, long position, final byte[] dstbuf,
 			int dstoff) throws IOException, DataFormatException {
 		if (inf == null)
 			inf = InflaterCache.get();
 		else
 			inf.reset();
 		for (;;) {
-			pin(provider, position);
-			dstoff = window.inflate(handle, position, dstbuf, dstoff, inf);
+			pin(pack, position);
+			dstoff = window.inflate(position, dstbuf, dstoff, inf);
 			if (inf.finished())
 				return dstoff;
 			position = window.end;
 		}
 	}
 
-	void inflateVerify(final PackFile provider, long position)
+	void inflateVerify(final PackFile pack, long position)
 			throws IOException, DataFormatException {
 		if (inf == null)
 			inf = InflaterCache.get();
 		else
 			inf.reset();
 		for (;;) {
-			pin(provider, position);
-			window.inflateVerify(handle, position, inf);
+			pin(pack, position);
+			window.inflateVerify(position, inf);
 			if (inf.finished())
 				return;
 			position = window.end;
 		}
 	}
 
-	private void pin(final PackFile provider, final long position)
+	private void pin(final PackFile pack, final long position)
 			throws IOException {
 		final ByteWindow w = window;
-		if (w == null || !w.contains(provider, position))
-			WindowCache.get(this, provider, position);
+		if (w == null || !w.contains(pack, position)) {
+			// If memory is low, we may need what is in our window field to
+			// be cleaned up by the GC during the get for the next window.
+			// So we always clear it, even though we are just going to set
+			// it again.
+			//
+			window = null;
+			window = WindowCache.get(pack, position);
+		}
 	}
 
 	/** Release the current window cursor. */
 	public void release() {
 		window = null;
-		handle = null;
 		try {
 			InflaterCache.release(inf);
 		} finally {

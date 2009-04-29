@@ -126,7 +126,7 @@ abstract class PackedObjectLoader extends ObjectLoader {
 	 *             deleted, and the object has moved to another pack file.
 	 */
 	public void beginCopyRawData() throws IOException {
-		WindowCache.pin(pack);
+		pack.beginCopyRawData();
 	}
 
 	/**
@@ -154,7 +154,7 @@ abstract class PackedObjectLoader extends ObjectLoader {
 
 	/** Release resources after {@link #beginCopyRawData()}. */
 	public void endCopyRawData() {
-		WindowCache.unpin(pack);
+		pack.endCopyRawData();
 	}
 
 	/**

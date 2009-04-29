@@ -77,12 +77,13 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 
 	final int hash;
 
-	RandomAccessFile fd;
+	private RandomAccessFile fd;
 
 	long length;
 
-	/** Total number of windows actively in the associated cache. */
-	int openCount;
+	private int activeWindows;
+
+	private int activeCopyRawData;
 
 	private int packLastModified;
 
@@ -310,27 +311,57 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		}
 	}
 
-	void cacheOpen() throws IOException {
-		fd = new RandomAccessFile(packFile, "r");
-		length = fd.length();
+	synchronized void beginCopyRawData() throws IOException {
+		if (++activeCopyRawData == 1 && activeWindows == 0)
+			doOpen();
+	}
+
+	synchronized void endCopyRawData() {
+		if (--activeCopyRawData == 0 && activeWindows == 0)
+			doClose();
+	}
+
+	synchronized boolean beginWindowCache() throws IOException {
+		if (++activeWindows == 1) {
+			if (activeCopyRawData == 0)
+				doOpen();
+			return true;
+		}
+		return false;
+	}
+
+	synchronized boolean endWindowCache() {
+		final boolean r = --activeWindows == 0;
+		if (r && activeCopyRawData == 0)
+			doClose();
+		return r;
+	}
+
+	private void doOpen() throws IOException {
 		try {
+			fd = new RandomAccessFile(packFile, "r");
+			length = fd.length();
 			onOpenPack();
 		} catch (IOException ioe) {
-			invalid = true;
-			cacheClose();
+			openFail();
 			throw ioe;
 		} catch (RuntimeException re) {
-			invalid = true;
-			cacheClose();
+			openFail();
 			throw re;
 		} catch (Error re) {
-			invalid = true;
-			cacheClose();
+			openFail();
 			throw re;
 		}
 	}
 
-	void cacheClose() {
+	private void openFail() {
+		activeWindows = 0;
+		activeCopyRawData = 0;
+		invalid = true;
+		doClose();
+	}
+
+	private void doClose() {
 		if (fd != null) {
 			try {
 				fd.close();
@@ -343,48 +374,34 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 		}
 	}
 
-	void allocWindow(final WindowCursor curs, final int windowId,
-			final long pos, final int size) {
-		if (WindowCache.mmap) {
-			MappedByteBuffer map;
-			try {
-				map = fd.getChannel().map(MapMode.READ_ONLY, pos, size);
-			} catch (IOException e) {
-				// The most likely reason this failed is the JVM has run out
-				// of virtual memory. We need to discard quickly, and try to
-				// force the GC to finalize and release any existing mappings.
-				try {
-					curs.release();
-					System.gc();
-					System.runFinalization();
-					map = fd.getChannel().map(MapMode.READ_ONLY, pos, size);
-				} catch (IOException ioe2) {
-					// Temporarily disable mmap and do buffered disk IO.
-					//
-					map = null;
-					System.err.println("warning: mmap failure: "+ioe2);
-				}
-			}
-			if (map != null) {
-				if (map.hasArray()) {
-					final byte[] b = map.array();
-					final ByteArrayWindow w;
-					w = new ByteArrayWindow(this, pos, windowId, b);
-					w.loaded = true;
-					curs.window = w;
-					curs.handle = b;
-				} else {
-					curs.window = new ByteBufferWindow(this, pos, windowId, map);
-					curs.handle = map;
-				}
-				return;
-			}
+	ByteArrayWindow read(final long pos, int size) throws IOException {
+		if (length < pos + size)
+			size = (int) (length - pos);
+		final byte[] buf = new byte[size];
+		NB.readFully(fd.getChannel(), pos, buf, 0, size);
+		return new ByteArrayWindow(this, pos, buf);
+	}
+
+	ByteWindow mmap(final long pos, int size) throws IOException {
+		if (length < pos + size)
+			size = (int) (length - pos);
+
+		MappedByteBuffer map;
+		try {
+			map = fd.getChannel().map(MapMode.READ_ONLY, pos, size);
+		} catch (IOException ioe1) {
+			// The most likely reason this failed is the JVM has run out
+			// of virtual memory. We need to discard quickly, and try to
+			// force the GC to finalize and release any existing mappings.
+			//
+			System.gc();
+			System.runFinalization();
+			map = fd.getChannel().map(MapMode.READ_ONLY, pos, size);
 		}
 
-		final byte[] b = new byte[size];
-		curs.window = new ByteArrayWindow(this, pos, windowId, b);
-		curs.handle = b;
-		openCount++; // Until the window loads, we must stay open.
+		if (map.hasArray())
+			return new ByteArrayWindow(this, pos, map.array());
+		return new ByteBufferWindow(this, pos, map);
 	}
 
 	private void onOpenPack() throws IOException {

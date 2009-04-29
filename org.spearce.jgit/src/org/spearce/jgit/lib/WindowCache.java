@@ -40,12 +40,17 @@ package org.spearce.jgit.lib;
 
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * The WindowCache manages reusable <code>Windows</code> and inflaters used by
- * the other windowed file access classes.
+ * Caches slices of a {@link PackFile} in memory for faster read access.
+ * <p>
+ * The WindowCache serves as a Java based "buffer cache", loading segments of a
+ * PackFile into the JVM heap prior to use. As JGit often wants to do reads of
+ * only tiny slices of a file, the WindowCache tries to smooth out these tiny
+ * reads into larger block-sized IO operations.
  */
-public class WindowCache {
+public class WindowCache extends OffsetCache<ByteWindow, WindowCache.WindowRef> {
 	private static final int bits(int newSize) {
 		if (newSize < 4096)
 			throw new IllegalArgumentException("Invalid window size");
@@ -54,41 +59,10 @@ public class WindowCache {
 		return Integer.numberOfTrailingZeros(newSize);
 	}
 
-	private static int maxFileCount;
-
-	private static int maxByteCount;
-
-	private static int windowSize;
-
-	private static int windowSizeShift;
-
-	static boolean mmap;
-
-	static final ReferenceQueue<?> clearedWindowQueue;
-
-	private static ByteWindow[] cache;
-
-	private static ByteWindow lruHead;
-
-	private static ByteWindow lruTail;
-
-	private static int openFileCount;
-
-	private static int openByteCount;
+	private static volatile WindowCache cache;
 
 	static {
-		final WindowCacheConfig c = new WindowCacheConfig();
-		maxFileCount = c.getPackedGitOpenFiles();
-		maxByteCount = c.getPackedGitLimit();
-		windowSizeShift = bits(c.getPackedGitWindowSize());
-		windowSize = 1 << windowSizeShift;
-		mmap = c.isPackedGitMMAP();
-		cache = new ByteWindow[cacheTableSize()];
-		clearedWindowQueue = new ReferenceQueue<Object>();
-	}
-
-	private static int cacheTableSize() {
-		return 5 * (maxByteCount / windowSize) / 2;
+		reconfigure(new WindowCacheConfig());
 	}
 
 	/**
@@ -128,322 +102,144 @@ public class WindowCache {
 	 *
 	 * @param cfg
 	 *            the new window cache configuration.
+	 * @throws IllegalArgumentException
+	 *             the cache configuration contains one or more invalid
+	 *             settings, usually too low of a limit.
 	 */
 	public static void reconfigure(final WindowCacheConfig cfg) {
-		reconfigureImpl(cfg);
+		final WindowCache nc = new WindowCache(cfg);
+		final WindowCache oc = cache;
+		if (oc != null)
+			oc.removeAll();
+		cache = nc;
 		UnpackedObjectCache.reconfigure(cfg);
 	}
 
-	private static synchronized void reconfigureImpl(final WindowCacheConfig cfg) {
-		boolean prune = false;
-		boolean evictAll = false;
-
-		if (maxFileCount < cfg.getPackedGitOpenFiles())
-			maxFileCount = cfg.getPackedGitOpenFiles();
-		else if (maxFileCount > cfg.getPackedGitOpenFiles()) {
-			maxFileCount = cfg.getPackedGitOpenFiles();
-			prune = true;
-		}
-
-		if (maxByteCount < cfg.getPackedGitLimit()) {
-			maxByteCount = cfg.getPackedGitLimit();
-		} else if (maxByteCount > cfg.getPackedGitLimit()) {
-			maxByteCount = cfg.getPackedGitLimit();
-			prune = true;
-		}
-
-		if (bits(cfg.getPackedGitWindowSize()) != windowSizeShift) {
-			windowSizeShift = bits(cfg.getPackedGitWindowSize());
-			windowSize = 1 << windowSizeShift;
-			evictAll = true;
-		}
-
-		if (mmap != cfg.isPackedGitMMAP()) {
-			mmap = cfg.isPackedGitMMAP();
-			evictAll = true;
-		}
-
-		if (evictAll) {
-			// We have to throw away every window we have. None
-			// of them are suitable for the new configuration.
+	static final ByteWindow get(final PackFile pack, final long offset)
+			throws IOException {
+		final WindowCache c = cache;
+		final ByteWindow r = c.getOrLoad(pack, c.toStart(offset));
+		if (c != cache) {
+			// The cache was reconfigured while we were using the old one
+			// to load this window. The window is still valid, but our
+			// cache may think its still live. Ensure the window is removed
+			// from the old cache so resources can be released.
 			//
-			for (ByteWindow<?> e : cache) {
-				for (; e != null; e = e.chainNext)
-					clear(e);
-			}
-			runClearedWindowQueue();
-			cache = new ByteWindow[cacheTableSize()];
-
-		} else {
-			if (prune) {
-				// We should decrease our memory usage.
-				//
-				releaseMemory();
-				runClearedWindowQueue();
-			}
-
-			if (cache.length != cacheTableSize()) {
-				// The cache table should be resized.
-				// Rehash every entry.
-				//
-				final ByteWindow[] priorTable = cache;
-
-				cache = new ByteWindow[cacheTableSize()];
-				for (ByteWindow<?> e : priorTable) {
-					for (ByteWindow<?> n; e != null; e = n) {
-						n = e.chainNext;
-						final int idx = hash(e.provider, e.id);
-						e.chainNext = cache[idx];
-						cache[idx] = e;
-					}
-				}
-			}
+			c.removeAll();
 		}
+		return r;
 	}
 
-	/**
-	 * Get a specific window.
-	 * 
-	 * @param curs
-	 *            an active cursor object to maintain the window reference while
-	 *            the caller needs it.
-	 * @param wp
-	 *            the provider of the window. If the window is not currently in
-	 *            the cache then the provider will be asked to load it.
-	 * @param position
-	 *            offset (in bytes) within the file that the caller needs access
-	 *            to.
-	 * @throws IOException
-	 *             the window was not found in the cache and the given provider
-	 *             was unable to load the window on demand.
-	 */
-	public static final void get(final WindowCursor curs, final PackFile wp,
-			final long position) throws IOException {
-		getImpl(curs, wp, position);
-		curs.window.ensureLoaded(curs.handle);
+	static final void purge(final PackFile pack) {
+		cache.removeAll(pack);
 	}
 
-	static synchronized final void pin(final PackFile wp) throws IOException {
-		if (++wp.openCount == 1) {
-			openFile(wp);
-		}
+	private final int maxFiles;
+
+	private final int maxBytes;
+
+	private final boolean mmap;
+
+	private final int windowSizeShift;
+
+	private final int windowSize;
+
+	private final AtomicInteger openFiles;
+
+	private final AtomicInteger openBytes;
+
+	private WindowCache(final WindowCacheConfig cfg) {
+		super(tableSize(cfg), lockCount(cfg));
+		maxFiles = cfg.getPackedGitOpenFiles();
+		maxBytes = cfg.getPackedGitLimit();
+		mmap = cfg.isPackedGitMMAP();
+		windowSizeShift = bits(cfg.getPackedGitWindowSize());
+		windowSize = 1 << windowSizeShift;
+
+		openFiles = new AtomicInteger();
+		openBytes = new AtomicInteger();
+
+		if (maxFiles < 1)
+			throw new IllegalArgumentException("Open files must be >= 1");
+		if (maxBytes < windowSize)
+			throw new IllegalArgumentException("Window size must be < limit");
 	}
 
-	static synchronized final void unpin(final PackFile wp) {
-		if (--wp.openCount == 0) {
-			openFileCount--;
-			wp.cacheClose();
-		}
+	@Override
+	protected int hash(final int packHash, final long off) {
+		return packHash + (int) (off >>> windowSizeShift);
 	}
 
-	private static synchronized final void getImpl(final WindowCursor curs,
-			final PackFile wp, final long position) throws IOException {
-		final int id = (int) (position >> windowSizeShift);
-		final int idx = hash(wp, id);
-		for (ByteWindow<?> e = cache[idx]; e != null; e = e.chainNext) {
-			if (e.provider == wp && e.id == id) {
-				if ((curs.handle = e.get()) != null) {
-					curs.window = e;
-					makeMostRecent(e);
-					return;
-				}
-
-				clear(e);
-				break;
-			}
-		}
-
-		if (wp.openCount == 0) {
-			openFile(wp);
-
-			// The cacheOpen may have mapped the window we are trying to
-			// map ourselves. Retrying the search ensures that does not
-			// happen to us.
-			//
-			for (ByteWindow<?> e = cache[idx]; e != null; e = e.chainNext) {
-				if (e.provider == wp && e.id == id) {
-					if ((curs.handle = e.get()) != null) {
-						curs.window = e;
-						makeMostRecent(e);
-						return;
-					}
-
-					clear(e);
-					break;
-				}
-			}
-		}
-
-		final int wsz = windowSize(wp, id);
-		wp.openCount++;
-		openByteCount += wsz;
-		releaseMemory();
-		runClearedWindowQueue();
-
-		wp.allocWindow(curs, id, (position >>> windowSizeShift) << windowSizeShift, wsz);
-		final ByteWindow<?> e = curs.window;
-		e.chainNext = cache[idx];
-		cache[idx] = e;
-		insertLRU(e);
-	}
-
-	private static void openFile(final PackFile wp) throws IOException {
+	@Override
+	protected ByteWindow load(final PackFile pack, final long offset)
+			throws IOException {
+		if (pack.beginWindowCache())
+			openFiles.incrementAndGet();
 		try {
-			openFileCount++;
-			releaseMemory();
-			runClearedWindowQueue();
-			wp.openCount = 1;
-			wp.cacheOpen();
-		} catch (IOException ioe) {
-			openFileCount--;
-			wp.openCount = 0;
-			throw ioe;
-		} catch (RuntimeException ioe) {
-			openFileCount--;
-			wp.openCount = 0;
-			throw ioe;
-		} catch (Error ioe) {
-			openFileCount--;
-			wp.openCount = 0;
-			throw ioe;
-		} finally {
-			wp.openCount--;
+			if (mmap)
+				return pack.mmap(offset, windowSize);
+			return pack.read(offset, windowSize);
+		} catch (IOException e) {
+			close(pack);
+			throw e;
+		} catch (RuntimeException e) {
+			close(pack);
+			throw e;
+		} catch (Error e) {
+			close(pack);
+			throw e;
 		}
 	}
 
-	static synchronized void markLoaded(final ByteWindow w) {
-		if (--w.provider.openCount == 0) {
-			openFileCount--;
-			w.provider.cacheClose();
+	@Override
+	protected WindowRef createRef(final PackFile p, final long o,
+			final ByteWindow v) {
+		final WindowRef ref = new WindowRef(p, o, v, queue);
+		openBytes.addAndGet(ref.size);
+		return ref;
+	}
+
+	@Override
+	protected void clear(final WindowRef ref) {
+		openBytes.addAndGet(-ref.size);
+		close(ref.pack);
+	}
+
+	private void close(final PackFile pack) {
+		if (pack.endWindowCache())
+			openFiles.decrementAndGet();
+	}
+
+	@Override
+	protected boolean isFull() {
+		return maxFiles < openFiles.get() || maxBytes < openBytes.get();
+	}
+
+	private long toStart(final long offset) {
+		return (offset >>> windowSizeShift) << windowSizeShift;
+	}
+
+	private static int tableSize(final WindowCacheConfig cfg) {
+		final int wsz = cfg.getPackedGitWindowSize();
+		final int limit = cfg.getPackedGitLimit();
+		if (wsz <= 0)
+			throw new IllegalArgumentException("Invalid window size");
+		if (limit < wsz)
+			throw new IllegalArgumentException("Window size must be < limit");
+		return 5 * (limit / wsz) / 2;
+	}
+
+	private static int lockCount(final WindowCacheConfig cfg) {
+		return Math.max(cfg.getPackedGitOpenFiles(), 32);
+	}
+
+	static class WindowRef extends OffsetCache.Ref<ByteWindow> {
+		final int size;
+
+		WindowRef(final PackFile pack, final long position, final ByteWindow v,
+				final ReferenceQueue<ByteWindow> queue) {
+			super(pack, position, v, queue);
+			size = v.size();
 		}
-	}
-
-	private static void makeMostRecent(ByteWindow<?> e) {
-		if (lruHead != e) {
-			unlinkLRU(e);
-			insertLRU(e);
-		}
-	}
-
-	private static void releaseMemory() {
-		ByteWindow<?> e = lruTail;
-		while (isOverLimit() && e != null) {
-			final ByteWindow<?> p = e.lruPrev;
-			clear(e);
-			e = p;
-		}
-	}
-
-	private static boolean isOverLimit() {
-		return openByteCount > maxByteCount || openFileCount > maxFileCount;
-	}
-
-	/**
-	 * Remove all windows associated with a specific provider.
-	 * <p>
-	 * Providers should invoke this method as part of their cleanup/close
-	 * routines, ensuring that the window cache releases all windows that cannot
-	 * ever be requested again.
-	 * </p>
-	 * 
-	 * @param wp
-	 *            the window provider whose windows should be removed from the
-	 *            cache.
-	 */
-	public static synchronized final void purge(final PackFile wp) {
-		for (ByteWindow e : cache) {
-			for (; e != null; e = e.chainNext) {
-				if (e.provider == wp)
-					clear(e);
-			}
-		}
-		runClearedWindowQueue();
-	}
-
-	private static void runClearedWindowQueue() {
-		ByteWindow<?> e;
-		while ((e = (ByteWindow) clearedWindowQueue.poll()) != null) {
-			unlinkSize(e);
-			unlinkLRU(e);
-			unlinkCache(e);
-			e.chainNext = null;
-			e.lruNext = null;
-			e.lruPrev = null;
-		}
-	}
-
-	private static void clear(final ByteWindow<?> e) {
-		unlinkSize(e);
-		e.clear();
-		e.enqueue();
-	}
-
-	private static void unlinkSize(final ByteWindow<?> e) {
-		if (e.sizeActive) {
-			if (--e.provider.openCount == 0) {
-				openFileCount--;
-				e.provider.cacheClose();
-			}
-			openByteCount -= e.size;
-			e.sizeActive = false;
-		}
-	}
-
-	private static void unlinkCache(final ByteWindow dead) {
-		final int idx = hash(dead.provider, dead.id);
-		ByteWindow<?> e = cache[idx], p = null, n;
-		for (; e != null; p = e, e = n) {
-			n = e.chainNext;
-			if (e == dead) {
-				if (p == null)
-					cache[idx] = n;
-				else
-					p.chainNext = n;
-				break;
-			}
-		}
-	}
-
-	private static void unlinkLRU(final ByteWindow e) {
-		final ByteWindow<?> prev = e.lruPrev;
-		final ByteWindow<?> next = e.lruNext;
-
-		if (prev != null)
-			prev.lruNext = next;
-		else
-			lruHead = next;
-
-		if (next != null)
-			next.lruPrev = prev;
-		else
-			lruTail = prev;
-	}
-
-	private static void insertLRU(final ByteWindow<?> e) {
-		final ByteWindow h = lruHead;
-		e.lruPrev = null;
-		e.lruNext = h;
-		if (h != null)
-			h.lruPrev = e;
-		else
-			lruTail = e;
-		lruHead = e;
-	}
-
-	private static int hash(final PackFile wp, final int id) {
-		// wp.hash was already "stirred up" a bit by * 31 when
-		// it was created. Its reasonable to just add here.
-		//
-		return ((wp.hash + id) >>> 1) % cache.length;
-	}
-
-	private static int windowSize(final PackFile file, final int id) {
-		final long len = file.length;
-		final long pos = id << windowSizeShift;
-		return len < pos + windowSize ? (int) (len - pos) : windowSize;
-	}
-
-	private WindowCache() {
-		throw new UnsupportedOperationException();
 	}
 }

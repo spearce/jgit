@@ -38,41 +38,29 @@
 
 package org.spearce.jgit.lib;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 /**
  * A {@link ByteWindow} with an underlying byte array for storage.
  */
-final class ByteArrayWindow extends ByteWindow<byte[]> {
-	boolean loaded;
+final class ByteArrayWindow extends ByteWindow {
+	private final byte[] array;
 
-	/**
-	 * Constructor for ByteWindow.
-	 * 
-	 * @param o
-	 *            the PackFile providing data access
-	 * @param p
-	 *            the file offset.
-	 * @param d
-	 *            an id provided by the PackFile. See
-	 *            {@link WindowCache#get(WindowCursor, PackFile, long)}.
-	 * @param b
-	 *            byte array for storage
-	 */
-	ByteArrayWindow(final PackFile o, final long p, final int d, final byte[] b) {
-		super(o, p, d, b, b.length);
+	ByteArrayWindow(final PackFile pack, final long o, final byte[] b) {
+		super(pack, o, b.length);
+		array = b;
 	}
 
-	int copy(final byte[] array, final int p, final byte[] b, final int o, int n) {
+	@Override
+	protected int copy(final int p, final byte[] b, final int o, int n) {
 		n = Math.min(array.length - p, n);
 		System.arraycopy(array, p, b, o, n);
 		return n;
 	}
 
-	int inflate(final byte[] array, final int pos, final byte[] b, int o,
+	@Override
+	protected int inflate(final int pos, final byte[] b, int o,
 			final Inflater inf) throws DataFormatException {
 		while (!inf.finished()) {
 			if (inf.needsInput()) {
@@ -86,7 +74,8 @@ final class ByteArrayWindow extends ByteWindow<byte[]> {
 		return o;
 	}
 
-	void inflateVerify(final byte[] array, final int pos, final Inflater inf)
+	@Override
+	protected void inflateVerify(final int pos, final Inflater inf)
 			throws DataFormatException {
 		while (!inf.finished()) {
 			if (inf.needsInput()) {
@@ -97,27 +86,5 @@ final class ByteArrayWindow extends ByteWindow<byte[]> {
 		}
 		while (!inf.finished() && !inf.needsInput())
 			inf.inflate(verifyGarbageBuffer, 0, verifyGarbageBuffer.length);
-	}
-
-	void ensureLoaded(final byte[] array) {
-		boolean release = false;
-		try {
-			synchronized (this) {
-				if (!loaded) {
-					release = true;
-					try {
-						provider.fd.getChannel().read(ByteBuffer.wrap(array),
-								start);
-					} catch (IOException e) {
-						throw new RuntimeException("Cannot fault in window", e);
-					}
-					loaded = true;
-				}
-			}
-		} finally {
-			if (release) {
-				WindowCache.markLoaded(this);
-			}
-		}
 	}
 }

@@ -38,8 +38,6 @@
 
 package org.spearce.jgit.lib;
 
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -51,64 +49,31 @@ import java.util.zip.Inflater;
  * is very low and has paged part of this process out to disk. Therefore copying
  * bytes from a window is very inexpensive.
  * </p>
- * 
- * @param <T>
- *            type of object reference used to manage the window data.
  */
-abstract class ByteWindow<T> extends SoftReference<T> {
-	boolean sizeActive = true;
+abstract class ByteWindow {
+	protected final PackFile pack;
 
-	ByteWindow<?> chainNext;
+	protected final long start;
 
-	ByteWindow<?> lruPrev;
+	protected final long end;
 
-	ByteWindow<?> lruNext;
+	protected ByteWindow(final PackFile p, final long s, final int n) {
+		pack = p;
+		start = s;
+		end = start + n;
+	}
 
-	final PackFile provider;
-
-	final int id;
-
-	final int size;
-
-	final long start;
-
-	final long end;
-
-	/**
-	 * Constructor for ByteWindow.
-	 * 
-	 * @param o
-	 *            the PackFile providing data access
-	 * @param pos
-	 *            the position in the file the data comes from.
-	 * @param d
-	 *            an id provided by the PackFile. See
-	 *            {@link WindowCache#get(WindowCursor, PackFile, long)}.
-	 * @param ref
-	 *            the object value required to perform data access.
-	 * @param sz
-	 *            the total number of bytes in this window.
-	 */
-	@SuppressWarnings("unchecked")
-	ByteWindow(final PackFile o, final long pos, final int d, final T ref,
-			final int sz) {
-		super(ref, (ReferenceQueue<T>) WindowCache.clearedWindowQueue);
-		provider = o;
-		size = sz;
-		id = d;
-		start = pos;
-		end = start + size;
+	final int size() {
+		return (int) (end - start);
 	}
 
 	final boolean contains(final PackFile neededFile, final long neededPos) {
-		return provider == neededFile && start <= neededPos && neededPos < end;
+		return pack == neededFile && start <= neededPos && neededPos < end;
 	}
 
 	/**
 	 * Copy bytes from the window to a caller supplied buffer.
 	 * 
-	 * @param ref
-	 *            the object value required to perform data access.
 	 * @param pos
 	 *            offset within the file to start copying from.
 	 * @param dstbuf
@@ -123,15 +88,13 @@ abstract class ByteWindow<T> extends SoftReference<T> {
 	 *         <code>cnt</code> if <code>cnt</code> exceeded the number of
 	 *         bytes available.
 	 */
-	final int copy(T ref, long pos, byte[] dstbuf, int dstoff, int cnt) {
-		return copy(ref, (int) (pos - start), dstbuf, dstoff, cnt);
+	final int copy(long pos, byte[] dstbuf, int dstoff, int cnt) {
+		return copy((int) (pos - start), dstbuf, dstoff, cnt);
 	}
 
 	/**
 	 * Copy bytes from the window to a caller supplied buffer.
 	 * 
-	 * @param ref
-	 *            the object value required to perform data access.
 	 * @param pos
 	 *            offset within the window to start copying from.
 	 * @param dstbuf
@@ -146,15 +109,13 @@ abstract class ByteWindow<T> extends SoftReference<T> {
 	 *         <code>cnt</code> if <code>cnt</code> exceeded the number of
 	 *         bytes available.
 	 */
-	abstract int copy(T ref, int pos, byte[] dstbuf, int dstoff, int cnt);
+	protected abstract int copy(int pos, byte[] dstbuf, int dstoff, int cnt);
 
 	/**
 	 * Pump bytes into the supplied inflater as input.
 	 * 
-	 * @param ref
-	 *            the object value required to perform data access.
 	 * @param pos
-	 *            offset within the window to start supplying input from.
+	 *            offset within the file to start supplying input from.
 	 * @param dstbuf
 	 *            destination buffer the inflater should output decompressed
 	 *            data to.
@@ -174,16 +135,14 @@ abstract class ByteWindow<T> extends SoftReference<T> {
 	 *             the inflater encountered an invalid chunk of data. Data
 	 *             stream corruption is likely.
 	 */
-	final int inflate(T ref, long pos, byte[] dstbuf, int dstoff, Inflater inf)
+	final int inflate(long pos, byte[] dstbuf, int dstoff, Inflater inf)
 			throws DataFormatException {
-		return inflate(ref, (int) (pos - start), dstbuf, dstoff, inf);
+		return inflate((int) (pos - start), dstbuf, dstoff, inf);
 	}
 
 	/**
 	 * Pump bytes into the supplied inflater as input.
 	 * 
-	 * @param ref
-	 *            the object value required to perform data access.
 	 * @param pos
 	 *            offset within the window to start supplying input from.
 	 * @param dstbuf
@@ -205,18 +164,16 @@ abstract class ByteWindow<T> extends SoftReference<T> {
 	 *             the inflater encountered an invalid chunk of data. Data
 	 *             stream corruption is likely.
 	 */
-	abstract int inflate(T ref, int pos, byte[] dstbuf, int dstoff, Inflater inf)
-			throws DataFormatException;
+	protected abstract int inflate(int pos, byte[] dstbuf, int dstoff,
+			Inflater inf) throws DataFormatException;
 
 	protected static final byte[] verifyGarbageBuffer = new byte[2048];
 
-	final void inflateVerify(T ref, long pos, Inflater inf)
+	final void inflateVerify(final long pos, final Inflater inf)
 			throws DataFormatException {
-		inflateVerify(ref, (int) (pos - start), inf);
+		inflateVerify((int) (pos - start), inf);
 	}
 
-	abstract void inflateVerify(T ref, int pos, Inflater inf)
+	protected abstract void inflateVerify(int pos, Inflater inf)
 			throws DataFormatException;
-
-	abstract void ensureLoaded(T ref);
 }

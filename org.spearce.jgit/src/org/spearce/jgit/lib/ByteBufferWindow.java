@@ -47,24 +47,16 @@ import java.util.zip.Inflater;
  *
  * @see ByteWindow
  */
-final class ByteBufferWindow extends ByteWindow<ByteBuffer> {
-	/**
-	 * Constructor.
-	 *
-	 * @See ByteWindow
-	 *
-	 * @param o The PackFile
-	 * @param p the file offset.
-	 * @param d Window id
-	 * @param b ByteBuffer storage
-	 */
-	ByteBufferWindow(final PackFile o, final long p, final int d,
-			final ByteBuffer b) {
-		super(o, p, d, b, b.capacity());
+final class ByteBufferWindow extends ByteWindow {
+	private final ByteBuffer buffer;
+
+	ByteBufferWindow(final PackFile pack, final long o, final ByteBuffer b) {
+		super(pack, o, b.capacity());
+		buffer = b;
 	}
 
-	final int copy(final ByteBuffer buffer, final int p, final byte[] b,
-			final int o, int n) {
+	@Override
+	protected int copy(final int p, final byte[] b, final int o, int n) {
 		final ByteBuffer s = buffer.slice();
 		s.position(p);
 		n = Math.min(s.remaining(), n);
@@ -72,9 +64,9 @@ final class ByteBufferWindow extends ByteWindow<ByteBuffer> {
 		return n;
 	}
 
-	int inflate(final ByteBuffer buffer, final int pos, final byte[] b, int o,
-			final Inflater inf)
-			throws DataFormatException {
+	@Override
+	protected int inflate(final int pos, final byte[] b, int o,
+			final Inflater inf) throws DataFormatException {
 		final byte[] tmp = new byte[512];
 		final ByteBuffer s = buffer.slice();
 		s.position(pos);
@@ -91,8 +83,9 @@ final class ByteBufferWindow extends ByteWindow<ByteBuffer> {
 		return o;
 	}
 
-	void inflateVerify(final ByteBuffer buffer, final int pos,
-			final Inflater inf) throws DataFormatException {
+	@Override
+	protected void inflateVerify(final int pos, final Inflater inf)
+			throws DataFormatException {
 		final byte[] tmp = new byte[512];
 		final ByteBuffer s = buffer.slice();
 		s.position(pos);
@@ -106,9 +99,5 @@ final class ByteBufferWindow extends ByteWindow<ByteBuffer> {
 		}
 		while (!inf.finished() && !inf.needsInput())
 			inf.inflate(verifyGarbageBuffer, 0, verifyGarbageBuffer.length);
-	}
-
-	void ensureLoaded(final ByteBuffer ref) {
-		// Do nothing.
 	}
 }

@@ -170,10 +170,6 @@ public class ConcurrentRepackTest extends RepositoryTestCase {
 
 	private static void whackCache() {
 		final WindowCacheConfig config = new WindowCacheConfig();
-
-		config.setPackedGitOpenFiles(0);
-		WindowCache.reconfigure(config);
-
 		config.setPackedGitOpenFiles(1);
 		WindowCache.reconfigure(config);
 	}
