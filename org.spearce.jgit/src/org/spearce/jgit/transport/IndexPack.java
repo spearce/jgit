@@ -500,7 +500,7 @@ public class IndexPack {
 				missing.add(baseId);
 				continue;
 			}
-			final byte[] data = ldr.getBytes();
+			final byte[] data = ldr.getCachedBytes();
 			final int typeCode = ldr.getType();
 			final PackedObjectInfo oe;
 
