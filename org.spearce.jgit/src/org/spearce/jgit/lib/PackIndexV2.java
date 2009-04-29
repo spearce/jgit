@@ -108,7 +108,7 @@ class PackIndexV2 extends PackIndex {
 
 			final int intNameLen = (int) nameLen;
 			final byte[] raw = new byte[intNameLen];
-			final int[] bin = new int[intNameLen >> 2];
+			final int[] bin = new int[intNameLen >>> 2];
 			NB.readFully(fd, raw, 0, raw.length);
 			for (int i = 0; i < bin.length; i++)
 				bin[i] = NB.decodeInt32(raw, i << 2);
@@ -212,12 +212,12 @@ class PackIndexV2 extends PackIndex {
 
 	private int binarySearchLevelTwo(final AnyObjectId objId, final int levelOne) {
 		final int[] data = names[levelOne];
-		int high = offset32[levelOne].length >> 2;
+		int high = offset32[levelOne].length >>> 2;
 		if (high == 0)
 			return -1;
 		int low = 0;
 		do {
-			final int mid = (low + high) >> 1;
+			final int mid = (low + high) >>> 1;
 			final int mid4 = mid << 2;
 			final int cmp;
 

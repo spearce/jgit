@@ -129,7 +129,7 @@ class PackIndexV1 extends PackIndex {
 		int high = data.length / (4 + Constants.OBJECT_ID_LENGTH);
 		int low = 0;
 		do {
-			final int mid = (low + high) / 2;
+			final int mid = (low + high) >>> 1;
 			final int pos = ((4 + Constants.OBJECT_ID_LENGTH) * mid) + 4;
 			final int cmp = objId.compareTo(data, pos);
 			if (cmp < 0)
