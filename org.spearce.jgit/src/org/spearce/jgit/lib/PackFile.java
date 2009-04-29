@@ -389,10 +389,9 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 
 	private void onOpenPack() throws IOException {
 		final PackIndex idx = idx();
-		final WindowCursor curs = new WindowCursor();
 		final byte[] buf = new byte[20];
 
-		readFully(0, buf, 0, 12, curs);
+		NB.readFully(fd.getChannel(), 0, buf, 0, 12);
 		if (RawParseUtils.match(buf, 0, Constants.PACK_SIGNATURE) != 4)
 			throw new IOException("Not a PACK file.");
 		final long vers = NB.decodeUInt32(buf, 4);
@@ -406,7 +405,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 					+ " index " + idx.getObjectCount()
 					+ ": " + getPackFile());
 
-		readFully(length - 20, buf, 0, 20, curs);
+		NB.readFully(fd.getChannel(), length - 20, buf, 0, 20);
 		if (!Arrays.equals(buf, idx.packChecksum))
 			throw new PackMismatchException("Pack checksum mismatch:"
 					+ " pack " + ObjectId.fromRaw(buf).name()
