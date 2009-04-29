@@ -47,7 +47,6 @@ import java.io.RandomAccessFile;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.zip.CRC32;
 import java.util.zip.DataFormatException;
@@ -163,7 +162,7 @@ public class IndexPack {
 
 	private ObjectIdMap<ArrayList<UnresolvedDelta>> baseById;
 
-	private HashMap<Long, ArrayList<UnresolvedDelta>> baseByPos;
+	private LongMap<ArrayList<UnresolvedDelta>> baseByPos;
 
 	private byte[] objectData;
 
@@ -303,7 +302,7 @@ public class IndexPack {
 
 				entries = new PackedObjectInfo[(int) objectCount];
 				baseById = new ObjectIdMap<ArrayList<UnresolvedDelta>>();
-				baseByPos = new HashMap<Long, ArrayList<UnresolvedDelta>>();
+				baseByPos = new LongMap<ArrayList<UnresolvedDelta>>();
 
 				progress.beginTask(PROGRESS_DOWNLOAD, (int) objectCount);
 				for (int done = 0; done < objectCount; done++) {
@@ -382,8 +381,7 @@ public class IndexPack {
 
 	private void resolveDeltas(final PackedObjectInfo oe) throws IOException {
 		final int oldCRC = oe.getCRC();
-		if (baseById.containsKey(oe)
-				|| baseByPos.containsKey(new Long(oe.getOffset())))
+		if (baseById.containsKey(oe) || baseByPos.containsKey(oe.getOffset()))
 			resolveDeltas(oe.getOffset(), oldCRC, Constants.OBJ_BAD, null, oe);
 	}
 
@@ -448,7 +446,7 @@ public class IndexPack {
 	private void resolveChildDeltas(final long pos, int type, byte[] data,
 			PackedObjectInfo oe) throws IOException {
 		final ArrayList<UnresolvedDelta> a = baseById.remove(oe);
-		final ArrayList<UnresolvedDelta> b = baseByPos.remove(new Long(pos));
+		final ArrayList<UnresolvedDelta> b = baseByPos.remove(pos);
 		int ai = 0, bi = 0;
 		if (a != null && b != null) {
 			while (ai < a.size() && bi < b.size()) {
@@ -679,7 +677,7 @@ public class IndexPack {
 				ofs <<= 7;
 				ofs += (c & 127);
 			}
-			final Long base = new Long(pos - ofs);
+			final long base = pos - ofs;
 			ArrayList<UnresolvedDelta> r = baseByPos.get(base);
 			if (r == null) {
 				r = new ArrayList<UnresolvedDelta>(8);
