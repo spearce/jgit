@@ -99,6 +99,13 @@ abstract class PackedObjectLoader extends ObjectLoader {
 	}
 
 	/**
+	 * @return offset of object header within pack file
+	 */
+	public final long getObjectOffset() {
+		return objectOffset;
+	}
+
+	/**
 	 * @return offset of object data within pack file
 	 */
 	public final long getDataOffset() {

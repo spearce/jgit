@@ -115,6 +115,10 @@ public class WindowCache extends OffsetCache<ByteWindow, WindowCache.WindowRef> 
 		UnpackedObjectCache.reconfigure(cfg);
 	}
 
+	static WindowCache getInstance() {
+		return cache;
+	}
+
 	static final ByteWindow get(final PackFile pack, final long offset)
 			throws IOException {
 		final WindowCache c = cache;
@@ -163,6 +167,14 @@ public class WindowCache extends OffsetCache<ByteWindow, WindowCache.WindowRef> 
 			throw new IllegalArgumentException("Open files must be >= 1");
 		if (maxBytes < windowSize)
 			throw new IllegalArgumentException("Window size must be < limit");
+	}
+
+	int getOpenFiles() {
+		return openFiles.get();
+	}
+
+	int getOpenBytes() {
+		return openBytes.get();
 	}
 
 	@Override
