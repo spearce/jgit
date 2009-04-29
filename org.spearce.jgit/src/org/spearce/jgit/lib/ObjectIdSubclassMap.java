@@ -37,6 +37,8 @@
 
 package org.spearce.jgit.lib;
 
+import java.util.Iterator;
+
 /**
  * Fast, efficient map specifically for {@link ObjectId} subclasses.
  * <p>
@@ -51,7 +53,7 @@ package org.spearce.jgit.lib;
  * @param <V>
  *            type of subclass of ObjectId that will be stored in the map.
  */
-public class ObjectIdSubclassMap<V extends ObjectId> {
+public class ObjectIdSubclassMap<V extends ObjectId> implements Iterable<V> {
 	private int size;
 
 	private V[] obj_hash;
@@ -112,6 +114,33 @@ public class ObjectIdSubclassMap<V extends ObjectId> {
 	 */
 	public int size() {
 		return size;
+	}
+
+	public Iterator<V> iterator() {
+		return new Iterator<V>() {
+			private int found;
+
+			private int i;
+
+			public boolean hasNext() {
+				return found < size;
+			}
+
+			public V next() {
+				while (i < obj_hash.length) {
+					final V v = obj_hash[i++];
+					if (v != null) {
+						found++;
+						return v;
+					}
+				}
+				throw new IllegalStateException();
+			}
+
+			public void remove() {
+				throw new UnsupportedOperationException();
+			}
+		};
 	}
 
 	private final int index(final AnyObjectId id) {
