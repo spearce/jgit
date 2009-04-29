@@ -253,7 +253,10 @@ public abstract class AnyObjectId implements Comparable {
 	}
 
 	public boolean equals(final Object o) {
-		return equals((AnyObjectId) o);
+		if (o instanceof AnyObjectId)
+			return equals((AnyObjectId) o);
+		else
+			return false;
 	}
 
 	/**
