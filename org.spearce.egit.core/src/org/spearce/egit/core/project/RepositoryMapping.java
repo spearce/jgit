@@ -232,6 +232,9 @@ public class RepositoryMapping {
 		if (!(rp instanceof GitProvider))
 			return null;
 
+		if (((GitProvider)rp).getData() == null)
+			return null;
+
 		return ((GitProvider)rp).getData().getRepositoryMapping(resource);
 	}
 
