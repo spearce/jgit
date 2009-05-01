@@ -13,6 +13,7 @@ org.spearce.jgit.pgm.MergeBase
 org.spearce.jgit.pgm.Push
 org.spearce.jgit.pgm.ReceivePack
 org.spearce.jgit.pgm.RevList
+org.spearce.jgit.pgm.RevParse
 org.spearce.jgit.pgm.Rm
 org.spearce.jgit.pgm.ShowRev
 org.spearce.jgit.pgm.Tag
