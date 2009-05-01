@@ -49,6 +49,7 @@ import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
+import org.spearce.jgit.lib.RepositoryConfig;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevCommitList;
 import org.spearce.jgit.revwalk.RevFlag;
@@ -126,10 +127,15 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 
 	private boolean includeTags;
 
+	private boolean allowOfsDelta;
+
 	BasePackFetchConnection(final PackTransport packTransport) {
 		super(packTransport);
+
+		final RepositoryConfig cfg = local.getConfig();
 		includeTags = transport.getTagOpt() != TagOpt.NO_TAGS;
 		thinPack = transport.isFetchThin();
+		allowOfsDelta = cfg.getBoolean("repack", "usedeltabaseoffset", true);
 
 		walk = new RevWalk(local);
 		reachableCommits = new RevCommitList<RevCommit>();
@@ -282,7 +288,8 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 		final StringBuilder line = new StringBuilder();
 		if (includeTags)
 			includeTags = wantCapability(line, OPTION_INCLUDE_TAG);
-		wantCapability(line, OPTION_OFS_DELTA);
+		if (allowOfsDelta)
+			wantCapability(line, OPTION_OFS_DELTA);
 		multiAck = wantCapability(line, OPTION_MULTI_ACK);
 		if (thinPack)
 			thinPack = wantCapability(line, OPTION_THIN_PACK);
