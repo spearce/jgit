@@ -77,6 +77,8 @@ public class ReceivePack {
 
 	static final String CAPABILITY_DELETE_REFS = BasePackPushConnection.CAPABILITY_DELETE_REFS;
 
+	static final String CAPABILITY_OFS_DELTA = BasePackPushConnection.CAPABILITY_OFS_DELTA;
+
 	/** Database we write the stored objects into. */
 	private final Repository db;
 
@@ -94,6 +96,8 @@ public class ReceivePack {
 
 	/** Should an incoming transfer permit non-fast-forward requests? */
 	private boolean allowNonFastForwards;
+
+	private boolean allowOfsDelta;
 
 	/** Identity to record action as within the reflog. */
 	private PersonIdent refLogIdent;
@@ -145,6 +149,7 @@ public class ReceivePack {
 		allowDeletes = !cfg.getBoolean("receive", "denydeletes", false);
 		allowNonFastForwards = !cfg.getBoolean("receive",
 				"denynonfastforwards", false);
+		allowOfsDelta = cfg.getBoolean("repack", "usedeltabaseoffset", true);
 		preReceive = PreReceiveHook.NULL;
 		postReceive = PostReceiveHook.NULL;
 	}
@@ -455,6 +460,10 @@ public class ReceivePack {
 			m.append(CAPABILITY_DELETE_REFS);
 			m.append(' ');
 			m.append(CAPABILITY_REPORT_STATUS);
+			if (allowOfsDelta) {
+				m.append(' ');
+				m.append(CAPABILITY_OFS_DELTA);
+			}
 			m.append(' ');
 			writeAdvertisedRef(m);
 		}

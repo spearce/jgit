@@ -78,11 +78,15 @@ class BasePackPushConnection extends BasePackConnection implements
 
 	static final String CAPABILITY_DELETE_REFS = "delete-refs";
 
+	static final String CAPABILITY_OFS_DELTA = "ofs-delta";
+
 	private final boolean thinPack;
 
 	private boolean capableDeleteRefs;
 
 	private boolean capableReport;
+
+	private boolean capableOfsDelta;
 
 	private boolean sentCommand;
 
@@ -180,6 +184,7 @@ class BasePackPushConnection extends BasePackConnection implements
 		final StringBuilder line = new StringBuilder();
 		capableReport = wantCapability(line, CAPABILITY_REPORT_STATUS);
 		capableDeleteRefs = wantCapability(line, CAPABILITY_DELETE_REFS);
+		capableOfsDelta = wantCapability(line, CAPABILITY_OFS_DELTA);
 		if (line.length() > 0)
 			line.setCharAt(0, '\0');
 		return line.toString();
@@ -202,6 +207,7 @@ class BasePackPushConnection extends BasePackConnection implements
 		}
 
 		writer.setThin(thinPack);
+		writer.setDeltaBaseAsOffset(capableOfsDelta);
 		writer.preparePack(newObjects, remoteObjects);
 		writer.writePack(out);
 	}
