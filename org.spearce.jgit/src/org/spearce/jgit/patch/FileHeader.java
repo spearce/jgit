@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.spearce.jgit.diff.EditList;
 import org.spearce.jgit.lib.AbbreviatedObjectId;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
@@ -421,6 +422,14 @@ public class FileHeader {
 	/** @return if a {@link PatchType#GIT_BINARY}, the old-image delta/literal */
 	public BinaryHunk getReverseBinaryHunk() {
 		return reverseBinaryHunk;
+	}
+
+	/** @return a list describing the content edits performed on this file. */
+	public EditList toEditList() {
+		final EditList r = new EditList();
+		for (final HunkHeader hunk : hunks)
+			r.addAll(hunk.toEditList());
+		return r;
 	}
 
 	/**

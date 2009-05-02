@@ -44,6 +44,8 @@ import static org.spearce.jgit.util.RawParseUtils.parseBase10;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.spearce.jgit.diff.Edit;
+import org.spearce.jgit.diff.EditList;
 import org.spearce.jgit.lib.AbbreviatedObjectId;
 import org.spearce.jgit.util.MutableInteger;
 
@@ -159,6 +161,52 @@ public class HunkHeader {
 	/** @return total number of lines of context appearing in this hunk */
 	public int getLinesContext() {
 		return nContext;
+	}
+
+	/** @return a list describing the content edits performed within the hunk. */
+	public EditList toEditList() {
+		final EditList r = new EditList();
+		final byte[] buf = file.buf;
+		int c = nextLF(buf, startOffset);
+		int oLine = old.startLine;
+		int nLine = newStartLine;
+		Edit in = null;
+
+		SCAN: for (; c < endOffset; c = nextLF(buf, c)) {
+			switch (buf[c]) {
+			case ' ':
+			case '\n':
+				in = null;
+				oLine++;
+				nLine++;
+				continue;
+
+			case '-':
+				if (in == null) {
+					in = new Edit(oLine - 1, nLine - 1);
+					r.add(in);
+				}
+				oLine++;
+				in.extendA();
+				continue;
+
+			case '+':
+				if (in == null) {
+					in = new Edit(oLine - 1, nLine - 1);
+					r.add(in);
+				}
+				nLine++;
+				in.extendB();
+				continue;
+
+			case '\\': // Matches "\ No newline at end of file"
+				continue;
+
+			default:
+				break SCAN;
+			}
+		}
+		return r;
 	}
 
 	void parseHeader() {
