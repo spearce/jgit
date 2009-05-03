@@ -140,6 +140,18 @@ public class RawText implements Sequence {
 		out.write(content, start, end - start);
 	}
 
+	/**
+	 * Determine if the file ends with a LF ('\n').
+	 *
+	 * @return true if the last line has an LF; false otherwise.
+	 */
+	public boolean isMissingNewlineAtEnd() {
+		final int end = lines.get(lines.size() - 1);
+		if (end == 0)
+			return true;
+		return content[end - 1] != '\n';
+	}
+
 	private IntList computeHashes() {
 		final IntList r = new IntList(lines.size());
 		r.add(0);
