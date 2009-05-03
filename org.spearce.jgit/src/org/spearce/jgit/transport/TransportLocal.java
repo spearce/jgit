@@ -52,13 +52,27 @@ import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.util.FS;
 
 /**
- * Transport that executes the Git "remote side" processes on a local directory.
+ * Transport to access a local directory as though it were a remote peer.
  * <p>
  * This transport is suitable for use on the local system, where the caller has
- * direct read or write access to the remote repository. This implementation
- * forks a C Git process to provide the remote side access, much as the
- * {@link TransportGitSsh} implementation causes the remote side to run a C Git
- * process.
+ * direct read or write access to the "remote" repository.
+ * <p>
+ * By default this transport works by spawning a helper thread within the same
+ * JVM, and processes the data transfer using a shared memory buffer between the
+ * calling thread and the helper thread. This is a pure-Java implementation
+ * which does not require forking an external process.
+ * <p>
+ * However, during {@link #openFetch()}, if the Transport has configured
+ * {@link Transport#getOptionUploadPack()} to be anything other than
+ * <code>"git-upload-pack"</code> or <code>"git upload-pack"</code>, this
+ * implementation will fork and execute the external process, using an operating
+ * system pipe to transfer data.
+ * <p>
+ * Similarly, during {@link #openPush()}, if the Transport has configured
+ * {@link Transport#getOptionReceivePack()} to be anything other than
+ * <code>"git-receive-pack"</code> or <code>"git receive-pack"</code>, this
+ * implementation will fork and execute the external process, using an operating
+ * system pipe to transfer data.
  */
 class TransportLocal extends Transport implements PackTransport {
 	private static final String PWD = ".";
