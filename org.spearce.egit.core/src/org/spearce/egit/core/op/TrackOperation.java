@@ -94,14 +94,15 @@ public class TrackOperation implements IWorkspaceRunnable {
 									// first. If a resource within a ignored folder is marked
 									// we ignore it here, i.e. there is no way to unmark it expect
 									// by explicitly selecting and invoking track on it.
+									boolean isIgnored = Team.isIgnoredHint(resource);
 									if (resource.getType() == IResource.FILE) {
 										Entry entry = index.getEntry(repoPath);
-										if (!Team.isIgnoredHint(resource) || entry != null && entry.isAssumedValid()) {
+										if (!isIgnored || entry != null && entry.isAssumedValid()) {
 											entry = index.add(rm.getWorkDir(), new File(rm.getWorkDir(), repoPath));
 											entry.setAssumeValid(false);
 										}
 									}
-									if (Team.isIgnoredHint(resource))
+									if (isIgnored)
 										return false;
 
 								} catch (IOException e) {
