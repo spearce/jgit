@@ -1,5 +1,5 @@
 #FindBugs User Preferences
-#Mon May 04 20:17:32 CEST 2009
+#Mon May 04 16:24:13 PDT 2009
 detectorAppendingToAnObjectOutputStream=AppendingToAnObjectOutputStream|true
 detectorBadAppletConstructor=BadAppletConstructor|false
 detectorBadResultSetAccess=BadResultSetAccess|true
@@ -10,7 +10,7 @@ detectorBooleanReturnNull=BooleanReturnNull|true
 detectorCallToUnsupportedMethod=CallToUnsupportedMethod|true
 detectorCheckImmutableAnnotation=CheckImmutableAnnotation|true
 detectorCheckTypeQualifiers=CheckTypeQualifiers|true
-detectorCloneIdiom=CloneIdiom|true
+detectorCloneIdiom=CloneIdiom|false
 detectorComparatorIdiom=ComparatorIdiom|true
 detectorConfusedInheritance=ConfusedInheritance|true
 detectorConfusionBetweenInheritedAndOuterMethod=ConfusionBetweenInheritedAndOuterMethod|true
