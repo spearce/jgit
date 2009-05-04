@@ -42,6 +42,7 @@ import java.util.Set;
 
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.PackLock;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
 
@@ -142,4 +143,26 @@ public interface FetchConnection extends Connection {
 	 *         the remote peer supplied a complete graph.
 	 */
 	public boolean didFetchTestConnectivity();
+
+	/**
+	 * Set the lock message used when holding a pack out of garbage collection.
+	 * <p>
+	 * Callers that set a lock message <b>must</b> ensure they call
+	 * {@link #getPackLocks()} after
+	 * {@link #fetch(ProgressMonitor, Collection, Set)}, even if an exception
+	 * was thrown, and release the locks that are held.
+	 *
+	 * @param message message to use when holding a pack in place.
+	 */
+	public void setPackLockMessage(String message);
+
+	/**
+	 * All locks created by the last
+	 * {@link #fetch(ProgressMonitor, Collection, Set)} call.
+	 *
+	 * @return collection (possibly empty) of locks created by the last call to
+	 *         fetch. The caller must release these after refs are updated in
+	 *         order to safely permit garbage collection.
+	 */
+	public Collection<PackLock> getPackLocks();
 }

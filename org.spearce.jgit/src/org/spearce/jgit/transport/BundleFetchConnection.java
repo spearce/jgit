@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,6 +55,7 @@ import org.spearce.jgit.errors.PackProtocolException;
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.PackLock;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.revwalk.RevCommit;
@@ -74,6 +76,10 @@ class BundleFetchConnection extends BaseFetchConnection {
 	InputStream bin;
 
 	final Set<ObjectId> prereqs = new HashSet<ObjectId>();
+
+	private String lockMessage;
+
+	private PackLock packLock;
 
 	BundleFetchConnection(Transport transportBundle, final InputStream src) throws TransportException {
 		transport = transportBundle;
@@ -158,7 +164,7 @@ class BundleFetchConnection extends BaseFetchConnection {
 		try {
 			final IndexPack ip = newIndexPack();
 			ip.index(monitor);
-			ip.renameAndOpenPack();
+			packLock = ip.renameAndOpenPack(lockMessage);
 		} catch (IOException err) {
 			close();
 			throw new TransportException(transport.uri, err.getMessage(), err);
@@ -166,6 +172,16 @@ class BundleFetchConnection extends BaseFetchConnection {
 			close();
 			throw new TransportException(transport.uri, err.getMessage(), err);
 		}
+	}
+
+	public void setPackLockMessage(final String message) {
+		lockMessage = message;
+	}
+
+	public Collection<PackLock> getPackLocks() {
+		if (packLock != null)
+			return Collections.singleton(packLock);
+		return Collections.<PackLock> emptyList();
 	}
 
 	private IndexPack newIndexPack() throws IOException {

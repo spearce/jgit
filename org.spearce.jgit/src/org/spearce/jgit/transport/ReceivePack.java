@@ -57,6 +57,7 @@ import org.spearce.jgit.errors.PackProtocolException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.NullProgressMonitor;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.PackLock;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.RefComparator;
@@ -132,6 +133,9 @@ public class ReceivePack {
 
 	/** if {@link #enabledCapablities} has {@link #CAPABILITY_REPORT_STATUS} */
 	private boolean reportStatus;
+
+	/** Lock around the received pack file, while updating refs. */
+	private PackLock packLock;
 
 	/**
 	 * Create a new pack receive for an open repository.
@@ -384,6 +388,7 @@ public class ReceivePack {
 					msgs.flush();
 				}
 			} finally {
+				unlockPack();
 				rawIn = null;
 				rawOut = null;
 				pckIn = null;
@@ -421,6 +426,7 @@ public class ReceivePack {
 				validateCommands();
 				executeCommands();
 			}
+			unlockPack();
 
 			if (reportStatus) {
 				sendStatusReport(true, new Reporter() {
@@ -439,6 +445,13 @@ public class ReceivePack {
 			}
 
 			postReceive.onPostReceive(this, filterCommands(Result.OK));
+		}
+	}
+
+	private void unlockPack() {
+		if (packLock != null) {
+			packLock.unlock();
+			packLock = null;
 		}
 	}
 
@@ -543,7 +556,11 @@ public class ReceivePack {
 		ip.setFixThin(true);
 		ip.setObjectChecking(isCheckReceivedObjects());
 		ip.index(NullProgressMonitor.INSTANCE);
-		ip.renameAndOpenPack();
+
+		String lockMsg = "jgit receive-pack";
+		if (getRefLogIdent() != null)
+			lockMsg += " from " + getRefLogIdent().toExternalString();
+		packLock = ip.renameAndOpenPack(lockMsg);
 	}
 
 	private void checkConnectivity() throws IOException {

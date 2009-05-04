@@ -40,6 +40,7 @@ package org.spearce.jgit.transport;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
 
@@ -47,6 +48,7 @@ import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.PackLock;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.RepositoryConfig;
@@ -129,6 +131,10 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 
 	private boolean allowOfsDelta;
 
+	private String lockMessage;
+
+	private PackLock packLock;
+
 	BasePackFetchConnection(final PackTransport packTransport) {
 		super(packTransport);
 
@@ -161,6 +167,16 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 
 	public boolean didFetchTestConnectivity() {
 		return false;
+	}
+
+	public void setPackLockMessage(final String message) {
+		lockMessage = message;
+	}
+
+	public Collection<PackLock> getPackLocks() {
+		if (packLock != null)
+			return Collections.singleton(packLock);
+		return Collections.<PackLock> emptyList();
 	}
 
 	protected void doFetch(final ProgressMonitor monitor,
@@ -484,7 +500,7 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 		ip.setFixThin(thinPack);
 		ip.setObjectChecking(transport.isCheckFetchedObjects());
 		ip.index(monitor);
-		ip.renameAndOpenPack();
+		packLock = ip.renameAndOpenPack(lockMessage);
 	}
 
 	private static class CancelledException extends Exception {

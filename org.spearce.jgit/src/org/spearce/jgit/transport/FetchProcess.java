@@ -57,6 +57,7 @@ import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.LockFile;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.PackLock;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
@@ -82,6 +83,8 @@ class FetchProcess {
 	/** Records to be recorded into FETCH_HEAD. */
 	private final ArrayList<FetchHeadRecord> fetchHeadUpdates = new ArrayList<FetchHeadRecord>();
 
+	private final ArrayList<PackLock> packLocks = new ArrayList<PackLock>();
+
 	private FetchConnection conn;
 
 	FetchProcess(final Transport t, final Collection<RefSpec> f) {
@@ -94,7 +97,19 @@ class FetchProcess {
 		askFor.clear();
 		localUpdates.clear();
 		fetchHeadUpdates.clear();
+		packLocks.clear();
 
+		try {
+			executeImp(monitor, result);
+		} finally {
+			for (final PackLock lock : packLocks)
+				lock.unlock();
+		}
+	}
+
+	private void executeImp(final ProgressMonitor monitor,
+			final FetchResult result) throws NotSupportedException,
+			TransportException {
 		conn = transport.openFetch();
 		try {
 			result.setAdvertisedRefs(transport.getURI(), conn.getRefsMap());
@@ -177,7 +192,12 @@ class FetchProcess {
 
 	private void fetchObjects(final ProgressMonitor monitor)
 			throws TransportException {
-		conn.fetch(monitor, askFor.values(), have);
+		try {
+			conn.setPackLockMessage("jgit fetch " + transport.uri);
+			conn.fetch(monitor, askFor.values(), have);
+		} finally {
+			packLocks.addAll(conn.getPackLocks());
+		}
 		if (transport.isCheckFetchedObjects()
 				&& !conn.didFetchTestConnectivity() && !askForIsComplete())
 			throw new TransportException(transport.getURI(),
