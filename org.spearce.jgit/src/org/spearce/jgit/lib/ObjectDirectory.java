@@ -314,9 +314,8 @@ public class ObjectDirectory extends ObjectDatabase {
 
 	private PackFile[] packs() {
 		PackFile[] r = packList.get();
-		if (r == null) {
-			r = scanPacks(r);
-		}
+		if (r == null)
+			r = scanPacks(null);
 		return r;
 	}
 
