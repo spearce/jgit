@@ -744,7 +744,7 @@ public class IndexPack {
 				objCheck.check(type, data);
 			} catch (CorruptObjectException e) {
 				throw new IOException("Invalid "
-						+ Constants.encodedTypeString(type) + " " + id.name()
+						+ Constants.typeString(type) + " " + id.name()
 						+ ":" + e.getMessage());
 			}
 		}

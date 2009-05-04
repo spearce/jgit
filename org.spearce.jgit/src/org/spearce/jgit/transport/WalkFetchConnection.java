@@ -602,7 +602,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 		if (!AnyObjectId.equals(id, idBuffer)) {
 			throw new TransportException("Incorrect hash for " + id.name()
 					+ "; computed " + idBuffer.name() + " as a "
-					+ Constants.encodedTypeString(uol.getType()) + " from "
+					+ Constants.typeString(uol.getType()) + " from "
 					+ compressed.length + " bytes.");
 		}
 		if (objCheck != null) {
@@ -610,7 +610,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 				objCheck.check(uol.getType(), uol.getCachedBytes());
 			} catch (CorruptObjectException e) {
 				throw new TransportException("Invalid "
-						+ Constants.encodedTypeString(uol.getType()) + " "
+						+ Constants.typeString(uol.getType()) + " "
 						+ id.name() + ":" + e.getMessage());
 			}
 		}
