@@ -363,7 +363,7 @@ class TransportLocal extends Transport implements PackTransport {
 		}
 	}
 
-	class StreamRewritingThread extends Thread {
+	static class StreamRewritingThread extends Thread {
 		private final InputStream in;
 
 		StreamRewritingThread(final String cmd, final InputStream in) {
