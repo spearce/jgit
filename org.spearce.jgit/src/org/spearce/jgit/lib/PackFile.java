@@ -54,6 +54,7 @@ import java.util.zip.CheckedOutputStream;
 import java.util.zip.DataFormatException;
 
 import org.spearce.jgit.errors.CorruptObjectException;
+import org.spearce.jgit.errors.PackInvalidException;
 import org.spearce.jgit.errors.PackMismatchException;
 import org.spearce.jgit.util.NB;
 import org.spearce.jgit.util.RawParseUtils;
@@ -89,6 +90,8 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 
 	private volatile boolean invalid;
 
+	private byte[] packChecksum;
+
 	private PackIndex loadedIdx;
 
 	private PackReverseIndex reverseIdx;
@@ -115,8 +118,18 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 
 	private synchronized PackIndex idx() throws IOException {
 		if (loadedIdx == null) {
+			if (invalid)
+				throw new PackInvalidException(packFile);
+
 			try {
-				loadedIdx = PackIndex.open(idxFile);
+				final PackIndex idx = PackIndex.open(idxFile);
+
+				if (packChecksum == null)
+					packChecksum = idx.packChecksum;
+				else if (!Arrays.equals(packChecksum, idx.packChecksum))
+					throw new PackMismatchException("Pack checksum mismatch");
+
+				loadedIdx = idx;
 			} catch (IOException e) {
 				invalid = true;
 				throw e;
@@ -339,6 +352,8 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 
 	private void doOpen() throws IOException {
 		try {
+			if (invalid)
+				throw new PackInvalidException(packFile);
 			fd = new RandomAccessFile(packFile, "r");
 			length = fd.length();
 			onOpenPack();
@@ -423,7 +438,7 @@ public class PackFile implements Iterable<PackIndex.MutableEntry> {
 					+ ": " + getPackFile());
 
 		NB.readFully(fd.getChannel(), length - 20, buf, 0, 20);
-		if (!Arrays.equals(buf, idx.packChecksum))
+		if (!Arrays.equals(buf, packChecksum))
 			throw new PackMismatchException("Pack checksum mismatch:"
 					+ " pack " + ObjectId.fromRaw(buf).name()
 					+ " index " + ObjectId.fromRaw(idx.packChecksum).name()
