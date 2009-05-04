@@ -1102,7 +1102,7 @@ public class RepositoryConfig {
 		}
 
 		private static boolean eq(final String a, final String b) {
-			if (a == b)
+			if (a == null && b == null)
 				return true;
 			if (a == null || b == null)
 				return false;
