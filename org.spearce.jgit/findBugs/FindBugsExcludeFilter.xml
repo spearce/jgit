@@ -6,4 +6,13 @@
        <Method name="refreshPackedRefs" />
        <Bug pattern="DM_STRING_CTOR" />
      </Match>
+
+     <!-- Silence PackFile.mmap calls GC, we need to force it to remove stale
+          memory mapped segments if the JVM heap is out of address space.
+       -->
+     <Match>
+       <Class name="org.spearce.jgit.lib.PackFile" />
+       <Method name="mmap" />
+       <Bug pattern="DM_GC" />
+     </Match>
 </FindBugsFilter>
