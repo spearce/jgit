@@ -414,6 +414,8 @@ abstract class OffsetCache<V, R extends OffsetCache.Ref<V>> {
 			// can be enqueued and dequeued twice on the same reference queue
 			// due to a race condition within ReferenceQueue.enqueue(Reference).
 			//
+			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6837858
+			//
 			// We CANNOT permit a Reference to come through us twice, as it will
 			// skew the resource counters we maintain. Our canClear() check here
 			// provides a way to skip the redundant dequeues, if any.
