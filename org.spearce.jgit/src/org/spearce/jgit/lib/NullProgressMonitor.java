@@ -45,6 +45,10 @@ public class NullProgressMonitor implements ProgressMonitor {
 	/** Immutable instance of a null progress monitor. */
 	public static final NullProgressMonitor INSTANCE = new NullProgressMonitor();
 
+	private NullProgressMonitor() {
+		// Do not let others instantiate
+	}
+
 	public void start(int totalTasks) {
 		// Do not report.
 	}
