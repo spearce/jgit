@@ -230,8 +230,8 @@ public class PackWriter {
 	public PackWriter(final Repository repo, final ProgressMonitor imonitor,
 			final ProgressMonitor wmonitor) {
 		this.db = repo;
-		initMonitor = imonitor;
-		writeMonitor = wmonitor;
+		initMonitor = imonitor == null ? NullProgressMonitor.INSTANCE : imonitor;
+		writeMonitor = wmonitor == null ? NullProgressMonitor.INSTANCE : wmonitor;
 		this.deflater = new Deflater(db.getConfig().getCore().getCompression());
 		outputVersion = repo.getConfig().getCore().getPackIndexVersion();
 	}
@@ -829,16 +829,18 @@ public class PackWriter {
 			RevObject o = walker.parseAny(id);
 			walker.markStart(o);
 		}
-		for (ObjectId id : uninterestingObjects) {
-			final RevObject o;
-			try {
-				o = walker.parseAny(id);
-			} catch (MissingObjectException x) {
-				if (ignoreMissingUninteresting)
-					continue;
-				throw x;
+		if (uninterestingObjects != null) {
+			for (ObjectId id : uninterestingObjects) {
+				final RevObject o;
+				try {
+					o = walker.parseAny(id);
+				} catch (MissingObjectException x) {
+					if (ignoreMissingUninteresting)
+						continue;
+					throw x;
+				}
+				walker.markUninteresting(o);
 			}
-			walker.markUninteresting(o);
 		}
 		return walker;
 	}
