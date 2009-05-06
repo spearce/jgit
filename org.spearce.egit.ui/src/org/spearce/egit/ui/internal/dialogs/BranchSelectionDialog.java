@@ -154,19 +154,19 @@ public class BranchSelectionDialog extends Dialog {
 
 		for (String ref : branches) {
 			String shortName = ref;
-			if (ref.startsWith("refs/heads/")) {
+			if (ref.startsWith(Constants.R_HEADS)) {
 				shortName = ref.substring(11);
-				if (!"refs/heads/".equals(curPrefix)) {
-					curPrefix = "refs/heads/";
+				if (!Constants.R_HEADS.equals(curPrefix)) {
+					curPrefix = Constants.R_HEADS;
 					curSubPrefix = null;
 					curSubItem = null;
 					curItem = new TreeItem(branchTree, SWT.NONE);
 					curItem.setText(UIText.BranchSelectionDialog_LocalBranches);
 				}
-			} else if (ref.startsWith("refs/remotes/")) {
+			} else if (ref.startsWith(Constants.R_REMOTES)) {
 				shortName = ref.substring(13);
-				if (!"refs/remotes/".equals(curPrefix)) {
-					curPrefix = "refs/remotes/";
+				if (!Constants.R_REMOTES.equals(curPrefix)) {
+					curPrefix = Constants.R_REMOTES;
 					curItem = new TreeItem(branchTree, SWT.NONE);
 					curItem.setText(UIText.BranchSelectionDialog_RemoteBranches);
 					curSubItem = null;
@@ -186,10 +186,10 @@ public class BranchSelectionDialog extends Dialog {
 					curSubItem = null;
 					curSubPrefix = null;
 				}
-			} else if (ref.startsWith("refs/tags/")) {
+			} else if (ref.startsWith(Constants.R_TAGS)) {
 				shortName = ref.substring(10);
-				if (!"refs/tags/".equals(curPrefix)) {
-					curPrefix = "refs/tags/";
+				if (!Constants.R_HEADS.equals(curPrefix)) {
+					curPrefix = Constants.R_TAGS;
 					curSubPrefix = null;
 					curSubItem = null;
 					curItem = new TreeItem(branchTree, SWT.NONE);
