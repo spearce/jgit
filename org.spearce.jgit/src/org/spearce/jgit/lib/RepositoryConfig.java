@@ -253,11 +253,19 @@ public class RepositoryConfig {
 		if (n == null)
 			return defaultValue;
 
-		n = n.toLowerCase();
-		if (MAGIC_EMPTY_VALUE.equals(n) || "yes".equalsIgnoreCase(n) || "true".equalsIgnoreCase(n) || "1".equals(n)) {
+		if (MAGIC_EMPTY_VALUE.equals(n)
+				|| "yes".equalsIgnoreCase(n)
+				|| "true".equalsIgnoreCase(n)
+				|| "1".equals(n)
+				|| "on".equalsIgnoreCase(n)) {
 			return true;
-		} else if ("no".equalsIgnoreCase(n) || "false".equalsIgnoreCase(n) || "0".equalsIgnoreCase(n)) {
+
+		} else if ("no".equalsIgnoreCase(n)
+				|| "false".equalsIgnoreCase(n)
+				|| "0".equals(n)
+				|| "off".equalsIgnoreCase(n)) {
 			return false;
+
 		} else {
 			throw new IllegalArgumentException("Invalid boolean value: "
 					+ section + "." + name + "=" + n);

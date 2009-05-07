@@ -57,9 +57,7 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 	 * @throws IOException
 	 */
 	public void test001_ReadBareKey() throws IOException {
-		final File path = writeTrashFile("config_001", "[foo]\nbar\n");
-		RepositoryConfig repositoryConfig = new RepositoryConfig(null, path);
-		System.out.println(repositoryConfig.getString("foo", null, "bar"));
+		final RepositoryConfig repositoryConfig = read("[foo]\nbar\n");
 		assertEquals(true, repositoryConfig.getBoolean("foo", null, "bar", false));
 		assertEquals("", repositoryConfig.getString("foo", null, "bar"));
 	}
@@ -70,8 +68,7 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 	 * @throws IOException
 	 */
 	public void test002_ReadWithSubsection() throws IOException {
-		final File path = writeTrashFile("config_002", "[foo \"zip\"]\nbar\n[foo \"zap\"]\nbar=false\nn=3\n");
-		RepositoryConfig repositoryConfig = new RepositoryConfig(null, path);
+		final RepositoryConfig repositoryConfig = read("[foo \"zip\"]\nbar\n[foo \"zap\"]\nbar=false\nn=3\n");
 		assertEquals(true, repositoryConfig.getBoolean("foo", "zip", "bar", false));
 		assertEquals("", repositoryConfig.getString("foo","zip", "bar"));
 		assertEquals(false, repositoryConfig.getBoolean("foo", "zap", "bar", true));
@@ -113,8 +110,7 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 	}
 
 	public void test006_readCaseInsensitive() throws IOException {
-		final File path = writeTrashFile("config_001", "[Foo]\nBar\n");
-		RepositoryConfig repositoryConfig = new RepositoryConfig(null, path);
+		final RepositoryConfig repositoryConfig = read("[Foo]\nBar\n");
 		assertEquals(true, repositoryConfig.getBoolean("foo", null, "bar", false));
 		assertEquals("", repositoryConfig.getString("foo", null, "bar"));
 	}
@@ -181,5 +177,65 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 		authorEmail = localRepositoryConfig.getCommitterEmail();
 		assertEquals("local username", authorName);
 		assertEquals("author@localemail", authorEmail);
+	}
+
+	public void testReadBoolean_TrueFalse1() throws IOException {
+		final RepositoryConfig c = read("[s]\na = true\nb = false\n");
+		assertEquals("true", c.getString("s", null, "a"));
+		assertEquals("false", c.getString("s", null, "b"));
+
+		assertTrue(c.getBoolean("s", "a", false));
+		assertFalse(c.getBoolean("s", "b", true));
+	}
+
+	public void testReadBoolean_TrueFalse2() throws IOException {
+		final RepositoryConfig c = read("[s]\na = TrUe\nb = fAlSe\n");
+		assertEquals("TrUe", c.getString("s", null, "a"));
+		assertEquals("fAlSe", c.getString("s", null, "b"));
+
+		assertTrue(c.getBoolean("s", "a", false));
+		assertFalse(c.getBoolean("s", "b", true));
+	}
+
+	public void testReadBoolean_YesNo1() throws IOException {
+		final RepositoryConfig c = read("[s]\na = yes\nb = no\n");
+		assertEquals("yes", c.getString("s", null, "a"));
+		assertEquals("no", c.getString("s", null, "b"));
+
+		assertTrue(c.getBoolean("s", "a", false));
+		assertFalse(c.getBoolean("s", "b", true));
+	}
+
+	public void testReadBoolean_YesNo2() throws IOException {
+		final RepositoryConfig c = read("[s]\na = yEs\nb = NO\n");
+		assertEquals("yEs", c.getString("s", null, "a"));
+		assertEquals("NO", c.getString("s", null, "b"));
+
+		assertTrue(c.getBoolean("s", "a", false));
+		assertFalse(c.getBoolean("s", "b", true));
+	}
+
+	public void testReadBoolean_OnOff1() throws IOException {
+		final RepositoryConfig c = read("[s]\na = on\nb = off\n");
+		assertEquals("on", c.getString("s", null, "a"));
+		assertEquals("off", c.getString("s", null, "b"));
+
+		assertTrue(c.getBoolean("s", "a", false));
+		assertFalse(c.getBoolean("s", "b", true));
+	}
+
+	public void testReadBoolean_OnOff2() throws IOException {
+		final RepositoryConfig c = read("[s]\na = ON\nb = OFF\n");
+		assertEquals("ON", c.getString("s", null, "a"));
+		assertEquals("OFF", c.getString("s", null, "b"));
+
+		assertTrue(c.getBoolean("s", "a", false));
+		assertFalse(c.getBoolean("s", "b", true));
+	}
+
+	private RepositoryConfig read(final String content) throws IOException {
+		final File p = writeTrashFile(getName() + ".config", content);
+		final RepositoryConfig c = new RepositoryConfig(null, p);
+		return c;
 	}
 }
