@@ -931,6 +931,8 @@ public class Repository {
 	 * a special meaning in a Git object reference expression. Some other
 	 * dangerous characters are also excluded.
 	 *
+	 * For portability reasons '\' is excluded
+	 *
 	 * @param refName
 	 *
 	 * @return true if refName is a valid ref name
@@ -939,36 +941,41 @@ public class Repository {
 		final int len = refName.length();
 		if (len == 0)
 			return false;
+		if (refName.endsWith(".lock"))
+			return false;
 
+		int components = 1;
 		char p = '\0';
-		for (int i=0; i<len; ++i) {
-			char c = refName.charAt(i);
+		for (int i = 0; i < len; i++) {
+			final char c = refName.charAt(i);
 			if (c <= ' ')
 				return false;
-			switch(c) {
+			switch (c) {
 			case '.':
-				if (i == 0)
+				switch (p) {
+				case '\0': case '/': case '.':
 					return false;
-				if (p == '/')
-					return false;
-				if (p == '.')
-					return false;
-				break;
-			case '/':
-				if (i == 0)
-					return false;
+				}
 				if (i == len -1)
 					return false;
 				break;
+			case '/':
+				if (i == 0 || i == len - 1)
+					return false;
+				components++;
+				break;
+			case '{':
+				if (p == '@')
+					return false;
+				break;
 			case '~': case '^': case ':':
-			case '?': case '[':
-				return false;
-			case '*':
+			case '?': case '[': case '*':
+			case '\\':
 				return false;
 			}
 			p = c;
 		}
-		return true;
+		return components > 1;
 	}
 
 	/**
