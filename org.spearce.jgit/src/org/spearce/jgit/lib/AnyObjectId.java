@@ -412,6 +412,13 @@ public abstract class AnyObjectId implements Comparable {
 	}
 
 	/**
+	 * @return string form of the SHA-1, in lower case hexadecimal.
+	 */
+	public final String getName() {
+		return name();
+	}
+
+	/**
 	 * Return unique abbreviation (prefix) of this object SHA-1.
 	 * <p>
 	 * This method is a utility for <code>abbreviate(repo, 8)</code>.
