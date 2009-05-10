@@ -175,7 +175,7 @@ class TransportLocal extends Transport implements PackTransport {
 					// force the buffer to be big enough, otherwise it
 					// will deadlock both threads.
 					{
-						buffer = new byte[MAX_CLIENT_BUFFER];
+						buffer = new byte[MIN_CLIENT_BUFFER];
 					}
 				};
 				out_w = new PipedOutputStream(out_r);

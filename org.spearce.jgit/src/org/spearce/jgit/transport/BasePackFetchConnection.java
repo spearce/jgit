@@ -89,7 +89,15 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 	 */
 	private static final int MAX_HAVES = 256;
 
-	protected static final int MAX_CLIENT_BUFFER = MAX_HAVES * 46 + 1024;
+	/**
+	 * Amount of data the client sends before starting to read.
+	 * <p>
+	 * Any output stream given to the client must be able to buffer this many
+	 * bytes before the client will stop writing and start reading from the
+	 * input stream. If the output stream blocks before this many bytes are in
+	 * the send queue, the system will deadlock.
+	 */
+	protected static final int MIN_CLIENT_BUFFER = 2 * 32 * 46 + 8;
 
 	static final String OPTION_INCLUDE_TAG = "include-tag";
 
