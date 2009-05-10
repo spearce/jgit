@@ -359,15 +359,15 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 				continue;
 			}
 
-			while (resultsPending > 0) {
+			for (;;) {
 				final PacketLineIn.AckNackResult anr;
 
 				anr = pckIn.readACK(ackId);
-				resultsPending--;
 				if (anr == PacketLineIn.AckNackResult.NAK) {
 					// More have lines are necessary to compute the
 					// pack on the remote side. Keep doing that.
 					//
+					resultsPending--;
 					break;
 				}
 
