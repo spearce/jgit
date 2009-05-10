@@ -1037,6 +1037,14 @@ public class IndexPack {
 		final File finalIdx = new File(packDir, "pack-" + name + ".idx");
 		final PackLock keep = new PackLock(finalPack);
 
+		if (!packDir.exists() && !packDir.mkdir() && !packDir.exists()) {
+			// The objects/pack directory isn't present, and we are unable
+			// to create it. There is no way to move this pack in.
+			//
+			cleanupTemporaryFiles();
+			throw new IOException("Cannot create " + packDir.getAbsolutePath());
+		}
+
 		if (finalPack.exists()) {
 			// If the pack is already present we should never replace it.
 			//
