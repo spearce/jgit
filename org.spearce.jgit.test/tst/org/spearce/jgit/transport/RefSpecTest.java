@@ -42,7 +42,7 @@ import junit.framework.TestCase;
 
 import org.spearce.jgit.lib.Ref;
 
-public class RefSpecTestCase extends TestCase {
+public class RefSpecTest extends TestCase {
 	public void testMasterMaster() {
 		final String sn = "refs/heads/master";
 		final RefSpec rs = new RefSpec(sn + ":" + sn);

@@ -44,7 +44,7 @@ import java.util.NoSuchElementException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.PackIndex.MutableEntry;
 
-public abstract class PackIndexTest extends RepositoryTestCase {
+public abstract class PackIndexTestCase extends RepositoryTestCase {
 
 	PackIndex smallIdx;
 
