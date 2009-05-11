@@ -45,6 +45,7 @@ import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.treewalk.AbstractTreeIterator;
+import org.spearce.jgit.treewalk.EmptyTreeIterator;
 
 /**
  * Iterate a {@link DirCache} as part of a <code>TreeWalk</code>.
@@ -123,6 +124,14 @@ public class DirCacheIterator extends AbstractTreeIterator {
 			throw new IncorrectObjectTypeException(getEntryObjectId(),
 					Constants.TYPE_TREE);
 		return new DirCacheIterator(this, currentSubtree);
+	}
+
+	@Override
+	public EmptyTreeIterator createEmptyTreeIterator() {
+		final byte[] n = new byte[Math.max(pathLen + 1, DEFAULT_PATH_SIZE)];
+		System.arraycopy(path, 0, n, 0, pathLen);
+		n[pathLen] = '/';
+		return new EmptyTreeIterator(this, n, pathLen + 1);
 	}
 
 	@Override

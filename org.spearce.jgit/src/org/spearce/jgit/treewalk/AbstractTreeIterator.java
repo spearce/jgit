@@ -73,7 +73,8 @@ import org.spearce.jgit.treewalk.filter.TreeFilter;
  * @see CanonicalTreeParser
  */
 public abstract class AbstractTreeIterator {
-	static final int DEFAULT_PATH_SIZE = 128;
+	/** Default size for the {@link #path} buffer. */
+	protected static final int DEFAULT_PATH_SIZE = 128;
 
 	/** A dummy object id buffer that matches the zero ObjectId. */
 	protected static final byte[] zeroid = new byte[Constants.OBJECT_ID_LENGTH];
@@ -251,9 +252,10 @@ public abstract class AbstractTreeIterator {
 	 *            be moved into the larger buffer.
 	 */
 	protected void growPath(final int len) {
-		final byte[] n = new byte[path.length << 1];
-		System.arraycopy(path, 0, n, 0, len);
-		for (AbstractTreeIterator p = this; p != null; p = p.parent)
+		final byte[] o = path;
+		final byte[] n = new byte[o.length << 1];
+		System.arraycopy(o, 0, n, 0, len);
+		for (AbstractTreeIterator p = this; p != null && p.path == o; p = p.parent)
 			p.path = n;
 	}
 
@@ -398,6 +400,15 @@ public abstract class AbstractTreeIterator {
 	 */
 	public abstract AbstractTreeIterator createSubtreeIterator(Repository repo)
 			throws IncorrectObjectTypeException, IOException;
+
+	/**
+	 * Create a new iterator as though the current entry were a subtree.
+	 *
+	 * @return a new empty tree iterator.
+	 */
+	public EmptyTreeIterator createEmptyTreeIterator() {
+		return new EmptyTreeIterator(this);
+	}
 
 	/**
 	 * Create a new iterator for the current entry's subtree.

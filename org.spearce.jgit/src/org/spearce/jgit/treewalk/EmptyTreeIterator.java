@@ -57,6 +57,28 @@ public class EmptyTreeIterator extends AbstractTreeIterator {
 		pathLen = pathOffset;
 	}
 
+	/**
+	 * Create an iterator for a subtree of an existing iterator.
+	 * <p>
+	 * The caller is responsible for setting up the path of the child iterator.
+	 *
+	 * @param p
+	 *            parent tree iterator.
+	 * @param childPath
+	 *            path array to be used by the child iterator. This path must
+	 *            contain the path from the top of the walk to the first child
+	 *            and must end with a '/'.
+	 * @param childPathOffset
+	 *            position within <code>childPath</code> where the child can
+	 *            insert its data. The value at
+	 *            <code>childPath[childPathOffset-1]</code> must be '/'.
+	 */
+	public EmptyTreeIterator(final AbstractTreeIterator p,
+			final byte[] childPath, final int childPathOffset) {
+		super(p, childPath, childPathOffset);
+		pathLen = childPathOffset - 1;
+	}
+
 	@Override
 	public AbstractTreeIterator createSubtreeIterator(final Repository repo)
 			throws IncorrectObjectTypeException, IOException {

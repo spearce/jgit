@@ -800,7 +800,7 @@ public class TreeWalk {
 			if (t.matches == ch && !t.eof() && FileMode.TREE.equals(t.mode))
 				n = t.createSubtreeIterator(db, idBuffer, curs);
 			else
-				n = new EmptyTreeIterator(t);
+				n = t.createEmptyTreeIterator();
 			tmp[i] = n;
 		}
 		depth++;
