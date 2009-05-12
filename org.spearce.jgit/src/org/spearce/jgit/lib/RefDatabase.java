@@ -41,7 +41,6 @@ package org.spearce.jgit.lib;
 import static org.spearce.jgit.lib.Constants.R_TAGS;
 
 import java.io.BufferedReader;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -53,7 +52,6 @@ import java.util.Map;
 import org.spearce.jgit.errors.ObjectWritingException;
 import org.spearce.jgit.lib.Ref.Storage;
 import org.spearce.jgit.util.FS;
-import org.spearce.jgit.util.NB;
 
 class RefDatabase {
 	private static final String REFS_SLASH = "refs/";
@@ -229,69 +227,17 @@ class RefDatabase {
 			final String entName = ent.getName();
 			if (".".equals(entName) || "..".equals(entName))
 				continue;
-			readOneLooseRef(avail, prefix + entName, prefix + entName, ent);
-		}
-	}
-
-	private synchronized void readOneLooseRef(final Map<String, Ref> avail,
-			final String origName, final String refName, final File ent) {
-		// Unchanged and cached? Don't read it again.
-		//
-		Ref ref = looseRefs.get(refName);
-		if (ref != null) {
-			Long cachedlastModified = looseRefsMTime.get(refName);
-			if (cachedlastModified != null && cachedlastModified == ent.lastModified()) {
-				avail.put(ref.getName(), ref);
-				return;
-			}
-			looseRefs.remove(refName);
-			looseRefsMTime.remove(refName);
-		}
-
-		// Recurse into the directory.
-		//
-		if (ent.isDirectory()) {
-			readLooseRefs(avail, refName + "/", ent);
-			return;
-		}
-
-		// Assume its a valid loose reference we need to cache.
-		//
-		try {
-			final FileInputStream in = new FileInputStream(ent);
-			try {
-				final ObjectId id;
+			if (ent.isDirectory()) {
+				readLooseRefs(avail, prefix + entName + "/", ent);
+			} else {
 				try {
-					final byte[] str = new byte[Constants.OBJECT_ID_LENGTH * 2];
-					NB.readFully(in, str, 0, str.length);
-					id = ObjectId.fromString(str, 0);
-				} catch (EOFException tooShortToBeRef) {
-					// Its below the minimum length needed. It could
-					// be a symbolic reference.
-					//
-					return;
-				} catch (IllegalArgumentException notRef) {
-					// It is not a well-formed ObjectId. It may be
-					// a symbolic reference ("ref: ").
-					//
-					return;
+					final Ref ref = readRefBasic(prefix + entName, 0);
+					if (ref != null)
+						avail.put(ref.getOrigName(), ref);
+				} catch (IOException e) {
+					continue;
 				}
-
-				ref = new Ref(Ref.Storage.LOOSE, origName, refName, id, null, false); // unpeeled
-
-				looseRefs.put(ref.getName(), ref);
-				looseRefsMTime.put(ref.getName(), ent.lastModified());
-				avail.put(ref.getName(), ref);
-			} finally {
-				in.close();
 			}
-		} catch (FileNotFoundException noFile) {
-			// Deleted while we were reading? Its gone now!
-			//
-		} catch (IOException err) {
-			// Whoops.
-			//
-			throw new RuntimeException("Cannot read ref " + ent, err);
 		}
 	}
 
