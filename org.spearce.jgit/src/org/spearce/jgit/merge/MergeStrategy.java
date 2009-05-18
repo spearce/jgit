@@ -55,7 +55,7 @@ public abstract class MergeStrategy {
 	public static final MergeStrategy THEIRS = new StrategyOneSided("theirs", 1);
 
 	/** Simple strategy to merge paths, without simultaneous edits. */
-	public static final ThreeWayMergeStrategy SIMPLE_TWO_WAY_IN_CORE = StrategySimpleTwoWayInCore.INSTANCE;
+	public static final ThreeWayMergeStrategy SIMPLE_TWO_WAY_IN_CORE = new StrategySimpleTwoWayInCore();
 
 	private static final HashMap<String, MergeStrategy> STRATEGIES = new HashMap<String, MergeStrategy>();
 

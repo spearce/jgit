@@ -61,8 +61,6 @@ import org.spearce.jgit.treewalk.NameConflictTreeWalk;
  * file contents.
  */
 public class StrategySimpleTwoWayInCore extends ThreeWayMergeStrategy {
-	static final ThreeWayMergeStrategy INSTANCE = new StrategySimpleTwoWayInCore();
-
 	/** Create a new instance of the strategy. */
 	protected StrategySimpleTwoWayInCore() {
 		//
