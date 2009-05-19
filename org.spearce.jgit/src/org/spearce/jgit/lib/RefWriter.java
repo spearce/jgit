@@ -97,7 +97,7 @@ public abstract class RefWriter {
 				w.write("^{}\n");
 			}
 		}
-		writeFile(Constants.INFO_REFS, Constants.encodeASCII(w.toString()));
+		writeFile(Constants.INFO_REFS, Constants.encode(w.toString()));
 	}
 
 	/**
