@@ -1074,4 +1074,19 @@ public class Repository {
 		getAllRefs(); // This will look for changes to refs
 		getIndex(); // This will detect changes in the index
 	}
+
+	/**
+	 * @param refName
+	 *
+	 * @return a more user friendly ref name
+	 */
+	public String shortenRefName(String refName) {
+		if (refName.startsWith(Constants.R_HEADS))
+			return refName.substring(Constants.R_HEADS.length());
+		if (refName.startsWith(Constants.R_TAGS))
+			return refName.substring(Constants.R_TAGS.length());
+		if (refName.startsWith(Constants.R_REMOTES))
+			return refName.substring(Constants.R_REMOTES.length());
+		return refName;
+	}
 }
