@@ -98,12 +98,18 @@ class Branch extends TextBuiltin {
 
 			if (branches.size() > 0) {
 				String newHead = branches.get(0);
-				ObjectId startAt;
+				String startBranch;
 				if (branches.size() == 2)
-					startAt = db.resolve(branches.get(1) + "^0");
+					startBranch = branches.get(1);
 				else
-					startAt = db.resolve(Constants.HEAD + "^0");
-
+					startBranch = Constants.HEAD;
+				Ref startRef = db.getRef(startBranch);
+				ObjectId startAt = db.resolve(startBranch + "^0");
+				if (startRef != null)
+					startBranch = startRef.getName();
+				else
+					startBranch = startAt.name();
+				startBranch = db.shortenRefName(startBranch);
 				String newRefName = newHead;
 				if (!newRefName.startsWith(Constants.R_HEADS))
 					newRefName = Constants.R_HEADS + newRefName;
@@ -114,6 +120,7 @@ class Branch extends TextBuiltin {
 				RefUpdate updateRef = db.updateRef(newRefName);
 				updateRef.setNewObjectId(startAt);
 				updateRef.setForceUpdate(createForce);
+				updateRef.setRefLogMessage("branch: Created from " + startBranch, false);
 				Result update = updateRef.update();
 				if (update == Result.REJECTED)
 					throw die(String.format("Could not create branch %s: %s", newHead, update.toString()));
