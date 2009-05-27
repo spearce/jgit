@@ -397,4 +397,9 @@ public class LockFile {
 			lck.delete();
 		}
 	}
+
+	@Override
+	public String toString() {
+		return "LockFile[" + lck + ", haveLck=" + haveLck + "]";
+	}
 }
