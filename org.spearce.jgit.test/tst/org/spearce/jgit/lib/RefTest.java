@@ -36,7 +36,13 @@
  */
 package org.spearce.jgit.lib;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Map;
+
+import org.spearce.jgit.lib.Ref.Storage;
+import org.spearce.jgit.lib.RefUpdate.Result;
 
 /**
  * Misc tests for refs. A lot of things are tested elsewhere so not having a
@@ -69,4 +75,73 @@ public class RefTest extends RepositoryTestCase {
 		assertFalse(refmaster.isPeeled());
 		assertNull(refmaster.getPeeledObjectId());
 	}
+
+	public void testReadSymRefToPacked() throws IOException {
+		db.writeSymref("HEAD", "refs/heads/b");
+		Ref ref = db.getRef("HEAD");
+		assertEquals(Ref.Storage.LOOSE_PACKED, ref.getStorage());
+	}
+
+	public void testReadSymRefToLoosePacked() throws IOException {
+		ObjectId pid = db.resolve("refs/heads/master^");
+		RefUpdate updateRef = db.updateRef("refs/heads/master");
+		updateRef.setNewObjectId(pid);
+		updateRef.setForceUpdate(true);
+		Result update = updateRef.update();
+		assertEquals(Result.FORCED, update); // internal
+
+		db.writeSymref("HEAD", "refs/heads/master");
+		Ref ref = db.getRef("HEAD");
+		assertEquals(Ref.Storage.LOOSE_PACKED, ref.getStorage());
+	}
+
+	public void testReadLooseRef() throws IOException {
+		RefUpdate updateRef = db.updateRef("ref/heads/new");
+		updateRef.setNewObjectId(db.resolve("refs/heads/master"));
+		Result update = updateRef.update();
+		assertEquals(Result.NEW, update);
+		Ref ref = db.getRef("ref/heads/new");
+		assertEquals(Storage.LOOSE, ref.getStorage());
+	}
+
+	/**
+	 * Let an "outsider" create a loose ref with the same name as a packed one
+	 *
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	public void testReadLoosePackedRef() throws IOException,
+			InterruptedException {
+		Ref ref = db.getRef("refs/heads/master");
+		assertEquals(Storage.PACKED, ref.getStorage());
+		FileOutputStream os = new FileOutputStream(new File(db.getDirectory(),
+				"refs/heads/master"));
+		os.write(ref.getObjectId().name().getBytes());
+		os.write('\n');
+		os.close();
+
+		ref = db.getRef("refs/heads/master");
+		assertEquals(Storage.LOOSE_PACKED, ref.getStorage());
+	}
+
+	/**
+	 * Modify a packed ref using the API. This creates a loose ref too, ie.
+	 * LOOSE_PACKED
+	 *
+	 * @throws IOException
+	 */
+	public void testReadSimplePackedRefSameRepo() throws IOException {
+		Ref ref = db.getRef("refs/heads/master");
+		ObjectId pid = db.resolve("refs/heads/master^");
+		assertEquals(Storage.PACKED, ref.getStorage());
+		RefUpdate updateRef = db.updateRef("refs/heads/master");
+		updateRef.setNewObjectId(pid);
+		updateRef.setForceUpdate(true);
+		Result update = updateRef.update();
+		assertEquals(Result.FORCED, update);
+
+		ref = db.getRef("refs/heads/master");
+		assertEquals(Storage.LOOSE_PACKED, ref.getStorage());
+	}
+
 }

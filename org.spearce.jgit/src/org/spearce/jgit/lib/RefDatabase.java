@@ -283,8 +283,14 @@ class RefDatabase {
 		final long mtime = loose.lastModified();
 		if (ref != null) {
 			Long cachedlastModified = looseRefsMTime.get(name);
-			if (cachedlastModified != null && cachedlastModified == mtime)
-				return ref;
+			if (cachedlastModified != null && cachedlastModified == mtime) {
+				if (packedRefs.containsKey(origName))
+					return new Ref(Storage.LOOSE_PACKED, origName, ref
+							.getObjectId(), ref.getPeeledObjectId(), ref
+							.isPeeled());
+				else
+					return ref;
+			}
 			looseRefs.remove(origName);
 			looseRefsMTime.remove(origName);
 		}
@@ -349,12 +355,20 @@ class RefDatabase {
 			throw new IOException("Not a ref: " + name + ": " + line);
 		}
 
-		ref = new Ref(Ref.Storage.LOOSE, origName, name, id);
-
-		looseRefs.put(origName, ref);
-		ref = new Ref(Ref.Storage.LOOSE, origName, id);
+		Storage storage;
+		if (packedRefs.containsKey(name))
+			storage = Ref.Storage.LOOSE_PACKED;
+		else
+			storage = Ref.Storage.LOOSE;
+		ref = new Ref(storage, name, id);
 		looseRefs.put(name, ref);
 		looseRefsMTime.put(name, mtime);
+
+		if (!origName.equals(name)) {
+			ref = new Ref(Ref.Storage.LOOSE, origName, name, id);
+			looseRefs.put(origName, ref);
+		}
+
 		return ref;
 	}
 
