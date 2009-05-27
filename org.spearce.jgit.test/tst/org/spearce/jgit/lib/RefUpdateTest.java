@@ -72,7 +72,8 @@ public class RefUpdateTest extends RepositoryTestCase {
 			// empty
 		};
 		ru.setNewObjectId(newid);
-		ru.update();
+		Result update = ru.update();
+		assertEquals(Result.NEW, update);
 		final Ref r = db.getAllRefs().get(newRef);
 		assertNotNull(r);
 		assertEquals(newRef, r.getName());
@@ -80,6 +81,25 @@ public class RefUpdateTest extends RepositoryTestCase {
 		assertNotSame(newid, r.getObjectId());
 		assertSame(ObjectId.class, r.getObjectId().getClass());
 		assertEquals(newid.copy(), r.getObjectId());
+	}
+
+	/**
+	 * Delete a ref that is pointed to by HEAD
+	 *
+	 * @throws IOException
+	 */
+	public void testDeleteHEADreferencedRef() throws IOException {
+		ObjectId pid = db.resolve("refs/heads/master^");
+		RefUpdate updateRef = db.updateRef("refs/heads/master");
+		updateRef.setNewObjectId(pid);
+		updateRef.setForceUpdate(true);
+		Result update = updateRef.update();
+		assertEquals(Result.FORCED, update); // internal
+
+		RefUpdate updateRef2 = db.updateRef("refs/heads/master");
+		Result delete = updateRef2.delete();
+		assertEquals(Result.REJECTED_CURRENT_BRANCH, delete);
+		assertEquals(pid, db.resolve("refs/heads/master"));
 	}
 
 	public void testLooseDelete() throws IOException {
@@ -95,21 +115,32 @@ public class RefUpdateTest extends RepositoryTestCase {
 		delete(ref, Result.REJECTED_CURRENT_BRANCH, true, false);
 	}
 
-	public void testLogDeleted() throws IOException {
-		String refName = "refs/heads/a";
-		final File log = createLog(refName);
-		assertTrue(log.exists());
-		final RefUpdate ref = updateRef(refName);
-		delete(ref, Result.FAST_FORWARD);
-		assertFalse(log.exists());
-	}
+	/**
+	 * Delete a loose ref and make sure the directory in refs is deleted too,
+	 * and the reflog dir too
+	 *
+	 * @throws IOException
+	 */
+	public void testDeleteLooseAndItsDirectory() throws IOException {
+		ObjectId pid = db.resolve("refs/heads/c^");
+		RefUpdate updateRef = db.updateRef("refs/heads/z/c");
+		updateRef.setNewObjectId(pid);
+		updateRef.setForceUpdate(true);
+		Result update = updateRef.update();
+		assertEquals(Result.NEW, update); // internal
+		assertTrue(new File(db.getDirectory(), Constants.R_HEADS + "z")
+				.exists());
+		assertTrue(new File(db.getDirectory(), "logs/refs/heads/z").exists());
 
-	private File createLog(String name) throws IOException {
-		final File log = new File(db.getDirectory(), Constants.LOGS + "/"
-				+ name);
-		log.getParentFile().mkdirs();
-		log.createNewFile();
-		return log;
+		// The real test here
+		RefUpdate updateRef2 = db.updateRef("refs/heads/z/c");
+		updateRef2.setForceUpdate(true);
+		Result delete = updateRef2.delete();
+		assertEquals(Result.FORCED, delete);
+		assertNull(db.resolve("refs/heads/z/c"));
+		assertFalse(new File(db.getDirectory(), Constants.R_HEADS + "z")
+				.exists());
+		assertFalse(new File(db.getDirectory(), "logs/refs/heads/z").exists());
 	}
 
 	public void testDeleteNotFound() throws IOException {
@@ -130,24 +161,6 @@ public class RefUpdateTest extends RepositoryTestCase {
 		delete(ref, Result.FORCED);
 	}
 
-	public void testDeleteEmptyDirs() throws IOException {
-		final String top = "refs/heads/a";
-		final String newRef = top + "/b/c";
-		final String newRef2 = top + "/d";
-		updateRef(newRef).update();
-		updateRef(newRef2).update();
-		delete(updateRef(newRef2), Result.NO_CHANGE);
-		assertExists(true, top);
-		createLog(newRef);
-		delete(updateRef(newRef), Result.NO_CHANGE);
-		assertExists(false, top);
-		assertExists(false, Constants.LOGS + "/" + top);
-	}
-
-	private void assertExists(final boolean expected, final String name) {
-		assertEquals(expected, new File(db.getDirectory(), name).exists());
-	}
-
 	public void testRefKeySameAsOrigName() {
 		Map<String, Ref> allRefs = db.getAllRefs();
 		for (Entry<String, Ref> e : allRefs.entrySet()) {
@@ -155,4 +168,114 @@ public class RefUpdateTest extends RepositoryTestCase {
 
 		}
 	}
+
+	/**
+	 * Try modify a ref forward, fast forward
+	 *
+	 * @throws IOException
+	 */
+	public void testUpdateRefForward() throws IOException {
+		ObjectId ppid = db.resolve("refs/heads/master^");
+		ObjectId pid = db.resolve("refs/heads/master");
+
+		RefUpdate updateRef = db.updateRef("refs/heads/master");
+		updateRef.setNewObjectId(ppid);
+		updateRef.setForceUpdate(true);
+		Result update = updateRef.update();
+		assertEquals(Result.FORCED, update);
+		assertEquals(ppid, db.resolve("refs/heads/master"));
+
+		// real test
+		RefUpdate updateRef2 = db.updateRef("refs/heads/master");
+		updateRef2.setNewObjectId(pid);
+		Result update2 = updateRef2.update();
+		assertEquals(Result.FAST_FORWARD, update2);
+		assertEquals(pid, db.resolve("refs/heads/master"));
+	}
+
+	/**
+	 * Delete a ref that exists both as packed and loose. Make sure the ref
+	 * cannot be resolved after delete.
+	 *
+	 * @throws IOException
+	 */
+	public void testDeleteLoosePacked() throws IOException {
+		ObjectId pid = db.resolve("refs/heads/c^");
+		RefUpdate updateRef = db.updateRef("refs/heads/c");
+		updateRef.setNewObjectId(pid);
+		updateRef.setForceUpdate(true);
+		Result update = updateRef.update();
+		assertEquals(Result.FORCED, update); // internal
+
+		// The real test here
+		RefUpdate updateRef2 = db.updateRef("refs/heads/c");
+		updateRef2.setForceUpdate(true);
+		Result delete = updateRef2.delete();
+		assertEquals(Result.FORCED, delete);
+		assertNull(db.resolve("refs/heads/c"));
+	}
+
+	/**
+	 * Try modify a ref to same
+	 *
+	 * @throws IOException
+	 */
+	public void testUpdateRefNoChange() throws IOException {
+		ObjectId pid = db.resolve("refs/heads/master");
+		RefUpdate updateRef = db.updateRef("refs/heads/master");
+		updateRef.setNewObjectId(pid);
+		Result update = updateRef.update();
+		assertEquals(Result.NO_CHANGE, update);
+		assertEquals(pid, db.resolve("refs/heads/master"));
+	}
+
+	/**
+	 * Try modify a ref, but get wrong expected old value
+	 *
+	 * @throws IOException
+	 */
+	public void testUpdateRefLockFailureWrongOldValue() throws IOException {
+		ObjectId pid = db.resolve("refs/heads/master");
+		RefUpdate updateRef = db.updateRef("refs/heads/master");
+		updateRef.setNewObjectId(pid);
+		updateRef.setExpectedOldObjectId(db.resolve("refs/heads/master^"));
+		Result update = updateRef.update();
+		assertEquals(Result.LOCK_FAILURE, update);
+		assertEquals(pid, db.resolve("refs/heads/master"));
+	}
+
+	/**
+	 * Try modify a ref that is locked
+	 *
+	 * @throws IOException
+	 */
+	public void testUpdateRefLockFailureLocked() throws IOException {
+		ObjectId opid = db.resolve("refs/heads/master");
+		ObjectId pid = db.resolve("refs/heads/master^");
+		RefUpdate updateRef = db.updateRef("refs/heads/master");
+		updateRef.setNewObjectId(pid);
+		LockFile lockFile1 = new LockFile(new File(db.getDirectory(),"refs/heads/master"));
+		assertTrue(lockFile1.lock()); // precondition to test
+		Result update = updateRef.update();
+		assertEquals(Result.LOCK_FAILURE, update);
+		assertEquals(opid, db.resolve("refs/heads/master"));
+		LockFile lockFile2 = new LockFile(new File(db.getDirectory(),"refs/heads/master"));
+		assertFalse(lockFile2.lock()); // was locked, still is
+	}
+
+	/**
+	 * Try to delete a ref. Delete requires force.
+	 *
+	 * @throws IOException
+	 */
+	public void testDeleteLoosePackedRejected() throws IOException {
+		ObjectId pid = db.resolve("refs/heads/c^");
+		ObjectId oldpid = db.resolve("refs/heads/c");
+		RefUpdate updateRef = db.updateRef("refs/heads/c");
+		updateRef.setNewObjectId(pid);
+		Result update = updateRef.update();
+		assertEquals(Result.REJECTED, update);
+		assertEquals(oldpid, db.resolve("refs/heads/c"));
+	}
+
 }
