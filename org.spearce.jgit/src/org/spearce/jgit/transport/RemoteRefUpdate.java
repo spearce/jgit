@@ -341,4 +341,14 @@ public class RemoteRefUpdate {
 		else
 			trackingRefUpdate.update(walk);
 	}
+
+	@Override
+	public String toString() {
+		return "RemoteRefUpdate[remoteName=" + remoteName + ", " + status
+				+ ", " + (expectedOldObjectId!=null?expectedOldObjectId.abbreviate(localDb).name() :"(null)")
+				+ "..." + (newObjectId != null ? newObjectId.abbreviate(localDb).name() : "(null)")
+				+ (fastForward ? ", fastForward" : "")
+				+ ", srcRef=" + srcRef + (forceUpdate ? ", forceUpdate" : "") + ", message=" + (message != null ? "\""
+				+ message + "\"" : "null") + ", " + localDb.getDirectory() + "]";
+	}
 }
