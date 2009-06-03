@@ -103,6 +103,10 @@ class TransportGitAnon extends TcpTransport implements PackTransport {
 		cmd.append('\0');
 		cmd.append("host=");
 		cmd.append(uri.getHost());
+		if (uri.getPort() > 0 && uri.getPort() != GIT_PORT) {
+			cmd.append(":");
+			cmd.append(uri.getPort());
+		}
 		cmd.append('\0');
 		pckOut.writeString(cmd.toString());
 		pckOut.flush();
