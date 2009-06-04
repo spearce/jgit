@@ -506,12 +506,14 @@ public class ReceivePack {
 		for (;;) {
 			String line;
 			try {
-				line = pckIn.readStringNoLF();
+				line = pckIn.readStringRaw();
 			} catch (EOFException eof) {
 				if (commands.isEmpty())
 					return;
 				throw eof;
 			}
+			if (line == PacketLineIn.END)
+				break;
 
 			if (commands.isEmpty()) {
 				final int nul = line.indexOf('\0');
@@ -522,8 +524,6 @@ public class ReceivePack {
 				}
 			}
 
-			if (line.length() == 0)
-				break;
 			if (line.length() < 83) {
 				final String m = "error: invalid protocol: wanted 'old new ref'";
 				sendError(m);

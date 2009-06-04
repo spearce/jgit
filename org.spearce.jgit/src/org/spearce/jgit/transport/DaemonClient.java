@@ -85,10 +85,7 @@ public class DaemonClient {
 		rawIn = in;
 		rawOut = out;
 
-		String cmd = new PacketLineIn(rawIn).readStringNoLF();
-		if (cmd == null || cmd.length() == 0)
-			return;
-
+		String cmd = new PacketLineIn(rawIn).readStringRaw();
 		final int nul = cmd.indexOf('\0');
 		if (nul >= 0) {
 			// Newer clients hide a "host" header behind this byte.

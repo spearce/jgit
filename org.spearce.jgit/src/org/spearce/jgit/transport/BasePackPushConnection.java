@@ -225,7 +225,7 @@ class BasePackPushConnection extends BasePackConnection implements
 							+ unpackStatus);
 
 		String refLine;
-		while ((refLine = pckIn.readString()).length() > 0) {
+		while ((refLine = pckIn.readString()) != PacketLineIn.END) {
 			boolean ok = false;
 			int refNameEnd = -1;
 			if (refLine.startsWith("ok ")) {

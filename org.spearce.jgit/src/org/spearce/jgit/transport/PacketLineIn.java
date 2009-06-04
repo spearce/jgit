@@ -50,6 +50,7 @@ import org.spearce.jgit.util.NB;
 import org.spearce.jgit.util.RawParseUtils;
 
 class PacketLineIn {
+	static final String END = new String("") /* must not string pool */;
 	private static final byte fromhex[];
 
 	static {
@@ -101,20 +102,23 @@ class PacketLineIn {
 	String readString() throws IOException {
 		int len = readLength();
 		if (len == 0)
-			return "";
+			return END;
 
-		len -= 5; // length header (4 bytes) and trailing LF.
+		len -= 4; // length header (4 bytes)
+		if (len == 0)
+			return "";
 
 		final byte[] raw = new byte[len];
 		NB.readFully(in, raw, 0, len);
-		readLF();
+		if (raw[len - 1] == '\n')
+			len--;
 		return RawParseUtils.decode(Constants.CHARSET, raw, 0, len);
 	}
 
-	String readStringNoLF() throws IOException {
+	String readStringRaw() throws IOException {
 		int len = readLength();
 		if (len == 0)
-			return "";
+			return END;
 
 		len -= 4; // length header (4 bytes)
 
@@ -123,10 +127,6 @@ class PacketLineIn {
 		return RawParseUtils.decode(Constants.CHARSET, raw, 0, len);
 	}
 
-	private void readLF() throws IOException {
-		if (in.read() != '\n')
-			throw new IOException("Protocol error: expected LF");
-	}
 
 	int readLength() throws IOException {
 		NB.readFully(in, lenbuffer, 0, 4);

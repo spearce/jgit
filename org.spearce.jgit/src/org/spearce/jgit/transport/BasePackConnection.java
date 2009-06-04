@@ -140,6 +140,8 @@ abstract class BasePackConnection extends BaseConnection {
 					throw noRepository();
 				throw eof;
 			}
+			if (line == PacketLineIn.END)
+				break;
 
 			if (avail.isEmpty()) {
 				final int nul = line.indexOf('\0');
@@ -151,9 +153,6 @@ abstract class BasePackConnection extends BaseConnection {
 					line = line.substring(0, nul);
 				}
 			}
-
-			if (line.length() == 0)
-				break;
 
 			String name = line.substring(41, line.length());
 			if (avail.isEmpty() && name.equals("capabilities^{}")) {

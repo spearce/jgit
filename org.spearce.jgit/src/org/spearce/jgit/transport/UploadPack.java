@@ -297,7 +297,7 @@ public class UploadPack {
 				throw eof;
 			}
 
-			if (line.length() == 0)
+			if (line == PacketLineIn.END)
 				break;
 			if (!line.startsWith("want ") || line.length() < 45)
 				throw new PackProtocolException("expected want; got " + line);
@@ -352,7 +352,7 @@ public class UploadPack {
 				throw eof;
 			}
 
-			if (line.length() == 0) {
+			if (line == PacketLineIn.END) {
 				if (commonBase.isEmpty() || multiAck)
 					pckOut.writeString("NAK\n");
 				pckOut.flush();
