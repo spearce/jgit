@@ -255,6 +255,36 @@ public final class RawParseUtils {
 	}
 
 	/**
+	 * Parse 4 character base 16 (hex) formatted string to unsigned integer.
+	 * <p>
+	 * The number is read in network byte order, that is, most significant
+	 * nybble first.
+	 *
+	 * @param bs
+	 *            buffer to parse digits from; positions {@code [p, p+4)} will
+	 *            be parsed.
+	 * @param p
+	 *            first position within the buffer to parse.
+	 * @return the integer value.
+	 * @throws ArrayIndexOutOfBoundsException
+	 *             if the string is not hex formatted.
+	 */
+	public static final int parseHexInt16(final byte[] bs, final int p) {
+		int r = digits16[bs[p]] << 4;
+
+		r |= digits16[bs[p + 1]];
+		r <<= 4;
+
+		r |= digits16[bs[p + 2]];
+		r <<= 4;
+
+		r |= digits16[bs[p + 3]];
+		if (r < 0)
+			throw new ArrayIndexOutOfBoundsException();
+		return r;
+	}
+
+	/**
 	 * Parse 8 character base 16 (hex) formatted string to unsigned integer.
 	 * <p>
 	 * The number is read in network byte order, that is, most significant
