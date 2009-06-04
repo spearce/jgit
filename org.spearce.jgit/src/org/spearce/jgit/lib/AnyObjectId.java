@@ -41,7 +41,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import org.spearce.jgit.util.NB;
 
@@ -57,16 +56,7 @@ public abstract class AnyObjectId implements Comparable {
 
 	static final int STR_LEN = RAW_LEN * 2;
 
-	static final byte fromhex[];
-
 	static {
-		fromhex = new byte['f' + 1];
-		Arrays.fill(fromhex, (byte) -1);
-		for (char i = '0'; i <= '9'; i++)
-			fromhex[i] = (byte) (i - '0');
-		for (char i = 'a'; i <= 'f'; i++)
-			fromhex[i] = (byte) ((i - 'a') + 10);
-
 		if (RAW_LEN != 20)
 			throw new LinkageError("ObjectId expects"
 					+ " Constants.OBJECT_ID_LENGTH = 20; it is " + RAW_LEN
@@ -98,32 +88,6 @@ public abstract class AnyObjectId implements Comparable {
 				&& firstObjectId.w4 == secondObjectId.w4
 				&& firstObjectId.w5 == secondObjectId.w5
 				&& firstObjectId.w1 == secondObjectId.w1;
-	}
-
-	static final int hexUInt32(final byte[] bs, final int p) {
-		int r = fromhex[bs[p]] << 4;
-
-		r |= fromhex[bs[p + 1]];
-		r <<= 4;
-
-		r |= fromhex[bs[p + 2]];
-		r <<= 4;
-
-		r |= fromhex[bs[p + 3]];
-		r <<= 4;
-
-		r |= fromhex[bs[p + 4]];
-		r <<= 4;
-
-		r |= fromhex[bs[p + 5]];
-		r <<= 4;
-
-		r |= fromhex[bs[p + 6]];
-
-		final int last = fromhex[bs[p + 7]];
-		if (r < 0 || last < 0)
-			throw new ArrayIndexOutOfBoundsException();
-		return (r << 4) | last;
 	}
 
 	int w1;

@@ -40,6 +40,7 @@ package org.spearce.jgit.lib;
 import java.io.UnsupportedEncodingException;
 
 import org.spearce.jgit.util.NB;
+import org.spearce.jgit.util.RawParseUtils;
 
 /**
  * A mutable SHA-1 abstraction.
@@ -159,11 +160,11 @@ public class MutableObjectId extends AnyObjectId {
 
 	private void fromHexString(final byte[] bs, int p) {
 		try {
-			w1 = hexUInt32(bs, p);
-			w2 = hexUInt32(bs, p + 8);
-			w3 = hexUInt32(bs, p + 16);
-			w4 = hexUInt32(bs, p + 24);
-			w5 = hexUInt32(bs, p + 32);
+			w1 = RawParseUtils.parseHexInt32(bs, p);
+			w2 = RawParseUtils.parseHexInt32(bs, p + 8);
+			w3 = RawParseUtils.parseHexInt32(bs, p + 16);
+			w4 = RawParseUtils.parseHexInt32(bs, p + 24);
+			w5 = RawParseUtils.parseHexInt32(bs, p + 32);
 		} catch (ArrayIndexOutOfBoundsException e1) {
 			try {
 				final String str = new String(bs, p, STR_LEN, "US-ASCII");

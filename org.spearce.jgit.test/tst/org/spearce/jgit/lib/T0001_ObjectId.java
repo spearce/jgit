@@ -74,8 +74,8 @@ public class T0001_ObjectId extends TestCase {
 				.isId("def4c620bc3713bb1bb26b808ec9312548e7394"));
 	}
 
-	public void test007_notIsId() {
-		assertFalse("uppercase is not accepted", ObjectId
+	public void test007_isId() {
+		assertTrue("uppercase is accepted", ObjectId
 				.isId("Def4c620bc3713bb1bb26b808ec9312548e73946"));
 	}
 
@@ -93,5 +93,11 @@ public class T0001_ObjectId extends TestCase {
 	public void test010_toString() {
 		final String x = "0000000000000000000000000000000000000000";
 		assertEquals(x, ObjectId.toString(null));
+	}
+
+	public void test011_toString() {
+		final String x = "0123456789ABCDEFabcdef1234567890abcdefAB";
+		final ObjectId oid = ObjectId.fromString(x);
+		assertEquals(x.toLowerCase(), oid.name());
 	}
 }

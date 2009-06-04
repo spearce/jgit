@@ -41,6 +41,7 @@ package org.spearce.jgit.lib;
 import java.io.UnsupportedEncodingException;
 
 import org.spearce.jgit.util.NB;
+import org.spearce.jgit.util.RawParseUtils;
 
 /**
  * A SHA-1 abstraction.
@@ -74,12 +75,12 @@ public class ObjectId extends AnyObjectId {
 	 * @return true if the string can converted into an ObjectId.
 	 */
 	public static final boolean isId(final String id) {
-		if (id.length() != 2 * Constants.OBJECT_ID_LENGTH)
+		if (id.length() != STR_LEN)
 			return false;
 		try {
-			for (int k = id.length() - 1; k >= 0; k--)
-				if (fromhex[id.charAt(k)] < 0)
-					return false;
+			for (int i = 0; i < STR_LEN; i++) {
+				RawParseUtils.parseHexInt4((byte) id.charAt(i));
+			}
 			return true;
 		} catch (ArrayIndexOutOfBoundsException e) {
 			return false;
@@ -222,11 +223,11 @@ public class ObjectId extends AnyObjectId {
 
 	private static final ObjectId fromHexString(final byte[] bs, int p) {
 		try {
-			final int a = hexUInt32(bs, p);
-			final int b = hexUInt32(bs, p + 8);
-			final int c = hexUInt32(bs, p + 16);
-			final int d = hexUInt32(bs, p + 24);
-			final int e = hexUInt32(bs, p + 32);
+			final int a = RawParseUtils.parseHexInt32(bs, p);
+			final int b = RawParseUtils.parseHexInt32(bs, p + 8);
+			final int c = RawParseUtils.parseHexInt32(bs, p + 16);
+			final int d = RawParseUtils.parseHexInt32(bs, p + 24);
+			final int e = RawParseUtils.parseHexInt32(bs, p + 32);
 			return new ObjectId(a, b, c, d, e);
 		} catch (ArrayIndexOutOfBoundsException e1) {
 			try {

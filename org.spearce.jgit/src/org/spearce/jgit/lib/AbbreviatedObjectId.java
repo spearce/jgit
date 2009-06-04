@@ -40,6 +40,7 @@ package org.spearce.jgit.lib;
 import java.io.UnsupportedEncodingException;
 
 import org.spearce.jgit.util.NB;
+import org.spearce.jgit.util.RawParseUtils;
 
 /**
  * A prefix abbreviation of an {@link ObjectId}.
@@ -107,15 +108,12 @@ public final class AbbreviatedObjectId {
 
 	private static final int hexUInt32(final byte[] bs, int p, final int end) {
 		if (8 <= end - p)
-			return AnyObjectId.hexUInt32(bs, p);
+			return RawParseUtils.parseHexInt32(bs, p);
 
 		int r = 0, n = 0;
 		while (n < 8 && p < end) {
-			final int v = AnyObjectId.fromhex[bs[p++]];
-			if (v < 0)
-				throw new ArrayIndexOutOfBoundsException();
 			r <<= 4;
-			r |= v;
+			r |= RawParseUtils.parseHexInt4(bs[p++]);
 			n++;
 		}
 		return r << (8 - n) * 4;

@@ -54,13 +54,24 @@ import org.spearce.jgit.lib.PersonIdent;
 
 /** Handy utility functions to parse raw object contents. */
 public final class RawParseUtils {
-	private static final byte[] digits;
+	private static final byte[] digits10;
+
+	private static final byte[] digits16;
 
 	static {
-		digits = new byte['9' + 1];
-		Arrays.fill(digits, (byte) -1);
+		digits10 = new byte['9' + 1];
+		Arrays.fill(digits10, (byte) -1);
 		for (char i = '0'; i <= '9'; i++)
-			digits[i] = (byte) (i - '0');
+			digits10[i] = (byte) (i - '0');
+
+		digits16 = new byte['f' + 1];
+		Arrays.fill(digits16, (byte) -1);
+		for (char i = '0'; i <= '9'; i++)
+			digits16[i] = (byte) (i - '0');
+		for (char i = 'a'; i <= 'f'; i++)
+			digits16[i] = (byte) ((i - 'a') + 10);
+		for (char i = 'A'; i <= 'F'; i++)
+			digits16[i] = (byte) ((i - 'A') + 10);
 	}
 
 	/**
@@ -175,7 +186,7 @@ public final class RawParseUtils {
 			}
 
 			while (ptr < sz) {
-				final byte v = digits[b[ptr]];
+				final byte v = digits10[b[ptr]];
 				if (v < 0)
 					break;
 				r = (r * 10) + v;
@@ -229,7 +240,7 @@ public final class RawParseUtils {
 			}
 
 			while (ptr < sz) {
-				final byte v = digits[b[ptr]];
+				final byte v = digits10[b[ptr]];
 				if (v < 0)
 					break;
 				r = (r * 10) + v;
@@ -241,6 +252,63 @@ public final class RawParseUtils {
 		if (ptrResult != null)
 			ptrResult.value = ptr;
 		return sign < 0 ? -r : r;
+	}
+
+	/**
+	 * Parse 8 character base 16 (hex) formatted string to unsigned integer.
+	 * <p>
+	 * The number is read in network byte order, that is, most significant
+	 * nybble first.
+	 *
+	 * @param bs
+	 *            buffer to parse digits from; positions {@code [p, p+8)} will
+	 *            be parsed.
+	 * @param p
+	 *            first position within the buffer to parse.
+	 * @return the integer value.
+	 * @throws ArrayIndexOutOfBoundsException
+	 *             if the string is not hex formatted.
+	 */
+	public static final int parseHexInt32(final byte[] bs, final int p) {
+		int r = digits16[bs[p]] << 4;
+
+		r |= digits16[bs[p + 1]];
+		r <<= 4;
+
+		r |= digits16[bs[p + 2]];
+		r <<= 4;
+
+		r |= digits16[bs[p + 3]];
+		r <<= 4;
+
+		r |= digits16[bs[p + 4]];
+		r <<= 4;
+
+		r |= digits16[bs[p + 5]];
+		r <<= 4;
+
+		r |= digits16[bs[p + 6]];
+
+		final int last = digits16[bs[p + 7]];
+		if (r < 0 || last < 0)
+			throw new ArrayIndexOutOfBoundsException();
+		return (r << 4) | last;
+	}
+
+	/**
+	 * Parse a single hex digit to its numeric value (0-15).
+	 *
+	 * @param digit
+	 *            hex character to parse.
+	 * @return numeric value, in the range 0-15.
+	 * @throws ArrayIndexOutOfBoundsException
+	 *             if the input digit is not a valid hex digit.
+	 */
+	public static final int parseHexInt4(final byte digit) {
+		final byte r = digits16[digit];
+		if (r < 0)
+			throw new ArrayIndexOutOfBoundsException();
+		return r;
 	}
 
 	/**
