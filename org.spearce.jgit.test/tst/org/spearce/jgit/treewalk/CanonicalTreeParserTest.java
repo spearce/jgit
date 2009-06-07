@@ -71,13 +71,13 @@ public class CanonicalTreeParserTest extends TestCase {
 	public void setUp() throws Exception {
 		super.setUp();
 
-		tree1 = mkree(entry(m644, "a", hash_a));
-		tree2 = mkree(entry(m644, "a", hash_a), entry(m644, "foo", hash_foo));
-		tree3 = mkree(entry(m644, "a", hash_a), entry(mt, "b_sometree",
+		tree1 = mktree(entry(m644, "a", hash_a));
+		tree2 = mktree(entry(m644, "a", hash_a), entry(m644, "foo", hash_foo));
+		tree3 = mktree(entry(m644, "a", hash_a), entry(mt, "b_sometree",
 				hash_sometree), entry(m644, "foo", hash_foo));
 	}
 
-	private static byte[] mkree(final byte[]... data) throws Exception {
+	private static byte[] mktree(final byte[]... data) throws Exception {
 		final ByteArrayOutputStream out = new ByteArrayOutputStream();
 		for (final byte[] e : data)
 			out.write(e);
@@ -247,7 +247,7 @@ public class CanonicalTreeParserTest extends TestCase {
 
 	public void testBackwards_ConfusingPathName() throws Exception {
 		final String aVeryConfusingName = "confusing 644 entry 755 and others";
-		ctp.reset(mkree(entry(m644, "a", hash_a), entry(mt, aVeryConfusingName,
+		ctp.reset(mktree(entry(m644, "a", hash_a), entry(mt, aVeryConfusingName,
 				hash_sometree), entry(m644, "foo", hash_foo)));
 		ctp.next(3);
 		assertTrue(ctp.eof());
@@ -263,6 +263,74 @@ public class CanonicalTreeParserTest extends TestCase {
 		assertEquals(m644.getBits(), ctp.mode);
 		assertEquals("a", path());
 		assertEquals(hash_a, ctp.getEntryObjectId());
+	}
+
+	public void testBackwords_Prebuilts1() throws Exception {
+		// What is interesting about this test is the ObjectId for the
+		// "darwin-x86" path entry ends in an octal digit (37 == '7').
+		// Thus when scanning backwards we could over scan and consume
+		// part of the SHA-1, and miss the path terminator.
+		//
+		final ObjectId common = ObjectId
+				.fromString("af7bf97cb9bce3f60f1d651a0ef862e9447dd8bc");
+		final ObjectId darwinx86 = ObjectId
+				.fromString("e927f7398240f78face99e1a738dac54ef738e37");
+		final ObjectId linuxx86 = ObjectId
+				.fromString("ac08dd97120c7cb7d06e98cd5b152011183baf21");
+		final ObjectId windows = ObjectId
+				.fromString("6c4c64c221a022bb973165192cca4812033479df");
+
+		ctp.reset(mktree(entry(mt, "common", common), entry(mt, "darwin-x86",
+				darwinx86), entry(mt, "linux-x86", linuxx86), entry(mt,
+				"windows", windows)));
+		ctp.next(3);
+		assertEquals("windows", ctp.getEntryPathString());
+		assertSame(mt, ctp.getEntryFileMode());
+		assertEquals(windows, ctp.getEntryObjectId());
+
+		ctp.back(1);
+		assertEquals("linux-x86", ctp.getEntryPathString());
+		assertSame(mt, ctp.getEntryFileMode());
+		assertEquals(linuxx86, ctp.getEntryObjectId());
+
+		ctp.next(1);
+		assertEquals("windows", ctp.getEntryPathString());
+		assertSame(mt, ctp.getEntryFileMode());
+		assertEquals(windows, ctp.getEntryObjectId());
+	}
+
+	public void testBackwords_Prebuilts2() throws Exception {
+		// What is interesting about this test is the ObjectId for the
+		// "darwin-x86" path entry ends in an octal digit (37 == '7').
+		// Thus when scanning backwards we could over scan and consume
+		// part of the SHA-1, and miss the path terminator.
+		//
+		final ObjectId common = ObjectId
+				.fromString("af7bf97cb9bce3f60f1d651a0ef862e9447dd8bc");
+		final ObjectId darwinx86 = ObjectId
+				.fromString("0000000000000000000000000000000000000037");
+		final ObjectId linuxx86 = ObjectId
+				.fromString("ac08dd97120c7cb7d06e98cd5b152011183baf21");
+		final ObjectId windows = ObjectId
+				.fromString("6c4c64c221a022bb973165192cca4812033479df");
+
+		ctp.reset(mktree(entry(mt, "common", common), entry(mt, "darwin-x86",
+				darwinx86), entry(mt, "linux-x86", linuxx86), entry(mt,
+				"windows", windows)));
+		ctp.next(3);
+		assertEquals("windows", ctp.getEntryPathString());
+		assertSame(mt, ctp.getEntryFileMode());
+		assertEquals(windows, ctp.getEntryObjectId());
+
+		ctp.back(1);
+		assertEquals("linux-x86", ctp.getEntryPathString());
+		assertSame(mt, ctp.getEntryFileMode());
+		assertEquals(linuxx86, ctp.getEntryObjectId());
+
+		ctp.next(1);
+		assertEquals("windows", ctp.getEntryPathString());
+		assertSame(mt, ctp.getEntryFileMode());
+		assertEquals(windows, ctp.getEntryObjectId());
 	}
 
 	public void testFreakingHugePathName() throws Exception {
