@@ -144,4 +144,15 @@ public class RefTest extends RepositoryTestCase {
 		assertEquals(Storage.LOOSE_PACKED, ref.getStorage());
 	}
 
+	public void testOrigResolvedNamesBranch() throws IOException {
+		Ref ref = db.getRef("a");
+		assertEquals("refs/heads/a", ref.getName());
+		assertEquals("refs/heads/a", ref.getOrigName());
+	}
+
+	public void testOrigResolvedNamesSymRef() throws IOException {
+		Ref ref = db.getRef("HEAD");
+		assertEquals("refs/heads/master", ref.getName());
+		assertEquals("HEAD", ref.getOrigName());
+	}
 }
