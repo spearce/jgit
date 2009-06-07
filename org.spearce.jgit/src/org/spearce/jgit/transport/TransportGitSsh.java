@@ -166,17 +166,14 @@ public class TransportGitSsh extends SshTransport implements PackTransport {
 			@Override
 			public void write(final int b) throws IOException {
 				if (b == '\r') {
-					System.err.print('\r');
 					return;
 				}
 
 				sb.append((char) b);
 
 				if (b == '\n') {
-					final String line = sb.toString();
-					System.err.print(line);
-					all.append(line);
-					sb = new StringBuilder();
+					all.append(sb);
+					sb.setLength(0);
 				}
 			}
 		};
