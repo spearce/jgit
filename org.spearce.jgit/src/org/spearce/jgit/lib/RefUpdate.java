@@ -165,6 +165,7 @@ public class RefUpdate {
 		this.ref = ref;
 		oldValue = ref.getObjectId();
 		looseFile = f;
+		refLogMessage = "";
 	}
 
 	/** @return the repository the updated ref resides in */
@@ -264,7 +265,8 @@ public class RefUpdate {
 	/**
 	 * Get the message to include in the reflog.
 	 * 
-	 * @return message the caller wants to include in the reflog.
+	 * @return message the caller wants to include in the reflog; null if the
+	 *         update should not be logged.
 	 */
 	public String getRefLogMessage() {
 		return refLogMessage;
@@ -274,15 +276,29 @@ public class RefUpdate {
 	 * Set the message to include in the reflog.
 	 * 
 	 * @param msg
-	 *            the message to describe this change.
+	 *            the message to describe this change. It may be null
+	 *            if appendStatus is null in order not to append to the reflog
 	 * @param appendStatus
 	 *            true if the status of the ref change (fast-forward or
 	 *            forced-update) should be appended to the user supplied
 	 *            message.
 	 */
 	public void setRefLogMessage(final String msg, final boolean appendStatus) {
-		refLogMessage = msg;
-		refLogIncludeResult = appendStatus;
+		if (msg == null && !appendStatus)
+			disableRefLog();
+		else if (msg == null && appendStatus) {
+			refLogMessage = "";
+			refLogIncludeResult = true;
+		} else {
+			refLogMessage = msg;
+			refLogIncludeResult = appendStatus;
+		}
+	}
+
+	/** Don't record this update in the ref's associated reflog. */
+	public void disableRefLog() {
+		refLogMessage = null;
+		refLogIncludeResult = false;
 	}
 
 	/**
@@ -471,19 +487,35 @@ public class RefUpdate {
 		lock.setNeedStatInformation(true);
 		lock.write(newValue);
 		String msg = getRefLogMessage();
-		if (msg != null && refLogIncludeResult) {
-			if (status == Result.FORCED)
-				msg += ": forced-update";
-			else if (status == Result.FAST_FORWARD)
-				msg += ": fast forward";
-			else if (status == Result.NEW)
-				msg += ": created";
+		if (msg != null) {
+			if (refLogIncludeResult) {
+				String strResult = toResultString(status);
+				if (strResult != null) {
+					if (msg.length() > 0)
+						msg = msg + ": " + strResult;
+					else
+						msg = strResult;
+				}
+			}
+			RefLogWriter.append(this, msg);
 		}
-		RefLogWriter.append(this, msg);
 		if (!lock.commit())
 			return Result.LOCK_FAILURE;
 		db.stored(this.ref.getOrigName(),  ref.getName(), newValue, lock.getCommitLastModified());
 		return status;
+	}
+
+	private static String toResultString(final Result status) {
+		switch (status) {
+		case FORCED:
+			return "forced-update";
+		case FAST_FORWARD:
+			return "fast forward";
+		case NEW:
+			return "created";
+		default:
+			return null;
+		}
 	}
 
 	/**

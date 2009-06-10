@@ -126,6 +126,7 @@ public class RefUpdateTest extends RepositoryTestCase {
 		RefUpdate updateRef = db.updateRef("refs/heads/z/c");
 		updateRef.setNewObjectId(pid);
 		updateRef.setForceUpdate(true);
+		updateRef.setRefLogMessage("new test ref", false);
 		Result update = updateRef.update();
 		assertEquals(Result.NEW, update); // internal
 		assertTrue(new File(db.getDirectory(), Constants.R_HEADS + "z")
