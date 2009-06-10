@@ -44,7 +44,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 /**
- * Utility class to add reflog entries
+ * Utility class to work with reflog files
  * 
  * @author Dave Watson
  */
@@ -56,6 +56,37 @@ public class RefLogWriter {
 		final PersonIdent ident = u.getRefLogIdent();
 
 		appendOneRecord(oldId, newId, ident, msg, db, u.getName());
+	}
+
+	static void append(RefRename refRename, String msg) throws IOException {
+		final ObjectId id = refRename.getObjectId();
+		final Repository db = refRename.getRepository();
+		final PersonIdent ident = refRename.getRefLogIdent();
+		appendOneRecord(id, id, ident, msg, db, refRename.getToName());
+	}
+
+	static void renameTo(final Repository db, final RefUpdate from,
+			final RefUpdate to) throws IOException {
+		final File logdir = new File(db.getDirectory(), Constants.LOGS);
+		final File reflogFrom = new File(logdir, from.getName());
+		if (!reflogFrom.exists())
+			return;
+		final File reflogTo = new File(logdir, to.getName());
+		final File reflogToDir = reflogTo.getParentFile();
+		File tmp = new File(logdir, "tmp-renamed-log.." + Thread.currentThread().getId());
+		if (!reflogFrom.renameTo(tmp)) {
+			throw new IOException("Cannot rename " + reflogFrom + " to (" + tmp
+					+ ")" + reflogTo);
+		}
+		RefUpdate.deleteEmptyDir(reflogFrom, RefUpdate.count(from.getName(),
+				'/'));
+		if (!reflogToDir.exists() && !reflogToDir.mkdirs()) {
+			throw new IOException("Cannot create directory " + reflogToDir);
+		}
+		if (!tmp.renameTo(reflogTo)) {
+			throw new IOException("Cannot rename (" + tmp + ")" + reflogFrom
+					+ " to " + reflogTo);
+		}
 	}
 
 	private static void appendOneRecord(final ObjectId oldId,

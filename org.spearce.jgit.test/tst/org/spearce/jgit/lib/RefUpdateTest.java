@@ -39,6 +39,7 @@ package org.spearce.jgit.lib;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -81,6 +82,72 @@ public class RefUpdateTest extends RepositoryTestCase {
 		assertNotSame(newid, r.getObjectId());
 		assertSame(ObjectId.class, r.getObjectId().getClass());
 		assertEquals(newid.copy(), r.getObjectId());
+	}
+
+	public void testNewNamespaceConflictWithLoosePrefixNameExists()
+			throws IOException {
+		final String newRef = "refs/heads/z";
+		final RefUpdate ru = updateRef(newRef);
+		final RevCommit newid = new RevCommit(ru.getNewObjectId()) {
+			// empty
+		};
+		ru.setNewObjectId(newid);
+		Result update = ru.update();
+		assertEquals(Result.NEW, update);
+		// end setup
+		final String newRef2 = "refs/heads/z/a";
+		final RefUpdate ru2 = updateRef(newRef2);
+		final RevCommit newid2 = new RevCommit(ru2.getNewObjectId()) {
+			// empty
+		};
+		ru.setNewObjectId(newid2);
+		Result update2 = ru2.update();
+		assertEquals(Result.LOCK_FAILURE, update2);
+	}
+
+	public void testNewNamespaceConflictWithPackedPrefixNameExists()
+			throws IOException {
+		final String newRef = "refs/heads/master/x";
+		final RefUpdate ru = updateRef(newRef);
+		final RevCommit newid = new RevCommit(ru.getNewObjectId()) {
+			// empty
+		};
+		ru.setNewObjectId(newid);
+		Result update = ru.update();
+		assertEquals(Result.LOCK_FAILURE, update);
+	}
+
+	public void testNewNamespaceConflictWithLoosePrefixOfExisting()
+			throws IOException {
+		final String newRef = "refs/heads/z/a";
+		final RefUpdate ru = updateRef(newRef);
+		final RevCommit newid = new RevCommit(ru.getNewObjectId()) {
+			// empty
+		};
+		ru.setNewObjectId(newid);
+		Result update = ru.update();
+		assertEquals(Result.NEW, update);
+		// end setup
+		final String newRef2 = "refs/heads/z";
+		final RefUpdate ru2 = updateRef(newRef2);
+		final RevCommit newid2 = new RevCommit(ru2.getNewObjectId()) {
+			// empty
+		};
+		ru.setNewObjectId(newid2);
+		Result update2 = ru2.update();
+		assertEquals(Result.LOCK_FAILURE, update2);
+	}
+
+	public void testNewNamespaceConflictWithPackedPrefixOfExisting()
+			throws IOException {
+		final String newRef = "refs/heads/prefix";
+		final RefUpdate ru = updateRef(newRef);
+		final RevCommit newid = new RevCommit(ru.getNewObjectId()) {
+			// empty
+		};
+		ru.setNewObjectId(newid);
+		Result update = ru.update();
+		assertEquals(Result.LOCK_FAILURE, update);
 	}
 
 	/**
@@ -283,4 +350,262 @@ public class RefUpdateTest extends RepositoryTestCase {
 		assertEquals(oldpid, db.resolve("refs/heads/c"));
 	}
 
+	public void testRenameBranchNoPreviousLog() throws IOException {
+		assertFalse("precondition, no log on old branchg", new File(db
+				.getDirectory(), "logs/refs/heads/b").exists());
+		ObjectId rb = db.resolve("refs/heads/b");
+		ObjectId oldHead = db.resolve(Constants.HEAD);
+		assertFalse(rb.equals(oldHead)); // assumption for this test
+		RefRename renameRef = db.renameRef("refs/heads/b",
+				"refs/heads/new/name");
+		Result result = renameRef.rename();
+		assertEquals(Result.RENAMED, result);
+		assertEquals(rb, db.resolve("refs/heads/new/name"));
+		assertNull(db.resolve("refs/heads/b"));
+		assertEquals(1, db.getReflogReader("new/name").getReverseEntries().size());
+		assertEquals("Branch: renamed b to new/name", db.getReflogReader("new/name")
+				.getLastEntry().getComment());
+		assertFalse(new File(db.getDirectory(), "logs/refs/heads/b").exists());
+		assertEquals(oldHead, db.resolve(Constants.HEAD)); // unchanged
+	}
+
+	public void testRenameBranchHasPreviousLog() throws IOException {
+		ObjectId rb = db.resolve("refs/heads/b");
+		ObjectId oldHead = db.resolve(Constants.HEAD);
+		assertFalse("precondition for this test, branch b != HEAD", rb
+				.equals(oldHead));
+		RefLogWriter.writeReflog(db, rb, rb, "Just a message", "refs/heads/b");
+		assertTrue("no log on old branch", new File(db.getDirectory(),
+				"logs/refs/heads/b").exists());
+		RefRename renameRef = db.renameRef("refs/heads/b",
+				"refs/heads/new/name");
+		Result result = renameRef.rename();
+		assertEquals(Result.RENAMED, result);
+		assertEquals(rb, db.resolve("refs/heads/new/name"));
+		assertNull(db.resolve("refs/heads/b"));
+		assertEquals(2, db.getReflogReader("new/name").getReverseEntries().size());
+		assertEquals("Branch: renamed b to new/name", db.getReflogReader("new/name")
+				.getLastEntry().getComment());
+		assertEquals("Just a message", db.getReflogReader("new/name")
+				.getReverseEntries().get(1).getComment());
+		assertFalse(new File(db.getDirectory(), "logs/refs/heads/b").exists());
+		assertEquals(oldHead, db.resolve(Constants.HEAD)); // unchanged
+	}
+
+	public void testRenameCurrentBranch() throws IOException {
+		ObjectId rb = db.resolve("refs/heads/b");
+		db.writeSymref(Constants.HEAD, "refs/heads/b");
+		ObjectId oldHead = db.resolve(Constants.HEAD);
+		assertTrue("internal test condition, b == HEAD", rb.equals(oldHead));
+		RefLogWriter.writeReflog(db, rb, rb, "Just a message", "refs/heads/b");
+		assertTrue("no log on old branch", new File(db.getDirectory(),
+				"logs/refs/heads/b").exists());
+		RefRename renameRef = db.renameRef("refs/heads/b",
+				"refs/heads/new/name");
+		Result result = renameRef.rename();
+		assertEquals(Result.RENAMED, result);
+		assertEquals(rb, db.resolve("refs/heads/new/name"));
+		assertNull(db.resolve("refs/heads/b"));
+		assertEquals("Branch: renamed b to new/name", db.getReflogReader(
+				"new/name").getLastEntry().getComment());
+		assertFalse(new File(db.getDirectory(), "logs/refs/heads/b").exists());
+		assertEquals(rb, db.resolve(Constants.HEAD));
+		assertEquals(2, db.getReflogReader("new/name").getReverseEntries().size());
+		assertEquals("Branch: renamed b to new/name", db.getReflogReader("new/name").getReverseEntries().get(0).getComment());
+		assertEquals("Just a message", db.getReflogReader("new/name").getReverseEntries().get(1).getComment());
+	}
+
+	public void testRenameBranchAlsoInPack() throws IOException {
+		ObjectId rb = db.resolve("refs/heads/b");
+		ObjectId rb2 = db.resolve("refs/heads/b~1");
+		assertEquals(Ref.Storage.PACKED, db.getRef("refs/heads/b").getStorage());
+		RefUpdate updateRef = db.updateRef("refs/heads/b");
+		updateRef.setNewObjectId(rb2);
+		updateRef.setForceUpdate(true);
+		Result update = updateRef.update();
+		assertEquals("internal check new ref is loose", Result.FORCED, update);
+		assertEquals(Ref.Storage.LOOSE_PACKED, db.getRef("refs/heads/b")
+				.getStorage());
+		RefLogWriter.writeReflog(db, rb, rb, "Just a message", "refs/heads/b");
+		assertTrue("no log on old branch", new File(db.getDirectory(),
+				"logs/refs/heads/b").exists());
+		RefRename renameRef = db.renameRef("refs/heads/b",
+				"refs/heads/new/name");
+		Result result = renameRef.rename();
+		assertEquals(Result.RENAMED, result);
+		assertEquals(rb2, db.resolve("refs/heads/new/name"));
+		assertNull(db.resolve("refs/heads/b"));
+		assertEquals("Branch: renamed b to new/name", db.getReflogReader(
+				"new/name").getLastEntry().getComment());
+		assertFalse(new File(db.getDirectory(), "logs/refs/heads/b").exists());
+
+		// Create new Repository instance, to reread caches and make sure our
+		// assumptions are persistent.
+		Repository ndb = new Repository(db.getDirectory());
+		assertEquals(rb2, ndb.resolve("refs/heads/new/name"));
+		assertNull(ndb.resolve("refs/heads/b"));
+	}
+
+	public void tryRenameWhenLocked(String toLock, String fromName,
+			String toName, String headPointsTo) throws IOException {
+		// setup
+		db.writeSymref(Constants.HEAD, headPointsTo);
+		ObjectId oldfromId = db.resolve(fromName);
+		ObjectId oldHeadId = db.resolve(Constants.HEAD);
+		RefLogWriter.writeReflog(db, oldfromId, oldfromId, "Just a message",
+				fromName);
+		List<org.spearce.jgit.lib.ReflogReader.Entry> oldFromLog = db
+				.getReflogReader(fromName).getReverseEntries();
+		List<org.spearce.jgit.lib.ReflogReader.Entry> oldHeadLog = oldHeadId != null ? db
+				.getReflogReader(Constants.HEAD).getReverseEntries() : null;
+
+		assertTrue("internal check, we have a log", new File(db.getDirectory(),
+				"logs/" + fromName).exists());
+
+		// "someone" has branch X locked
+		assertTrue(new LockFile(new File(db.getDirectory(), toLock)).lock());
+
+		// Now this is our test
+		RefRename renameRef = db.renameRef(fromName, toName);
+		Result result = renameRef.rename();
+		assertEquals(Result.LOCK_FAILURE, result);
+
+		// Check that the involved refs are the same despite the failure
+		assertExists(false, toName);
+		if (!toLock.equals(toName))
+			assertExists(false, toName + ".lock");
+		assertExists(true, toLock + ".lock");
+		if (!toLock.equals(fromName))
+			assertExists(false, "logs/" + fromName + ".lock");
+		assertExists(false, "logs/" + toName + ".lock");
+		assertEquals(oldHeadId, db.resolve(Constants.HEAD));
+		assertEquals(oldfromId, db.resolve(fromName));
+		assertNull(db.resolve(toName));
+		assertEquals(oldFromLog.toString(), db.getReflogReader(fromName)
+				.getReverseEntries().toString());
+		if (oldHeadId != null)
+			assertEquals(oldHeadLog, db.getReflogReader(Constants.HEAD)
+					.getReverseEntries());
+	}
+
+	private void assertExists(boolean positive, String toName) {
+		assertEquals(toName + (positive ? " " : " does not ") + "exist",
+				positive, new File(db.getDirectory(), toName).exists());
+	}
+
+	public void testRenameBranchCannotLockAFileHEADisFromLockHEAD()
+			throws IOException {
+		tryRenameWhenLocked("HEAD", "refs/heads/b", "refs/heads/new/name",
+				"refs/heads/b");
+	}
+
+	public void testRenameBranchCannotLockAFileHEADisFromLockFrom()
+			throws IOException {
+		tryRenameWhenLocked("refs/heads/b", "refs/heads/b",
+				"refs/heads/new/name", "refs/heads/b");
+	}
+
+	public void testRenameBranchCannotLockAFileHEADisFromLockTo()
+			throws IOException {
+		tryRenameWhenLocked("refs/heads/new/name", "refs/heads/b",
+				"refs/heads/new/name", "refs/heads/b");
+	}
+
+	public void testRenameBranchCannotLockAFileHEADisToLockFrom()
+			throws IOException {
+		tryRenameWhenLocked("refs/heads/b", "refs/heads/b",
+				"refs/heads/new/name", "refs/heads/new/name");
+	}
+
+	public void testRenameBranchCannotLockAFileHEADisToLockTo()
+			throws IOException {
+		tryRenameWhenLocked("refs/heads/new/name", "refs/heads/b",
+				"refs/heads/new/name", "refs/heads/new/name");
+	}
+
+	public void testRenameBranchCannotLockAFileHEADisToLockTmp()
+			throws IOException {
+		tryRenameWhenLocked("RENAMED-REF.." + Thread.currentThread().getId(),
+				"refs/heads/b", "refs/heads/new/name", "refs/heads/new/name");
+	}
+
+	public void testRenameBranchCannotLockAFileHEADisOtherLockFrom()
+			throws IOException {
+		tryRenameWhenLocked("refs/heads/b", "refs/heads/b",
+				"refs/heads/new/name", "refs/heads/a");
+	}
+
+	public void testRenameBranchCannotLockAFileHEADisOtherLockTo()
+			throws IOException {
+		tryRenameWhenLocked("refs/heads/new/name", "refs/heads/b",
+				"refs/heads/new/name", "refs/heads/a");
+	}
+
+	public void testRenameBranchCannotLockAFileHEADisOtherLockTmp()
+			throws IOException {
+		tryRenameWhenLocked("RENAMED-REF.." + Thread.currentThread().getId(),
+				"refs/heads/b", "refs/heads/new/name", "refs/heads/a");
+	}
+
+	public void testRenameRefNameColission1avoided() throws IOException {
+		// setup
+		ObjectId rb = db.resolve("refs/heads/b");
+		db.writeSymref(Constants.HEAD, "refs/heads/a");
+		RefUpdate updateRef = db.updateRef("refs/heads/a");
+		updateRef.setNewObjectId(rb);
+		updateRef.setRefLogMessage("Setup", false);
+		assertEquals(Result.FAST_FORWARD, updateRef.update());
+		ObjectId oldHead = db.resolve(Constants.HEAD);
+		assertTrue(rb.equals(oldHead)); // assumption for this test
+		RefLogWriter.writeReflog(db, rb, rb, "Just a message", "refs/heads/a");
+		assertTrue("internal check, we have a log", new File(db.getDirectory(),
+				"logs/refs/heads/a").exists());
+
+		// Now this is our test
+		RefRename renameRef = db.renameRef("refs/heads/a", "refs/heads/a/b");
+		Result result = renameRef.rename();
+		assertEquals(Result.RENAMED, result);
+		assertNull(db.resolve("refs/heads/a"));
+		assertEquals(rb, db.resolve("refs/heads/a/b"));
+		assertEquals(3, db.getReflogReader("a/b").getReverseEntries().size());
+		assertEquals("Branch: renamed a to a/b", db.getReflogReader("a/b")
+				.getReverseEntries().get(0).getComment());
+		assertEquals("Just a message", db.getReflogReader("a/b")
+				.getReverseEntries().get(1).getComment());
+		assertEquals("Setup", db.getReflogReader("a/b").getReverseEntries()
+				.get(2).getComment());
+	}
+
+	public void testRenameRefNameColission2avoided() throws IOException {
+		// setup
+		ObjectId rb = db.resolve("refs/heads/b");
+		db.writeSymref(Constants.HEAD, "refs/heads/prefix/a");
+		RefUpdate updateRef = db.updateRef("refs/heads/prefix/a");
+		updateRef.setNewObjectId(rb);
+		updateRef.setRefLogMessage("Setup", false);
+		updateRef.setForceUpdate(true);
+		assertEquals(Result.FORCED, updateRef.update());
+		ObjectId oldHead = db.resolve(Constants.HEAD);
+		assertTrue(rb.equals(oldHead)); // assumption for this test
+		RefLogWriter.writeReflog(db, rb, rb, "Just a message",
+				"refs/heads/prefix/a");
+		assertTrue("internal check, we have a log", new File(db.getDirectory(),
+				"logs/refs/heads/prefix/a").exists());
+
+		// Now this is our test
+		RefRename renameRef = db.renameRef("refs/heads/prefix/a",
+				"refs/heads/prefix");
+		Result result = renameRef.rename();
+		assertEquals(Result.RENAMED, result);
+
+		assertNull(db.resolve("refs/heads/prefix/a"));
+		assertEquals(rb, db.resolve("refs/heads/prefix"));
+		assertEquals(3, db.getReflogReader("prefix").getReverseEntries().size());
+		assertEquals("Branch: renamed prefix/a to prefix", db.getReflogReader(
+				"prefix").getReverseEntries().get(0).getComment());
+		assertEquals("Just a message", db.getReflogReader("prefix")
+				.getReverseEntries().get(1).getComment());
+		assertEquals("Setup", db.getReflogReader("prefix").getReverseEntries()
+				.get(2).getComment());
+	}
 }

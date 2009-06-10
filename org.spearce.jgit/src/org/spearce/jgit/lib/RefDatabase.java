@@ -146,6 +146,23 @@ class RefDatabase {
 	}
 
 	/**
+	 * An set of update operations for renaming a ref
+	 *
+	 * @param fromRef Old ref name
+	 * @param toRef New ref name
+	 * @return a RefUpdate operation to rename a ref
+	 * @throws IOException
+	 */
+	RefRename newRename(String fromRef, String toRef) throws IOException {
+		refreshPackedRefs();
+		Ref f = readRefBasic(fromRef, 0);
+		Ref t = new Ref(Ref.Storage.NEW, toRef, null);
+		RefUpdate refUpdateFrom = new RefUpdate(this, f, fileForRef(f.getName()));
+		RefUpdate refUpdateTo = new RefUpdate(this, t, fileForRef(t.getName()));
+		return new RefRename(refUpdateTo, refUpdateFrom);
+	}
+
+	/**
 	 * Writes a symref (e.g. HEAD) to disk
 	 * 
 	 * @param name
@@ -158,9 +175,23 @@ class RefDatabase {
 		final byte[] content = Constants.encode("ref: " + target + "\n");
 		lockAndWriteFile(fileForRef(name), content);
 		synchronized (this) {
+			looseSymRefs.remove(name);
 			setModified();
 		}
 		db.fireRefsMaybeChanged();
+	}
+
+	void uncacheSymRef(String name) {
+		synchronized(this) {
+			looseSymRefs.remove(name);
+			setModified();
+		}
+	}
+
+	void uncacheRef(String name) {
+		looseRefs.remove(name);
+		looseRefsMTime.remove(name);
+		packedRefs.remove(name);
 	}
 
 	private void setModified() {
