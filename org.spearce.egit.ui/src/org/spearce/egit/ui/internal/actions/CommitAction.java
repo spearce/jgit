@@ -295,7 +295,7 @@ public class CommitAction extends RepositoryAction {
 		if (newlineIndex > 0) {
 			firstLine = commitMessage.substring(0, newlineIndex);
 		}
-		String commitStr = amending ? "\tcommit (amend):" : "\tcommit: ";
+		String commitStr = amending ? "commit (amend):" : "commit: ";
 		String message = commitStr + firstLine;
 		return message;
 	}
