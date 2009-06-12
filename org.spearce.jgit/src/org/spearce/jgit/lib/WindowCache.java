@@ -41,6 +41,7 @@ package org.spearce.jgit.lib;
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Caches slices of a {@link PackFile} in memory for faster read access.
@@ -140,7 +141,7 @@ public class WindowCache extends OffsetCache<ByteWindow, WindowCache.WindowRef> 
 
 	private final int maxFiles;
 
-	private final int maxBytes;
+	private final long maxBytes;
 
 	private final boolean mmap;
 
@@ -150,7 +151,7 @@ public class WindowCache extends OffsetCache<ByteWindow, WindowCache.WindowRef> 
 
 	private final AtomicInteger openFiles;
 
-	private final AtomicInteger openBytes;
+	private final AtomicLong openBytes;
 
 	private WindowCache(final WindowCacheConfig cfg) {
 		super(tableSize(cfg), lockCount(cfg));
@@ -161,7 +162,7 @@ public class WindowCache extends OffsetCache<ByteWindow, WindowCache.WindowRef> 
 		windowSize = 1 << windowSizeShift;
 
 		openFiles = new AtomicInteger();
-		openBytes = new AtomicInteger();
+		openBytes = new AtomicLong();
 
 		if (maxFiles < 1)
 			throw new IllegalArgumentException("Open files must be >= 1");
@@ -173,7 +174,7 @@ public class WindowCache extends OffsetCache<ByteWindow, WindowCache.WindowRef> 
 		return openFiles.get();
 	}
 
-	int getOpenBytes() {
+	long getOpenBytes() {
 		return openBytes.get();
 	}
 
@@ -233,12 +234,12 @@ public class WindowCache extends OffsetCache<ByteWindow, WindowCache.WindowRef> 
 
 	private static int tableSize(final WindowCacheConfig cfg) {
 		final int wsz = cfg.getPackedGitWindowSize();
-		final int limit = cfg.getPackedGitLimit();
+		final long limit = cfg.getPackedGitLimit();
 		if (wsz <= 0)
 			throw new IllegalArgumentException("Invalid window size");
 		if (limit < wsz)
 			throw new IllegalArgumentException("Window size must be < limit");
-		return 5 * (limit / wsz) / 2;
+		return (int) Math.min(5 * (limit / wsz) / 2, 2000000000);
 	}
 
 	private static int lockCount(final WindowCacheConfig cfg) {

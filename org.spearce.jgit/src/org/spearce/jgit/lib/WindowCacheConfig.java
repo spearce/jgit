@@ -47,7 +47,7 @@ public class WindowCacheConfig {
 
 	private int packedGitOpenFiles;
 
-	private int packedGitLimit;
+	private long packedGitLimit;
 
 	private int packedGitWindowSize;
 
@@ -85,7 +85,7 @@ public class WindowCacheConfig {
 	 * @return maximum number bytes of heap memory to dedicate to caching pack
 	 *         file data. <b>Default is 10 MB.</b>
 	 */
-	public int getPackedGitLimit() {
+	public long getPackedGitLimit() {
 		return packedGitLimit;
 	}
 
@@ -94,7 +94,7 @@ public class WindowCacheConfig {
 	 *            maximum number bytes of heap memory to dedicate to caching
 	 *            pack file data.
 	 */
-	public void setPackedGitLimit(final int newLimit) {
+	public void setPackedGitLimit(final long newLimit) {
 		packedGitLimit = newLimit;
 	}
 
@@ -162,7 +162,7 @@ public class WindowCacheConfig {
 	 */
 	public void fromConfig(final RepositoryConfig rc) {
 		setPackedGitOpenFiles(rc.getInt("core", null, "packedgitopenfiles", getPackedGitOpenFiles()));
-		setPackedGitLimit(rc.getInt("core", null, "packedgitlimit", getPackedGitLimit()));
+		setPackedGitLimit(rc.getLong("core", null, "packedgitlimit", getPackedGitLimit()));
 		setPackedGitWindowSize(rc.getInt("core", null, "packedgitwindowsize", getPackedGitWindowSize()));
 		setPackedGitMMAP(rc.getBoolean("core", null, "packedgitmmap", isPackedGitMMAP()));
 		setDeltaBaseCacheLimit(rc.getInt("core", null, "deltabasecachelimit", getDeltaBaseCacheLimit()));
