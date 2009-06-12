@@ -667,15 +667,7 @@ public class RevWalk implements Iterable<RevCommit> {
 					Constants.TYPE_TREE);
 		else
 			t = (RevTree) c;
-
-		if ((t.flags & PARSED) != 0)
-			return t;
-		final ObjectLoader ldr = db.openObject(curs, t);
-		if (ldr == null)
-			throw new MissingObjectException(t, Constants.TYPE_TREE);
-		if (ldr.getType() != Constants.OBJ_TREE)
-			throw new IncorrectObjectTypeException(t, Constants.TYPE_TREE);
-		t.flags |= PARSED;
+		parse(t);
 		return t;
 	}
 
@@ -731,8 +723,8 @@ public class RevWalk implements Iterable<RevCommit> {
 				throw new IllegalArgumentException("Bad object type: " + type);
 			}
 			objects.add(r);
-		} else if ((r.flags & PARSED) == 0)
-			r.parse(this);
+		} else
+			parse(r);
 		return r;
 	}
 

@@ -39,11 +39,13 @@ package org.spearce.jgit.revwalk;
 
 import java.io.IOException;
 
+import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
+import org.spearce.jgit.lib.ObjectLoader;
 
 /** Base object type accessed during revision walking. */
 public abstract class RevObject extends ObjectId {
@@ -55,9 +57,24 @@ public abstract class RevObject extends ObjectId {
 		super(name);
 	}
 
-	abstract void parse(RevWalk walk) throws MissingObjectException,
-			IncorrectObjectTypeException, IOException;
-	
+	void parse(final RevWalk walk) throws MissingObjectException,
+			IncorrectObjectTypeException, IOException {
+		loadCanonical(walk);
+		flags |= PARSED;
+	}
+
+	final byte[] loadCanonical(final RevWalk walk) throws IOException,
+			MissingObjectException, IncorrectObjectTypeException,
+			CorruptObjectException {
+		final ObjectLoader ldr = walk.db.openObject(walk.curs, this);
+		if (ldr == null)
+			throw new MissingObjectException(this, getType());
+		final byte[] data = ldr.getCachedBytes();
+		if (getType() != ldr.getType())
+			throw new IncorrectObjectTypeException(this, getType());
+		return data;
+	}
+
 	/**
 	 * Get Git object type. See {@link Constants}.
 	 * 

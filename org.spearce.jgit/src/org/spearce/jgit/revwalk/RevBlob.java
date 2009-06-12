@@ -53,11 +53,6 @@ public class RevBlob extends RevObject {
 	}
 
 	@Override
-	void parse(final RevWalk walk) {
-		flags |= PARSED;
-	}
-	
-	@Override
 	public final int getType() {
 		return Constants.OBJ_BLOB;
 	}

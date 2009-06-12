@@ -45,7 +45,6 @@ import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Constants;
-import org.spearce.jgit.lib.ObjectLoader;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Tag;
 import org.spearce.jgit.util.MutableInteger;
@@ -72,13 +71,7 @@ public class RevTag extends RevObject {
 	@Override
 	void parse(final RevWalk walk) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
-		final ObjectLoader ldr = walk.db.openObject(walk.curs, this);
-		if (ldr == null)
-			throw new MissingObjectException(this, Constants.TYPE_TAG);
-		final byte[] data = ldr.getCachedBytes();
-		if (Constants.OBJ_TAG != ldr.getType())
-			throw new IncorrectObjectTypeException(this, Constants.TYPE_TAG);
-		parseCanonical(walk, data);
+		parseCanonical(walk, loadCanonical(walk));
 	}
 
 	void parseCanonical(final RevWalk walk, final byte[] rawTag)
