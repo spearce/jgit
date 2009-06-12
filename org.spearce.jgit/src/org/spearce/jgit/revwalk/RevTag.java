@@ -189,7 +189,7 @@ public class RevTag extends RevObject {
 	 * 
 	 * @return object this tag refers to.
 	 */
-	public RevObject getObject() {
+	public final RevObject getObject() {
 		return object;
 	}
 
@@ -198,7 +198,7 @@ public class RevTag extends RevObject {
 	 * 
 	 * @return name of the tag, according to the tag header.
 	 */
-	public String getName() {
+	public final String getName() {
 		return name;
 	}
 
