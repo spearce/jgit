@@ -40,6 +40,7 @@ package org.spearce.jgit.errors;
 
 import java.io.IOException;
 
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 
 /**
@@ -57,5 +58,16 @@ public class MissingObjectException extends IOException {
 	 */
 	public MissingObjectException(final ObjectId id, final String type) {
 		super("Missing " + type + " " + id.name());
+	}
+
+	/**
+	 * Construct a MissingObjectException for the specified object id.
+	 * Expected type is reported to simplify tracking down the problem.
+	 *
+	 * @param id SHA-1
+	 * @param type object type
+	 */
+	public MissingObjectException(final ObjectId id, final int type) {
+		this(id, Constants.typeString(type));
 	}
 }

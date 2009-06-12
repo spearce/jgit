@@ -40,6 +40,7 @@ package org.spearce.jgit.errors;
 
 import java.io.IOException;
 
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 
 /**
@@ -61,5 +62,17 @@ public class IncorrectObjectTypeException extends IOException {
 	 */
 	public IncorrectObjectTypeException(final ObjectId id, final String type) {
 		super("Object " + id.name() + " is not a " + type + ".");
+	}
+
+	/**
+	 * Construct and IncorrectObjectTypeException for the specified object id.
+	 *
+	 * Provide the type to make it easier to track down the problem.
+	 *
+	 * @param id SHA-1
+	 * @param type object type
+	 */
+	public IncorrectObjectTypeException(final ObjectId id, final int type) {
+		this(id, Constants.typeString(type));
 	}
 }
