@@ -183,6 +183,28 @@ public class RepositoryConfig {
 	 */
 	public int getInt(final String section, String subsection,
 			final String name, final int defaultValue) {
+		final long val = getLong(section, subsection, name, defaultValue);
+		if (Integer.MIN_VALUE <= val && val <= Integer.MAX_VALUE)
+			return (int) val;
+		throw new IllegalArgumentException("Integer value " + section + "."
+				+ name + " out of range");
+	}
+
+	/**
+	 * Obtain an integer value from the configuration.
+	 *
+	 * @param section
+	 *            section the key is grouped within.
+	 * @param subsection
+	 *            subsection name, such a remote or branch name.
+	 * @param name
+	 *            name of the key to get.
+	 * @param defaultValue
+	 *            default value to return if no value was present.
+	 * @return an integer value from the configuration, or defaultValue.
+	 */
+	public long getLong(final String section, String subsection,
+			final String name, final long defaultValue) {
 		final String str = getString(section, subsection, name);
 		if (str == null)
 			return defaultValue;
@@ -191,7 +213,7 @@ public class RepositoryConfig {
 		if (n.length() == 0)
 			return defaultValue;
 
-		int mul = 1;
+		long mul = 1;
 		switch (Character.toLowerCase(n.charAt(n.length() - 1))) {
 		case 'g':
 			mul = 1024 * 1024 * 1024;
@@ -209,7 +231,7 @@ public class RepositoryConfig {
 			return defaultValue;
 
 		try {
-			return mul * Integer.parseInt(n);
+			return mul * Long.parseLong(n);
 		} catch (NumberFormatException nfe) {
 			throw new IllegalArgumentException("Invalid integer value: "
 					+ section + "." + name + "=" + str);

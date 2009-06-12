@@ -233,6 +233,32 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 		assertFalse(c.getBoolean("s", "b", true));
 	}
 
+	public void testReadLong() throws IOException {
+		assertReadLong(1L);
+		assertReadLong(-1L);
+		assertReadLong(Long.MIN_VALUE);
+		assertReadLong(Long.MAX_VALUE);
+		assertReadLong(4L * 1024 * 1024 * 1024, "4g");
+		assertReadLong(3L * 1024 * 1024, "3 m");
+		assertReadLong(8L * 1024, "8 k");
+
+		try {
+			assertReadLong(-1, "1.5g");
+			fail("incorrectly accepted 1.5g");
+		} catch (IllegalArgumentException e) {
+			assertEquals("Invalid integer value: s.a=1.5g", e.getMessage());
+		}
+	}
+
+	private void assertReadLong(long exp) throws IOException {
+		assertReadLong(exp, String.valueOf(exp));
+	}
+
+	private void assertReadLong(long exp, String act) throws IOException {
+		final RepositoryConfig c = read("[s]\na = " + act + "\n");
+		assertEquals(exp, c.getLong("s", null, "a", 0L));
+	}
+
 	private RepositoryConfig read(final String content) throws IOException {
 		final File p = writeTrashFile(getName() + ".config", content);
 		final RepositoryConfig c = new RepositoryConfig(null, p);
