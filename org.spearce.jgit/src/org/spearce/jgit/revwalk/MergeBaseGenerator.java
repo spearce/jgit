@@ -137,7 +137,7 @@ class MergeBaseGenerator extends Generator {
 				if ((p.flags & IN_PENDING) != 0)
 					continue;
 				if ((p.flags & PARSED) == 0)
-					p.parse(walker);
+					p.parseHeaders(walker);
 				p.flags |= IN_PENDING;
 				pending.add(p);
 			}

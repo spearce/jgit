@@ -115,7 +115,7 @@ class BoundaryGenerator extends Generator {
 				if ((c.flags & DUPLICATE) != 0)
 					continue;
 				if ((c.flags & PARSED) == 0)
-					c.parse(walk);
+					c.parseHeaders(walk);
 				c.flags |= DUPLICATE;
 				boundary.add(c);
 			}

@@ -160,7 +160,7 @@ public abstract class RevWalkTestCase extends RepositoryTestCase {
 	}
 
 	protected <T extends RevObject> T parse(final T t) throws Exception {
-		rw.parse(t);
+		rw.parseBody(t);
 		return t;
 	}
 

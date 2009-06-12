@@ -137,6 +137,7 @@ public class UploadPack {
 	public UploadPack(final Repository copyFrom) {
 		db = copyFrom;
 		walk = new RevWalk(db);
+		walk.setRetainBody(false);
 
 		ADVERTISED = walk.newFlag("ADVERTISED");
 		WANT = walk.newFlag("WANT");
@@ -270,7 +271,7 @@ public class UploadPack {
 		while (o instanceof RevTag) {
 			// Fully unwrap here so later on we have these already parsed.
 			try {
-				walk.parse(((RevTag) o).getObject());
+				walk.parseHeaders(((RevTag) o).getObject());
 			} catch (IOException err) {
 				return;
 			}
@@ -434,7 +435,6 @@ public class UploadPack {
 				}
 				return true;
 			}
-			c.dispose();
 		}
 		return false;
 	}

@@ -69,9 +69,19 @@ public class RevTag extends RevObject {
 	}
 
 	@Override
-	void parse(final RevWalk walk) throws MissingObjectException,
+	void parseHeaders(final RevWalk walk) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
 		parseCanonical(walk, loadCanonical(walk));
+	}
+
+	@Override
+	void parseBody(final RevWalk walk) throws MissingObjectException,
+			IncorrectObjectTypeException, IOException {
+		if (buffer == null) {
+			buffer = loadCanonical(walk);
+			if ((flags & PARSED) == 0)
+				parseCanonical(walk, buffer);
+		}
 	}
 
 	void parseCanonical(final RevWalk walk, final byte[] rawTag)
@@ -87,7 +97,9 @@ public class RevTag extends RevObject {
 		int p = pos.value += 4; // "tag "
 		final int nameEnd = RawParseUtils.nextLF(rawTag, p) - 1;
 		name = RawParseUtils.decode(Constants.CHARSET, rawTag, p, nameEnd);
-		buffer = rawTag;
+
+		if (walk.isRetainBody())
+			buffer = rawTag;
 		flags |= PARSED;
 	}
 
@@ -195,8 +207,7 @@ public class RevTag extends RevObject {
 		return name;
 	}
 
-	public void dispose() {
-		flags &= ~PARSED;
+	final void disposeBody() {
 		buffer = null;
 	}
 }

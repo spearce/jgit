@@ -57,10 +57,16 @@ public abstract class RevObject extends ObjectId {
 		super(name);
 	}
 
-	void parse(final RevWalk walk) throws MissingObjectException,
+	void parseHeaders(final RevWalk walk) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
 		loadCanonical(walk);
 		flags |= PARSED;
+	}
+
+	void parseBody(final RevWalk walk) throws MissingObjectException,
+			IncorrectObjectTypeException, IOException {
+		if ((flags & PARSED) == 0)
+			parseHeaders(walk);
 	}
 
 	final byte[] loadCanonical(final RevWalk walk) throws IOException,
@@ -178,11 +184,6 @@ public abstract class RevObject extends ObjectId {
 	 */
 	public final void remove(final RevFlagSet set) {
 		flags &= ~set.mask;
-	}
-
-	/** Release as much memory as possible from this object. */
-	public void dispose() {
-		// Nothing needs to be done for most objects.
 	}
 
 	@Override

@@ -135,7 +135,7 @@ class PendingGenerator extends Generator {
 					if ((p.flags & SEEN) != 0)
 						continue;
 					if ((p.flags & PARSED) == 0)
-						p.parse(walker);
+						p.parseHeaders(walker);
 					p.flags |= SEEN;
 					pending.add(p);
 				}
@@ -157,14 +157,14 @@ class PendingGenerator extends Generator {
 						overScan = OVER_SCAN;
 					}
 					if (canDispose)
-						c.dispose();
+						c.disposeBody();
 					continue;
 				}
 
 				if (produce)
 					return last = c;
 				else if (canDispose)
-					c.dispose();
+					c.disposeBody();
 			}
 		} catch (StopWalkException swe) {
 			walker.curs.release();

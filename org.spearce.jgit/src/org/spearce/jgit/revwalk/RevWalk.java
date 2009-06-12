@@ -175,6 +175,8 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	private TreeFilter treeFilter;
 
+	private boolean retainBody;
+
 	/**
 	 * Create a new revision walker for a given repository.
 	 * 
@@ -192,6 +194,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		sorting = EnumSet.of(RevSort.NONE);
 		filter = RevFilter.ALL;
 		treeFilter = TreeFilter.ALL;
+		retainBody = true;
 	}
 
 	/**
@@ -237,7 +240,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		if ((c.flags & SEEN) != 0)
 			return;
 		if ((c.flags & PARSED) == 0)
-			c.parse(this);
+			c.parseHeaders(this);
 		c.flags |= SEEN;
 		roots.add(c);
 		queue.add(c);
@@ -510,6 +513,32 @@ public class RevWalk implements Iterable<RevCommit> {
 	}
 
 	/**
+	 * Should the body of a commit or tag be retained after parsing its headers?
+	 * <p>
+	 * Usually the body is always retained, but some application code might not
+	 * care and would prefer to discard the body of a commit as early as
+	 * possible, to reduce memory usage.
+	 *
+	 * @return true if the body should be retained; false it is discarded.
+	 */
+	public boolean isRetainBody() {
+		return retainBody;
+	}
+
+	/**
+	 * Set whether or not the body of a commit or tag is retained.
+	 * <p>
+	 * If a body of a commit or tag is not retained, the application must
+	 * call {@link #parseBody(RevObject)} before the body can be safely
+	 * accessed through the type specific access methods.
+	 *
+	 * @param retain true to retain bodies; false to discard them early.
+	 */
+	public void setRetainBody(final boolean retain) {
+		retainBody = retain;
+	}
+
+	/**
 	 * Locate a reference to a blob without loading it.
 	 * <p>
 	 * The blob may or may not exist in the repository. It is impossible to tell
@@ -625,7 +654,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		RevObject c = parseAny(id);
 		while (c instanceof RevTag) {
 			c = ((RevTag) c).getObject();
-			parse(c);
+			parseHeaders(c);
 		}
 		if (!(c instanceof RevCommit))
 			throw new IncorrectObjectTypeException(id.toObjectId(),
@@ -637,7 +666,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * Locate a reference to a tree.
 	 * <p>
 	 * This method only returns successfully if the tree object exists, is
-	 * verified to be a tree, and was parsed without error.
+	 * verified to be a tree.
 	 *
 	 * @param id
 	 *            name of the tree object, or a commit or annotated tag that may
@@ -656,7 +685,7 @@ public class RevWalk implements Iterable<RevCommit> {
 		RevObject c = parseAny(id);
 		while (c instanceof RevTag) {
 			c = ((RevTag) c).getObject();
-			parse(c);
+			parseHeaders(c);
 		}
 
 		final RevTree t;
@@ -667,12 +696,12 @@ public class RevWalk implements Iterable<RevCommit> {
 					Constants.TYPE_TREE);
 		else
 			t = (RevTree) c;
-		parse(t);
+		parseHeaders(t);
 		return t;
 	}
 
 	/**
-	 * Locate a reference to any object and immediately parse its content.
+	 * Locate a reference to any object and immediately parse its headers.
 	 * <p>
 	 * This method only returns successfully if the object exists and was parsed
 	 * without error. Parsing an object can be expensive as the type must be
@@ -724,12 +753,12 @@ public class RevWalk implements Iterable<RevCommit> {
 			}
 			objects.add(r);
 		} else
-			parse(r);
+			parseHeaders(r);
 		return r;
 	}
 
 	/**
-	 * Ensure the object's content has been parsed.
+	 * Ensure the object's critical headers have been parsed.
 	 * <p>
 	 * This method only returns successfully if the object exists and was parsed
 	 * without error.
@@ -741,11 +770,28 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * @throws IOException
 	 *             a pack file or loose object could not be read.
 	 */
-	public void parse(final RevObject obj) throws MissingObjectException,
-			IOException {
-		if ((obj.flags & PARSED) != 0)
-			return;
-		obj.parse(this);
+	public void parseHeaders(final RevObject obj)
+			throws MissingObjectException, IOException {
+		if ((obj.flags & PARSED) == 0)
+			obj.parseHeaders(this);
+	}
+
+	/**
+	 * Ensure the object's fully body content is available.
+	 * <p>
+	 * This method only returns successfully if the object exists and was parsed
+	 * without error.
+	 *
+	 * @param obj
+	 *            the object the caller needs to be parsed.
+	 * @throws MissingObjectException
+	 *             the supplied does not exist.
+	 * @throws IOException
+	 *             a pack file or loose object could not be read.
+	 */
+	public void parseBody(final RevObject obj)
+			throws MissingObjectException, IOException {
+		obj.parseBody(this);
 	}
 
 	/**

@@ -820,6 +820,7 @@ public class PackWriter {
 			throws MissingObjectException, IOException,
 			IncorrectObjectTypeException {
 		final ObjectWalk walker = new ObjectWalk(db);
+		walker.setRetainBody(false);
 		walker.sort(RevSort.TOPO);
 		walker.sort(RevSort.COMMIT_TIME_DESC, true);
 		if (thin)
@@ -854,12 +855,10 @@ public class PackWriter {
 
 		while ((o = walker.next()) != null) {
 			addObject(o);
-			o.dispose();
 			initMonitor.update(1);
 		}
 		while ((o = walker.nextObject()) != null) {
 			addObject(o);
-			o.dispose();
 			initMonitor.update(1);
 		}
 		initMonitor.endTask();

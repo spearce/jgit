@@ -193,6 +193,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 		packLocks = new ArrayList<PackLock>(4);
 
 		revWalk = new RevWalk(local);
+		revWalk.setRetainBody(false);
 		treeWalk = new TreeWalk(local);
 		COMPLETE = revWalk.newFlag("COMPLETE");
 		IN_WORK_QUEUE = revWalk.newFlag("IN_WORK_QUEUE");
@@ -266,7 +267,7 @@ class WalkFetchConnection extends BaseFetchConnection {
 				obj = (RevObject) id;
 				if (obj.has(COMPLETE))
 					return;
-				revWalk.parse(obj);
+				revWalk.parseHeaders(obj);
 			} else {
 				obj = revWalk.parseAny(id);
 				if (obj.has(COMPLETE))
@@ -275,12 +276,6 @@ class WalkFetchConnection extends BaseFetchConnection {
 		} catch (IOException e) {
 			throw new TransportException("Cannot read " + id.name(), e);
 		}
-
-		// We only care about traversal; disposing an object throws its
-		// message buffer (if any) away but retains the links so we can
-		// continue to navigate, but use less memory long-term.
-		//
-		obj.dispose();
 
 		switch (obj.getType()) {
 		case Constants.OBJ_BLOB:
@@ -694,9 +689,8 @@ class WalkFetchConnection extends BaseFetchConnection {
 	private void markLocalObjComplete(RevObject obj) throws IOException {
 		while (obj.getType() == Constants.OBJ_TAG) {
 			obj.add(COMPLETE);
-			obj.dispose();
 			obj = ((RevTag) obj).getObject();
-			revWalk.parse(obj);
+			revWalk.parseHeaders(obj);
 		}
 
 		switch (obj.getType()) {
@@ -734,11 +728,10 @@ class WalkFetchConnection extends BaseFetchConnection {
 			throws MissingObjectException, IOException {
 		if (p.has(LOCALLY_SEEN))
 			return;
-		revWalk.parse(p);
+		revWalk.parseHeaders(p);
 		p.add(LOCALLY_SEEN);
 		p.add(COMPLETE);
 		p.carry(COMPLETE);
-		p.dispose();
 		localCommitQueue.add(p);
 	}
 

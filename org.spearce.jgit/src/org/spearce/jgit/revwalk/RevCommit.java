@@ -74,9 +74,19 @@ public class RevCommit extends RevObject {
 	}
 
 	@Override
-	void parse(final RevWalk walk) throws MissingObjectException,
+	void parseHeaders(final RevWalk walk) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
 		parseCanonical(walk, loadCanonical(walk));
+	}
+
+	@Override
+	void parseBody(final RevWalk walk) throws MissingObjectException,
+			IncorrectObjectTypeException, IOException {
+		if (buffer == null) {
+			buffer = loadCanonical(walk);
+			if ((flags & PARSED) == 0)
+				parseCanonical(walk, buffer);
+		}
 	}
 
 	void parseCanonical(final RevWalk walk, final byte[] raw) {
@@ -125,7 +135,8 @@ public class RevCommit extends RevObject {
 			commitTime = RawParseUtils.parseBase10(raw, ptr, null);
 		}
 
-		buffer = raw;
+		if (walk.isRetainBody())
+			buffer = raw;
 		flags |= PARSED;
 	}
 	
@@ -375,8 +386,7 @@ public class RevCommit extends RevObject {
 		inDegree = 0;
 	}
 
-	public void dispose() {
-		flags &= ~PARSED;
+	final void disposeBody() {
 		buffer = null;
 	}
 

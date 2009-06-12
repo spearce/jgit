@@ -94,7 +94,7 @@ class RewriteTreeFilter extends RevFilter {
 		for (int i = 0; i < nParents; i++) {
 			final RevCommit p = c.parents[i];
 			if ((p.flags & PARSED) == 0)
-				p.parse(walker);
+				p.parseHeaders(walker);
 			trees[i] = p.getTree();
 		}
 		trees[nParents] = c.getTree();

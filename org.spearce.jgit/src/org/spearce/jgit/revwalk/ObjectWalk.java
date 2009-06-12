@@ -134,7 +134,7 @@ public class ObjectWalk extends RevWalk {
 		while (o instanceof RevTag) {
 			addObject(o);
 			o = ((RevTag) o).getObject();
-			parse(o);
+			parseHeaders(o);
 		}
 
 		if (o instanceof RevCommit)
@@ -186,7 +186,7 @@ public class ObjectWalk extends RevWalk {
 			if (hasRevSort(RevSort.BOUNDARY))
 				addObject(o);
 			o = ((RevTag) o).getObject();
-			parse(o);
+			parseHeaders(o);
 		}
 
 		if (o instanceof RevCommit)
