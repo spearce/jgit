@@ -112,6 +112,9 @@ public class UploadPack {
 	/** Objects on both sides, these don't have to be sent. */
 	private final List<RevObject> commonBase = new ArrayList<RevObject>();
 
+	/** null if {@link #commonBase} should be examined again. */
+	private Boolean okToGiveUp;
+
 	/** Marked on objects we sent in our advertisement list. */
 	private final RevFlag ADVERTISED;
 
@@ -396,15 +399,26 @@ public class UploadPack {
 			o.add(PEER_HAS);
 			if (o instanceof RevCommit)
 				((RevCommit) o).carry(PEER_HAS);
-			if (!o.has(COMMON)) {
-				o.add(COMMON);
-				commonBase.add(o);
-			}
+			addCommonBase(o);
 		}
 		return true;
 	}
 
+	private void addCommonBase(final RevObject o) {
+		if (!o.has(COMMON)) {
+			o.add(COMMON);
+			commonBase.add(o);
+			okToGiveUp = null;
+		}
+	}
+
 	private boolean okToGiveUp() throws PackProtocolException {
+		if (okToGiveUp == null)
+			okToGiveUp = Boolean.valueOf(okToGiveUpImp());
+		return okToGiveUp.booleanValue();
+	}
+
+	private boolean okToGiveUpImp() throws PackProtocolException {
 		if (commonBase.isEmpty())
 			return false;
 
@@ -429,10 +443,7 @@ public class UploadPack {
 			if (c == null)
 				break;
 			if (c.has(PEER_HAS)) {
-				if (!c.has(COMMON)) {
-					c.add(COMMON);
-					commonBase.add(c);
-				}
+				addCommonBase(c);
 				return true;
 			}
 		}
