@@ -70,6 +70,18 @@ public abstract class CommitTimeRevFilter extends RevFilter {
 		return new After(ts.getTime());
 	}
 
+	/**
+	 * Create a new filter to select commits after or equal a given date/time <code>since</code>
+	 * and before or equal a given date/time <code>until</code>.
+	 *
+	 * @param since the point in time to cut on.
+	 * @param until the point in time to cut off.
+	 * @return a new filter to select commits between the given date/times.
+	 */
+	public static final RevFilter between(final Date since, final Date until) {
+		return new Between(since.getTime(), until.getTime());
+	}
+
 	final int when;
 
 	CommitTimeRevFilter(final long ts) {
@@ -117,4 +129,21 @@ public abstract class CommitTimeRevFilter extends RevFilter {
 			return true;
 		}
 	}
+
+	private static class Between extends CommitTimeRevFilter {
+		private final int until;
+
+		Between(final long since, final long until) {
+			super(since);
+			this.until = (int) (until / 1000);
+		}
+
+		@Override
+		public boolean include(final RevWalk walker, final RevCommit cmit)
+				throws StopWalkException, MissingObjectException,
+				IncorrectObjectTypeException, IOException {
+			return cmit.getCommitTime() <= until && cmit.getCommitTime() >= when;
+		}
+	}
+
 }
