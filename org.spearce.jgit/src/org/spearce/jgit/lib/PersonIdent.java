@@ -39,7 +39,9 @@
 
 package org.spearce.jgit.lib;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -235,17 +237,17 @@ public class PersonIdent {
 	}
 
 	/**
-	 * @return this person's preferred time zone; null if time zone is unknown.
+	 * @return this person's declared time zone; null if time zone is unknown.
 	 */
 	public TimeZone getTimeZone() {
-		final String[] ids = TimeZone.getAvailableIDs(tzOffset * 60 * 1000);
-		if (ids.length == 0)
-			return null;
-		return TimeZone.getTimeZone(ids[0]);
+		StringBuffer tzId = new StringBuffer(8);
+		tzId.append("GMT");
+		appendTimezone(tzId);
+		return TimeZone.getTimeZone(tzId.toString());
 	}
 
 	/**
-	 * @return this person's preferred time zone as minutes east of UTC. If the
+	 * @return this person's declared time zone as minutes east of UTC. If the
 	 *         timezone is to the west of UTC it is negative.
 	 */
 	public int getTimeZoneOffset() {
@@ -273,6 +275,17 @@ public class PersonIdent {
 	 */
 	public String toExternalString() {
 		final StringBuffer r = new StringBuffer();
+		r.append(getName());
+		r.append(" <");
+		r.append(getEmailAddress());
+		r.append("> ");
+		r.append(when / 1000);
+		r.append(' ');
+		appendTimezone(r);
+		return r.toString();
+	}
+
+	private void appendTimezone(final StringBuffer r) {
 		int offset = tzOffset;
 		final char sign;
 		final int offsetHours;
@@ -288,12 +301,6 @@ public class PersonIdent {
 		offsetHours = offset / 60;
 		offsetMins = offset % 60;
 
-		r.append(getName());
-		r.append(" <");
-		r.append(getEmailAddress());
-		r.append("> ");
-		r.append(when / 1000);
-		r.append(' ');
 		r.append(sign);
 		if (offsetHours < 10) {
 			r.append('0');
@@ -303,23 +310,20 @@ public class PersonIdent {
 			r.append('0');
 		}
 		r.append(offsetMins);
-		return r.toString();
 	}
 
 	public String toString() {
 		final StringBuffer r = new StringBuffer();
-		int minutes;
-
-		minutes = tzOffset < 0 ? -tzOffset : tzOffset;
-		minutes = (minutes / 100) * 60 + (minutes % 100);
-		minutes = tzOffset < 0 ? -minutes : minutes;
+		final SimpleDateFormat dtfmt;
+		dtfmt = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.US);
+		dtfmt.setTimeZone(getTimeZone());
 
 		r.append("PersonIdent[");
 		r.append(getName());
 		r.append(", ");
 		r.append(getEmailAddress());
 		r.append(", ");
-		r.append(new Date(when + minutes * 60));
+		r.append(dtfmt.format(Long.valueOf(when)));
 		r.append("]");
 
 		return r.toString();
