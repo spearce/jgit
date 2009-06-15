@@ -159,8 +159,8 @@ public class GitDecoratorPreferencePage extends PreferencePage implements
 
 		SWTUtils.createPreferenceLink(
 				(IWorkbenchPreferenceContainer) getContainer(), composite,
-				"org.eclipse.ui.preferencePages.Decorators",
-				UIText.DecoratorPreferencesPage_labelDecorationsLink); //$NON-NLS-1$
+				"org.eclipse.ui.preferencePages.Decorators", //$NON-NLS-1$
+				UIText.DecoratorPreferencesPage_labelDecorationsLink);
 
 		TabFolder tabFolder = new TabFolder(composite, SWT.NONE);
 		tabFolder.setLayoutData(SWTUtils.createHVFillGridData());
