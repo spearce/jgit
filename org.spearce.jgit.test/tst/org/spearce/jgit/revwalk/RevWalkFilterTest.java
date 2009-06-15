@@ -38,11 +38,13 @@
 package org.spearce.jgit.revwalk;
 
 import java.io.IOException;
+import java.util.Date;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.StopWalkException;
 import org.spearce.jgit.revwalk.filter.AndRevFilter;
+import org.spearce.jgit.revwalk.filter.CommitTimeRevFilter;
 import org.spearce.jgit.revwalk.filter.NotRevFilter;
 import org.spearce.jgit.revwalk.filter.OrRevFilter;
 import org.spearce.jgit.revwalk.filter.RevFilter;
@@ -214,6 +216,66 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 		assertCommit(b, rw.next());
 		assertCommit(a, rw.next());
 		assertNull(rw.next());
+	}
+
+	public void testCommitTimeRevFilter() throws Exception {
+		final RevCommit a = commit();
+		tick(100);
+
+		final RevCommit b = commit(a);
+		tick(100);
+
+		Date since = new Date(nowTick);
+		final RevCommit c1 = commit(b);
+		tick(100);
+
+		final RevCommit c2 = commit(b);
+		tick(100);
+
+		Date until =  new Date(nowTick);
+		final RevCommit d = commit(c1, c2);
+		tick(100);
+
+		final RevCommit e = commit(d);
+
+		{
+			RevFilter after = CommitTimeRevFilter.after(since);
+			assertNotNull(after);
+			System.out.println(after.toString());
+			rw.setRevFilter(after);
+			markStart(e);
+			assertCommit(e, rw.next());
+			assertCommit(d, rw.next());
+			assertCommit(c2, rw.next());
+			assertCommit(c1, rw.next());
+			assertNull(rw.next());
+		}
+
+		{
+			RevFilter before = CommitTimeRevFilter.before(until);
+			assertNotNull(before);
+			System.out.println(before.toString());
+			rw.reset();
+			rw.setRevFilter(before);
+			markStart(e);
+			assertCommit(c2, rw.next());
+			assertCommit(c1, rw.next());
+			assertCommit(b, rw.next());
+			assertCommit(a, rw.next());
+			assertNull(rw.next());
+		}
+
+		{
+			RevFilter between = CommitTimeRevFilter.between(since, until);
+			assertNotNull(between);
+			System.out.println(between.toString());
+			rw.reset();
+			rw.setRevFilter(between);
+			markStart(e);
+			assertCommit(c2, rw.next());
+			assertCommit(c1, rw.next());
+			assertNull(rw.next());
+		}
 	}
 
 	private static class MyAll extends RevFilter {

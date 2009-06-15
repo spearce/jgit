@@ -93,11 +93,6 @@ public abstract class CommitTimeRevFilter extends RevFilter {
 		return this;
 	}
 
-	@Override
-	public String toString() {
-		return super.toString() + "(" + new Date(when * 1000) + ")";
-	}
-
 	private static class Before extends CommitTimeRevFilter {
 		Before(final long ts) {
 			super(ts);
@@ -108,6 +103,11 @@ public abstract class CommitTimeRevFilter extends RevFilter {
 				throws StopWalkException, MissingObjectException,
 				IncorrectObjectTypeException, IOException {
 			return cmit.getCommitTime() <= when;
+		}
+
+		@Override
+		public String toString() {
+			return super.toString() + "(" + new Date(when * 1000L) + ")";
 		}
 	}
 
@@ -128,6 +128,11 @@ public abstract class CommitTimeRevFilter extends RevFilter {
 				throw StopWalkException.INSTANCE;
 			return true;
 		}
+
+		@Override
+		public String toString() {
+			return super.toString() + "(" + new Date(when * 1000L) + ")";
+		}
 	}
 
 	private static class Between extends CommitTimeRevFilter {
@@ -144,6 +149,12 @@ public abstract class CommitTimeRevFilter extends RevFilter {
 				IncorrectObjectTypeException, IOException {
 			return cmit.getCommitTime() <= until && cmit.getCommitTime() >= when;
 		}
+
+		@Override
+		public String toString() {
+			return super.toString() + "(" + new Date(when * 1000L) + " - " + new Date(until * 1000L) + ")";
+		}
+
 	}
 
 }
