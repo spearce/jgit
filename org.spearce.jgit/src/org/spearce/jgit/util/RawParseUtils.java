@@ -667,6 +667,52 @@ public final class RawParseUtils {
 	}
 
 	/**
+	 * Parse a name data (e.g. as within a reflog) into a PersonIdent.
+	 * <p>
+	 * When passing in a value for <code>nameB</code> callers should use the
+	 * return value of {@link #author(byte[], int)} or
+	 * {@link #committer(byte[], int)}, as these methods provide the proper
+	 * position within the buffer.
+	 *
+	 * @param raw
+	 *            the buffer to parse character data from.
+	 * @param nameB
+	 *            first position of the identity information. This should be the
+	 *            first position after the space which delimits the header field
+	 *            name (e.g. "author" or "committer") from the rest of the
+	 *            identity line.
+	 * @return the parsed identity. Never null.
+	 */
+	public static PersonIdent parsePersonIdentOnly(final byte[] raw, final int nameB) {
+		int stop = nextLF(raw, nameB);
+		int emailB = nextLF(raw, nameB, '<');
+		int emailE = nextLF(raw, emailB, '>');
+		final String name;
+		final String email;
+		if (emailE < stop) {
+			email = decode(raw, emailB, emailE - 1);
+		} else {
+			email = "invalid";
+		}
+		if (emailB < stop)
+			name = decode(raw, nameB, emailB - 2);
+		else
+			name = decode(raw, nameB, stop);
+
+		final MutableInteger ptrout = new MutableInteger();
+		long when;
+		int tz;
+		if (emailE < stop) {
+			when = parseLongBase10(raw, emailE + 1, ptrout);
+			tz = parseTimeZoneOffset(raw, ptrout.value);
+		} else {
+			when = 0;
+			tz = 0;
+		}
+		return new PersonIdent(name, email, when * 1000L, tz);
+	}
+
+	/**
 	 * Decode a buffer under UTF-8, if possible.
 	 *
 	 * If the byte stream cannot be decoded that way, the platform default is tried
