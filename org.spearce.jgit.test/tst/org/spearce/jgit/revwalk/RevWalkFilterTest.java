@@ -241,7 +241,6 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 		{
 			RevFilter after = CommitTimeRevFilter.after(since);
 			assertNotNull(after);
-			System.out.println(after.toString());
 			rw.setRevFilter(after);
 			markStart(e);
 			assertCommit(e, rw.next());
@@ -254,7 +253,6 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 		{
 			RevFilter before = CommitTimeRevFilter.before(until);
 			assertNotNull(before);
-			System.out.println(before.toString());
 			rw.reset();
 			rw.setRevFilter(before);
 			markStart(e);
@@ -268,7 +266,6 @@ public class RevWalkFilterTest extends RevWalkTestCase {
 		{
 			RevFilter between = CommitTimeRevFilter.between(since, until);
 			assertNotNull(between);
-			System.out.println(between.toString());
 			rw.reset();
 			rw.setRevFilter(between);
 			markStart(e);
