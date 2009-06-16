@@ -302,13 +302,13 @@ public class UploadPack {
 			if (!line.startsWith("want ") || line.length() < 45)
 				throw new PackProtocolException("expected want; got " + line);
 
-			if (isFirst) {
-				final int sp = line.indexOf(' ', 45);
-				if (sp >= 0) {
-					for (String c : line.substring(sp + 1).split(" "))
-						options.add(c);
-					line = line.substring(0, sp);
-				}
+			if (isFirst && line.length() > 45) {
+				String opt = line.substring(45);
+				if (opt.startsWith(" "))
+					opt = opt.substring(1);
+				for (String c : opt.split(" "))
+					options.add(c);
+				line = line.substring(0, 45);
 			}
 
 			final ObjectId id = ObjectId.fromString(line.substring(5));
