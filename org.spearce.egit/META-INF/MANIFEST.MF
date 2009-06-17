@@ -1,7 +1,0 @@
-Manifest-Version: 1.0
-Bundle-ManifestVersion: 2
-Bundle-Name: Java Git / Eclipse Git
-Bundle-SymbolicName: org.spearce.egit
-Bundle-Version: 0.4.0.qualifier
-Bundle-Vendor: spearce.org
-Bundle-RequiredExecutionEnvironment: J2SE-1.5

@@ -1,14 +1,6 @@
-            == Java GIT and Eclipse GIT plugin ==
+            == Java GIT ==
 
-Parts of this package are licensed under the BSD, and others are
-licensed under the EPL.  Please refer to the COPYING and LICENSE 
-files for the complete licenses within each package, and please 
-refer to the individual source file header to determine
-which license covers it.
-
-
-This package is actually composed of three major components plus
-three for packaging.
+This package is licensed under the BSD.
 
   org.spearce.jgit/
 
@@ -23,47 +15,6 @@ three for packaging.
   org.spearce.jgit.test/
     Unit tests for org.spearce.jgit and the same licensing rules.
 
-  org.spearce.egit.core/
-
-    An Eclipse plugin providing an interface to org.spearce.jgit
-    and support routines to allow processing against the Eclipse
-    workspace and resource APIs, rather than the standard Java
-    file APIs.  It also supplies the team provider implementation.
-    Everything here is EPL.
-
-  org.spearce.egit.ui/
-
-    An Eclipse plugin providing the user interface on top of
-    org.spearce.egit.core.
-
-    Everything here is EPL.
-
-  org.spearce.egit.core.test/
-
-    Unit tests for org.spearce.egit.core.
-
-    Everything here is EPL.
-
-  org.spearce.egit/
-
-    A plugin for packaging
-
-    Everything here is EPL.
-
-  org.spearce.egit-feature
-
-    Also packaging. This project is for building an Eclipse "feature"
-    out of the plugins above.
-
-    Everything here is EPL.
-
-  org.spearce.egit-updatesite/
-
-    This package is for producing and update site, i.e. a web site
-    you can point your eclipse at and just upgrade.
-
-    Everything here is EPL.
-
             == WARNINGS / CAVEATS              ==
 
 - Symbolic links are not supported because java does not support it.
@@ -72,7 +23,7 @@ three for packaging.
 - Only the timestamp of the index is used by jgit check if  the index
   is dirty.
 
-- Don't try the plugin with a JDK other than 1.6 (Java 6) unless you
+- Don't try the library with a JDK other than 1.6 (Java 6) unless you
   are prepared to investigate problems yourself. JDK 1.5.0_11 and later
   Java 5 versions *may* work. Earlier versions do not. JDK 1.4 is *not*
   supported. Apple's Java 1.5.0_07 is reported to work acceptably. We
@@ -82,15 +33,6 @@ three for packaging.
 - CRLF conversion is never performed. On Windows you should thereforc
   make sure your projects and workspaces are configured to save files
   with Unix (LF) line endings.
-
-            == COMPATIBILITY                   ==
-
-- Eclipse 3.4 is the minimum Eclipse version.
-
-- Newer version of EGit/JGit may implement new functionality, remove
-  existing functions and change others without other notice than what
-  is written in the commit log and source files themselves.
-
 
             == Package Features                ==
 
@@ -134,45 +76,6 @@ three for packaging.
     * Assorted set of command line utilities. Mostly for ad-hoc testing of jgit
       log, glog, fetch etc.
 
-  org.spearce.egit.core/
-
-    * Supplies an Eclipse team provider.
-
-    * Connect/disconnect the provider to a project.
-
-    * Search for the repositories associated with a project by
-      autodetecting the GIT repository directories.
-
-    * Store which repositories are tied to which containers in the
-      Eclipse workspace.
-
-    * Tracks moves/renames/deletes and reflects them in the cache
-      tree.
-
-    * Resolves through linked containers.
-
-  org.spearce.egit.ui/
-
-    * Connect team provider wizard panels.
-
-    * Connect to GIT team provider by making a new repository.
-
-    * Connect to GIT team provider by searching local filesystem
-      for existing repository directories.
-
-    * Team actions: track (add), untrack (remove), disconnect, show
-      history, compare version.
-
-    * Resource decorator shows file/directory state in the package
-      explorer and other views.
-
-    * Creating new commits or amending commits.
-
-    * Graphical history viewer with the ability to compare versions
-      using eclipse built-in compare editor.
-
-     * Clone, push, fetch
-
             == Missing Features                ==
 
 There are a lot of missing features. You need the real Git for this.
@@ -182,7 +85,7 @@ partial files simple.
 
 - Merging. 
 
-- Repacking from within the plugin.
+- Repacking.
 
 - Generate a GIT format patch.
 
@@ -196,9 +99,6 @@ partial files simple.
 
 - submodule support
   Submodules are not supported or even recognized.
-
-- The Eclipse plugin cannot handle files outside any Eclipse project. You
-  need commit changes to such files outside of Eclipse.
 
             == Support                         ==
 

@@ -7,13 +7,13 @@ Short Version:
    Developer's Certificate of Origin (see below).
  - Make sure all code is under the proper license:
 
-   in *.jgit: 3-clause BSD
-   in *.egit: Eclipse Public License (EPL)
+      3-clause BSD
 
- - Use a subject prefix of "[PATCH JGIT ...]" or "[PATCH EGIT ...]"
-   when sending any patches directly by email.
+ - Use a subject prefix of "[PATCH JGIT ...]"  when sending any
+   patches directly by email.
+
  - Send by email to the maintainers, cc'ing the git mailing list
-   which is currently used for both Git, JGit/EGit:
+   which is currently used for both Git and JGit:
 
    maintainers   : "Shawn O. Pearce" <spearce@spearce.org>
                    Robin Rosenberg <robin.rosenberg@dewire.com>
@@ -24,7 +24,7 @@ Short Version:
 
 Long Version:
 
-I wanted a file describing how to submit patches for EGit/JGit,
+I wanted a file describing how to submit patches for JGit,
 so I started with the one found in the core Git distribution
 (Documentation/SubmittingPatches), which itself was based on the
 patch submission guidelines for the Linux kernel.
@@ -128,14 +128,9 @@ is trivially correct or after the list reached a consensus, send it
 
 (4) Check the license
 
-Some parts of EGit/JGit are licensed under one of the:
+JGit is licensed under the 3-clause (new-style) BSD.
 
- * 3-clause (new-style) BSD,
- * GNU Public License (GPL),
- * GNU Lesser General Public License (LGPL),
- * Eclipse Public License (EPL).
-
-Because of this split licensing model *every* file within the project
+Because of this licensing model *every* file within the project
 *must* list which license covers it in the header of the file.
 Any new contributions to an existing file *must* be submitted under
 the current license of that file.  Any new files *must* clearly
@@ -151,7 +146,7 @@ has been applied and pushed out.
 
 To improve tracking of who did what, we've borrowed the "sign-off"
 procedure from the Linux kernel project on patches that are being
-emailed around.  Although EGit/JGit is a lot smaller project it is
+emailed around.  Although JGit is a lot smaller project it is
 a good discipline to follow it.
 
 The sign-off is a simple line at the end of the explanation for the
