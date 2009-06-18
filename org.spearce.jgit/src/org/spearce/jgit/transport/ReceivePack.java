@@ -461,32 +461,37 @@ public class ReceivePack {
 		final StringBuilder m = new StringBuilder(100);
 		final char[] idtmp = new char[2 * Constants.OBJECT_ID_LENGTH];
 		final Iterator<Ref> i = RefComparator.sort(refs.values()).iterator();
-		{
-			if (i.hasNext()) {
-				final Ref r = i.next();
-				format(m, idtmp, r.getObjectId(), r.getOrigName());
-			} else {
-				format(m, idtmp, ObjectId.zeroId(), "capabilities^{}");
-			}
-			m.append('\0');
-			m.append(' ');
-			m.append(CAPABILITY_DELETE_REFS);
-			m.append(' ');
-			m.append(CAPABILITY_REPORT_STATUS);
-			if (allowOfsDelta) {
-				m.append(' ');
-				m.append(CAPABILITY_OFS_DELTA);
-			}
-			m.append(' ');
-			writeAdvertisedRef(m);
-		}
-
+		boolean first = true;
 		while (i.hasNext()) {
 			final Ref r = i.next();
+			if (r.getObjectId() == null)
+				continue;
 			format(m, idtmp, r.getObjectId(), r.getOrigName());
+			if (first) {
+				first = false;
+				advertiseCapabilities(m);
+			}
+			writeAdvertisedRef(m);
+		}
+		if (first) {
+			format(m, idtmp, ObjectId.zeroId(), "capabilities^{}");
+			advertiseCapabilities(m);
 			writeAdvertisedRef(m);
 		}
 		pckOut.end();
+	}
+
+	private void advertiseCapabilities(final StringBuilder m) {
+		m.append('\0');
+		m.append(' ');
+		m.append(CAPABILITY_DELETE_REFS);
+		m.append(' ');
+		m.append(CAPABILITY_REPORT_STATUS);
+		if (allowOfsDelta) {
+			m.append(' ');
+			m.append(CAPABILITY_OFS_DELTA);
+		}
+		m.append(' ');
 	}
 
 	private void format(final StringBuilder m, final char[] idtmp,

@@ -235,6 +235,8 @@ public class UploadPack {
 		}
 		while (i.hasNext()) {
 			final Ref r = i.next();
+			if (r.getObjectId() == null)
+				continue;
 			final RevObject o = safeParseAny(r.getObjectId());
 			if (o != null) {
 				advertise(m, idtmp, o, r.getOrigName());
