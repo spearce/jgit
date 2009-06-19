@@ -38,18 +38,24 @@
 package org.spearce.jgit.pgm;
 
 import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.Option;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.transport.FetchConnection;
 import org.spearce.jgit.transport.Transport;
 
 class LsRemote extends TextBuiltin {
+	@Option(name = "--timeout", metaVar = "SECONDS", usage = "abort connection if no activity")
+	int timeout = -1;
+
 	@Argument(index = 0, metaVar = "uri-ish", required = true)
 	private String remote;
 
 	@Override
 	protected void run() throws Exception {
 		final Transport tn = Transport.open(db, remote);
+		if (0 <= timeout)
+			tn.setTimeout(timeout);
 		final FetchConnection c = tn.openFetch();
 		try {
 			for (final Ref r : c.getRefs()) {

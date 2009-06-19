@@ -40,10 +40,14 @@ package org.spearce.jgit.pgm;
 import java.io.File;
 
 import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.Option;
 import org.spearce.jgit.lib.Repository;
 
 @Command(common = false, usage = "Server side backend for 'jgit fetch'")
 class UploadPack extends TextBuiltin {
+	@Option(name = "--timeout", metaVar = "SECONDS", usage = "abort connection if no activity")
+	int timeout = -1;
+
 	@Argument(index = 0, required = true, metaVar = "DIRECTORY", usage = "Repository to read from")
 	File srcGitdir;
 
@@ -62,6 +66,8 @@ class UploadPack extends TextBuiltin {
 		if (!db.getObjectsDirectory().isDirectory())
 			throw die("'" + srcGitdir.getPath() + "' not a git repository");
 		rp = new org.spearce.jgit.transport.UploadPack(db);
+		if (0 <= timeout)
+			rp.setTimeout(timeout);
 		rp.upload(System.in, System.out, System.err);
 	}
 }

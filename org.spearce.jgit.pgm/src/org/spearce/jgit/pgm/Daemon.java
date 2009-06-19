@@ -54,6 +54,9 @@ class Daemon extends TextBuiltin {
 	@Option(name = "--listen", metaVar = "HOSTNAME", usage = "hostname (or ip) to listen on")
 	String host;
 
+	@Option(name = "--timeout", metaVar = "SECONDS", usage = "abort connection if no activity")
+	int timeout = -1;
+
 	@Option(name = "--enable", metaVar = "SERVICE", usage = "enable the service in all repositories", multiValued = true)
 	final List<String> enable = new ArrayList<String>();
 
@@ -85,6 +88,8 @@ class Daemon extends TextBuiltin {
 				host != null ? new InetSocketAddress(host, port)
 						: new InetSocketAddress(port));
 		d.setExportAll(exportAll);
+		if (0 <= timeout)
+			d.setTimeout(timeout);
 
 		for (final String n : enable)
 			service(d, n).setEnabled(true);

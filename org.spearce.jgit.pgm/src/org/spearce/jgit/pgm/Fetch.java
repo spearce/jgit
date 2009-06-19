@@ -48,6 +48,9 @@ import org.spearce.jgit.transport.Transport;
 
 @Command(common = true, usage = "Update remote refs from another repository")
 class Fetch extends AbstractFetchCommand {
+	@Option(name = "--timeout", metaVar = "SECONDS", usage = "abort connection if no activity")
+	int timeout = -1;
+
 	@Option(name = "--fsck", usage = "perform fsck style checks on receive")
 	private Boolean fsck;
 
@@ -86,6 +89,8 @@ class Fetch extends AbstractFetchCommand {
 		tn.setDryRun(dryRun);
 		if (thin != null)
 			tn.setFetchThin(thin.booleanValue());
+		if (0 <= timeout)
+			tn.setTimeout(timeout);
 		final FetchResult r;
 		try {
 			r = tn.fetch(new TextProgressMonitor(), toget);
