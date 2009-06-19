@@ -37,8 +37,6 @@
 
 package org.spearce.jgit.transport;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -79,6 +77,8 @@ public class Daemon {
 
 	private Thread acceptThread;
 
+	private int timeout;
+
 	/** Configure a daemon to listen on any available network port. */
 	public Daemon() {
 		this(null);
@@ -108,6 +108,7 @@ public class Daemon {
 							final Repository db) throws IOException {
 						final UploadPack rp = new UploadPack(db);
 						final InputStream in = dc.getInputStream();
+						rp.setTimeout(Daemon.this.getTimeout());
 						rp.upload(in, dc.getOutputStream(), null);
 					}
 				}, new DaemonService("receive-pack", "receivepack") {
@@ -127,6 +128,7 @@ public class Daemon {
 						final String name = "anonymous";
 						final String email = name + "@" + host;
 						rp.setRefLogIdent(new PersonIdent(name, email));
+						rp.setTimeout(Daemon.this.getTimeout());
 						rp.receive(in, dc.getOutputStream(), null);
 					}
 				} };
@@ -213,6 +215,23 @@ public class Daemon {
 		}
 	}
 
+	/** @return timeout (in seconds) before aborting an IO operation. */
+	public int getTimeout() {
+		return timeout;
+	}
+
+	/**
+	 * Set the timeout before willing to abort an IO call.
+	 *
+	 * @param seconds
+	 *            number of seconds to wait (with no data transfer occurring)
+	 *            before aborting an IO read or write operation with the
+	 *            connected client.
+	 */
+	public void setTimeout(final int seconds) {
+		timeout = seconds;
+	}
+
 	/**
 	 * Start this daemon on a background thread.
 	 *
@@ -280,8 +299,7 @@ public class Daemon {
 		new Thread(processors, "Git-Daemon-Client " + peer.toString()) {
 			public void run() {
 				try {
-					dc.execute(new BufferedInputStream(s.getInputStream()),
-							new BufferedOutputStream(s.getOutputStream()));
+					dc.execute(s);
 				} catch (IOException e) {
 					// Ignore unexpected IO exceptions from clients
 					e.printStackTrace();

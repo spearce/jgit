@@ -37,10 +37,13 @@
 
 package org.spearce.jgit.transport;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.Socket;
 
 /** Active network client of {@link Daemon}. */
 public class DaemonClient {
@@ -80,11 +83,13 @@ public class DaemonClient {
 		return rawOut;
 	}
 
-	void execute(final InputStream in, final OutputStream out)
+	void execute(final Socket sock)
 			throws IOException {
-		rawIn = in;
-		rawOut = out;
+		rawIn = new BufferedInputStream(sock.getInputStream());
+		rawOut = new BufferedOutputStream(sock.getOutputStream());
 
+		if (0 < daemon.getTimeout())
+			sock.setSoTimeout(daemon.getTimeout() * 1000);
 		String cmd = new PacketLineIn(rawIn).readStringRaw();
 		final int nul = cmd.indexOf('\0');
 		if (nul >= 0) {
@@ -98,6 +103,7 @@ public class DaemonClient {
 		final DaemonService srv = getDaemon().matchService(cmd);
 		if (srv == null)
 			return;
+		sock.setSoTimeout(0);
 		srv.execute(this, cmd);
 	}
 }
