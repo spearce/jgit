@@ -70,6 +70,8 @@ public class RemoteConfig {
 
 	private static final String KEY_MIRROR = "mirror";
 
+	private static final String KEY_TIMEOUT = "timeout";
+
 	private static final boolean DEFAULT_MIRROR = false;
 
 	/** Default value for {@link #getUploadPack()} if not specified. */
@@ -119,6 +121,8 @@ public class RemoteConfig {
 	private TagOpt tagopt;
 
 	private boolean mirror;
+
+	private int timeout;
 
 	/**
 	 * Parse a remote block from an existing configuration file.
@@ -170,6 +174,7 @@ public class RemoteConfig {
 		val = rc.getString(SECTION, name, KEY_TAGOPT);
 		tagopt = TagOpt.fromOption(val);
 		mirror = rc.getBoolean(SECTION, name, KEY_MIRROR, DEFAULT_MIRROR);
+		timeout = rc.getInt(SECTION, name, KEY_TIMEOUT, 0);
 	}
 
 	/**
@@ -200,6 +205,7 @@ public class RemoteConfig {
 		set(rc, KEY_RECEIVEPACK, getReceivePack(), DEFAULT_RECEIVE_PACK);
 		set(rc, KEY_TAGOPT, getTagOpt().option(), TagOpt.AUTO_FOLLOW.option());
 		set(rc, KEY_MIRROR, mirror, DEFAULT_MIRROR);
+		set(rc, KEY_TIMEOUT, timeout, 0);
 	}
 
 	private void set(final RepositoryConfig rc, final String key,
@@ -216,6 +222,14 @@ public class RemoteConfig {
 			unset(rc, key);
 		else
 			rc.setBoolean(SECTION, getName(), key, currentValue);
+	}
+
+	private void set(final RepositoryConfig rc, final String key,
+			final int currentValue, final int defaultValue) {
+		if (defaultValue == currentValue)
+			unset(rc, key);
+		else
+			rc.setInt(SECTION, getName(), key, currentValue);
 	}
 
 	private void unset(final RepositoryConfig rc, final String key) {
@@ -419,5 +433,22 @@ public class RemoteConfig {
 	 */
 	public void setMirror(final boolean m) {
 		mirror = m;
+	}
+
+	/** @return timeout (in seconds) before aborting an IO operation. */
+	public int getTimeout() {
+		return timeout;
+	}
+
+	/**
+	 * Set the timeout before willing to abort an IO call.
+	 *
+	 * @param seconds
+	 *            number of seconds to wait (with no data transfer occurring)
+	 *            before aborting an IO read or write operation with this
+	 *            remote.  A timeout of 0 will block indefinitely.
+	 */
+	public void setTimeout(final int seconds) {
+		timeout = seconds;
 	}
 }

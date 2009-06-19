@@ -78,6 +78,7 @@ public class RemoteConfigTest extends RepositoryTestCase {
 		assertNotNull(rc.getFetchRefSpecs());
 		assertNotNull(rc.getPushRefSpecs());
 		assertNotNull(rc.getTagOpt());
+		assertEquals(0, rc.getTimeout());
 		assertSame(TagOpt.AUTO_FOLLOW, rc.getTagOpt());
 
 		assertEquals(1, allURIs.size());
@@ -422,5 +423,30 @@ public class RemoteConfigTest extends RepositoryTestCase {
 				+ "[remote \"origin\"]\n" + "\turl = /some/dir\n"
 				+ "\tfetch = +refs/heads/*:refs/remotes/origin/*\n"
 				+ "\ttagopt = --tags\n");
+	}
+
+	public void testSimpleTimeout() throws Exception {
+		writeConfig("[remote \"spearce\"]\n"
+				+ "url = http://www.spearce.org/egit.git\n"
+				+ "fetch = +refs/heads/*:refs/remotes/spearce/*\n"
+				+ "timeout = 12\n");
+		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "spearce");
+		assertEquals(12, rc.getTimeout());
+	}
+
+	public void testSaveTimeout() throws Exception {
+		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "origin");
+		rc.addURI(new URIish("/some/dir"));
+		rc.addFetchRefSpec(new RefSpec("+refs/heads/*:refs/remotes/"
+				+ rc.getName() + "/*"));
+		rc.setTimeout(60);
+		rc.update(db.getConfig());
+		db.getConfig().save();
+
+		checkFile(new File(db.getDirectory(), "config"), "[core]\n"
+				+ "\trepositoryformatversion = 0\n" + "\tfilemode = true\n"
+				+ "[remote \"origin\"]\n" + "\turl = /some/dir\n"
+				+ "\tfetch = +refs/heads/*:refs/remotes/origin/*\n"
+				+ "\ttimeout = 60\n");
 	}
 }
