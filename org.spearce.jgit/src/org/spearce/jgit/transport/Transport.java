@@ -376,6 +376,9 @@ public abstract class Transport {
 	/** Should refs no longer on the source be pruned from the destination? */
 	private boolean removeDeletedRefs;
 
+	/** Timeout in seconds to wait before aborting an IO read or write. */
+	private int timeout;
+
 	/**
 	 * Create a new transport instance.
 	 * 
@@ -572,6 +575,7 @@ public abstract class Transport {
 		setTagOpt(cfg.getTagOpt());
 		optionReceivePack = cfg.getReceivePack();
 		push = cfg.getPushRefSpecs();
+		timeout = cfg.getTimeout();
 	}
 
 	/**
@@ -593,6 +597,23 @@ public abstract class Transport {
 	 */
 	public void setDryRun(final boolean dryRun) {
 		this.dryRun = dryRun;
+	}
+
+	/** @return timeout (in seconds) before aborting an IO operation. */
+	public int getTimeout() {
+		return timeout;
+	}
+
+	/**
+	 * Set the timeout before willing to abort an IO call.
+	 *
+	 * @param seconds
+	 *            number of seconds to wait (with no data transfer occurring)
+	 *            before aborting an IO read or write operation with this
+	 *            remote.
+	 */
+	public void setTimeout(final int seconds) {
+		timeout = seconds;
 	}
 
 	/**

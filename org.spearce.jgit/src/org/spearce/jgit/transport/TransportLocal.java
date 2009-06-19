@@ -43,6 +43,7 @@ package org.spearce.jgit.transport;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 
@@ -240,7 +241,9 @@ class TransportLocal extends Transport implements PackTransport {
 		ForkLocalFetchConnection() throws TransportException {
 			super(TransportLocal.this);
 			uploadPack = startProcessWithErrStream(getOptionUploadPack());
-			init(uploadPack.getInputStream(), uploadPack.getOutputStream());
+			final InputStream upIn = uploadPack.getInputStream();
+			final OutputStream upOut = uploadPack.getOutputStream();
+			init(upIn, upOut);
 			readAdvertisedRefs();
 		}
 
@@ -343,7 +346,9 @@ class TransportLocal extends Transport implements PackTransport {
 		ForkLocalPushConnection() throws TransportException {
 			super(TransportLocal.this);
 			receivePack = startProcessWithErrStream(getOptionReceivePack());
-			init(receivePack.getInputStream(), receivePack.getOutputStream());
+			final InputStream rpIn = receivePack.getInputStream();
+			final OutputStream rpOut = receivePack.getOutputStream();
+			init(rpIn, rpOut);
 			readAdvertisedRefs();
 		}
 

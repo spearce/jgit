@@ -40,7 +40,11 @@
 package org.spearce.jgit.transport;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 
 import org.spearce.jgit.errors.NoRemoteRepositoryException;
 import org.spearce.jgit.errors.TransportException;
@@ -120,6 +124,7 @@ public class TransportGitSsh extends SshTransport implements PackTransport {
 	ChannelExec exec(final String exe) throws TransportException {
 		initSession();
 
+		final int tms = getTimeout() > 0 ? getTimeout() * 1000 : 0;
 		try {
 			final ChannelExec channel = (ChannelExec) sock.openChannel("exec");
 			String path = uri.getPath();
@@ -139,7 +144,7 @@ public class TransportGitSsh extends SshTransport implements PackTransport {
 			channel.setCommand(cmd.toString());
 			errStream = createErrorStream();
 			channel.setErrStream(errStream, true);
-			channel.connect();
+			channel.connect(tms);
 			return channel;
 		} catch (JSchException je) {
 			throw new TransportException(uri, je.getMessage(), je);
@@ -198,6 +203,98 @@ public class TransportGitSsh extends SshTransport implements PackTransport {
 		return new NoRemoteRepositoryException(uri, why);
 	}
 
+	// JSch won't let us interrupt writes when we use our InterruptTimer to
+	// break out of a long-running write operation. To work around that we
+	// spawn a background thread to shuttle data through a pipe, as we can
+	// issue an interrupted write out of that. Its slower, so we only use
+	// this route if there is a timeout.
+	//
+	private OutputStream outputStream(ChannelExec channel) throws IOException {
+		final OutputStream out = channel.getOutputStream();
+		if (getTimeout() <= 0)
+			return out;
+		final PipedInputStream pipeIn = new PipedInputStream();
+		final CopyThread copyThread = new CopyThread(pipeIn, out);
+		final PipedOutputStream pipeOut = new PipedOutputStream(pipeIn) {
+			@Override
+			public void flush() throws IOException {
+				super.flush();
+				copyThread.flush();
+			}
+
+			@Override
+			public void close() throws IOException {
+				super.close();
+				try {
+					copyThread.join(getTimeout() * 1000);
+				} catch (InterruptedException e) {
+					// Just wake early, the thread will terminate anyway.
+				}
+			}
+		};
+		copyThread.start();
+		return pipeOut;
+	}
+
+	private static class CopyThread extends Thread {
+		private final InputStream src;
+
+		private final OutputStream dst;
+
+		private volatile boolean doFlush;
+
+		CopyThread(final InputStream i, final OutputStream o) {
+			setName(Thread.currentThread().getName() + "-Output");
+			src = i;
+			dst = o;
+		}
+
+		void flush() {
+			if (!doFlush) {
+				doFlush = true;
+				interrupt();
+			}
+		}
+
+		@Override
+		public void run() {
+			try {
+				final byte[] buf = new byte[1024];
+				for (;;) {
+					try {
+						if (doFlush) {
+							doFlush = false;
+							dst.flush();
+						}
+
+						final int n;
+						try {
+							n = src.read(buf);
+						} catch (InterruptedIOException wakey) {
+							continue;
+						}
+						if (n < 0)
+							break;
+						dst.write(buf, 0, n);
+					} catch (IOException e) {
+						break;
+					}
+				}
+			} finally {
+				try {
+					src.close();
+				} catch (IOException e) {
+					// Ignore IO errors on close
+				}
+				try {
+					dst.close();
+				} catch (IOException e) {
+					// Ignore IO errors on close
+				}
+			}
+		}
+	}
+
 	class SshFetchConnection extends BasePackFetchConnection {
 		private ChannelExec channel;
 
@@ -207,7 +304,7 @@ public class TransportGitSsh extends SshTransport implements PackTransport {
 				channel = exec(getOptionUploadPack());
 
 				if (channel.isConnected())
-					init(channel.getInputStream(), channel.getOutputStream());
+					init(channel.getInputStream(), outputStream(channel));
 				else
 					throw new TransportException(uri, errStream.toString());
 
@@ -251,7 +348,7 @@ public class TransportGitSsh extends SshTransport implements PackTransport {
 				channel = exec(getOptionReceivePack());
 
 				if (channel.isConnected())
-					init(channel.getInputStream(), channel.getOutputStream());
+					init(channel.getInputStream(), outputStream(channel));
 				else
 					throw new TransportException(uri, errStream.toString());
 

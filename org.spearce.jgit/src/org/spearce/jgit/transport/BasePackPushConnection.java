@@ -92,6 +92,9 @@ class BasePackPushConnection extends BasePackConnection implements
 
 	private boolean writePack;
 
+	/** Time in milliseconds spent transferring the pack data. */
+	private long packTransferTime;
+
 	BasePackPushConnection(final PackTransport packTransport) {
 		super(packTransport);
 		thinPack = transport.isPushThin();
@@ -209,12 +212,14 @@ class BasePackPushConnection extends BasePackConnection implements
 		writer.setThin(thinPack);
 		writer.setDeltaBaseAsOffset(capableOfsDelta);
 		writer.preparePack(newObjects, remoteObjects);
+		final long start = System.currentTimeMillis();
 		writer.writePack(out);
+		packTransferTime = System.currentTimeMillis() - start;
 	}
 
 	private void readStatusReport(final Map<String, RemoteRefUpdate> refUpdates)
 			throws IOException {
-		final String unpackLine = pckIn.readString();
+		final String unpackLine = readStringLongTimeout();
 		if (!unpackLine.startsWith("unpack "))
 			throw new PackProtocolException(uri, "unexpected report line: "
 					+ unpackLine);
@@ -258,6 +263,28 @@ class BasePackPushConnection extends BasePackConnection implements
 				throw new PackProtocolException(uri
 						+ ": expected report for ref " + rru.getRemoteName()
 						+ " not received");
+		}
+	}
+
+	private String readStringLongTimeout() throws IOException {
+		if (timeoutIn == null)
+			return pckIn.readString();
+
+		// The remote side may need a lot of time to choke down the pack
+		// we just sent them. There may be many deltas that need to be
+		// resolved by the remote. Its hard to say how long the other
+		// end is going to be silent. Taking 10x the configured timeout
+		// or the time spent transferring the pack, whichever is larger,
+		// gives the other side some reasonable window to process the data,
+		// but this is just a wild guess.
+		//
+		final int oldTimeout = timeoutIn.getTimeout();
+		final int sendTime = (int) Math.min(packTransferTime, 28800000L);
+		try {
+			timeoutIn.setTimeout(10 * Math.max(sendTime, oldTimeout));
+			return pckIn.readString();
+		} finally {
+			timeoutIn.setTimeout(oldTimeout);
 		}
 	}
 }

@@ -42,6 +42,7 @@ package org.spearce.jgit.transport;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -82,16 +83,26 @@ class TransportGitAnon extends TcpTransport implements PackTransport {
 	}
 
 	Socket openConnection() throws TransportException {
+		final int tms = getTimeout() > 0 ? getTimeout() * 1000 : 0;
 		final int port = uri.getPort() > 0 ? uri.getPort() : GIT_PORT;
+		final Socket s = new Socket();
 		try {
-			return new Socket(InetAddress.getByName(uri.getHost()), port);
+			final InetAddress host = InetAddress.getByName(uri.getHost());
+			s.bind(null);
+			s.connect(new InetSocketAddress(host, port), tms);
 		} catch (IOException c) {
+			try {
+				s.close();
+			} catch (IOException closeErr) {
+				// ignore a failure during close, we're already failing
+			}
 			if (c instanceof UnknownHostException)
 				throw new TransportException(uri, "unknown host");
 			if (c instanceof ConnectException)
 				throw new TransportException(uri, c.getMessage());
 			throw new TransportException(uri, c.getMessage(), c);
 		}
+		return s;
 	}
 
 	void service(final String name, final PacketLineOut pckOut)

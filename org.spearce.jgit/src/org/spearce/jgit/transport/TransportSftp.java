@@ -112,9 +112,10 @@ public class TransportSftp extends SshTransport implements WalkTransport {
 	ChannelSftp newSftp() throws TransportException {
 		initSession();
 
+		final int tms = getTimeout() > 0 ? getTimeout() * 1000 : 0;
 		try {
 			final Channel channel = sock.openChannel("sftp");
-			channel.connect();
+			channel.connect(tms);
 			return (ChannelSftp) channel;
 		} catch (JSchException je) {
 			throw new TransportException(uri, je.getMessage(), je);

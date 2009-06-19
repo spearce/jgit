@@ -55,6 +55,9 @@ import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.util.io.InterruptTimer;
+import org.spearce.jgit.util.io.TimeoutInputStream;
+import org.spearce.jgit.util.io.TimeoutOutputStream;
 
 /**
  * Base helper class for pack-based operations implementations. Provides partial
@@ -74,6 +77,15 @@ abstract class BasePackConnection extends BaseConnection {
 
 	/** A transport connected to {@link #uri}. */
 	protected final Transport transport;
+
+	/** Low-level input stream, if a timeout was configured. */
+	protected TimeoutInputStream timeoutIn;
+
+	/** Low-level output stream, if a timeout was configured. */
+	protected TimeoutOutputStream timeoutOut;
+
+	/** Timer to manage {@link #timeoutIn} and {@link #timeoutOut}. */
+	private InterruptTimer myTimer;
 
 	/** Buffered input stream reading from the remote. */
 	protected InputStream in;
@@ -102,7 +114,19 @@ abstract class BasePackConnection extends BaseConnection {
 		uri = transport.uri;
 	}
 
-	protected void init(final InputStream myIn, final OutputStream myOut) {
+	protected final void init(InputStream myIn, OutputStream myOut) {
+		final int timeout = transport.getTimeout();
+		if (timeout > 0) {
+			final Thread caller = Thread.currentThread();
+			myTimer = new InterruptTimer(caller.getName() + "-Timer");
+			timeoutIn = new TimeoutInputStream(myIn, myTimer);
+			timeoutOut = new TimeoutOutputStream(myOut, myTimer);
+			timeoutIn.setTimeout(timeout * 1000);
+			timeoutOut.setTimeout(timeout * 1000);
+			myIn = timeoutIn;
+			myOut = timeoutOut;
+		}
+
 		in = myIn instanceof BufferedInputStream ? myIn
 				: new BufferedInputStream(myIn, IndexPack.BUFFER_SIZE);
 		out = myOut instanceof BufferedOutputStream ? myOut
@@ -239,6 +263,16 @@ abstract class BasePackConnection extends BaseConnection {
 			} finally {
 				in = null;
 				pckIn = null;
+			}
+		}
+
+		if (myTimer != null) {
+			try {
+				myTimer.terminate();
+			} finally {
+				myTimer = null;
+				timeoutIn = null;
+				timeoutOut = null;
 			}
 		}
 	}

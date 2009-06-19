@@ -111,6 +111,7 @@ public abstract class SshTransport extends TcpTransport {
 		if (sock != null)
 			return;
 
+		final int tms = getTimeout() > 0 ? getTimeout() * 1000 : 0;
 		final String user = uri.getUser();
 		final String pass = uri.getPass();
 		final String host = uri.getHost();
@@ -118,7 +119,7 @@ public abstract class SshTransport extends TcpTransport {
 		try {
 			sock = sch.getSession(user, pass, host, port);
 			if (!sock.isConnected())
-				sock.connect();
+				sock.connect(tms);
 		} catch (JSchException je) {
 			final Throwable c = je.getCause();
 			if (c instanceof UnknownHostException)
