@@ -39,7 +39,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <groupId>org.spearce</groupId>
     <artifactId>jgit</artifactId>
     <packaging>jar</packaging>
-    <version>0.4-SNAPSHOT</version>
+    <version>0.4.9</version>
     <name>jgit</name>
     <url>http://repo.or.cz/w/egit.git</url>
     <mailingLists>
