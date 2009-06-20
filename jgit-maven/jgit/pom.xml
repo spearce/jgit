@@ -41,7 +41,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <packaging>jar</packaging>
     <version>0.4.9-SNAPSHOT</version>
     <name>jgit</name>
-    <url>http://repo.or.cz/w/egit.git</url>
+    <url>http://repo.or.cz/w/jgit.git</url>
     <mailingLists>
         <mailingList>
             <name>GIT Mailing List</name>
