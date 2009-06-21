@@ -58,6 +58,8 @@ public class RemoteConfig {
 
 	private static final String KEY_URL = "url";
 
+	private static final String KEY_PUSHURL = "pushurl";
+
 	private static final String KEY_FETCH = "fetch";
 
 	private static final String KEY_PUSH = "push";
@@ -110,6 +112,8 @@ public class RemoteConfig {
 
 	private List<URIish> uris;
 
+	private List<URIish> pushURIs;
+
 	private List<RefSpec> fetch;
 
 	private List<RefSpec> push;
@@ -151,6 +155,11 @@ public class RemoteConfig {
 		for (final String s : vlst)
 			uris.add(new URIish(s));
 
+		vlst = rc.getStringList(SECTION, name, KEY_PUSHURL);
+		pushURIs = new ArrayList<URIish>(vlst.length);
+		for (final String s : vlst)
+			pushURIs.add(new URIish(s));
+
 		vlst = rc.getStringList(SECTION, name, KEY_FETCH);
 		fetch = new ArrayList<RefSpec>(vlst.length);
 		for (final String s : vlst)
@@ -190,6 +199,11 @@ public class RemoteConfig {
 		for (final URIish u : getURIs())
 			vlst.add(u.toPrivateString());
 		rc.setStringList(SECTION, getName(), KEY_URL, vlst);
+
+		vlst.clear();
+		for (final URIish u : getPushURIs())
+			vlst.add(u.toPrivateString());
+		rc.setStringList(SECTION, getName(), KEY_PUSHURL, vlst);
 
 		vlst.clear();
 		for (final RefSpec u : getFetchRefSpecs())
@@ -276,6 +290,39 @@ public class RemoteConfig {
 	 */
 	public boolean removeURI(final URIish toRemove) {
 		return uris.remove(toRemove);
+	}
+
+	/**
+	 * Get all configured push-only URIs under this remote.
+	 *
+	 * @return the set of URIs known to this remote.
+	 */
+	public List<URIish> getPushURIs() {
+		return Collections.unmodifiableList(pushURIs);
+	}
+
+	/**
+	 * Add a new push-only URI to the end of the list of URIs.
+	 *
+	 * @param toAdd
+	 *            the new URI to add to this remote.
+	 * @return true if the URI was added; false if it already exists.
+	 */
+	public boolean addPushURI(final URIish toAdd) {
+		if (pushURIs.contains(toAdd))
+			return false;
+		return pushURIs.add(toAdd);
+	}
+
+	/**
+	 * Remove a push-only URI from the list of URIs.
+	 *
+	 * @param toRemove
+	 *            the URI to remove from this remote.
+	 * @return true if the URI was added; false if it already exists.
+	 */
+	public boolean removePushURI(final URIish toRemove) {
+		return pushURIs.remove(toRemove);
 	}
 
 	/**

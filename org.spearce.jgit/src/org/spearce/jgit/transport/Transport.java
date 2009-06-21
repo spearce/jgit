@@ -72,8 +72,18 @@ import org.spearce.jgit.lib.TransferConfig;
  * Callers must ensure a transport is accessed by only one thread at a time.
  */
 public abstract class Transport {
+	/** Type of operation a Transport is being opened for. */
+	public enum Operation {
+		/** Transport is to fetch objects locally. */
+		FETCH,
+		/** Transport is to push objects remotely. */
+		PUSH;
+	}
+
 	/**
 	 * Open a new transport instance to connect two repositories.
+	 * <p>
+	 * This method assumes {@link Operation#FETCH}.
 	 * 
 	 * @param local
 	 *            existing local repository.
@@ -90,15 +100,41 @@ public abstract class Transport {
 	 */
 	public static Transport open(final Repository local, final String remote)
 			throws NotSupportedException, URISyntaxException {
+		return open(local, remote, Operation.FETCH);
+	}
+
+	/**
+	 * Open a new transport instance to connect two repositories.
+	 *
+	 * @param local
+	 *            existing local repository.
+	 * @param remote
+	 *            location of the remote repository - may be URI or remote
+	 *            configuration name.
+	 * @param op
+	 *            planned use of the returned Transport; the URI may differ
+	 *            based on the type of connection desired.
+	 * @return the new transport instance. Never null. In case of multiple URIs
+	 *         in remote configuration, only the first is chosen.
+	 * @throws URISyntaxException
+	 *             the location is not a remote defined in the configuration
+	 *             file and is not a well-formed URL.
+	 * @throws NotSupportedException
+	 *             the protocol specified is not supported.
+	 */
+	public static Transport open(final Repository local, final String remote,
+			final Operation op) throws NotSupportedException,
+			URISyntaxException {
 		final RemoteConfig cfg = new RemoteConfig(local.getConfig(), remote);
-		final List<URIish> uris = cfg.getURIs();
-		if (uris.size() == 0)
+		if (doesNotExist(cfg))
 			return open(local, new URIish(remote));
-		return open(local, cfg);
+		return open(local, cfg, op);
 	}
 
 	/**
 	 * Open new transport instances to connect two repositories.
+	 * <p>
+	 * This method assumes {@link Operation#FETCH}.
 	 *
 	 * @param local
 	 *            existing local repository.
@@ -116,18 +152,44 @@ public abstract class Transport {
 	public static List<Transport> openAll(final Repository local,
 			final String remote) throws NotSupportedException,
 			URISyntaxException {
+		return openAll(local, remote, Operation.FETCH);
+	}
+
+	/**
+	 * Open new transport instances to connect two repositories.
+	 *
+	 * @param local
+	 *            existing local repository.
+	 * @param remote
+	 *            location of the remote repository - may be URI or remote
+	 *            configuration name.
+	 * @param op
+	 *            planned use of the returned Transport; the URI may differ
+	 *            based on the type of connection desired.
+	 * @return the list of new transport instances for every URI in remote
+	 *         configuration.
+	 * @throws URISyntaxException
+	 *             the location is not a remote defined in the configuration
+	 *             file and is not a well-formed URL.
+	 * @throws NotSupportedException
+	 *             the protocol specified is not supported.
+	 */
+	public static List<Transport> openAll(final Repository local,
+			final String remote, final Operation op)
+			throws NotSupportedException, URISyntaxException {
 		final RemoteConfig cfg = new RemoteConfig(local.getConfig(), remote);
-		final List<URIish> uris = cfg.getURIs();
-		if (uris.size() == 0) {
+		if (doesNotExist(cfg)) {
 			final ArrayList<Transport> transports = new ArrayList<Transport>(1);
 			transports.add(open(local, new URIish(remote)));
 			return transports;
 		}
-		return openAll(local, cfg);
+		return openAll(local, cfg, op);
 	}
 
 	/**
 	 * Open a new transport instance to connect two repositories.
+	 * <p>
+	 * This method assumes {@link Operation#FETCH}.
 	 * 
 	 * @param local
 	 *            existing local repository.
@@ -144,17 +206,45 @@ public abstract class Transport {
 	 */
 	public static Transport open(final Repository local, final RemoteConfig cfg)
 			throws NotSupportedException {
-		if (cfg.getURIs().isEmpty())
+		return open(local, cfg, Operation.FETCH);
+	}
+
+	/**
+	 * Open a new transport instance to connect two repositories.
+	 *
+	 * @param local
+	 *            existing local repository.
+	 * @param cfg
+	 *            configuration describing how to connect to the remote
+	 *            repository.
+	 * @param op
+	 *            planned use of the returned Transport; the URI may differ
+	 *            based on the type of connection desired.
+	 * @return the new transport instance. Never null. In case of multiple URIs
+	 *         in remote configuration, only the first is chosen.
+	 * @throws NotSupportedException
+	 *             the protocol specified is not supported.
+	 * @throws IllegalArgumentException
+	 *             if provided remote configuration doesn't have any URI
+	 *             associated.
+	 */
+	public static Transport open(final Repository local,
+			final RemoteConfig cfg, final Operation op)
+			throws NotSupportedException {
+		final List<URIish> uris = getURIs(cfg, op);
+		if (uris.isEmpty())
 			throw new IllegalArgumentException(
 					"Remote config \""
 					+ cfg.getName() + "\" has no URIs associated");
-		final Transport tn = open(local, cfg.getURIs().get(0));
+		final Transport tn = open(local, uris.get(0));
 		tn.applyConfig(cfg);
 		return tn;
 	}
 
 	/**
 	 * Open new transport instances to connect two repositories.
+	 * <p>
+	 * This method assumes {@link Operation#FETCH}.
 	 *
 	 * @param local
 	 *            existing local repository.
@@ -168,7 +258,29 @@ public abstract class Transport {
 	 */
 	public static List<Transport> openAll(final Repository local,
 			final RemoteConfig cfg) throws NotSupportedException {
-		final List<URIish> uris = cfg.getURIs();
+		return openAll(local, cfg, Operation.FETCH);
+	}
+
+	/**
+	 * Open new transport instances to connect two repositories.
+	 *
+	 * @param local
+	 *            existing local repository.
+	 * @param cfg
+	 *            configuration describing how to connect to the remote
+	 *            repository.
+	 * @param op
+	 *            planned use of the returned Transport; the URI may differ
+	 *            based on the type of connection desired.
+	 * @return the list of new transport instances for every URI in remote
+	 *         configuration.
+	 * @throws NotSupportedException
+	 *             the protocol specified is not supported.
+	 */
+	public static List<Transport> openAll(final Repository local,
+			final RemoteConfig cfg, final Operation op)
+			throws NotSupportedException {
+		final List<URIish> uris = getURIs(cfg, op);
 		final List<Transport> transports = new ArrayList<Transport>(uris.size());
 		for (final URIish uri : uris) {
 			final Transport tn = open(local, uri);
@@ -176,6 +288,26 @@ public abstract class Transport {
 			transports.add(tn);
 		}
 		return transports;
+	}
+
+	private static List<URIish> getURIs(final RemoteConfig cfg,
+			final Operation op) {
+		switch (op) {
+		case FETCH:
+			return cfg.getURIs();
+		case PUSH: {
+			List<URIish> uris = cfg.getPushURIs();
+			if (uris.isEmpty())
+				uris = cfg.getURIs();
+			return uris;
+		}
+		default:
+			throw new IllegalArgumentException(op.toString());
+		}
+	}
+
+	private static boolean doesNotExist(final RemoteConfig cfg) {
+		return cfg.getURIs().isEmpty() && cfg.getPushURIs().isEmpty();
 	}
 
 	/**

@@ -105,7 +105,8 @@ class Push extends TextBuiltin {
 				refSpecs.add(spec.setForceUpdate(true));
 		}
 
-		final List<Transport> transports = Transport.openAll(db, remote);
+		final List<Transport> transports;
+		transports = Transport.openAll(db, remote, Transport.Operation.PUSH);
 		for (final Transport transport : transports) {
 			if (0 <= timeout)
 				transport.setTimeout(timeout);
