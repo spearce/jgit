@@ -571,9 +571,9 @@ public abstract class Transport {
 	 */
 	public void applyConfig(final RemoteConfig cfg) {
 		setOptionUploadPack(cfg.getUploadPack());
-		fetch = cfg.getFetchRefSpecs();
+		setOptionReceivePack(cfg.getReceivePack());
 		setTagOpt(cfg.getTagOpt());
-		optionReceivePack = cfg.getReceivePack();
+		fetch = cfg.getFetchRefSpecs();
 		push = cfg.getPushRefSpecs();
 		timeout = cfg.getTimeout();
 	}
