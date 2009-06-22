@@ -468,7 +468,7 @@ public class GitIndex {
 			if (modified) {
 				size = (int) f.length();
 				ObjectWriter writer = new ObjectWriter(db);
-				ObjectId newsha1 = sha1 = writer.writeBlob(f);
+				ObjectId newsha1 = writer.writeBlob(f);
 				if (!newsha1.equals(sha1))
 					modified = true;
 				sha1 = newsha1;
@@ -491,7 +491,7 @@ public class GitIndex {
 			boolean modified = false;
 			size = newContent.length;
 			ObjectWriter writer = new ObjectWriter(db);
-			ObjectId newsha1 = sha1 = writer.writeBlob(newContent);
+			ObjectId newsha1 = writer.writeBlob(newContent);
 			if (!newsha1.equals(sha1))
 				modified = true;
 			sha1 = newsha1;
