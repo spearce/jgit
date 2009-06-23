@@ -255,12 +255,16 @@ public class RefUpdateTest extends RepositoryTestCase {
 		RefUpdate updateRef = db.updateRef("refs/heads/master");
 		updateRef.setNewObjectId(pid);
 		LockFile lockFile1 = new LockFile(new File(db.getDirectory(),"refs/heads/master"));
-		assertTrue(lockFile1.lock()); // precondition to test
-		Result update = updateRef.update();
-		assertEquals(Result.LOCK_FAILURE, update);
-		assertEquals(opid, db.resolve("refs/heads/master"));
-		LockFile lockFile2 = new LockFile(new File(db.getDirectory(),"refs/heads/master"));
-		assertFalse(lockFile2.lock()); // was locked, still is
+		try {
+			assertTrue(lockFile1.lock()); // precondition to test
+			Result update = updateRef.update();
+			assertEquals(Result.LOCK_FAILURE, update);
+			assertEquals(opid, db.resolve("refs/heads/master"));
+			LockFile lockFile2 = new LockFile(new File(db.getDirectory(),"refs/heads/master"));
+			assertFalse(lockFile2.lock()); // was locked, still is
+		} finally {
+			lockFile1.unlock();
+		}
 	}
 
 	/**
