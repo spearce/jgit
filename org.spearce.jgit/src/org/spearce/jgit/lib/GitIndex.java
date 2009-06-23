@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.TreeMap;
 
+import org.spearce.jgit.dircache.DirCache;
 import org.spearce.jgit.errors.CorruptObjectException;
 import org.spearce.jgit.errors.NotSupportedException;
 import org.spearce.jgit.util.FS;
@@ -85,6 +86,8 @@ import org.spearce.jgit.util.RawParseUtils;
  *
  * An index can also contain a tree cache which we ignore for now. We drop the
  * tree cache when writing the index.
+ *
+ * @deprecated Use {@link DirCache} instead.
  */
 public class GitIndex {
 
@@ -110,7 +113,7 @@ public class GitIndex {
 	private Map<byte[], Entry> entries = new TreeMap<byte[], Entry>(new Comparator<byte[]>() {
 		public int compare(byte[] o1, byte[] o2) {
 			for (int i = 0; i < o1.length && i < o2.length; ++i) {
-				int c = o1[i] - o2[i];
+				int c = (o1[i] & 0xff) - (o2[i] & 0xff);
 				if (c != 0)
 					return c;
 			}
