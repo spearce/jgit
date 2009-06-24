@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2009, Google Inc.
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
  * All rights reserved.
@@ -374,6 +375,21 @@ public class RevCommit extends RevObject {
 			if (r[b++] == '\n')
 				return true;
 		return false;
+	}
+
+	/**
+	 * Determine the encoding of the commit message buffer.
+	 * <p>
+	 * Locates the "encoding" header (if present) and then returns the proper
+	 * character set to apply to this buffer to evaluate its contents as
+	 * character data.
+	 * <p>
+	 * If no encoding header is present, {@link Constants#CHARSET} is assumed.
+	 *
+	 * @return the preferred encoding of {@link #getRawBuffer()}.
+	 */
+	public final Charset getEncoding() {
+		return RawParseUtils.parseEncoding(buffer);
 	}
 
 	/**

@@ -39,6 +39,7 @@ package org.spearce.jgit.revwalk;
 
 import java.io.ByteArrayOutputStream;
 
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.RepositoryTestCase;
@@ -145,6 +146,7 @@ public class RevCommitParseTest extends RepositoryTestCase {
 		c = new RevCommit(id("9473095c4cb2f12aefe1db8a355fe3fafba42f67")); // bogus id
 		c.parseCanonical(new RevWalk(db), b.toByteArray());
 
+		assertSame(Constants.CHARSET, c.getEncoding());
 		assertEquals("F\u00f6r fattare", c.getAuthorIdent().getName());
 		assertEquals("Sm\u00f6rg\u00e5sbord", c.getShortMessage());
 		assertEquals("Sm\u00f6rg\u00e5sbord\n\n\u304d\u308c\u3044\n", c.getFullMessage());
@@ -163,6 +165,7 @@ public class RevCommitParseTest extends RepositoryTestCase {
 		c = new RevCommit(id("9473095c4cb2f12aefe1db8a355fe3fafba42f67")); // bogus id
 		c.parseCanonical(new RevWalk(db), b.toByteArray());
 
+		assertSame(Constants.CHARSET, c.getEncoding());
 		assertEquals("F\u00f6r fattare", c.getAuthorIdent().getName());
 		assertEquals("Sm\u00f6rg\u00e5sbord", c.getShortMessage());
 		assertEquals("Sm\u00f6rg\u00e5sbord\n\n\u304d\u308c\u3044\n", c.getFullMessage());
@@ -187,6 +190,7 @@ public class RevCommitParseTest extends RepositoryTestCase {
 		c = new RevCommit(id("9473095c4cb2f12aefe1db8a355fe3fafba42f67")); // bogus id
 		c.parseCanonical(new RevWalk(db), b.toByteArray());
 
+		assertEquals("EUC-JP", c.getEncoding().name());
 		assertEquals("F\u00f6r fattare", c.getAuthorIdent().getName());
 		assertEquals("\u304d\u308c\u3044", c.getShortMessage());
 		assertEquals("\u304d\u308c\u3044\n\nHi\n", c.getFullMessage());
@@ -215,6 +219,7 @@ public class RevCommitParseTest extends RepositoryTestCase {
 		c = new RevCommit(id("9473095c4cb2f12aefe1db8a355fe3fafba42f67")); // bogus id
 		c.parseCanonical(new RevWalk(db), b.toByteArray());
 
+		assertEquals("EUC-JP", c.getEncoding().name());
 		assertEquals("F\u00f6r fattare", c.getAuthorIdent().getName());
 		assertEquals("\u304d\u308c\u3044", c.getShortMessage());
 		assertEquals("\u304d\u308c\u3044\n\nHi\n", c.getFullMessage());
@@ -244,6 +249,7 @@ public class RevCommitParseTest extends RepositoryTestCase {
 		c = new RevCommit(id("9473095c4cb2f12aefe1db8a355fe3fafba42f67")); // bogus id
 		c.parseCanonical(new RevWalk(db), b.toByteArray());
 
+		assertEquals("ISO-8859-1", c.getEncoding().name());
 		assertEquals("F\u00f6r fattare", c.getAuthorIdent().getName());
 		assertEquals("\u304d\u308c\u3044", c.getShortMessage());
 		assertEquals("\u304d\u308c\u3044\n\nHi\n", c.getFullMessage());
