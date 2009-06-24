@@ -58,6 +58,8 @@ public final class RawParseUtils {
 
 	private static final byte[] digits16;
 
+	private static final byte[] footerLineKeyChars;
+
 	static {
 		digits10 = new byte['9' + 1];
 		Arrays.fill(digits10, (byte) -1);
@@ -72,6 +74,15 @@ public final class RawParseUtils {
 			digits16[i] = (byte) ((i - 'a') + 10);
 		for (char i = 'A'; i <= 'F'; i++)
 			digits16[i] = (byte) ((i - 'A') + 10);
+
+		footerLineKeyChars = new byte['z' + 1];
+		footerLineKeyChars['-'] = 1;
+		for (char i = '0'; i <= '9'; i++)
+			footerLineKeyChars[i] = 1;
+		for (char i = 'A'; i <= 'Z'; i++)
+			footerLineKeyChars[i] = 1;
+		for (char i = 'a'; i <= 'z'; i++)
+			footerLineKeyChars[i] = 1;
 	}
 
 	/**
@@ -710,6 +721,39 @@ public final class RawParseUtils {
 			tz = 0;
 		}
 		return new PersonIdent(name, email, when * 1000L, tz);
+	}
+
+	/**
+	 * Locate the end of a footer line key string.
+	 * <p>
+	 * If the region at {@code raw[ptr]} matches {@code ^[A-Za-z0-9-]+:} (e.g.
+	 * "Signed-off-by: A. U. Thor\n") then this method returns the position of
+	 * the first ':'.
+	 * <p>
+	 * If the region at {@code raw[ptr]} does not match {@code ^[A-Za-z0-9-]+:}
+	 * then this method returns -1.
+	 *
+	 * @param raw
+	 *            buffer to scan.
+	 * @param ptr
+	 *            first position within raw to consider as a footer line key.
+	 * @return position of the ':' which terminates the footer line key if this
+	 *         is otherwise a valid footer line key; otherwise -1.
+	 */
+	public static int endOfFooterLineKey(final byte[] raw, int ptr) {
+		try {
+			for (;;) {
+				final byte c = raw[ptr];
+				if (footerLineKeyChars[c] == 0) {
+					if (c == ':')
+						return ptr;
+					return -1;
+				}
+				ptr++;
+			}
+		} catch (ArrayIndexOutOfBoundsException e) {
+			return -1;
+		}
 	}
 
 	/**

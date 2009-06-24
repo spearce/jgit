@@ -40,6 +40,9 @@ package org.spearce.jgit.revwalk;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
@@ -390,6 +393,105 @@ public class RevCommit extends RevObject {
 	 */
 	public final Charset getEncoding() {
 		return RawParseUtils.parseEncoding(buffer);
+	}
+
+	/**
+	 * Parse the footer lines (e.g. "Signed-off-by") for machine processing.
+	 * <p>
+	 * This method splits all of the footer lines out of the last paragraph of
+	 * the commit message, providing each line as a key-value pair, ordered by
+	 * the order of the line's appearance in the commit message itself.
+	 * <p>
+	 * A footer line's key must match the pattern {@code ^[A-Za-z0-9-]+:}, while
+	 * the value is free-form, but must not contain an LF. Very common keys seen
+	 * in the wild are:
+	 * <ul>
+	 * <li>{@code Signed-off-by} (agrees to Developer Certificate of Origin)
+	 * <li>{@code Acked-by} (thinks change looks sane in context)
+	 * <li>{@code Reported-by} (originally found the issue this change fixes)
+	 * <li>{@code Tested-by} (validated change fixes the issue for them)
+	 * <li>{@code CC}, {@code Cc} (copy on all email related to this change)
+	 * <li>{@code Bug} (link to project's bug tracking system)
+	 * </ul>
+	 *
+	 * @return ordered list of footer lines; empty list if no footers found.
+	 */
+	public final List<FooterLine> getFooterLines() {
+		final byte[] raw = buffer;
+		int ptr = raw.length - 1;
+		while (raw[ptr] == '\n') // trim any trailing LFs, not interesting
+			ptr--;
+
+		final int msgB = RawParseUtils.commitMessage(raw, 0);
+		final ArrayList<FooterLine> r = new ArrayList<FooterLine>(4);
+		final Charset enc = getEncoding();
+		for (;;) {
+			ptr = RawParseUtils.prevLF(raw, ptr);
+			if (ptr <= msgB)
+				break; // Don't parse commit headers as footer lines.
+
+			final int keyStart = ptr + 2;
+			if (raw[keyStart] == '\n')
+				break; // Stop at first paragraph break, no footers above it.
+
+			final int keyEnd = RawParseUtils.endOfFooterLineKey(raw, keyStart);
+			if (keyEnd < 0)
+				continue; // Not a well formed footer line, skip it.
+
+			// Skip over the ': *' at the end of the key before the value.
+			//
+			int valStart = keyEnd + 1;
+			while (valStart < raw.length && raw[valStart] == ' ')
+				valStart++;
+
+			// Value ends at the LF, and does not include it.
+			//
+			int valEnd = RawParseUtils.nextLF(raw, valStart);
+			if (raw[valEnd - 1] == '\n')
+				valEnd--;
+
+			r.add(new FooterLine(raw, enc, keyStart, keyEnd, valStart, valEnd));
+		}
+		Collections.reverse(r);
+		return r;
+	}
+
+	/**
+	 * Get the values of all footer lines with the given key.
+	 *
+	 * @param keyName
+	 *            footer key to find values of, case insensitive.
+	 * @return values of footers with key of {@code keyName}, ordered by their
+	 *         order of appearance. Duplicates may be returned if the same
+	 *         footer appeared more than once. Empty list if no footers appear
+	 *         with the specified key, or there are no footers at all.
+	 * @see #getFooterLines()
+	 */
+	public final List<String> getFooterLines(final String keyName) {
+		return getFooterLines(new FooterKey(keyName));
+	}
+
+	/**
+	 * Get the values of all footer lines with the given key.
+	 *
+	 * @param keyName
+	 *            footer key to find values of, case insensitive.
+	 * @return values of footers with key of {@code keyName}, ordered by their
+	 *         order of appearance. Duplicates may be returned if the same
+	 *         footer appeared more than once. Empty list if no footers appear
+	 *         with the specified key, or there are no footers at all.
+	 * @see #getFooterLines()
+	 */
+	public final List<String> getFooterLines(final FooterKey keyName) {
+		final List<FooterLine> src = getFooterLines();
+		if (src.isEmpty())
+			return Collections.emptyList();
+		final ArrayList<String> r = new ArrayList<String>(src.size());
+		for (final FooterLine f : src) {
+			if (f.matches(keyName))
+				r.add(f.getValue());
+		}
+		return r;
 	}
 
 	/**
