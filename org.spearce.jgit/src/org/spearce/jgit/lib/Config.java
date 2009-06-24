@@ -368,6 +368,7 @@ public abstract class Config {
 	 */
 	public Set<String> getSubsections(final String section) {
 		final Set<String> result = new HashSet<String>();
+		ensureLoaded();
 
 		for (final Entry e : entries) {
 			if (section.equalsIgnoreCase(e.base) && e.extendedBase != null)
@@ -402,8 +403,7 @@ public abstract class Config {
 			return null;
 	}
 
-	private Object getRawEntry(final String section, final String subsection,
-			final String name) {
+	private void ensureLoaded() {
 		if (!readFile) {
 			try {
 				load();
@@ -414,6 +414,11 @@ public abstract class Config {
 				err.printStackTrace();
 			}
 		}
+	}
+
+	private Object getRawEntry(final String section, final String subsection,
+			final String name) {
+		ensureLoaded();
 
 		String ss;
 		if (subsection != null)
