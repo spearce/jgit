@@ -149,6 +149,13 @@ public class Commit implements Treeish {
 	}
 
 	/**
+	 * @return get repository for the commit
+	 */
+	public Repository getRepository() {
+		return objdb;
+	}
+
+	/**
 	 * @return The commit object id
 	 */
 	public ObjectId getCommitId() {

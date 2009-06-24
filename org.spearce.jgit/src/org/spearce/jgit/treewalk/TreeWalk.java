@@ -103,7 +103,7 @@ public class TreeWalk {
 	 *             a tree object was not found.
 	 */
 	public static TreeWalk forPath(final Repository db, final String path,
-			final AnyObjectId[] trees) throws MissingObjectException,
+			final AnyObjectId... trees) throws MissingObjectException,
 			IncorrectObjectTypeException, CorruptObjectException, IOException {
 		final TreeWalk r = new TreeWalk(db);
 		r.setFilter(PathFilterGroup.createFromStrings(Collections
