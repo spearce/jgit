@@ -105,6 +105,7 @@ public class FooterLineTest extends RepositoryTestCase {
 		f = footers.get(0);
 		assertEquals("Signed-off-by", f.getKey());
 		assertEquals("A. U. Thor <a@example.com>", f.getValue());
+		assertEquals("a@example.com", f.getEmailAddress());
 	}
 
 	public void testSignedOffBy_OneUserWithLF() {
@@ -119,6 +120,7 @@ public class FooterLineTest extends RepositoryTestCase {
 		f = footers.get(0);
 		assertEquals("Signed-off-by", f.getKey());
 		assertEquals("A. U. Thor <a@example.com>", f.getValue());
+		assertEquals("a@example.com", f.getEmailAddress());
 	}
 
 	public void testSignedOffBy_IgnoreWhitespace() {
@@ -136,6 +138,7 @@ public class FooterLineTest extends RepositoryTestCase {
 		f = footers.get(0);
 		assertEquals("Signed-off-by", f.getKey());
 		assertEquals("A. U. Thor <a@example.com>  ", f.getValue());
+		assertEquals("a@example.com", f.getEmailAddress());
 	}
 
 	public void testEmptyValueNoLF() {
@@ -150,6 +153,7 @@ public class FooterLineTest extends RepositoryTestCase {
 		f = footers.get(0);
 		assertEquals("Signed-off-by", f.getKey());
 		assertEquals("", f.getValue());
+		assertNull(f.getEmailAddress());
 	}
 
 	public void testEmptyValueWithLF() {
@@ -164,6 +168,7 @@ public class FooterLineTest extends RepositoryTestCase {
 		f = footers.get(0);
 		assertEquals("Signed-off-by", f.getKey());
 		assertEquals("", f.getValue());
+		assertNull(f.getEmailAddress());
 	}
 
 	public void testShortKey() {
@@ -178,6 +183,37 @@ public class FooterLineTest extends RepositoryTestCase {
 		f = footers.get(0);
 		assertEquals("K", f.getKey());
 		assertEquals("V", f.getValue());
+		assertNull(f.getEmailAddress());
+	}
+
+	public void testNonDelimtedEmail() {
+		final RevCommit commit = parse("subject\n\nbody of commit\n" + "\n"
+				+ "Acked-by: re@example.com\n");
+		final List<FooterLine> footers = commit.getFooterLines();
+		FooterLine f;
+
+		assertNotNull(footers);
+		assertEquals(1, footers.size());
+
+		f = footers.get(0);
+		assertEquals("Acked-by", f.getKey());
+		assertEquals("re@example.com", f.getValue());
+		assertEquals("re@example.com", f.getEmailAddress());
+	}
+
+	public void testNotEmail() {
+		final RevCommit commit = parse("subject\n\nbody of commit\n" + "\n"
+				+ "Acked-by: Main Tain Er\n");
+		final List<FooterLine> footers = commit.getFooterLines();
+		FooterLine f;
+
+		assertNotNull(footers);
+		assertEquals(1, footers.size());
+
+		f = footers.get(0);
+		assertEquals("Acked-by", f.getKey());
+		assertEquals("Main Tain Er", f.getValue());
+		assertNull(f.getEmailAddress());
 	}
 
 	public void testSignedOffBy_ManyUsers() {
@@ -197,18 +233,22 @@ public class FooterLineTest extends RepositoryTestCase {
 		f = footers.get(0);
 		assertEquals("Signed-off-by", f.getKey());
 		assertEquals("A. U. Thor <a@example.com>", f.getValue());
+		assertEquals("a@example.com", f.getEmailAddress());
 
 		f = footers.get(1);
 		assertEquals("CC", f.getKey());
 		assertEquals("<some.mailing.list@example.com>", f.getValue());
+		assertEquals("some.mailing.list@example.com", f.getEmailAddress());
 
 		f = footers.get(2);
 		assertEquals("Acked-by", f.getKey());
 		assertEquals("Some Reviewer <sr@example.com>", f.getValue());
+		assertEquals("sr@example.com", f.getEmailAddress());
 
 		f = footers.get(3);
 		assertEquals("Signed-off-by", f.getKey());
 		assertEquals("Main Tain Er <mte@example.com>", f.getValue());
+		assertEquals("mte@example.com", f.getEmailAddress());
 	}
 
 	public void testSignedOffBy_SkipNonFooter() {
