@@ -56,7 +56,7 @@ if [ -n "`git diff-index --name-only HEAD --`" ]
 then
 	VN="$VN-dirty"
 fi
-VN=`echo "$VN" | sed -e s/-/./g`
+VN=${VN:-untagged}`echo "$VN" | sed -e s/-/./g`
 
 CLASSPATH=
 for j in $JARS

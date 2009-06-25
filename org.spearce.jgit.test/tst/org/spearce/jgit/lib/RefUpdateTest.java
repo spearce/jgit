@@ -463,29 +463,34 @@ public class RefUpdateTest extends RepositoryTestCase {
 				"logs/" + fromName).exists());
 
 		// "someone" has branch X locked
-		assertTrue(new LockFile(new File(db.getDirectory(), toLock)).lock());
+		LockFile lockFile = new LockFile(new File(db.getDirectory(), toLock));
+		try {
+			assertTrue(lockFile.lock());
 
-		// Now this is our test
-		RefRename renameRef = db.renameRef(fromName, toName);
-		Result result = renameRef.rename();
-		assertEquals(Result.LOCK_FAILURE, result);
+			// Now this is our test
+			RefRename renameRef = db.renameRef(fromName, toName);
+			Result result = renameRef.rename();
+			assertEquals(Result.LOCK_FAILURE, result);
 
-		// Check that the involved refs are the same despite the failure
-		assertExists(false, toName);
-		if (!toLock.equals(toName))
-			assertExists(false, toName + ".lock");
-		assertExists(true, toLock + ".lock");
-		if (!toLock.equals(fromName))
-			assertExists(false, "logs/" + fromName + ".lock");
-		assertExists(false, "logs/" + toName + ".lock");
-		assertEquals(oldHeadId, db.resolve(Constants.HEAD));
-		assertEquals(oldfromId, db.resolve(fromName));
-		assertNull(db.resolve(toName));
-		assertEquals(oldFromLog.toString(), db.getReflogReader(fromName)
-				.getReverseEntries().toString());
-		if (oldHeadId != null)
-			assertEquals(oldHeadLog, db.getReflogReader(Constants.HEAD)
-					.getReverseEntries());
+			// Check that the involved refs are the same despite the failure
+			assertExists(false, toName);
+			if (!toLock.equals(toName))
+				assertExists(false, toName + ".lock");
+			assertExists(true, toLock + ".lock");
+			if (!toLock.equals(fromName))
+				assertExists(false, "logs/" + fromName + ".lock");
+			assertExists(false, "logs/" + toName + ".lock");
+			assertEquals(oldHeadId, db.resolve(Constants.HEAD));
+			assertEquals(oldfromId, db.resolve(fromName));
+			assertNull(db.resolve(toName));
+			assertEquals(oldFromLog.toString(), db.getReflogReader(fromName)
+					.getReverseEntries().toString());
+			if (oldHeadId != null)
+				assertEquals(oldHeadLog, db.getReflogReader(Constants.HEAD)
+						.getReverseEntries());
+		} finally {
+			lockFile.unlock();
+		}
 	}
 
 	private void assertExists(boolean positive, String toName) {
