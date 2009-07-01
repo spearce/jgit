@@ -258,8 +258,7 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 		mode = e.getMode().getBits();
 
 		final int nameLen = e.encodedNameLen;
-		while (pathOffset + nameLen > path.length)
-			growPath(pathOffset);
+		ensurePathCapacity(pathOffset + nameLen, pathOffset);
 		System.arraycopy(e.encodedName, 0, path, pathOffset, nameLen);
 		pathLen = pathOffset + nameLen;
 	}
