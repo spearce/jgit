@@ -37,6 +37,7 @@
 package org.spearce.jgit.lib;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.Callable;
@@ -118,7 +119,7 @@ public class BlobBasedConfig extends Config {
 				final Repository r = commit.getRepository();
 				final TreeWalk tree = TreeWalk.forPath(r, path, treeId);
 				if (tree == null) {
-					throw new IOException("Entry not found by path: " + path);
+					throw new FileNotFoundException("Entry not found by path: " + path);
 				}
 				ObjectId blobId = tree.getObjectId(0);
 				ObjectLoader loader = tree.getRepository().openBlob(blobId);
