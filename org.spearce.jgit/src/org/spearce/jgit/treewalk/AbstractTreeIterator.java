@@ -252,8 +252,39 @@ public abstract class AbstractTreeIterator {
 	 *            be moved into the larger buffer.
 	 */
 	protected void growPath(final int len) {
+		setPathCapacity(path.length << 1, len);
+	}
+
+	/**
+	 * Ensure that path is capable to hold at least {@code capacity} bytes
+	 *
+	 * @param capacity
+	 *            the amount of bytes to hold
+	 * @param len
+	 *            the amount of live bytes in path buffer
+	 */
+	protected void ensurePathCapacity(final int capacity, final int len) {
+		if (path.length >= capacity)
+			return;
 		final byte[] o = path;
-		final byte[] n = new byte[o.length << 1];
+		int current = o.length;
+		int newCapacity = current;
+		while (newCapacity < capacity && newCapacity > 0)
+			newCapacity <<= 1;
+		setPathCapacity(newCapacity, len);
+	}
+
+	/**
+	 * Set path buffer capacity to the specified size
+	 *
+	 * @param capacity
+	 *            the new size
+	 * @param len
+	 *            the amount of bytes to copy
+	 */
+	private void setPathCapacity(int capacity, int len) {
+		final byte[] o = path;
+		final byte[] n = new byte[capacity];
 		System.arraycopy(o, 0, n, 0, len);
 		for (AbstractTreeIterator p = this; p != null && p.path == o; p = p.parent)
 			p.path = n;
@@ -353,6 +384,11 @@ public abstract class AbstractTreeIterator {
 	/** @return the file mode of the current entry. */
 	public FileMode getEntryFileMode() {
 		return FileMode.fromBits(mode);
+	}
+
+	/** @return the file mode of the current entry as bits */
+	public int getEntryRawMode() {
+		return mode;
 	}
 
 	/** @return path of the current entry, as a string. */
@@ -530,5 +566,23 @@ public abstract class AbstractTreeIterator {
 	 */
 	public void stopWalk() {
 		// Do nothing by default.  Most iterators do not care.
+	}
+
+	/**
+	 * @return the length of the name component of the path for the current entry
+	 */
+	public int getNameLength() {
+		return pathLen - pathOffset;
+	}
+
+	/**
+	 * Get the name component of the current entry path into the provided buffer.
+	 *
+	 * @param buffer the buffer to get the name into, it is assumed that buffer can hold the name
+	 * @param offset the offset of the name in the buffer
+	 * @see #getNameLength()
+	 */
+	public void getName(byte[] buffer, int offset) {
+		System.arraycopy(path, pathOffset, buffer, offset, pathLen - pathOffset);
 	}
 }
