@@ -42,16 +42,27 @@ import java.io.IOException;
 import junit.framework.TestCase;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.FileMode;
 import org.spearce.jgit.lib.Repository;
 
 
 public class AbstractTreeIteratorTest extends TestCase {
+	private static String prefix(String path) {
+		final int s = path.lastIndexOf('/');
+		return s > 0 ? path.substring(0, s) : "";
+	}
+
 	public class FakeTreeIterator extends WorkingTreeIterator {
-		public FakeTreeIterator(String path, FileMode fileMode) {
-			super(path);
+		public FakeTreeIterator(String pathName, FileMode fileMode) {
+			super(prefix(pathName));
 			mode = fileMode.getBits();
-			pathLen -= 1; // Get rid of extra '/'
+
+			final int s = pathName.lastIndexOf('/');
+			final byte[] name = Constants.encode(pathName.substring(s + 1));
+			ensurePathCapacity(pathOffset + name.length, pathOffset);
+			System.arraycopy(name, 0, path, pathOffset, name.length);
+			pathLen = pathOffset + name.length;
 		}
 
 		@Override
@@ -73,5 +84,79 @@ public class AbstractTreeIteratorTest extends TestCase {
 
 		assertTrue(new FakeTreeIterator("a", FileMode.TREE).pathCompare(
 				new FakeTreeIterator("a", FileMode.TREE)) == 0);
+	}
+
+	public void testGrowPath() throws Exception {
+		final FakeTreeIterator i = new FakeTreeIterator("ab", FileMode.TREE);
+		final byte[] origpath = i.path;
+		assertEquals(i.path[0], 'a');
+		assertEquals(i.path[1], 'b');
+
+		i.growPath(2);
+
+		assertNotSame(origpath, i.path);
+		assertEquals(origpath.length * 2, i.path.length);
+		assertEquals(i.path[0], 'a');
+		assertEquals(i.path[1], 'b');
+	}
+
+	public void testEnsurePathCapacityFastCase() throws Exception {
+		final FakeTreeIterator i = new FakeTreeIterator("ab", FileMode.TREE);
+		final int want = 50;
+		final byte[] origpath = i.path;
+		assertEquals(i.path[0], 'a');
+		assertEquals(i.path[1], 'b');
+		assertTrue(want < i.path.length);
+
+		i.ensurePathCapacity(want, 2);
+
+		assertSame(origpath, i.path);
+		assertEquals(i.path[0], 'a');
+		assertEquals(i.path[1], 'b');
+	}
+
+	public void testEnsurePathCapacityGrows() throws Exception {
+		final FakeTreeIterator i = new FakeTreeIterator("ab", FileMode.TREE);
+		final int want = 384;
+		final byte[] origpath = i.path;
+		assertEquals(i.path[0], 'a');
+		assertEquals(i.path[1], 'b');
+		assertTrue(i.path.length < want);
+
+		i.ensurePathCapacity(want, 2);
+
+		assertNotSame(origpath, i.path);
+		assertEquals(512, i.path.length);
+		assertEquals(i.path[0], 'a');
+		assertEquals(i.path[1], 'b');
+	}
+
+	public void testEntryFileMode() {
+		for (FileMode m : new FileMode[] { FileMode.TREE,
+				FileMode.REGULAR_FILE, FileMode.EXECUTABLE_FILE,
+				FileMode.GITLINK, FileMode.SYMLINK }) {
+			final FakeTreeIterator i = new FakeTreeIterator("a", m);
+			assertEquals(m.getBits(), i.getEntryRawMode());
+			assertSame(m, i.getEntryFileMode());
+		}
+	}
+
+	public void testEntryPath() {
+		FakeTreeIterator i = new FakeTreeIterator("a/b/cd", FileMode.TREE);
+		assertEquals("a/b/cd", i.getEntryPathString());
+		assertEquals(2, i.getNameLength());
+		byte[] b = new byte[3];
+		b[0] = 0x0a;
+		i.getName(b, 1);
+		assertEquals(0x0a, b[0]);
+		assertEquals('c', b[1]);
+		assertEquals('d', b[2]);
+	}
+
+	public void testCreateEmptyTreeIterator() {
+		FakeTreeIterator i = new FakeTreeIterator("a/b/cd", FileMode.TREE);
+		EmptyTreeIterator e = i.createEmptyTreeIterator();
+		assertNotNull(e);
+		assertEquals(i.getEntryPathString() + "/", e.getEntryPathString());
 	}
 }
