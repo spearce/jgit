@@ -22,9 +22,10 @@ then
 	R=`cygpath -m $R`
 	PSEP=";"
 fi
-if [ "$MSYSTEM" = "MINGW" ]
+if [ "$MSYSTEM" = "MINGW" -o "$MSYSTEM" = "MINGW32" ]
 then
 	PSEP=";"
+	R=`pwd -W`
 fi
 
 if [ -n "$JAVA_HOME" ]
