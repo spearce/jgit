@@ -69,7 +69,7 @@ public class HttpSupport {
 		if (s == null || s.equals(""))
 			return;
 
-		final URL u = new URL(s);
+		final URL u = new URL((s.indexOf("://") == -1) ? "http://" + s : s);
 		if (!"http".equals(u.getProtocol()))
 			throw new MalformedURLException("Invalid http_proxy: " + s
 					+ ": Only http supported.");
