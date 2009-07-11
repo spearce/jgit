@@ -67,7 +67,7 @@ public class Daemon {
 
 	private final ThreadGroup processors;
 
-	private boolean exportAll;
+	private volatile boolean exportAll;
 
 	private Map<String, Repository> exports;
 
@@ -164,7 +164,7 @@ public class Daemon {
 	 *         ignored.
 	 * @see #setExportAll(boolean)
 	 */
-	public synchronized boolean isExportAll() {
+	public boolean isExportAll() {
 		return exportAll;
 	}
 
@@ -180,7 +180,7 @@ public class Daemon {
 	 *
 	 * @param export
 	 */
-	public synchronized void setExportAll(final boolean export) {
+	public void setExportAll(final boolean export) {
 		exportAll = export;
 	}
 
