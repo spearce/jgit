@@ -46,8 +46,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,12 +60,12 @@ import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.PackLock;
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Ref;
-import org.spearce.jgit.lib.RefComparator;
 import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.lib.RepositoryConfig;
 import org.spearce.jgit.revwalk.ObjectWalk;
 import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.revwalk.RevFlag;
 import org.spearce.jgit.revwalk.RevObject;
 import org.spearce.jgit.revwalk.RevWalk;
 import org.spearce.jgit.transport.ReceiveCommand.Result;
@@ -503,55 +503,18 @@ public class ReceivePack {
 	}
 
 	private void sendAdvertisedRefs() throws IOException {
+		final RevFlag advertised = walk.newFlag("ADVERTISED");
+		final RefAdvertiser adv = new RefAdvertiser(pckOut, walk, advertised);
+		adv.advertiseCapability(CAPABILITY_DELETE_REFS);
+		adv.advertiseCapability(CAPABILITY_REPORT_STATUS);
+		if (allowOfsDelta)
+			adv.advertiseCapability(CAPABILITY_OFS_DELTA);
 		refs = db.getAllRefs();
-
-		final StringBuilder m = new StringBuilder(100);
-		final char[] idtmp = new char[2 * Constants.OBJECT_ID_LENGTH];
-		final Iterator<Ref> i = RefComparator.sort(refs.values()).iterator();
-		boolean first = true;
-		while (i.hasNext()) {
-			final Ref r = i.next();
-			if (r.getObjectId() == null)
-				continue;
-			format(m, idtmp, r.getObjectId(), r.getOrigName());
-			if (first) {
-				first = false;
-				advertiseCapabilities(m);
-			}
-			writeAdvertisedRef(m);
-		}
-		if (first) {
-			format(m, idtmp, ObjectId.zeroId(), "capabilities^{}");
-			advertiseCapabilities(m);
-			writeAdvertisedRef(m);
-		}
+		adv.send(refs.values());
+		if (adv.isEmpty())
+			adv.advertiseId(ObjectId.zeroId(), "capabilities^{}");
 		pckOut.end();
-	}
-
-	private void advertiseCapabilities(final StringBuilder m) {
-		m.append('\0');
-		m.append(' ');
-		m.append(CAPABILITY_DELETE_REFS);
-		m.append(' ');
-		m.append(CAPABILITY_REPORT_STATUS);
-		if (allowOfsDelta) {
-			m.append(' ');
-			m.append(CAPABILITY_OFS_DELTA);
-		}
-		m.append(' ');
-	}
-
-	private void format(final StringBuilder m, final char[] idtmp,
-			final ObjectId id, final String name) {
-		m.setLength(0);
-		id.copyTo(idtmp, m);
-		m.append(' ');
-		m.append(name);
-	}
-
-	private void writeAdvertisedRef(final StringBuilder m) throws IOException {
-		m.append('\n');
-		pckOut.writeString(m.toString());
+		walk.disposeFlag(advertised);
 	}
 
 	private void recvCommands() throws IOException {

@@ -50,13 +50,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.spearce.jgit.errors.PackProtocolException;
-import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.NullProgressMonitor;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.PackWriter;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
-import org.spearce.jgit.lib.RefComparator;
 import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevFlag;
@@ -249,89 +247,18 @@ public class UploadPack {
 	}
 
 	private void sendAdvertisedRefs() throws IOException {
+		final RefAdvertiser adv = new RefAdvertiser(pckOut, walk, ADVERTISED);
+		adv.advertiseCapability(OPTION_INCLUDE_TAG);
+		adv.advertiseCapability(OPTION_MULTI_ACK);
+		adv.advertiseCapability(OPTION_OFS_DELTA);
+		adv.advertiseCapability(OPTION_SIDE_BAND);
+		adv.advertiseCapability(OPTION_SIDE_BAND_64K);
+		adv.advertiseCapability(OPTION_THIN_PACK);
+		adv.advertiseCapability(OPTION_NO_PROGRESS);
+		adv.setDerefTags(true);
 		refs = db.getAllRefs();
-
-		final StringBuilder m = new StringBuilder(100);
-		final char[] idtmp = new char[2 * Constants.OBJECT_ID_LENGTH];
-		final Iterator<Ref> i = RefComparator.sort(refs.values()).iterator();
-		if (i.hasNext()) {
-			final Ref r = i.next();
-			final RevObject o = safeParseAny(r.getObjectId());
-			if (o != null) {
-				advertise(m, idtmp, o, r.getOrigName());
-				m.append('\0');
-				m.append(' ');
-				m.append(OPTION_INCLUDE_TAG);
-				m.append(' ');
-				m.append(OPTION_MULTI_ACK);
-				m.append(' ');
-				m.append(OPTION_OFS_DELTA);
-				m.append(' ');
-				m.append(OPTION_SIDE_BAND);
-				m.append(' ');
-				m.append(OPTION_SIDE_BAND_64K);
-				m.append(' ');
-				m.append(OPTION_THIN_PACK);
-				m.append(' ');
-				m.append(OPTION_NO_PROGRESS);
-				m.append(' ');
-				writeAdvertisedRef(m);
-				if (o instanceof RevTag)
-					writeAdvertisedTag(m, idtmp, o, r.getName());
-			}
-		}
-		while (i.hasNext()) {
-			final Ref r = i.next();
-			if (r.getObjectId() == null)
-				continue;
-			final RevObject o = safeParseAny(r.getObjectId());
-			if (o != null) {
-				advertise(m, idtmp, o, r.getOrigName());
-				writeAdvertisedRef(m);
-				if (o instanceof RevTag)
-					writeAdvertisedTag(m, idtmp, o, r.getName());
-			}
-		}
+		adv.send(refs.values());
 		pckOut.end();
-	}
-
-	private RevObject safeParseAny(final ObjectId id) {
-		try {
-			return walk.parseAny(id);
-		} catch (IOException e) {
-			return null;
-		}
-	}
-
-	private void advertise(final StringBuilder m, final char[] idtmp,
-			final RevObject o, final String name) {
-		o.add(ADVERTISED);
-		m.setLength(0);
-		o.getId().copyTo(idtmp, m);
-		m.append(' ');
-		m.append(name);
-	}
-
-	private void writeAdvertisedRef(final StringBuilder m) throws IOException {
-		m.append('\n');
-		pckOut.writeString(m.toString());
-	}
-
-	private void writeAdvertisedTag(final StringBuilder m, final char[] idtmp,
-			final RevObject tag, final String name) throws IOException {
-		RevObject o = tag;
-		while (o instanceof RevTag) {
-			// Fully unwrap here so later on we have these already parsed.
-			try {
-				walk.parseHeaders(((RevTag) o).getObject());
-			} catch (IOException err) {
-				return;
-			}
-			o = ((RevTag) o).getObject();
-			o.add(ADVERTISED);
-		}
-		advertise(m, idtmp, ((RevTag) tag).getObject(), name + "^{}");
-		writeAdvertisedRef(m);
 	}
 
 	private void recvWants() throws IOException {
