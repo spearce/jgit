@@ -307,6 +307,7 @@ public abstract class RepositoryTestCase extends TestCase {
 	}
 
 	protected void tearDown() throws Exception {
+		RepositoryCache.clear();
 		db.close();
 		for (Repository r : repositoriesToClose)
 			r.close();
@@ -334,8 +335,21 @@ public abstract class RepositoryTestCase extends TestCase {
 	 * @throws IOException
 	 */
 	protected Repository createNewEmptyRepo() throws IOException {
+		return createNewEmptyRepo(false);
+	}
+
+	/**
+	 * Helper for creating extra empty repos
+	 *
+	 * @param bare if true, create a bare repository.
+	 * @return a new empty git repository for testing purposes
+	 *
+	 * @throws IOException
+	 */
+	protected Repository createNewEmptyRepo(boolean bare) throws IOException {
 		final File newTestRepo = new File(trashParent, "new"
-				+ System.currentTimeMillis() + "." + (testcount++) + "/.git");
+				+ System.currentTimeMillis() + "." + (testcount++)
+				+ (bare ? "" : "/") + ".git");
 		assertFalse(newTestRepo.exists());
 		final Repository newRepo = new Repository(newTestRepo);
 		newRepo.create();
