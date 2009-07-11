@@ -195,7 +195,9 @@ public class Daemon {
 	 * @param db
 	 *            the repository instance.
 	 */
-	public void exportRepository(final String name, final Repository db) {
+	public void exportRepository(String name, final Repository db) {
+		if (!name.endsWith(".git"))
+			name = name + ".git";
 		exports.put(name, db);
 	}
 
@@ -347,11 +349,7 @@ public class Daemon {
 		name = name.substring(1);
 
 		Repository db;
-		db = exports.get(name);
-		if (db != null)
-			return db;
-
-		db = exports.get(name + ".git");
+		db = exports.get(name.endsWith(".git") ? name : name + ".git");
 		if (db != null)
 			return db;
 
