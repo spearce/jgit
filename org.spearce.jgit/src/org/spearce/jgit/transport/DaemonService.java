@@ -108,11 +108,15 @@ public abstract class DaemonService {
 		final Repository db = client.getDaemon().openRepository(name);
 		if (db == null)
 			return;
-		boolean on = isEnabled();
-		if (isOverridable())
-			on = db.getConfig().getBoolean("daemon", config, on);
-		if (on)
-			execute(client, db);
+		try {
+			boolean on = isEnabled();
+			if (isOverridable())
+				on = db.getConfig().getBoolean("daemon", config, on);
+			if (on)
+				execute(client, db);
+		} finally {
+			db.close();
+		}
 	}
 
 	abstract void execute(DaemonClient client, Repository db)

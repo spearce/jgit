@@ -53,6 +53,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.RepositoryCache;
+import org.spearce.jgit.lib.RepositoryCache.FileKey;
 
 /** Basic daemon for the anonymous <code>git://</code> transport protocol. */
 public class Daemon {
@@ -199,6 +201,7 @@ public class Daemon {
 		if (!name.endsWith(".git"))
 			name = name + ".git";
 		exports.put(name, db);
+		RepositoryCache.register(db);
 	}
 
 	/**
@@ -350,34 +353,27 @@ public class Daemon {
 
 		Repository db;
 		db = exports.get(name.endsWith(".git") ? name : name + ".git");
-		if (db != null)
+		if (db != null) {
+			db.incrementOpen();
 			return db;
+		}
 
-		for (final File f : exportBase) {
-			db = openRepository(new File(f, name));
-			if (db != null)
-				return db;
-
-			db = openRepository(new File(f, name + ".git"));
-			if (db != null)
-				return db;
-
-			db = openRepository(new File(f, name + "/.git"));
-			if (db != null)
-				return db;
+		for (final File baseDir : exportBase) {
+			final File gitdir = FileKey.resolve(new File(baseDir, name));
+			if (gitdir != null && canExport(gitdir))
+				return openRepository(gitdir);
 		}
 		return null;
 	}
 
-	private Repository openRepository(final File d) {
-		if (d.isDirectory() && canExport(d)) {
-			try {
-				return new Repository(d);
-			} catch (IOException err) {
-				// Ignore
-			}
+	private static Repository openRepository(final File gitdir) {
+		try {
+			return RepositoryCache.open(FileKey.exact(gitdir));
+		} catch (IOException err) {
+			// null signals it "wasn't found", which is all that is suitable
+			// for the remote client to know.
+			return null;
 		}
-		return null;
 	}
 
 	private boolean canExport(final File d) {
