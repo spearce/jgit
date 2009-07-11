@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.RevisionSyntaxException;
@@ -85,6 +86,8 @@ import org.spearce.jgit.util.FS;
  *
  */
 public class Repository {
+	private final AtomicInteger useCnt = new AtomicInteger(1);
+
 	private final File gitDir;
 
 	private final RepositoryConfig config;
@@ -721,11 +724,17 @@ public class Repository {
 		return r != null ? r.getObjectId() : null;
 	}
 
+	/** Increment the use counter by one, requiring a matched {@link #close()}. */
+	public void incrementOpen() {
+		useCnt.incrementAndGet();
+	}
+
 	/**
 	 * Close all resources used by this repository
 	 */
 	public void close() {
-		objectDatabase.close();
+		if (useCnt.decrementAndGet() == 0)
+			objectDatabase.close();
 	}
 
 	/**
