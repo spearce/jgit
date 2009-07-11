@@ -42,10 +42,13 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import org.spearce.jgit.lib.AlternateRepositoryDatabase;
 import org.spearce.jgit.lib.AnyObjectId;
 import org.spearce.jgit.lib.Constants;
+import org.spearce.jgit.lib.ObjectDatabase;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.RefComparator;
+import org.spearce.jgit.lib.Repository;
 import org.spearce.jgit.revwalk.RevFlag;
 import org.spearce.jgit.revwalk.RevObject;
 import org.spearce.jgit.revwalk.RevTag;
@@ -102,6 +105,22 @@ class RefAdvertiser {
 			if (obj instanceof RevTag)
 				advertiseAnyOnce(((RevTag) obj).getObject(), ".have");
 		}
+	}
+
+	void includeAdditionalHaves() throws IOException {
+		additionalHaves(walk.getRepository().getObjectDatabase());
+	}
+
+	private void additionalHaves(final ObjectDatabase db) throws IOException {
+		if (db instanceof AlternateRepositoryDatabase)
+			additionalHaves(((AlternateRepositoryDatabase) db).getRepository());
+		for (ObjectDatabase alt : db.getAlternates())
+			additionalHaves(alt);
+	}
+
+	private void additionalHaves(final Repository alt) throws IOException {
+		for (final Ref r : alt.getAllRefs().values())
+			advertiseHave(r.getObjectId());
 	}
 
 	boolean isEmpty() {

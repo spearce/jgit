@@ -514,6 +514,7 @@ public class ReceivePack {
 		adv.send(refs.values());
 		if (head != null && head.getName().equals(head.getOrigName()))
 			adv.advertiseHave(head.getObjectId());
+		adv.includeAdditionalHaves();
 		if (adv.isEmpty())
 			adv.advertiseId(ObjectId.zeroId(), "capabilities^{}");
 		pckOut.end();
