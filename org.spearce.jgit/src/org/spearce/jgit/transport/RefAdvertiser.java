@@ -95,6 +95,15 @@ class RefAdvertiser {
 		}
 	}
 
+	void advertiseHave(AnyObjectId id) throws IOException {
+		RevObject obj = parseAnyOrNull(id);
+		if (obj != null) {
+			advertiseAnyOnce(obj, ".have");
+			if (obj instanceof RevTag)
+				advertiseAnyOnce(((RevTag) obj).getObject(), ".have");
+		}
+	}
+
 	boolean isEmpty() {
 		return first;
 	}
@@ -107,6 +116,12 @@ class RefAdvertiser {
 		} catch (IOException e) {
 			return null;
 		}
+	}
+
+	private void advertiseAnyOnce(final RevObject obj, final String refName)
+			throws IOException {
+		if (!obj.has(ADVERTISED))
+			advertiseAny(obj, refName);
 	}
 
 	private void advertiseAny(final RevObject obj, final String refName)

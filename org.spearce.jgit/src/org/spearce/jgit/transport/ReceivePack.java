@@ -509,8 +509,11 @@ public class ReceivePack {
 		adv.advertiseCapability(CAPABILITY_REPORT_STATUS);
 		if (allowOfsDelta)
 			adv.advertiseCapability(CAPABILITY_OFS_DELTA);
-		refs = db.getAllRefs();
+		refs = new HashMap<String, Ref>(db.getAllRefs());
+		final Ref head = refs.remove(Constants.HEAD);
 		adv.send(refs.values());
+		if (head != null && head.getName().equals(head.getOrigName()))
+			adv.advertiseHave(head.getObjectId());
 		if (adv.isEmpty())
 			adv.advertiseId(ObjectId.zeroId(), "capabilities^{}");
 		pckOut.end();
