@@ -46,10 +46,10 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Repository;
@@ -93,8 +93,8 @@ public class Daemon {
 	 */
 	public Daemon(final InetSocketAddress addr) {
 		myAddress = addr;
-		exports = new HashMap<String, Repository>();
-		exportBase = new ArrayList<File>();
+		exports = new ConcurrentHashMap<String, Repository>();
+		exportBase = new CopyOnWriteArrayList<File>();
 		processors = new ThreadGroup("Git-Daemon");
 
 		services = new DaemonService[] {
@@ -196,9 +196,7 @@ public class Daemon {
 	 *            the repository instance.
 	 */
 	public void exportRepository(final String name, final Repository db) {
-		synchronized (exports) {
-			exports.put(name, db);
-		}
+		exports.put(name, db);
 	}
 
 	/**
@@ -210,9 +208,7 @@ public class Daemon {
 	 *            named <code>git-daemon-export-ok</code> will be published.
 	 */
 	public void exportDirectory(final File dir) {
-		synchronized (exportBase) {
-			exportBase.add(dir);
-		}
+		exportBase.add(dir);
 	}
 
 	/** @return timeout (in seconds) before aborting an IO operation. */
@@ -351,21 +347,15 @@ public class Daemon {
 		name = name.substring(1);
 
 		Repository db;
-		synchronized (exports) {
-			db = exports.get(name);
-			if (db != null)
-				return db;
+		db = exports.get(name);
+		if (db != null)
+			return db;
 
-			db = exports.get(name + ".git");
-			if (db != null)
-				return db;
-		}
+		db = exports.get(name + ".git");
+		if (db != null)
+			return db;
 
-		final File[] search;
-		synchronized (exportBase) {
-			search = exportBase.toArray(new File[exportBase.size()]);
-		}
-		for (final File f : search) {
+		for (final File f : exportBase) {
 			db = openRepository(new File(f, name));
 			if (db != null)
 				return db;
