@@ -187,6 +187,13 @@ public class Repository {
 	}
 
 	/**
+	 * @return the object database which stores this repository's data.
+	 */
+	public ObjectDatabase getObjectDatabase() {
+		return objectDatabase;
+	}
+
+	/**
 	 * @return the configuration of this repository
 	 */
 	public RepositoryConfig getConfig() {
