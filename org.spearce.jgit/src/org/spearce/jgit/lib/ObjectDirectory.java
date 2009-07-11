@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.spearce.jgit.errors.PackMismatchException;
+import org.spearce.jgit.lib.RepositoryCache.FileKey;
 import org.spearce.jgit.util.FS;
 
 /**
@@ -415,11 +416,11 @@ public class ObjectDirectory extends ObjectDatabase {
 	@Override
 	protected ObjectDatabase[] loadAlternates() throws IOException {
 		final BufferedReader br = open(alternatesFile);
-		final List<ObjectDirectory> l = new ArrayList<ObjectDirectory>(4);
+		final List<ObjectDatabase> l = new ArrayList<ObjectDatabase>(4);
 		try {
 			String line;
 			while ((line = br.readLine()) != null) {
-				l.add(new ObjectDirectory(FS.resolve(objects, line)));
+				l.add(openAlternate(line));
 			}
 		} finally {
 			br.close();
@@ -428,11 +429,22 @@ public class ObjectDirectory extends ObjectDatabase {
 		if (l.isEmpty()) {
 			return NO_ALTERNATES;
 		}
-		return l.toArray(new ObjectDirectory[l.size()]);
+		return l.toArray(new ObjectDatabase[l.size()]);
 	}
 
 	private static BufferedReader open(final File f)
 			throws FileNotFoundException {
 		return new BufferedReader(new FileReader(f));
+	}
+
+	private ObjectDatabase openAlternate(final String location)
+			throws IOException {
+		final File objdir = FS.resolve(objects, location);
+		final File parent = objdir.getParentFile();
+		if (FileKey.isGitRepository(parent)) {
+			final Repository db = RepositoryCache.open(FileKey.exact(parent));
+			return new AlternateRepositoryDatabase(db);
+		}
+		return new ObjectDirectory(objdir);
 	}
 }
