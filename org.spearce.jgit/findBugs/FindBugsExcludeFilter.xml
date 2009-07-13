@@ -1,12 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <FindBugsFilter>
-     <!-- Silence inefficient new String(String) constructor warning, see http://thread.gmane.org/gmane.comp.version-control.git/117831/focus=117937 -->
-     <Match>
-       <Class name="org.spearce.jgit.lib.RefDatabase" />
-       <Method name="refreshPackedRefs" />
-       <Bug pattern="DM_STRING_CTOR" />
-     </Match>
-
      <!-- Silence PackFile.mmap calls GC, we need to force it to remove stale
           memory mapped segments if the JVM heap is out of address space.
        -->

@@ -438,7 +438,7 @@ class RefDatabase {
 
 					final int sp = p.indexOf(' ');
 					final ObjectId id = ObjectId.fromString(p.substring(0, sp));
-					final String name = new String(p.substring(sp + 1));
+					final String name = copy(p, sp + 1, p.length());
 					last = new Ref(Ref.Storage.PACKED, name, name, id);
 					newPackedRefs.put(last.getName(), last);
 				}
@@ -458,6 +458,10 @@ class RefDatabase {
 		} catch (IOException e) {
 			throw new RuntimeException("Cannot read packed refs", e);
 		}
+	}
+
+	private static String copy(final String src, final int off, final int end) {
+		return new StringBuilder(end - off).append(src, off, end).toString();
 	}
 
 	private void lockAndWriteFile(File file, byte[] content) throws IOException {
