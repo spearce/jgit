@@ -66,10 +66,6 @@ public class RepositoryConfig extends FileBasedConfig {
 		return systemReader.openUserConfig();
 	}
 
-
-	/** Section name for a remote configuration */
-	public static final String REMOTE_SECTION = "remote";
-
 	/** Section name for a branch configuration. */
 	public static final String BRANCH_SECTION = "branch";
 
