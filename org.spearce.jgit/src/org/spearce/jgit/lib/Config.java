@@ -374,8 +374,8 @@ public abstract class Config {
 		ensureLoaded();
 
 		for (final Entry e : entries) {
-			if (section.equalsIgnoreCase(e.base) && e.extendedBase != null)
-				result.add(e.extendedBase);
+			if (section.equalsIgnoreCase(e.section) && e.subsection != null)
+				result.add(e.subsection);
 		}
 		if (baseConfig != null)
 			result.addAll(baseConfig.getSubsections(section));
@@ -593,8 +593,8 @@ public abstract class Config {
 			byName.remove(key);
 		else if (values.size() == 1) {
 			final Entry e = new Entry();
-			e.base = section;
-			e.extendedBase = subsection;
+			e.section = section;
+			e.subsection = subsection;
 			e.name = name;
 			e.value = values.get(0);
 			byName.put(key, e);
@@ -602,8 +602,8 @@ public abstract class Config {
 			final ArrayList<Entry> eList = new ArrayList<Entry>(values.size());
 			for (final String v : values) {
 				final Entry e = new Entry();
-				e.base = section;
-				e.extendedBase = subsection;
+				e.section = section;
+				e.subsection = subsection;
 				e.name = name;
 				e.value = v;
 				eList.add(e);
@@ -650,15 +650,15 @@ public abstract class Config {
 				// so we must create a new section header at the end.
 				//
 				final Entry e = new Entry();
-				e.base = section;
-				e.extendedBase = subsection;
+				e.section = section;
+				e.subsection = subsection;
 				entries.add(e);
 				insertPosition = entries.size();
 			}
 			while (valueIndex < values.size()) {
 				final Entry e = new Entry();
-				e.base = section;
-				e.extendedBase = subsection;
+				e.section = section;
+				e.subsection = subsection;
 				e.name = name;
 				e.value = values.get(valueIndex++);
 				entries.add(insertPosition++, e);
@@ -697,17 +697,17 @@ public abstract class Config {
 			if (e.prefix != null) {
 				r.print(e.prefix);
 			}
-			if (e.base != null && e.name == null) {
+			if (e.section != null && e.name == null) {
 				r.print('[');
-				r.print(e.base);
-				if (e.extendedBase != null) {
+				r.print(e.section);
+				if (e.subsection != null) {
 					r.print(' ');
 					r.print('"');
-					r.print(escapeValue(e.extendedBase));
+					r.print(escapeValue(e.subsection));
 					r.print('"');
 				}
 				r.print(']');
-			} else if (e.base != null && e.name != null) {
+			} else if (e.section != null && e.name != null) {
 				if (e.prefix == null || "".equals(e.prefix)) {
 					r.print('\t');
 				}
@@ -751,7 +751,7 @@ public abstract class Config {
 				} else if ('\n' == in) {
 					// End of this entry.
 					add(e);
-					if (e.base != null) {
+					if (e.section != null) {
 						last = e;
 					}
 					e = new Entry();
@@ -761,18 +761,18 @@ public abstract class Config {
 				} else if (';' == in || '#' == in) {
 					// The rest of this line is a comment; put into suffix.
 					e.suffix = String.valueOf(in);
-				} else if (e.base == null && Character.isWhitespace(in)) {
+				} else if (e.section == null && Character.isWhitespace(in)) {
 					// Save the leading whitespace (if any).
 					if (e.prefix == null) {
 						e.prefix = "";
 					}
 					e.prefix += in;
 				} else if ('[' == in) {
-					// This is a group header line.
-					e.base = readBase(r);
+					// This is a section header.
+					e.section = readSectionName(r);
 					input = r.read();
 					if ('"' == input) {
-						e.extendedBase = readValue(r, true, '"');
+						e.subsection = readValue(r, true, '"');
 						input = r.read();
 					}
 					if (']' != input) {
@@ -781,10 +781,10 @@ public abstract class Config {
 					e.suffix = "";
 				} else if (last != null) {
 					// Read a value.
-					e.base = last.base;
-					e.extendedBase = last.extendedBase;
+					e.section = last.section;
+					e.subsection = last.subsection;
 					r.reset();
-					e.name = readName(r);
+					e.name = readKeyName(r);
 					if (e.name.endsWith("\n")) {
 						e.name = e.name.substring(0, e.name.length() - 1);
 						e.value = MAGIC_EMPTY_VALUE;
@@ -820,8 +820,8 @@ public abstract class Config {
 	@SuppressWarnings("unchecked")
 	private void add(final Entry e) {
 		entries.add(e);
-		if (e.base != null && e.name != null) {
-			final String key = concatenateKey(e.base, e.extendedBase, e.name);
+		if (e.section != null && e.name != null) {
+			final String key = concatenateKey(e.section, e.subsection, e.name);
 			final Object o = byName.get(key);
 			if (o == null) {
 				byName.put(key, e);
@@ -836,8 +836,9 @@ public abstract class Config {
 		}
 	}
 
-	private static String readBase(final BufferedReader r) throws IOException {
-		final StringBuffer base = new StringBuffer();
+	private static String readSectionName(final BufferedReader r)
+			throws IOException {
+		final StringBuffer name = new StringBuffer();
 		for (;;) {
 			r.mark(1);
 			int c = r.read();
@@ -858,22 +859,23 @@ public abstract class Config {
 					} else if (' ' == c || '\t' == c) {
 						// Skipped...
 					} else {
-						throw new IOException("Bad base entry. : " + base + ","
-								+ c);
+						throw new IOException("Bad section entry. : " + name
+								+ "," + c);
 					}
 				}
 				break;
 			} else if (Character.isLetterOrDigit((char) c) || '.' == c
 					|| '-' == c) {
-				base.append((char) c);
+				name.append((char) c);
 			} else {
-				throw new IOException("Bad base entry. : " + base + ", " + c);
+				throw new IOException("Bad section entry. : " + name + ", " + c);
 			}
 		}
-		return base.toString();
+		return name.toString();
 	}
 
-	private static String readName(final BufferedReader r) throws IOException {
+	private static String readKeyName(final BufferedReader r)
+			throws IOException {
 		final StringBuffer name = new StringBuffer();
 		for (;;) {
 			r.mark(1);
@@ -1002,12 +1004,12 @@ public abstract class Config {
 		/**
 		 * The section name for the entry
 		 */
-		String base;
+		String section;
 
 		/**
 		 * Subsection name
 		 */
-		String extendedBase;
+		String subsection;
 
 		/**
 		 * The key name
@@ -1024,10 +1026,10 @@ public abstract class Config {
 		 */
 		String suffix;
 
-		boolean match(final String aBase, final String aExtendedBase,
-				final String aName) {
-			return eq(base, aBase) && eq(extendedBase, aExtendedBase)
-					&& eq(name, aName);
+		boolean match(final String aSection, final String aSubsection,
+				final String aKey) {
+			return eq(section, aSection) && eq(subsection, aSubsection)
+					&& eq(name, aKey);
 		}
 
 		private static boolean eq(final String a, final String b) {
