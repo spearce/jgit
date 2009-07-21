@@ -4,6 +4,7 @@
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  * Copyright (C) 2008, Thad Hughes <thadh@thad.corp.google.com>
  * Copyright (C) 2009, JetBrains s.r.o.
+ * Copyright (C) 2009, Google, Inc.
  *
  * All rights reserved.
  *
@@ -1025,17 +1026,25 @@ public abstract class Config {
 
 		boolean match(final String aSection, final String aSubsection,
 				final String aKey) {
-			return eq(section, aSection) && eq(subsection, aSubsection)
-					&& eq(name, aKey);
+			return eqIgnoreCase(section, aSection)
+					&& eqSameCase(subsection, aSubsection)
+					&& eqIgnoreCase(name, aKey);
 		}
 
-		private static boolean eq(final String a, final String b) {
+		private static boolean eqIgnoreCase(final String a, final String b) {
 			if (a == null && b == null)
 				return true;
 			if (a == null || b == null)
 				return false;
 			return a.equalsIgnoreCase(b);
 		}
-	}
 
+		private static boolean eqSameCase(final String a, final String b) {
+			if (a == null && b == null)
+				return true;
+			if (a == null || b == null)
+				return false;
+			return a.equals(b);
+		}
+	}
 }
