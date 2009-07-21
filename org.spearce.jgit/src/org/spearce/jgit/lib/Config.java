@@ -650,8 +650,6 @@ public abstract class Config {
 				// so we must create a new section header at the end.
 				//
 				final Entry e = new Entry();
-				e.prefix = null;
-				e.suffix = null;
 				e.base = section;
 				e.extendedBase = subsection;
 				entries.add(e);
@@ -659,8 +657,6 @@ public abstract class Config {
 			}
 			while (valueIndex < values.size()) {
 				final Entry e = new Entry();
-				e.prefix = null;
-				e.suffix = null;
 				e.base = section;
 				e.extendedBase = subsection;
 				e.name = name;
