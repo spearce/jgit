@@ -76,9 +76,13 @@ public abstract class Config {
 	private Map<String, Object> byName;
 
 	/**
-	 * Magic value indicating a missing entry
+	 * Magic value indicating a missing entry.
+	 * <p>
+	 * This value is tested for reference equality in some contexts, so we
+	 * must ensure it is a special copy of the empty string.  It also must
+	 * be treated like the empty string.
 	 */
-	private static final String MAGIC_EMPTY_VALUE = "%%magic%%empty%%";
+	private static final String MAGIC_EMPTY_VALUE = new String();
 
 	/**
 	 * The constructor for configuration file
@@ -293,7 +297,7 @@ public abstract class Config {
 		if (n == null)
 			return defaultValue;
 
-		if (MAGIC_EMPTY_VALUE.equals(n) || "yes".equalsIgnoreCase(n)
+		if (MAGIC_EMPTY_VALUE == n || "yes".equalsIgnoreCase(n)
 				|| "true".equalsIgnoreCase(n) || "1".equals(n)
 				|| "on".equalsIgnoreCase(n)) {
 			return true;
@@ -321,11 +325,7 @@ public abstract class Config {
 	 */
 	public String getString(final String section, String subsection,
 			final String name) {
-		String val = getRawString(section, subsection, name);
-		if (MAGIC_EMPTY_VALUE.equals(val)) {
-			return "";
-		}
-		return val;
+		return getRawString(section, subsection, name);
 	}
 
 	/**
@@ -345,16 +345,13 @@ public abstract class Config {
 		if (o instanceof List) {
 			final List lst = (List) o;
 			final String[] r = new String[lst.size()];
-			for (int i = 0; i < r.length; i++) {
-				final String val = ((Entry) lst.get(i)).value;
-				r[i] = MAGIC_EMPTY_VALUE.equals(val) ? "" : val;
-			}
+			for (int i = 0; i < r.length; i++)
+				r[i] = ((Entry) lst.get(i)).value;
 			return r;
 		}
 
 		if (o instanceof Entry) {
-			final String val = ((Entry) o).value;
-			return new String[] { MAGIC_EMPTY_VALUE.equals(val) ? "" : val };
+			return new String[] { ((Entry) o).value };
 		}
 
 		if (baseConfig != null)
@@ -711,7 +708,7 @@ public abstract class Config {
 				}
 				r.print(e.name);
 				if (e.value != null) {
-					if (!MAGIC_EMPTY_VALUE.equals(e.value)) {
+					if (MAGIC_EMPTY_VALUE != e.value) {
 						r.print(" = ");
 						r.print(escapeValue(e.value));
 					}

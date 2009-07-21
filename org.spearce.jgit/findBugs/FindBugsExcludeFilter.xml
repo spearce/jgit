@@ -8,4 +8,10 @@
        <Method name="mmap" />
        <Bug pattern="DM_GC" />
      </Match>
+	 <!-- Silence the construction of our magic String instance. 
+	  -->
+     <Match>
+     	<Class name="org.spearce.jgit.lib.Config" />
+     	<Bug pattern="DM_STRING_VOID_CTOR"/>
+     </Match>
 </FindBugsFilter>
