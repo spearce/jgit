@@ -37,11 +37,8 @@
 
 package org.spearce.jgit.lib;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.Iterator;
@@ -50,6 +47,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.spearce.jgit.errors.RepositoryNotFoundException;
 import org.spearce.jgit.util.FS;
+import org.spearce.jgit.util.NB;
+import org.spearce.jgit.util.RawParseUtils;
 
 /** Cache of active {@link Repository} instances. */
 public class RepositoryCache {
@@ -341,14 +340,13 @@ public class RepositoryCache {
 
 		private static String readFirstLine(final File head) {
 			try {
-				final BufferedReader br = new BufferedReader(
-						new InputStreamReader(new FileInputStream(head),
-								Constants.CHARSET));
-				try {
-					return br.readLine();
-				} finally {
-					br.close();
-				}
+				final byte[] buf = NB.readFully(head, 4096);
+				int n = buf.length;
+				if (n == 0)
+					return null;
+				if (buf[n - 1] == '\n')
+					n--;
+				return RawParseUtils.decode(buf, 0, n);
 			} catch (IOException e) {
 				return null;
 			}

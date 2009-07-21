@@ -38,6 +38,9 @@
 package org.spearce.jgit.util;
 
 import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -45,6 +48,55 @@ import java.nio.channels.FileChannel;
 
 /** Conversion utilities for network byte order handling. */
 public final class NB {
+	/**
+	 * Read an entire local file into memory as a byte array.
+	 *
+	 * @param path
+	 *            location of the file to read.
+	 * @return complete contents of the requested local file.
+	 * @throws FileNotFoundException
+	 *             the file does not exist.
+	 * @throws IOException
+	 *             the file exists, but its contents cannot be read.
+	 */
+	public static final byte[] readFully(final File path)
+			throws FileNotFoundException, IOException {
+		return readFully(path, Integer.MAX_VALUE);
+	}
+
+	/**
+	 * Read an entire local file into memory as a byte array.
+	 *
+	 * @param path
+	 *            location of the file to read.
+	 * @param max
+	 *            maximum number of bytes to read, if the file is larger than
+	 *            this limit an IOException is thrown.
+	 * @return complete contents of the requested local file.
+	 * @throws FileNotFoundException
+	 *             the file does not exist.
+	 * @throws IOException
+	 *             the file exists, but its contents cannot be read.
+	 */
+	public static final byte[] readFully(final File path, final int max)
+			throws FileNotFoundException, IOException {
+		final FileInputStream in = new FileInputStream(path);
+		try {
+			final long sz = in.getChannel().size();
+			if (sz > max)
+				throw new IOException("File is too large: " + path);
+			final byte[] buf = new byte[(int) sz];
+			readFully(in, buf, 0, buf.length);
+			return buf;
+		} finally {
+			try {
+				in.close();
+			} catch (IOException ignored) {
+				// ignore any close errors, this was a read only stream
+			}
+		}
+	}
+
 	/**
 	 * Read the entire byte array into memory, or throw an exception.
 	 * 

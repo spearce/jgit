@@ -37,7 +37,6 @@
 package org.spearce.jgit.lib;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -157,31 +156,20 @@ public class ReflogReader {
 	 * @throws IOException
 	 */
 	public List<Entry> getReverseEntries(int max) throws IOException {
-		FileInputStream fileInputStream;
+		final byte[] log;
 		try {
-			fileInputStream = new FileInputStream(logName);
+			log = NB.readFully(logName);
 		} catch (FileNotFoundException e) {
 			return Collections.emptyList();
 		}
-		try {
-			long logSize = fileInputStream.getChannel().size();
-			if (logSize > Integer.MAX_VALUE) {
-				// implementation limit, will suck with smaller files too
-				throw new IOException("Cannot handle reflog larger than "
-						+ Integer.MAX_VALUE + " bytes");
-			}
-			byte[] log = new byte[(int) logSize];
-			NB.readFully(fileInputStream, log, 0, log.length);
-			int rs = RawParseUtils.prevLF(log, log.length);
-			List<Entry> ret = new ArrayList<Entry>();
-			while (rs >= 0 && max-- > 0) {
-				rs = RawParseUtils.prevLF(log, rs);
-				Entry entry = new Entry(log, rs < 0 ? 0 : rs + 2);
-				ret.add(entry);
-			}
-			return ret;
-		} finally {
-			fileInputStream.close();
+
+		int rs = RawParseUtils.prevLF(log, log.length);
+		List<Entry> ret = new ArrayList<Entry>();
+		while (rs >= 0 && max-- > 0) {
+			rs = RawParseUtils.prevLF(log, rs);
+			Entry entry = new Entry(log, rs < 0 ? 0 : rs + 2);
+			ret.add(entry);
 		}
+		return ret;
 	}
 }

@@ -39,7 +39,6 @@
 package org.spearce.jgit.lib;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.zip.DataFormatException;
@@ -74,19 +73,7 @@ public class UnpackedObjectLoader extends ObjectLoader {
 	 */
 	public UnpackedObjectLoader(final File path, final AnyObjectId id)
 			throws IOException {
-		this(readCompressed(path), id);
-	}
-
-	private static byte[] readCompressed(final File path)
-			throws FileNotFoundException, IOException {
-		final FileInputStream in = new FileInputStream(path);
-		try {
-			final byte[] compressed = new byte[(int) in.getChannel().size()];
-			NB.readFully(in, compressed, 0, compressed.length);
-			return compressed;
-		} finally {
-			in.close();
-		}
+		this(NB.readFully(path), id);
 	}
 
 	/**

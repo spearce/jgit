@@ -52,6 +52,8 @@ import java.util.Map;
 import org.spearce.jgit.errors.ObjectWritingException;
 import org.spearce.jgit.lib.Ref.Storage;
 import org.spearce.jgit.util.FS;
+import org.spearce.jgit.util.NB;
+import org.spearce.jgit.util.RawParseUtils;
 
 class RefDatabase {
 	private static final String REFS_SLASH = "refs/";
@@ -494,12 +496,13 @@ class RefDatabase {
 
 	private static String readLine(final File file)
 			throws FileNotFoundException, IOException {
-		final BufferedReader br = openReader(file);
-		try {
-			return br.readLine();
-		} finally {
-			br.close();
-		}
+		final byte[] buf = NB.readFully(file, 4096);
+		int n = buf.length;
+		if (n == 0)
+			return null;
+		if (buf[n - 1] == '\n')
+			n--;
+		return RawParseUtils.decode(buf, 0, n);
 	}
 
 	private static BufferedReader openReader(final File fileLocation)
