@@ -60,6 +60,10 @@ import java.util.Set;
  * file.
  */
 public abstract class Config {
+	private static final long KiB = 1024;
+	private static final long MiB = 1024 * KiB;
+	private static final long GiB = 1024 * MiB;
+
 	private boolean fileRead;
 
 	private List<Entry> entries;
@@ -230,13 +234,13 @@ public abstract class Config {
 		long mul = 1;
 		switch (Character.toLowerCase(n.charAt(n.length() - 1))) {
 		case 'g':
-			mul = 1024 * 1024 * 1024;
+			mul = GiB;
 			break;
 		case 'm':
-			mul = 1024 * 1024;
+			mul = MiB;
 			break;
 		case 'k':
-			mul = 1024;
+			mul = KiB;
 			break;
 		}
 		if (mul > 1)
@@ -488,12 +492,12 @@ public abstract class Config {
 			final String name, final long value) {
 		final String s;
 
-		if ((value % (1024 * 1024 * 1024)) == 0)
-			s = String.valueOf(value / (1024 * 1024 * 1024)) + " g";
-		else if ((value % (1024 * 1024)) == 0)
-			s = String.valueOf(value / (1024 * 1024)) + " m";
-		else if ((value % 1024) == 0)
-			s = String.valueOf(value / 1024) + " k";
+		if (value >= GiB && (value % GiB) == 0)
+			s = String.valueOf(value / GiB) + " g";
+		else if (value >= MiB && (value % MiB) == 0)
+			s = String.valueOf(value / MiB) + " m";
+		else if (value >= KiB && (value % KiB) == 0)
+			s = String.valueOf(value / KiB) + " k";
 		else
 			s = String.valueOf(value);
 
