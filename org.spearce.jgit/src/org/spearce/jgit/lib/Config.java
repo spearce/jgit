@@ -463,6 +463,29 @@ public abstract class Config {
 	 */
 	public void setInt(final String section, final String subsection,
 			final String name, final int value) {
+		setLong(section, subsection, name, value);
+	}
+
+	/**
+	 * Add or modify a configuration value. The parameters will result in a
+	 * configuration entry like this.
+	 *
+	 * <pre>
+	 * [section &quot;subsection&quot;]
+	 *         name = value
+	 * </pre>
+	 *
+	 * @param section
+	 *            section name, e.g "branch"
+	 * @param subsection
+	 *            optional subsection value, e.g. a branch name
+	 * @param name
+	 *            parameter name, e.g. "filemode"
+	 * @param value
+	 *            parameter value
+	 */
+	public void setLong(final String section, final String subsection,
+			final String name, final long value) {
 		final String s;
 
 		if ((value % (1024 * 1024 * 1024)) == 0)
