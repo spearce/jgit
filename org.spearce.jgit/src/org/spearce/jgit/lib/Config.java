@@ -50,7 +50,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -691,9 +690,7 @@ public abstract class Config {
 	 *             stream to write the configuration to.
 	 */
 	protected void printConfig(final PrintWriter r) {
-		final Iterator<Entry> i = entries.iterator();
-		while (i.hasNext()) {
-			final Entry e = i.next();
+		for (final Entry e : entries) {
 			if (e.prefix != null) {
 				r.print(e.prefix);
 			}
