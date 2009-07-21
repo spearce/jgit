@@ -247,7 +247,7 @@ public class RemoteConfig {
 	}
 
 	private void unset(final RepositoryConfig rc, final String key) {
-		rc.unsetString(SECTION, getName(), key);
+		rc.unset(SECTION, getName(), key);
 	}
 
 	/**

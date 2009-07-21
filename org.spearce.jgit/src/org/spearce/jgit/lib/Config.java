@@ -561,7 +561,7 @@ public abstract class Config {
 	 * @param name
 	 *            parameter name, e.g. "filemode"
 	 */
-	public void unsetString(final String section, final String subsection,
+	public void unset(final String section, final String subsection,
 			final String name) {
 		setStringList(section, subsection, name, Collections
 				.<String> emptyList());
