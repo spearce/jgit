@@ -60,8 +60,7 @@ import java.util.Set;
  * file.
  */
 public abstract class Config {
-
-	private boolean readFile;
+	private boolean fileRead;
 
 	private List<Entry> entries;
 
@@ -96,7 +95,7 @@ public abstract class Config {
 	 *            true if file does not need loading
 	 */
 	protected void setFileRead(boolean ok) {
-		readFile = ok;
+		fileRead = ok;
 	}
 
 	/**
@@ -404,7 +403,7 @@ public abstract class Config {
 	}
 
 	private void ensureLoaded() {
-		if (!readFile) {
+		if (!fileRead) {
 			try {
 				load();
 			} catch (FileNotFoundException err) {
@@ -714,7 +713,7 @@ public abstract class Config {
 	 */
 	public void load() throws IOException {
 		clear();
-		readFile = true;
+		fileRead = true;
 		final BufferedReader r = new BufferedReader(new InputStreamReader(
 				openInputStream(), Constants.CHARSET));
 		try {
