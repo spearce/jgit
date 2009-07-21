@@ -80,12 +80,7 @@ public class FileBasedConfig extends Config {
 				+ ".lock");
 		final PrintWriter r = new PrintWriter(new BufferedWriter(
 				new OutputStreamWriter(new FileOutputStream(tmp),
-						Constants.CHARSET))) {
-			@Override
-			public void println() {
-				print('\n');
-			}
-		};
+						Constants.CHARSET)));
 		boolean ok = false;
 		try {
 			printConfig(r);

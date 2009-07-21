@@ -688,7 +688,7 @@ public abstract class Config {
 	 * Print configuration file to the PrintWriter
 	 *
 	 * @param r
-	 *             the print writer (it must use '\n' as new line separator).
+	 *             stream to write the configuration to.
 	 */
 	protected void printConfig(final PrintWriter r) {
 		final Iterator<Entry> i = entries.iterator();
@@ -725,7 +725,7 @@ public abstract class Config {
 			if (e.suffix != null) {
 				r.print(e.suffix);
 			}
-			r.println();
+			r.print('\n');
 		}
 	}
 
