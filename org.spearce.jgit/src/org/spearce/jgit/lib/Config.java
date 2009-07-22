@@ -419,15 +419,29 @@ public abstract class Config {
 	private Object getRawEntry(final String section, final String subsection,
 			final String name) {
 		ensureLoaded();
+		return byName.get(concatenateKey(section, subsection, name));
+	}
 
+	/**
+	 * Create simple a key name from the key components
+	 *
+	 * @param section
+	 *            the section name
+	 * @param subsection
+	 *            the subsection name
+	 * @param name
+	 *            the key name
+	 * @return a simple key name that have all components concatenated and the
+	 *         case converted
+	 */
+	private static String concatenateKey(final String section,
+			final String subsection, final String name) {
 		String ss;
 		if (subsection != null)
-			ss = "." + subsection.toLowerCase();
+			ss = "." + subsection;
 		else
 			ss = "";
-		final Object o;
-		o = byName.get(section.toLowerCase() + ss + "." + name.toLowerCase());
-		return o;
+		return section.toLowerCase() + ss + "." + name.toLowerCase();
 	}
 
 	/**
@@ -548,10 +562,7 @@ public abstract class Config {
 			final String name, final List<String> values) {
 		// Update our parsed cache of values for future reference.
 		//
-		String key = section.toLowerCase();
-		if (subsection != null)
-			key += "." + subsection.toLowerCase();
-		key += "." + name.toLowerCase();
+		String key = concatenateKey(section, subsection, name);
 		if (values.size() == 0)
 			byName.remove(key);
 		else if (values.size() == 1) {
@@ -787,28 +798,18 @@ public abstract class Config {
 	@SuppressWarnings("unchecked")
 	private void add(final Entry e) {
 		entries.add(e);
-		if (e.base != null) {
-			final String b = e.base.toLowerCase();
-			final String group;
-			if (e.extendedBase != null) {
-				group = b + "." + e.extendedBase;
-			} else {
-				group = b;
-			}
-			if (e.name != null) {
-				final String n = e.name.toLowerCase();
-				final String key = group + "." + n;
-				final Object o = byName.get(key);
-				if (o == null) {
-					byName.put(key, e);
-				} else if (o instanceof Entry) {
-					final ArrayList<Object> l = new ArrayList<Object>();
-					l.add(o);
-					l.add(e);
-					byName.put(key, l);
-				} else if (o instanceof List) {
-					((List<Entry>) o).add(e);
-				}
+		if (e.base != null && e.name != null) {
+			final String key = concatenateKey(e.base, e.extendedBase, e.name);
+			final Object o = byName.get(key);
+			if (o == null) {
+				byName.put(key, e);
+			} else if (o instanceof Entry) {
+				final ArrayList<Object> l = new ArrayList<Object>();
+				l.add(o);
+				l.add(e);
+				byName.put(key, l);
+			} else if (o instanceof List) {
+				((List<Entry>) o).add(e);
 			}
 		}
 	}
