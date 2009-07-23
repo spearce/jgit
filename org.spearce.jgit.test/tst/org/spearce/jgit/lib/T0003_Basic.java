@@ -507,7 +507,8 @@ public class T0003_Basic extends RepositoryTestCase {
 	public void test027_UnpackedRefHigherPriorityThanPacked() throws IOException {
 		PrintWriter writer = new PrintWriter(new FileWriter(new File(db.getDirectory(), "refs/heads/a"))); 
 		String unpackedId = "7f822839a2fe9760f386cbbbcb3f92c5fe81def7";
-		writer.println(unpackedId);
+		writer.print(unpackedId);
+		writer.print('\n');
 		writer.close();
 
 		ObjectId resolved = db.resolve("refs/heads/a");
