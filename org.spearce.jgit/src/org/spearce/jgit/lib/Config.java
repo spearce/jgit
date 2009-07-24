@@ -55,6 +55,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.spearce.jgit.util.StringUtils;
+
 /**
  * The configuration file stored in the format similar to the ".git/config"
  * file.
@@ -236,7 +238,7 @@ public abstract class Config {
 			return defaultValue;
 
 		long mul = 1;
-		switch (Character.toLowerCase(n.charAt(n.length() - 1))) {
+		switch (StringUtils.toLowerCase(n.charAt(n.length() - 1))) {
 		case 'g':
 			mul = GiB;
 			break;
@@ -297,13 +299,16 @@ public abstract class Config {
 		if (n == null)
 			return defaultValue;
 
-		if (MAGIC_EMPTY_VALUE == n || "yes".equalsIgnoreCase(n)
-				|| "true".equalsIgnoreCase(n) || "1".equals(n)
-				|| "on".equalsIgnoreCase(n)) {
+		if (MAGIC_EMPTY_VALUE == n || StringUtils.equalsIgnoreCase("yes", n)
+				|| StringUtils.equalsIgnoreCase("true", n)
+				|| StringUtils.equalsIgnoreCase("1", n)
+				|| StringUtils.equalsIgnoreCase("on", n)) {
 			return true;
 
-		} else if ("no".equalsIgnoreCase(n) || "false".equalsIgnoreCase(n)
-				|| "0".equals(n) || "off".equalsIgnoreCase(n)) {
+		} else if (StringUtils.equalsIgnoreCase("no", n)
+				|| StringUtils.equalsIgnoreCase("false", n)
+				|| StringUtils.equalsIgnoreCase("0", n)
+				|| StringUtils.equalsIgnoreCase("off", n)) {
 			return false;
 
 		} else {
@@ -371,7 +376,8 @@ public abstract class Config {
 		ensureLoaded();
 
 		for (final Entry e : entries) {
-			if (section.equalsIgnoreCase(e.section) && e.subsection != null)
+			if (StringUtils.equalsIgnoreCase(section, e.section)
+					&& e.subsection != null)
 				result.add(e.subsection);
 		}
 		if (baseConfig != null)
@@ -441,7 +447,8 @@ public abstract class Config {
 			ss = "." + subsection;
 		else
 			ss = "";
-		return section.toLowerCase() + ss + "." + name.toLowerCase();
+		return StringUtils.toLowerCase(section) + ss + "."
+				+ StringUtils.toLowerCase(name);
 	}
 
 	/**
@@ -1033,7 +1040,7 @@ public abstract class Config {
 				return true;
 			if (a == null || b == null)
 				return false;
-			return a.equalsIgnoreCase(b);
+			return StringUtils.equalsIgnoreCase(a, b);
 		}
 
 		private static boolean eqSameCase(final String a, final String b) {

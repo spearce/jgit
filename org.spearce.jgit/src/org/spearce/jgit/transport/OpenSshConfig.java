@@ -55,6 +55,7 @@ import java.util.Map;
 import org.spearce.jgit.errors.InvalidPatternException;
 import org.spearce.jgit.fnmatch.FileNameMatcher;
 import org.spearce.jgit.util.FS;
+import org.spearce.jgit.util.StringUtils;
 
 /**
  * Simple configuration parser for the OpenSSH ~/.ssh/config file.
@@ -176,7 +177,7 @@ public class OpenSshConfig {
 			final String keyword = parts[0].trim();
 			final String argValue = parts[1].trim();
 
-			if ("Host".equalsIgnoreCase(keyword)) {
+			if (StringUtils.equalsIgnoreCase("Host", keyword)) {
 				current.clear();
 				for (final String pattern : argValue.split("[ \t]")) {
 					final String name = dequote(pattern);
@@ -197,15 +198,15 @@ public class OpenSshConfig {
 				continue;
 			}
 
-			if ("HostName".equalsIgnoreCase(keyword)) {
+			if (StringUtils.equalsIgnoreCase("HostName", keyword)) {
 				for (final Host c : current)
 					if (c.hostName == null)
 						c.hostName = dequote(argValue);
-			} else if ("User".equalsIgnoreCase(keyword)) {
+			} else if (StringUtils.equalsIgnoreCase("User", keyword)) {
 				for (final Host c : current)
 					if (c.user == null)
 						c.user = dequote(argValue);
-			} else if ("Port".equalsIgnoreCase(keyword)) {
+			} else if (StringUtils.equalsIgnoreCase("Port", keyword)) {
 				try {
 					final int port = Integer.parseInt(dequote(argValue));
 					for (final Host c : current)
@@ -214,19 +215,19 @@ public class OpenSshConfig {
 				} catch (NumberFormatException nfe) {
 					// Bad port number. Don't set it.
 				}
-			} else if ("IdentityFile".equalsIgnoreCase(keyword)) {
+			} else if (StringUtils.equalsIgnoreCase("IdentityFile", keyword)) {
 				for (final Host c : current)
 					if (c.identityFile == null)
 						c.identityFile = toFile(dequote(argValue));
-			} else if ("PreferredAuthentications".equalsIgnoreCase(keyword)) {
+			} else if (StringUtils.equalsIgnoreCase("PreferredAuthentications", keyword)) {
 				for (final Host c : current)
 					if (c.preferredAuthentications == null)
 						c.preferredAuthentications = nows(dequote(argValue));
-			} else if ("BatchMode".equalsIgnoreCase(keyword)) {
+			} else if (StringUtils.equalsIgnoreCase("BatchMode", keyword)) {
 				for (final Host c : current)
 					if (c.batchMode == null)
 						c.batchMode = yesno(dequote(argValue));
-			} else if ("StrictHostKeyChecking".equalsIgnoreCase(keyword)) {
+			} else if (StringUtils.equalsIgnoreCase("StrictHostKeyChecking", keyword)) {
 				String value = dequote(argValue);
 				for (final Host c : current)
 					if (c.strictHostKeyChecking == null)
@@ -268,7 +269,7 @@ public class OpenSshConfig {
 	}
 
 	private static Boolean yesno(final String value) {
-		if ("yes".equalsIgnoreCase(value))
+		if (StringUtils.equalsIgnoreCase("yes", value))
 			return Boolean.TRUE;
 		return Boolean.FALSE;
 	}

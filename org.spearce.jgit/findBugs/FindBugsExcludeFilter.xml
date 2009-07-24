@@ -8,10 +8,20 @@
        <Method name="mmap" />
        <Bug pattern="DM_GC" />
      </Match>
-	 <!-- Silence the construction of our magic String instance. 
-	  -->
+
+	   <!-- Silence the construction of our magic String instance.
+	     -->
      <Match>
-     	<Class name="org.spearce.jgit.lib.Config" />
-     	<Bug pattern="DM_STRING_VOID_CTOR"/>
+	 <Class name="org.spearce.jgit.lib.Config" />
+	 <Bug pattern="DM_STRING_VOID_CTOR"/>
+     </Match>
+
+     <!-- Silence comparison of string by == or !=.  This class is built
+          only to provide compare of string values, we won't make a mistake
+          here with == assuming .equals() style equality.
+       -->
+     <Match>
+       <Class name="org.spearce.jgit.lib.util.StringUtils" />
+       <Bug pattern="ES_COMPARING_PARAMETER_STRING_WITH_EQ" />
      </Match>
 </FindBugsFilter>

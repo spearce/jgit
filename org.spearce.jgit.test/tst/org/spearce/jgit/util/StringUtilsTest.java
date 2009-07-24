@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2009, Google Inc.
  *
  * All rights reserved.
  *
@@ -37,31 +37,42 @@
 
 package org.spearce.jgit.util;
 
-import java.io.File;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import junit.framework.TestCase;
 
-class FS_Win32 extends FS {
-	static boolean detect() {
-		final String osDotName = AccessController
-				.doPrivileged(new PrivilegedAction<String>() {
-					public String run() {
-						return System.getProperty("os.name");
-					}
-				});
-		return osDotName != null
-				&& StringUtils.toLowerCase(osDotName).indexOf("windows") != -1;
+public class StringUtilsTest extends TestCase {
+	public void testToLowerCaseChar() {
+		assertEquals('a', StringUtils.toLowerCase('A'));
+		assertEquals('z', StringUtils.toLowerCase('Z'));
+
+		assertEquals('a', StringUtils.toLowerCase('a'));
+		assertEquals('z', StringUtils.toLowerCase('z'));
+
+		assertEquals((char) 0, StringUtils.toLowerCase((char) 0));
+		assertEquals((char) 0xffff, StringUtils.toLowerCase((char) 0xffff));
 	}
 
-	public boolean supportsExecute() {
-		return false;
+	public void testToLowerCaseString() {
+		assertEquals("\n abcdefghijklmnopqrstuvwxyz\n", StringUtils
+				.toLowerCase("\n ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"));
 	}
 
-	public boolean canExecute(final File f) {
-		return false;
+	public void testEqualsIgnoreCase1() {
+		final String a = "FOO";
+		assertTrue(StringUtils.equalsIgnoreCase(a, a));
 	}
 
-	public boolean setExecute(final File f, final boolean canExec) {
-		return false;
+	public void testEqualsIgnoreCase2() {
+		assertFalse(StringUtils.equalsIgnoreCase("a", ""));
+	}
+
+	public void testEqualsIgnoreCase3() {
+		assertFalse(StringUtils.equalsIgnoreCase("a", "b"));
+		assertFalse(StringUtils.equalsIgnoreCase("ac", "ab"));
+	}
+
+	public void testEqualsIgnoreCase4() {
+		assertTrue(StringUtils.equalsIgnoreCase("a", "a"));
+		assertTrue(StringUtils.equalsIgnoreCase("A", "a"));
+		assertTrue(StringUtils.equalsIgnoreCase("a", "A"));
 	}
 }

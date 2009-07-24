@@ -79,6 +79,7 @@ import org.spearce.jgit.lib.NullProgressMonitor;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.util.Base64;
 import org.spearce.jgit.util.HttpSupport;
+import org.spearce.jgit.util.StringUtils;
 import org.spearce.jgit.util.TemporaryBuffer;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -122,7 +123,7 @@ public class AmazonS3 {
 	}
 
 	private static boolean isSignedHeader(final String name) {
-		final String nameLC = name.toLowerCase();
+		final String nameLC = StringUtils.toLowerCase(name);
 		return SIGNED_HEADERS.contains(nameLC) || nameLC.startsWith("x-amz-");
 	}
 
@@ -214,13 +215,13 @@ public class AmazonS3 {
 		privateKey = new SecretKeySpec(Constants.encodeASCII(secret), HMAC);
 
 		final String pacl = props.getProperty("acl", "PRIVATE");
-		if ("PRIVATE".equalsIgnoreCase(pacl))
+		if (StringUtils.equalsIgnoreCase("PRIVATE", pacl))
 			acl = "private";
-		else if ("PUBLIC".equalsIgnoreCase(pacl))
+		else if (StringUtils.equalsIgnoreCase("PUBLIC", pacl))
 			acl = "public-read";
-		else if ("PUBLIC-READ".equalsIgnoreCase(pacl))
+		else if (StringUtils.equalsIgnoreCase("PUBLIC-READ", pacl))
 			acl = "public-read";
-		else if ("PUBLIC_READ".equalsIgnoreCase(pacl))
+		else if (StringUtils.equalsIgnoreCase("PUBLIC_READ", pacl))
 			acl = "public-read";
 		else
 			throw new IllegalArgumentException("Invalid acl: " + pacl);
@@ -575,7 +576,7 @@ public class AmazonS3 {
 		for (final Map.Entry<String, List<String>> entry : reqHdr.entrySet()) {
 			final String hdr = entry.getKey();
 			if (isSignedHeader(hdr))
-				sigHdr.put(hdr.toLowerCase(), toCleanString(entry.getValue()));
+				sigHdr.put(StringUtils.toLowerCase(hdr), toCleanString(entry.getValue()));
 		}
 
 		final StringBuilder s = new StringBuilder();
@@ -781,7 +782,7 @@ public class AmazonS3 {
 			if ("Key".equals(name))
 				entries.add(data.toString().substring(prefix.length()));
 			else if ("IsTruncated".equals(name))
-				truncated = "true".equalsIgnoreCase(data.toString());
+				truncated = StringUtils.equalsIgnoreCase("true", data.toString());
 			data = null;
 		}
 	}

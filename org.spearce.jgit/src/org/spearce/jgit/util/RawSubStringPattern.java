@@ -117,7 +117,7 @@ public class RawSubStringPattern {
 	}
 
 	private static final byte lc(final byte q) {
-		return (byte) Character.toLowerCase((char) (q & 0xff));
+		return (byte) StringUtils.toLowerCase((char) (q & 0xff));
 	}
 
 	/**
