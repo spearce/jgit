@@ -39,13 +39,15 @@ package org.spearce.jgit.transport;
 
 import java.io.IOException;
 
+import org.spearce.jgit.lib.Config;
 import org.spearce.jgit.lib.Repository;
+import org.spearce.jgit.lib.Config.SectionParser;
 
 /** A service exposed by {@link Daemon} over anonymous <code>git://</code>. */
 public abstract class DaemonService {
 	private final String command;
 
-	private final String config;
+	private final SectionParser<ServiceConfig> configKey;
 
 	private boolean enabled;
 
@@ -53,8 +55,21 @@ public abstract class DaemonService {
 
 	DaemonService(final String cmdName, final String cfgName) {
 		command = cmdName.startsWith("git-") ? cmdName : "git-" + cmdName;
-		config = cfgName;
+		configKey = new SectionParser<ServiceConfig>() {
+			public ServiceConfig parse(final Config cfg) {
+				return new ServiceConfig(DaemonService.this, cfg, cfgName);
+			}
+		};
 		overridable = true;
+	}
+
+	private static class ServiceConfig {
+		final boolean enabled;
+
+		ServiceConfig(final DaemonService service, final Config cfg,
+				final String name) {
+			enabled = cfg.getBoolean("daemon", name, service.isEnabled());
+		}
 	}
 
 	/** @return is this service enabled for invocation? */
@@ -109,14 +124,17 @@ public abstract class DaemonService {
 		if (db == null)
 			return;
 		try {
-			boolean on = isEnabled();
-			if (isOverridable())
-				on = db.getConfig().getBoolean("daemon", config, on);
-			if (on)
+			if (isEnabledFor(db))
 				execute(client, db);
 		} finally {
 			db.close();
 		}
+	}
+
+	private boolean isEnabledFor(final Repository db) {
+		if (isOverridable())
+			return db.getConfig().get(configKey).enabled;
+		return isEnabled();
 	}
 
 	abstract void execute(DaemonClient client, Repository db)
