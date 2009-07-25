@@ -55,6 +55,7 @@ import org.spearce.jgit.util.StringUtils;
  * Git style {@code .config}, {@code .gitconfig}, {@code .gitmodules} file.
  */
 public class Config {
+	private static final String[] EMPTY_STRING_ARRAY = {};
 	private static final long KiB = 1024;
 	private static final long MiB = 1024 * KiB;
 	private static final long GiB = 1024 * MiB;
@@ -316,6 +317,9 @@ public class Config {
 
 	/**
 	 * Get a list of string values
+	 * <p>
+	 * If this instance was created with a base, the base's values are returned
+	 * first (if any).
 	 *
 	 * @param section
 	 *            the section
@@ -327,12 +331,22 @@ public class Config {
 	 */
 	public String[] getStringList(final String section, String subsection,
 			final String name) {
-		final List<String> lst = getRawStringList(section, subsection, name);
-		if (lst != null)
-			return lst.toArray(new String[lst.size()]);
+		final String[] baseList;
 		if (baseConfig != null)
-			return baseConfig.getStringList(section, subsection, name);
-		return new String[0];
+			baseList = baseConfig.getStringList(section, subsection, name);
+		else
+			baseList = EMPTY_STRING_ARRAY;
+
+		final List<String> lst = getRawStringList(section, subsection, name);
+		if (lst != null) {
+			final String[] res = new String[baseList.length + lst.size()];
+			int idx = baseList.length;
+			System.arraycopy(baseList, 0, res, 0, idx);
+			for (final String val : lst)
+				res[idx++] = val;
+			return res;
+		}
+		return baseList;
 	}
 
 	/**
