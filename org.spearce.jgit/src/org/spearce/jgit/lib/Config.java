@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.spearce.jgit.errors.ConfigInvalidException;
 import org.spearce.jgit.util.StringUtils;
@@ -60,9 +61,15 @@ public class Config {
 	private static final long MiB = 1024 * KiB;
 	private static final long GiB = 1024 * MiB;
 
-	private List<Entry> entries;
+	/**
+	 * Immutable current state of the configuration data.
+	 * <p>
+	 * This state is copy-on-write. It should always contain an immutable list
+	 * of the configuration keys/values.
+	 */
+	private final AtomicReference<State> state;
 
-	final Config baseConfig;
+	private final Config baseConfig;
 
 	/**
 	 * Magic value indicating a missing entry.
@@ -87,7 +94,7 @@ public class Config {
 	 */
 	public Config(Config defaultConfig) {
 		baseConfig = defaultConfig;
-		clear();
+		state = new AtomicReference<State>(newState());
 	}
 
 	/**
@@ -358,7 +365,7 @@ public class Config {
 	 */
 	public Set<String> getSubsections(final String section) {
 		final Set<String> result = new HashSet<String>();
-		for (final Entry e : entries) {
+		for (final Entry e : state.get().entryList) {
 			if (StringUtils.equalsIgnoreCase(section, e.section)
 					&& e.subsection != null)
 				result.add(e.subsection);
@@ -382,7 +389,7 @@ public class Config {
 	private List<String> getRawStringList(final String section,
 			final String subsection, final String name) {
 		List<String> r = null;
-		for (final Entry e : entries) {
+		for (final Entry e : state.get().entryList) {
 			if (e.match(section, subsection, name))
 				r = add(r, e.value);
 		}
@@ -541,6 +548,17 @@ public class Config {
 	 */
 	public void setStringList(final String section, final String subsection,
 			final String name, final List<String> values) {
+		State src, res;
+		do {
+			src = state.get();
+			res = replaceStringList(src, section, subsection, name, values);
+		} while (!state.compareAndSet(src, res));
+	}
+
+	private State replaceStringList(final State srcState,
+			final String section, final String subsection, final String name,
+			final List<String> values) {
+		final List<Entry> entries = copy(srcState, values);
 		int entryIndex = 0;
 		int valueIndex = 0;
 		int insertPosition = -1;
@@ -548,11 +566,12 @@ public class Config {
 		// Reset the first n Entry objects that match this input name.
 		//
 		while (entryIndex < entries.size() && valueIndex < values.size()) {
-			final Entry e = entries.get(entryIndex++);
+			final Entry e = entries.get(entryIndex);
 			if (e.match(section, subsection, name)) {
-				e.value = values.get(valueIndex++);
-				insertPosition = entryIndex;
+				entries.set(entryIndex, e.forValue(values.get(valueIndex++)));
+				insertPosition = entryIndex + 1;
 			}
+			entryIndex++;
 		}
 
 		// Remove any extra Entry objects that we no longer need.
@@ -573,7 +592,7 @@ public class Config {
 				// is already a section available that matches. Insert
 				// after the last key of that section.
 				//
-				insertPosition = findSectionEnd(section, subsection);
+				insertPosition = findSectionEnd(entries, section, subsection);
 			}
 			if (insertPosition < 0) {
 				// We didn't find any matching section header for this key,
@@ -594,9 +613,22 @@ public class Config {
 				entries.add(insertPosition++, e);
 			}
 		}
+
+		return newState(entries);
 	}
 
-	private int findSectionEnd(final String section, final String subsection) {
+	private static List<Entry> copy(final State src, final List<String> values) {
+		// At worst we need to insert 1 line for each value, plus 1 line
+		// for a new section header. Assume that and allocate the space.
+		//
+		final int max = src.entryList.size() + values.size() + 1;
+		final ArrayList<Entry> r = new ArrayList<Entry>(max);
+		r.addAll(src.entryList);
+		return r;
+	}
+
+	private static int findSectionEnd(final List<Entry> entries,
+			final String section, final String subsection) {
 		for (int i = 0; i < entries.size(); i++) {
 			Entry e = entries.get(i);
 			if (e.match(section, subsection, null)) {
@@ -619,7 +651,7 @@ public class Config {
 	 */
 	public String toText() {
 		final StringBuilder out = new StringBuilder();
-		for (final Entry e : entries) {
+		for (final Entry e : state.get().entryList) {
 			if (e.prefix != null)
 				out.append(e.prefix);
 			if (e.section != null && e.name == null) {
@@ -721,14 +753,22 @@ public class Config {
 				throw new ConfigInvalidException("Invalid line in config file");
 		}
 
-		entries = newEntries;
+		state.set(newState(newEntries));
+	}
+
+	private State newState() {
+		return new State(Collections.<Entry> emptyList());
+	}
+
+	private State newState(final List<Entry> entries) {
+		return new State(Collections.unmodifiableList(entries));
 	}
 
 	/**
 	 * Clear the configuration file
 	 */
 	protected void clear() {
-		entries = new ArrayList<Entry>();
+		state.set(newState());
 	}
 
 	private static String readSectionName(final StringReader in)
@@ -893,6 +933,14 @@ public class Config {
 		return value.length() > 0 ? value.toString() : null;
 	}
 
+	private static class State {
+		final List<Entry> entryList;
+
+		State(List<Entry> entries) {
+			entryList = entries;
+		}
+	}
+
 	/**
 	 * The configuration file entry
 	 */
@@ -926,6 +974,17 @@ public class Config {
 		 * The text content after entry
 		 */
 		String suffix;
+
+		Entry forValue(final String newValue) {
+			final Entry e = new Entry();
+			e.prefix = prefix;
+			e.section = section;
+			e.subsection = subsection;
+			e.name = name;
+			e.value = newValue;
+			e.suffix = suffix;
+			return e;
+		}
 
 		boolean match(final String aSection, final String aSubsection,
 				final String aKey) {
