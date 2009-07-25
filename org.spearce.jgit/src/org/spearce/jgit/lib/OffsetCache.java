@@ -253,12 +253,11 @@ abstract class OffsetCache<V, R extends OffsetCache.Ref<V>> {
 	}
 
 	private void evict() {
-		final int start = rng.nextInt(tableSize);
-		int ptr = start;
 		while (isFull()) {
+			int ptr = rng.nextInt(tableSize);
 			Entry<V> old = null;
 			int slot = 0;
-			for (int b = evictBatch - 1; b >= 0; b--) {
+			for (int b = evictBatch - 1; b >= 0; b--, ptr++) {
 				if (tableSize <= ptr)
 					ptr = 0;
 				for (Entry<V> e = table.get(ptr); e != null; e = e.next) {
@@ -269,8 +268,6 @@ abstract class OffsetCache<V, R extends OffsetCache.Ref<V>> {
 						slot = ptr;
 					}
 				}
-				if (++ptr == start)
-					return;
 			}
 			if (old != null) {
 				old.kill();
