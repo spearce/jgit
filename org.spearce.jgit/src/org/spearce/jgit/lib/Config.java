@@ -385,17 +385,6 @@ public abstract class Config {
 		return result;
 	}
 
-	/**
-	 * Get a list of string values
-	 *
-	 * @param section
-	 *            the section
-	 * @param subsection
-	 *            the subsection for the value
-	 * @param name
-	 *            the key name
-	 * @return a raw string value as it is stored in configuration file
-	 */
 	private String getRawString(final String section, final String subsection,
 			final String name) {
 		final Object o = getRawEntry(section, subsection, name);
