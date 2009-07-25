@@ -203,8 +203,8 @@ public class RepositoryConfig extends FileBasedConfig {
 	public void create() {
 		clear();
 		setFileRead(true);
-		setString("core", null, "repositoryformatversion", "0");
-		setString("core", null, "filemode", "true");
+		setInt("core", null, "repositoryformatversion", 0);
+		setBoolean("core", null, "filemode", true);
 
 		core = new CoreConfig(this);
 		transfer = new TransferConfig(this);

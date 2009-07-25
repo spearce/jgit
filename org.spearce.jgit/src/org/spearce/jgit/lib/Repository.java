@@ -166,9 +166,8 @@ public class Repository {
 
 		RepositoryConfig cfg = getConfig();
 		cfg.create();
-		if (bare) {
-			cfg.setString("core", null, "bare", "true");
-		}
+		if (bare)
+			cfg.setBoolean("core", null, "bare", true);
 		cfg.save();
 	}
 
