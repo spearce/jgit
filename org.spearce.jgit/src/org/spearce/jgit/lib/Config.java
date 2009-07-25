@@ -115,7 +115,7 @@ public abstract class Config {
 	 *            the value to escape
 	 * @return the escaped value
 	 */
-	protected static String escapeValue(final String x) {
+	private static String escapeValue(final String x) {
 		boolean inquote = false;
 		int lineStart = 0;
 		final StringBuffer r = new StringBuffer(x.length());
