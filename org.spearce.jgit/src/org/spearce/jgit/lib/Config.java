@@ -366,15 +366,7 @@ public class Config {
 	 *         subsection exists.
 	 */
 	public Set<String> getSubsections(final String section) {
-		final Set<String> result = new HashSet<String>();
-		for (final Entry e : state.get().entryList) {
-			if (StringUtils.equalsIgnoreCase(section, e.section)
-					&& e.subsection != null)
-				result.add(e.subsection);
-		}
-		if (baseConfig != null)
-			result.addAll(baseConfig.getSubsections(section));
-		return result;
+		return get(new SubsectionNames(section));
 	}
 
 	/**
@@ -1011,6 +1003,38 @@ public class Config {
 		 * @return the application model instance.
 		 */
 		T parse(Config cfg);
+	}
+
+	private static class SubsectionNames implements SectionParser<Set<String>> {
+		private final String section;
+
+		SubsectionNames(final String sectionName) {
+			section = sectionName;
+		}
+
+		public int hashCode() {
+			return section.hashCode();
+		}
+
+		public boolean equals(Object other) {
+			if (other instanceof SubsectionNames) {
+				return section.equals(((SubsectionNames) other).section);
+			}
+			return false;
+		}
+
+		public Set<String> parse(Config cfg) {
+			final Set<String> result = new HashSet<String>();
+			while (cfg != null) {
+				for (final Entry e : cfg.state.get().entryList) {
+					if (e.subsection != null && e.name == null
+							&& StringUtils.equalsIgnoreCase(section, e.section))
+						result.add(e.subsection);
+				}
+				cfg = cfg.baseConfig;
+			}
+			return Collections.unmodifiableSet(result);
+		}
 	}
 
 	private static class State {
