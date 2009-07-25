@@ -144,8 +144,6 @@ public class Repository {
 				throw new IOException("Unknown repository format \""
 						+ repositoryFormatVersion + "\"; expected \"0\".");
 			}
-		} else {
-			getConfig().create();
 		}
 	}
 
@@ -185,7 +183,8 @@ public class Repository {
 		final String master = Constants.R_HEADS + Constants.MASTER;
 		refs.link(Constants.HEAD, master);
 
-		cfg.create();
+		cfg.setInt("core", null, "repositoryformatversion", 0);
+		cfg.setBoolean("core", null, "filemode", true);
 		if (bare)
 			cfg.setBoolean("core", null, "bare", true);
 		cfg.save();

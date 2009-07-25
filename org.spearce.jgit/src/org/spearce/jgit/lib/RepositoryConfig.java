@@ -123,13 +123,4 @@ public class RepositoryConfig extends FileBasedConfig {
 	public String getCommitterEmail() {
 		return getUserConfig().getCommitterEmail();
 	}
-
-	/**
-	 * Create a new default config
-	 */
-	public void create() {
-		clear();
-		setInt("core", null, "repositoryformatversion", 0);
-		setBoolean("core", null, "filemode", true);
-	}
 }
