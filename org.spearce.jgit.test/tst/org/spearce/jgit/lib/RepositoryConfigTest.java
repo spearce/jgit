@@ -109,55 +109,56 @@ public class RepositoryConfigTest extends TestCase {
 		SystemReader.setInstance(mockSystemReader);
 		final String hostname = mockSystemReader.getHostname();
 		final Config userGitConfig = mockSystemReader.userGitConfig;
-		final RepositoryConfig localConfig = new RepositoryConfig(userGitConfig, null);
-		localConfig.create();
+		final Config localConfig = new Config(userGitConfig);
 		mockSystemReader.values.clear();
 
 		String authorName;
 		String authorEmail;
 
 		// no values defined nowhere
-		authorName = localConfig.getAuthorName();
-		authorEmail = localConfig.getAuthorEmail();
+		authorName = localConfig.get(UserConfig.KEY).getAuthorName();
+		authorEmail = localConfig.get(UserConfig.KEY).getAuthorEmail();
 		assertEquals(Constants.UNKNOWN_USER_DEFAULT, authorName);
 		assertEquals(Constants.UNKNOWN_USER_DEFAULT + "@" + hostname, authorEmail);
 
 		// the system user name is defined
 		mockSystemReader.values.put(Constants.OS_USER_NAME_KEY, "os user name");
-		authorName = localConfig.getAuthorName();
+		localConfig.uncache(UserConfig.KEY);
+		authorName = localConfig.get(UserConfig.KEY).getAuthorName();
 		assertEquals("os user name", authorName);
 
 		if (hostname != null && hostname.length() != 0) {
-			authorEmail = localConfig.getAuthorEmail();
+			authorEmail = localConfig.get(UserConfig.KEY).getAuthorEmail();
 			assertEquals("os user name@" + hostname, authorEmail);
 		}
 
 		// the git environment variables are defined
 		mockSystemReader.values.put(Constants.GIT_AUTHOR_NAME_KEY, "git author name");
 		mockSystemReader.values.put(Constants.GIT_AUTHOR_EMAIL_KEY, "author@email");
-		authorName = localConfig.getAuthorName();
-		authorEmail = localConfig.getAuthorEmail();
+		localConfig.uncache(UserConfig.KEY);
+		authorName = localConfig.get(UserConfig.KEY).getAuthorName();
+		authorEmail = localConfig.get(UserConfig.KEY).getAuthorEmail();
 		assertEquals("git author name", authorName);
 		assertEquals("author@email", authorEmail);
 
 		// the values are defined in the global configuration
 		userGitConfig.setString("user", null, "name", "global username");
 		userGitConfig.setString("user", null, "email", "author@globalemail");
-		authorName = localConfig.getAuthorName();
-		authorEmail = localConfig.getAuthorEmail();
+		authorName = localConfig.get(UserConfig.KEY).getAuthorName();
+		authorEmail = localConfig.get(UserConfig.KEY).getAuthorEmail();
 		assertEquals("global username", authorName);
 		assertEquals("author@globalemail", authorEmail);
 
 		// the values are defined in the local configuration
 		localConfig.setString("user", null, "name", "local username");
 		localConfig.setString("user", null, "email", "author@localemail");
-		authorName = localConfig.getAuthorName();
-		authorEmail = localConfig.getAuthorEmail();
+		authorName = localConfig.get(UserConfig.KEY).getAuthorName();
+		authorEmail = localConfig.get(UserConfig.KEY).getAuthorEmail();
 		assertEquals("local username", authorName);
 		assertEquals("author@localemail", authorEmail);
 
-		authorName = localConfig.getCommitterName();
-		authorEmail = localConfig.getCommitterEmail();
+		authorName = localConfig.get(UserConfig.KEY).getCommitterName();
+		authorEmail = localConfig.get(UserConfig.KEY).getCommitterEmail();
 		assertEquals("local username", authorName);
 		assertEquals("author@localemail", authorEmail);
 	}

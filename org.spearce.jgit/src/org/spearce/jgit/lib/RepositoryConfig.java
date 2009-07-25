@@ -43,8 +43,6 @@ package org.spearce.jgit.lib;
 
 import java.io.File;
 
-import org.spearce.jgit.util.SystemReader;
-
 /**
  * An object representing the Git config file.
  *
@@ -83,13 +81,18 @@ public class RepositoryConfig extends FileBasedConfig {
 		return get(TransferConfig.KEY);
 	}
 
+	/** @return standard user configuration data */
+	public UserConfig getUserConfig() {
+		return get(UserConfig.KEY);
+	}
+
 	/**
 	 * @return the author name as defined in the git variables
 	 *         and configurations. If no name could be found, try
 	 *         to use the system user name instead.
 	 */
 	public String getAuthorName() {
-		return getUsernameInternal(Constants.GIT_AUTHOR_NAME_KEY);
+		return getUserConfig().getAuthorName();
 	}
 
 	/**
@@ -98,26 +101,7 @@ public class RepositoryConfig extends FileBasedConfig {
 	 *         to use the system user name instead.
 	 */
 	public String getCommitterName() {
-		return getUsernameInternal(Constants.GIT_COMMITTER_NAME_KEY);
-	}
-
-	private String getUsernameInternal(String gitVariableKey) {
-		SystemReader systemReader = SystemReader.getInstance();
-		// try to get the user name from the local and global configurations.
-		String username = getString("user", null, "name");
-
-		if (username == null) {
-			// try to get the user name for the system property GIT_XXX_NAME
-			username = systemReader.getenv(gitVariableKey);
-		}
-		if (username == null) {
-			// get the system user name
-			username = systemReader.getProperty(Constants.OS_USER_NAME_KEY);
-		}
-		if (username == null) {
-			username = Constants.UNKNOWN_USER_DEFAULT;
-		}
-		return username;
+		return getUserConfig().getCommitterName();
 	}
 
 	/**
@@ -127,7 +111,7 @@ public class RepositoryConfig extends FileBasedConfig {
 	 *         host name.
 	 */
 	public String getAuthorEmail() {
-		return getUserEmailInternal(Constants.GIT_AUTHOR_EMAIL_KEY);
+		return getUserConfig().getAuthorEmail();
 	}
 
 	/**
@@ -137,29 +121,7 @@ public class RepositoryConfig extends FileBasedConfig {
 	 *         host name.
 	 */
 	public String getCommitterEmail() {
-		return getUserEmailInternal(Constants.GIT_COMMITTER_EMAIL_KEY);
-	}
-
-	private String getUserEmailInternal(String gitVariableKey) {
-		SystemReader systemReader = SystemReader.getInstance();
-		// try to get the email from the local and global configurations.
-		String email = getString("user", null, "email");
-
-		if (email == null) {
-			// try to get the email for the system property GIT_XXX_EMAIL
-			email = systemReader.getenv(gitVariableKey);
-		}
-
-		if (email == null) {
-			// try to construct an email
-			String username = systemReader.getProperty(Constants.OS_USER_NAME_KEY);
-			if (username == null){
-				username = Constants.UNKNOWN_USER_DEFAULT;
-			}
-			email = username + "@" + systemReader.getHostname();
-		}
-
-		return email;
+		return getUserConfig().getCommitterEmail();
 	}
 
 	/**
