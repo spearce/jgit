@@ -38,22 +38,28 @@
 
 package org.spearce.jgit.lib;
 
-import java.util.zip.Deflater;
+import static java.util.zip.Deflater.DEFAULT_COMPRESSION;
+
+import org.spearce.jgit.lib.Config.SectionParser;
 
 /**
  * This class keeps git repository core parameters.
  */
 public class CoreConfig {
-	private static final int DEFAULT_COMPRESSION = Deflater.DEFAULT_COMPRESSION;
-	private static final int DEFAULT_INDEXVERSION = 2;
+	/** Key for {@link Config#get(SectionParser)}. */
+	public static final Config.SectionParser<CoreConfig> KEY = new SectionParser<CoreConfig>() {
+		public CoreConfig parse(final Config cfg) {
+			return new CoreConfig(cfg);
+		}
+	};
 
 	private final int compression;
 
 	private final int packIndexVersion;
 
-	CoreConfig(final RepositoryConfig rc) {
+	private CoreConfig(final Config rc) {
 		compression = rc.getInt("core", "compression", DEFAULT_COMPRESSION);
-		packIndexVersion = rc.getInt("pack", "indexversion", DEFAULT_INDEXVERSION);
+		packIndexVersion = rc.getInt("pack", "indexversion", 2);
 	}
 
 	/**

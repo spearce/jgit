@@ -42,9 +42,7 @@
 package org.spearce.jgit.lib;
 
 import java.io.File;
-import java.io.IOException;
 
-import org.spearce.jgit.errors.ConfigInvalidException;
 import org.spearce.jgit.util.SystemReader;
 
 /**
@@ -56,10 +54,6 @@ import org.spearce.jgit.util.SystemReader;
 public class RepositoryConfig extends FileBasedConfig {
 	/** Section name for a branch configuration. */
 	public static final String BRANCH_SECTION = "branch";
-
-	CoreConfig core;
-
-	TransferConfig transfer;
 
 	/**
 	 * Create a Git configuration file reader/writer/cache for a specific file.
@@ -79,14 +73,14 @@ public class RepositoryConfig extends FileBasedConfig {
 	 * @return Core configuration values
 	 */
 	public CoreConfig getCore() {
-		return core;
+		return get(CoreConfig.KEY);
 	}
 
 	/**
 	 * @return transfer, fetch and receive configuration values
 	 */
 	public TransferConfig getTransfer() {
-		return transfer;
+		return get(TransferConfig.KEY);
 	}
 
 	/**
@@ -175,15 +169,5 @@ public class RepositoryConfig extends FileBasedConfig {
 		clear();
 		setInt("core", null, "repositoryformatversion", 0);
 		setBoolean("core", null, "filemode", true);
-
-		core = new CoreConfig(this);
-		transfer = new TransferConfig(this);
-	}
-
-	@Override
-	public void load() throws IOException, ConfigInvalidException {
-		super.load();
-		core = new CoreConfig(this);
-		transfer = new TransferConfig(this);
 	}
 }

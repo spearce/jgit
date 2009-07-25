@@ -45,7 +45,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.spearce.jgit.errors.ConfigInvalidException;
@@ -375,6 +377,43 @@ public class Config {
 		return result;
 	}
 
+	/**
+	 * Obtain a handle to a parsed set of configuration values.
+	 *
+	 * @param <T>
+	 *            type of configuration model to return.
+	 * @param parser
+	 *            parser which can create the model if it is not already
+	 *            available in this configuration file. The parser is also used
+	 *            as the key into a cache and must obey the hashCode and equals
+	 *            contract in order to reuse a parsed model.
+	 * @return the parsed object instance, which is cached inside this config.
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> T get(final SectionParser<T> parser) {
+		final State myState = getState();
+		T obj = (T) myState.cache.get(parser);
+		if (obj == null) {
+			obj = parser.parse(this);
+			myState.cache.put(parser, obj);
+		}
+		return obj;
+	}
+
+	/**
+	 * Remove a cached configuration object.
+	 * <p>
+	 * If the associated configuration object has not yet been cached, this
+	 * method has no effect.
+	 *
+	 * @param parser
+	 *            parser used to obtain the configuration object.
+	 * @see #get(SectionParser)
+	 */
+	public void uncache(final SectionParser<?> parser) {
+		state.get().cache.remove(parser);
+	}
+
 	private String getRawString(final String section, final String subsection,
 			final String name) {
 		final List<String> lst = getRawStringList(section, subsection, name);
@@ -407,6 +446,22 @@ public class Config {
 		}
 		curr.add(value);
 		return curr;
+	}
+
+	private State getState() {
+		State cur, upd;
+		do {
+			cur = state.get();
+			final State base = getBaseState();
+			if (cur.baseState == base)
+				return cur;
+			upd = new State(cur.entryList, base);
+		} while (!state.compareAndSet(cur, upd));
+		return upd;
+	}
+
+	private State getBaseState() {
+		return baseConfig != null ? baseConfig.getState() : null;
 	}
 
 	/**
@@ -757,11 +812,11 @@ public class Config {
 	}
 
 	private State newState() {
-		return new State(Collections.<Entry> emptyList());
+		return new State(Collections.<Entry> emptyList(), getBaseState());
 	}
 
 	private State newState(final List<Entry> entries) {
-		return new State(Collections.unmodifiableList(entries));
+		return new State(Collections.unmodifiableList(entries), getBaseState());
 	}
 
 	/**
@@ -933,11 +988,42 @@ public class Config {
 		return value.length() > 0 ? value.toString() : null;
 	}
 
+	/**
+	 * Parses a section of the configuration into an application model object.
+	 * <p>
+	 * Instances must implement hashCode and equals such that model objects can
+	 * be cached by using the {@code SectionParser} as a key of a HashMap.
+	 * <p>
+	 * As the {@code SectionParser} itself is used as the key of the internal
+	 * HashMap applications should be careful to ensure the SectionParser key
+	 * does not retain unnecessary application state which may cause memory to
+	 * be held longer than expected.
+	 *
+	 * @param <T>
+	 *            type of the application model created by the parser.
+	 */
+	public static interface SectionParser<T> {
+		/**
+		 * Create a model object from a configuration.
+		 *
+		 * @param cfg
+		 *            the configuration to read values from.
+		 * @return the application model instance.
+		 */
+		T parse(Config cfg);
+	}
+
 	private static class State {
 		final List<Entry> entryList;
 
-		State(List<Entry> entries) {
+		final Map<Object, Object> cache;
+
+		final State baseState;
+
+		State(List<Entry> entries, State base) {
 			entryList = entries;
+			cache = new ConcurrentHashMap<Object, Object>(16, 0.75f, 1);
+			baseState = base;
 		}
 	}
 

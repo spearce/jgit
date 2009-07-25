@@ -37,13 +37,22 @@
 
 package org.spearce.jgit.lib;
 
+import org.spearce.jgit.lib.Config.SectionParser;
+
 /**
  * The standard "transfer", "fetch" and "receive" configuration parameters.
  */
 public class TransferConfig {
+	/** Key for {@link Config#get(SectionParser)}. */
+	public static final Config.SectionParser<TransferConfig> KEY = new SectionParser<TransferConfig>() {
+		public TransferConfig parse(final Config cfg) {
+			return new TransferConfig(cfg);
+		}
+	};
+
 	private final boolean fsckObjects;
 
-	TransferConfig(final RepositoryConfig rc) {
+	private TransferConfig(final Config rc) {
 		fsckObjects = rc.getBoolean("receive", "fsckobjects", false);
 	}
 
