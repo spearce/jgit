@@ -41,6 +41,7 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import org.spearce.jgit.lib.FileBasedConfig;
 import org.spearce.jgit.lib.RepositoryConfig;
 
 /**
@@ -63,7 +64,7 @@ public abstract class SystemReader {
 			return System.getProperty(key);
 		}
 
-		public RepositoryConfig openUserConfig() {
+		public FileBasedConfig openUserConfig() {
 			final File home = FS.userHome();
 			return new RepositoryConfig(null, new File(home, ".gitconfig"));
 		}
@@ -119,5 +120,5 @@ public abstract class SystemReader {
 	/**
 	 * @return the git configuration found in the user home
 	 */
-	public abstract RepositoryConfig openUserConfig();
+	public abstract FileBasedConfig openUserConfig();
 }

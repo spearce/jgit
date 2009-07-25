@@ -60,7 +60,7 @@ public class RepositoryConfig extends FileBasedConfig {
 	 * @return a new configuration instance to read the user's global
 	 *         configuration file from their home directory.
 	 */
-	public static RepositoryConfig openUserConfig() {
+	public static FileBasedConfig openUserConfig() {
 		return SystemReader.getInstance().openUserConfig();
 	}
 
@@ -85,7 +85,7 @@ public class RepositoryConfig extends FileBasedConfig {
 	 * @param cfgLocation
 	 *            path of the file to load (or save).
 	 */
-	public RepositoryConfig(final RepositoryConfig base, final File cfgLocation) {
+	public RepositoryConfig(final Config base, final File cfgLocation) {
 		super(base, cfgLocation);
 	}
 
