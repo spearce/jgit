@@ -171,7 +171,8 @@ public class Repository {
 	 *             in case of IO problem
 	 */
 	public void create(boolean bare) throws IOException {
-		if ((bare ? new File(gitDir, "config") : gitDir).exists()) {
+		final RepositoryConfig cfg = getConfig();
+		if (cfg.getFile().exists()) {
 			throw new IllegalStateException("Repository already exists: "
 					+ gitDir);
 		}
@@ -184,7 +185,6 @@ public class Repository {
 		final String master = Constants.R_HEADS + Constants.MASTER;
 		refs.link(Constants.HEAD, master);
 
-		RepositoryConfig cfg = getConfig();
 		cfg.create();
 		if (bare)
 			cfg.setBoolean("core", null, "bare", true);
