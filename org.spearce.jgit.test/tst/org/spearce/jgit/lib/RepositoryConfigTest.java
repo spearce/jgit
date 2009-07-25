@@ -45,6 +45,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 
+import org.spearce.jgit.util.SystemReader;
+
 /**
  * Test reading of git config
  */
@@ -113,59 +115,58 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 		assertEquals("", repositoryConfig.getString("foo", null, "bar"));
 	}
 
-	public void test007_readUserInfos() throws IOException {
-		final String hostname = FAKE_HOSTNAME;
-		final File localConfig = writeTrashFile("local.config", "");
-		System.clearProperty(Constants.OS_USER_NAME_KEY);
-
-		RepositoryConfig localRepositoryConfig = new RepositoryConfig(userGitConfig, localConfig);
-		fakeSystemReader.values.clear();
+	public void test007_readUserConfig() {
+		final MockSystemReader mockSystemReader = (MockSystemReader)SystemReader.getInstance();
+		final String hostname = mockSystemReader.getHostname();
+		final Config userGitConfig = mockSystemReader.userGitConfig;
+		final RepositoryConfig localConfig = db.getConfig();
+		mockSystemReader.values.clear();
 
 		String authorName;
 		String authorEmail;
 
 		// no values defined nowhere
-		authorName = localRepositoryConfig.getAuthorName();
-		authorEmail = localRepositoryConfig.getAuthorEmail();
+		authorName = localConfig.getAuthorName();
+		authorEmail = localConfig.getAuthorEmail();
 		assertEquals(Constants.UNKNOWN_USER_DEFAULT, authorName);
 		assertEquals(Constants.UNKNOWN_USER_DEFAULT + "@" + hostname, authorEmail);
 
 		// the system user name is defined
-		fakeSystemReader.values.put(Constants.OS_USER_NAME_KEY, "os user name");
-		authorName = localRepositoryConfig.getAuthorName();
+		mockSystemReader.values.put(Constants.OS_USER_NAME_KEY, "os user name");
+		authorName = localConfig.getAuthorName();
 		assertEquals("os user name", authorName);
 
 		if (hostname != null && hostname.length() != 0) {
-			authorEmail = localRepositoryConfig.getAuthorEmail();
+			authorEmail = localConfig.getAuthorEmail();
 			assertEquals("os user name@" + hostname, authorEmail);
 		}
 
 		// the git environment variables are defined
-		fakeSystemReader.values.put(Constants.GIT_AUTHOR_NAME_KEY, "git author name");
-		fakeSystemReader.values.put(Constants.GIT_AUTHOR_EMAIL_KEY, "author@email");
-		authorName = localRepositoryConfig.getAuthorName();
-		authorEmail = localRepositoryConfig.getAuthorEmail();
+		mockSystemReader.values.put(Constants.GIT_AUTHOR_NAME_KEY, "git author name");
+		mockSystemReader.values.put(Constants.GIT_AUTHOR_EMAIL_KEY, "author@email");
+		authorName = localConfig.getAuthorName();
+		authorEmail = localConfig.getAuthorEmail();
 		assertEquals("git author name", authorName);
 		assertEquals("author@email", authorEmail);
 
 		// the values are defined in the global configuration
 		userGitConfig.setString("user", null, "name", "global username");
 		userGitConfig.setString("user", null, "email", "author@globalemail");
-		authorName = localRepositoryConfig.getAuthorName();
-		authorEmail = localRepositoryConfig.getAuthorEmail();
+		authorName = localConfig.getAuthorName();
+		authorEmail = localConfig.getAuthorEmail();
 		assertEquals("global username", authorName);
 		assertEquals("author@globalemail", authorEmail);
 
 		// the values are defined in the local configuration
-		localRepositoryConfig.setString("user", null, "name", "local username");
-		localRepositoryConfig.setString("user", null, "email", "author@localemail");
-		authorName = localRepositoryConfig.getAuthorName();
-		authorEmail = localRepositoryConfig.getAuthorEmail();
+		localConfig.setString("user", null, "name", "local username");
+		localConfig.setString("user", null, "email", "author@localemail");
+		authorName = localConfig.getAuthorName();
+		authorEmail = localConfig.getAuthorEmail();
 		assertEquals("local username", authorName);
 		assertEquals("author@localemail", authorEmail);
 
-		authorName = localRepositoryConfig.getCommitterName();
-		authorEmail = localRepositoryConfig.getCommitterEmail();
+		authorName = localConfig.getCommitterName();
+		authorEmail = localConfig.getCommitterEmail();
 		assertEquals("local username", authorName);
 		assertEquals("author@localemail", authorEmail);
 	}

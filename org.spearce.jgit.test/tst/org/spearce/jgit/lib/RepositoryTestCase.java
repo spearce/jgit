@@ -47,9 +47,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -81,46 +79,12 @@ public abstract class RepositoryTestCase extends TestCase {
 
 	protected static final PersonIdent jcommitter;
 
-	protected static final String FAKE_HOSTNAME = "fake.host.example.com";
-
 	static {
 		jauthor = new PersonIdent("J. Author", "jauthor@example.com");
 		jcommitter = new PersonIdent("J. Committer", "jcommitter@example.com");
 	}
 
 	protected boolean packedGitMMAP;
-
-	protected static class FakeSystemReader extends SystemReader {
-		Map<String, String> values = new HashMap<String, String>();
-		RepositoryConfig userGitConfig;
-		public String getenv(String variable) {
-			return values.get(variable);
-		}
-		public String getProperty(String key) {
-			return values.get(key);
-		}
-		public RepositoryConfig openUserConfig() {
-			return userGitConfig;
-		}
-		public void setUserGitConfig(RepositoryConfig userGitConfig) {
-			this.userGitConfig = userGitConfig;
-		}
-		public String getHostname() {
-			return FAKE_HOSTNAME;
-		}
-	}
-
-	/**
-	 * Simulates the reading of system variables and properties.
-	 * Unit test can control the returned values by manipulating
-	 * {@link FakeSystemReader#values}.
-	 */
-	protected static FakeSystemReader fakeSystemReader;
-
-	static {
-		fakeSystemReader = new FakeSystemReader();
-		SystemReader.setInstance(fakeSystemReader);
-	}
 
 	/**
 	 * Configure JGit before setting up test repositories.
@@ -241,12 +205,6 @@ public abstract class RepositoryTestCase extends TestCase {
 
 	protected Repository db;
 
-	/**
-	 * mock user's global configuration used instead ~/.gitconfig.
-	 * This configuration can be modified by the tests without any
-	 * effect for ~/.gitconfig.
-	 */
-	protected RepositoryConfig userGitConfig;
 	private static Thread shutdownhook;
 	private static List<Runnable> shutDownCleanups = new ArrayList<Runnable>();
 	private static int testcount;
@@ -278,9 +236,10 @@ public abstract class RepositoryTestCase extends TestCase {
 			Runtime.getRuntime().addShutdownHook(shutdownhook);
 		}
 
-		final File userGitConfigFile = new File(trash_git, "usergitconfig").getAbsoluteFile();
-		userGitConfig = new RepositoryConfig(null, userGitConfigFile);
-		fakeSystemReader.setUserGitConfig(userGitConfig);
+		final MockSystemReader mockSystemReader = new MockSystemReader();
+		mockSystemReader.userGitConfig = new FileBasedConfig(null, new File(
+				trash_git, "usergitconfig"));
+		SystemReader.setInstance(mockSystemReader);
 
 		db = new Repository(trash_git);
 		db.create();
@@ -302,13 +261,6 @@ public abstract class RepositoryTestCase extends TestCase {
 		}
 
 		copyFile(JGitTestUtil.getTestResourceFile("packed-refs"), new File(trash_git,"packed-refs"));
-
-		fakeSystemReader.values.clear();
-		fakeSystemReader.values.put(Constants.OS_USER_NAME_KEY, Constants.OS_USER_NAME_KEY);
-		fakeSystemReader.values.put(Constants.GIT_AUTHOR_NAME_KEY, Constants.GIT_AUTHOR_NAME_KEY);
-		fakeSystemReader.values.put(Constants.GIT_AUTHOR_EMAIL_KEY, Constants.GIT_AUTHOR_EMAIL_KEY);
-		fakeSystemReader.values.put(Constants.GIT_COMMITTER_NAME_KEY, Constants.GIT_COMMITTER_NAME_KEY);
-		fakeSystemReader.values.put(Constants.GIT_COMMITTER_EMAIL_KEY, Constants.GIT_COMMITTER_EMAIL_KEY);
 	}
 
 	protected void tearDown() throws Exception {
