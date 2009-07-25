@@ -43,8 +43,6 @@ package org.spearce.jgit.lib;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 import org.spearce.jgit.util.FS;
 import org.spearce.jgit.util.SystemReader;
@@ -63,7 +61,7 @@ public class RepositoryConfig extends FileBasedConfig {
 	 *         configuration file from their home directory.
 	 */
 	public static RepositoryConfig openUserConfig() {
-		return systemReader.openUserConfig();
+		return SystemReader.getInstance().openUserConfig();
 	}
 
 	/** Section name for a branch configuration. */
@@ -72,21 +70,6 @@ public class RepositoryConfig extends FileBasedConfig {
 	CoreConfig core;
 
 	TransferConfig transfer;
-
-	private static String hostname;
-
-	// default system reader gets the value from the system
-	private static SystemReader systemReader = new SystemReader() {
-		public String getenv(String variable) {
-			return System.getenv(variable);
-		}
-		public String getProperty(String key) {
-			return System.getProperty(key);
-		}
-		public RepositoryConfig openUserConfig() {
-			return new RepositoryConfig(null, new File(FS.userHome(), ".gitconfig"));
-		}
-	};
 
 	RepositoryConfig(final Repository repo) {
 		this(openUserConfig(), FS.resolve(repo.getDirectory(), "config"));
@@ -139,6 +122,7 @@ public class RepositoryConfig extends FileBasedConfig {
 	}
 
 	private String getUsernameInternal(String gitVariableKey) {
+		SystemReader systemReader = SystemReader.getInstance();
 		// try to get the user name from the local and global configurations.
 		String username = getString("user", null, "name");
 
@@ -177,6 +161,7 @@ public class RepositoryConfig extends FileBasedConfig {
 	}
 
 	private String getUserEmailInternal(String gitVariableKey) {
+		SystemReader systemReader = SystemReader.getInstance();
 		// try to get the email from the local and global configurations.
 		String email = getString("user", null, "email");
 
@@ -191,7 +176,7 @@ public class RepositoryConfig extends FileBasedConfig {
 			if (username == null){
 				username = Constants.UNKNOWN_USER_DEFAULT;
 			}
-			email = username + "@" + getHostname();
+			email = username + "@" + systemReader.getHostname();
 		}
 
 		return email;
@@ -215,32 +200,5 @@ public class RepositoryConfig extends FileBasedConfig {
 		super.load();
 		core = new CoreConfig(this);
 		transfer = new TransferConfig(this);
-	}
-
-	/**
-	 * Gets the hostname of the local host.
-	 * If no hostname can be found, the hostname is set to the default value "localhost".
-	 * @return the canonical hostname
-	 */
-	private static String getHostname() {
-		if (hostname == null) {
-			try {
-				InetAddress localMachine = InetAddress.getLocalHost();
-				hostname = localMachine.getCanonicalHostName();
-			} catch (UnknownHostException e) {
-				// we do nothing
-				hostname = "localhost";
-			}
-			assert hostname != null;
-		}
-		return hostname;
-	}
-
-	/**
-	 * Overrides the default system reader by a custom one.
-	 * @param newSystemReader new system reader
-	 */
-	public static void setSystemReader(SystemReader newSystemReader) {
-		systemReader = newSystemReader;
 	}
 }

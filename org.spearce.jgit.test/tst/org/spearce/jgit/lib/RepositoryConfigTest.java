@@ -42,8 +42,6 @@ package org.spearce.jgit.lib;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.LinkedList;
 
@@ -116,14 +114,7 @@ public class RepositoryConfigTest extends RepositoryTestCase {
 	}
 
 	public void test007_readUserInfos() throws IOException {
-		String hostname;
-		try {
-			InetAddress localMachine = InetAddress.getLocalHost();
-			hostname = localMachine.getCanonicalHostName();
-		} catch (UnknownHostException e) {
-			hostname = "localhost";
-		}
-
+		final String hostname = FAKE_HOSTNAME;
 		final File localConfig = writeTrashFile("local.config", "");
 		System.clearProperty(Constants.OS_USER_NAME_KEY);
 

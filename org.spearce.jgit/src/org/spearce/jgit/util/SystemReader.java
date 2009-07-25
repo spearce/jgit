@@ -37,6 +37,10 @@
 
 package org.spearce.jgit.util;
 
+import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import org.spearce.jgit.lib.RepositoryConfig;
 
 /**
@@ -47,21 +51,73 @@ import org.spearce.jgit.lib.RepositoryConfig;
  * permits to control the user's global configuration.
  * </p>
  */
-public interface SystemReader {
+public abstract class SystemReader {
+	private static SystemReader INSTANCE = new SystemReader() {
+		private volatile String hostname;
+
+		public String getenv(String variable) {
+			return System.getenv(variable);
+		}
+
+		public String getProperty(String key) {
+			return System.getProperty(key);
+		}
+
+		public RepositoryConfig openUserConfig() {
+			final File home = FS.userHome();
+			return new RepositoryConfig(null, new File(home, ".gitconfig"));
+		}
+
+		public String getHostname() {
+			if (hostname == null) {
+				try {
+					InetAddress localMachine = InetAddress.getLocalHost();
+					hostname = localMachine.getCanonicalHostName();
+				} catch (UnknownHostException e) {
+					// we do nothing
+					hostname = "localhost";
+				}
+				assert hostname != null;
+			}
+			return hostname;
+		}
+	};
+
+	/** @return the live instance to read system properties. */
+	public static SystemReader getInstance() {
+		return INSTANCE;
+	}
+
+	/**
+	 * @param newReader
+	 *            the new instance to use when accessing properties.
+	 */
+	public static void setInstance(SystemReader newReader) {
+		INSTANCE = newReader;
+	}
+
+	/**
+	 * Gets the hostname of the local host. If no hostname can be found, the
+	 * hostname is set to the default value "localhost".
+	 *
+	 * @return the canonical hostname
+	 */
+	public abstract String getHostname();
+
 	/**
 	 * @param variable system variable to read
 	 * @return value of the system variable
 	 */
-	String getenv(String variable);
+	public abstract String getenv(String variable);
 
 	/**
 	 * @param key of the system property to read
 	 * @return value of the system property
 	 */
-	String getProperty(String key);
+	public abstract String getProperty(String key);
 
 	/**
 	 * @return the git configuration found in the user home
 	 */
-	RepositoryConfig openUserConfig();
+	public abstract RepositoryConfig openUserConfig();
 }

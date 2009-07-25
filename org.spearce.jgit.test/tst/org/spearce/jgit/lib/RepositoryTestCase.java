@@ -81,6 +81,8 @@ public abstract class RepositoryTestCase extends TestCase {
 
 	protected static final PersonIdent jcommitter;
 
+	protected static final String FAKE_HOSTNAME = "fake.host.example.com";
+
 	static {
 		jauthor = new PersonIdent("J. Author", "jauthor@example.com");
 		jcommitter = new PersonIdent("J. Committer", "jcommitter@example.com");
@@ -88,7 +90,7 @@ public abstract class RepositoryTestCase extends TestCase {
 
 	protected boolean packedGitMMAP;
 
-	protected static class FakeSystemReader implements SystemReader {
+	protected static class FakeSystemReader extends SystemReader {
 		Map<String, String> values = new HashMap<String, String>();
 		RepositoryConfig userGitConfig;
 		public String getenv(String variable) {
@@ -103,6 +105,9 @@ public abstract class RepositoryTestCase extends TestCase {
 		public void setUserGitConfig(RepositoryConfig userGitConfig) {
 			this.userGitConfig = userGitConfig;
 		}
+		public String getHostname() {
+			return FAKE_HOSTNAME;
+		}
 	}
 
 	/**
@@ -114,7 +119,7 @@ public abstract class RepositoryTestCase extends TestCase {
 
 	static {
 		fakeSystemReader = new FakeSystemReader();
-		RepositoryConfig.setSystemReader(fakeSystemReader);
+		SystemReader.setInstance(fakeSystemReader);
 	}
 
 	/**
