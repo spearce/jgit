@@ -244,7 +244,7 @@ public class ConcurrentRepackTest extends RepositoryTestCase {
 	private RevObject writeBlob(final Repository repo, final String data)
 			throws IOException {
 		final RevWalk revWalk = new RevWalk(repo);
-		final byte[] bytes = data.getBytes(Constants.CHARACTER_ENCODING);
+		final byte[] bytes = Constants.encode(data);
 		final ObjectWriter ow = new ObjectWriter(repo);
 		final ObjectId id = ow.writeBlob(bytes);
 		try {

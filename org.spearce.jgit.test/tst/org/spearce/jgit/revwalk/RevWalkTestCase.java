@@ -82,8 +82,7 @@ public abstract class RevWalkTestCase extends RepositoryTestCase {
 	}
 
 	protected RevBlob blob(final String content) throws Exception {
-		return rw.lookupBlob(ow.writeBlob(content
-				.getBytes(Constants.CHARACTER_ENCODING)));
+		return rw.lookupBlob(ow.writeBlob(Constants.encode(content)));
 	}
 
 	protected DirCacheEntry file(final String path, final RevBlob blob)

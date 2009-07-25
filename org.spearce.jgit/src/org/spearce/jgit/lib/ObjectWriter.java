@@ -215,7 +215,7 @@ public class ObjectWriter {
 		w.flush();
 		os.write('\n');
 
-		if (!encoding.equals("UTF-8")) {
+		if (!encoding.equals(Constants.CHARACTER_ENCODING)) {
 			os.write(hencoding);
 			os.write(' ');
 			os.write(Constants.encodeASCII(encoding));

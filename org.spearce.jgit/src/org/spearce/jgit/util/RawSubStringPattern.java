@@ -37,7 +37,7 @@
 
 package org.spearce.jgit.util;
 
-import java.io.UnsupportedEncodingException;
+import org.spearce.jgit.lib.Constants;
 
 /**
  * Searches text using only substring search.
@@ -63,13 +63,7 @@ public class RawSubStringPattern {
 			throw new IllegalArgumentException("Cannot match on empty string.");
 		needleString = patternText;
 
-		final byte[] b;
-		try {
-			b = patternText.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new IllegalStateException("JVM lacks UTF-8 support.", e);
-		}
-
+		final byte[] b = Constants.encode(patternText);
 		needle = new byte[b.length];
 		for (int i = 0; i < b.length; i++)
 			needle[i] = lc(b[i]);

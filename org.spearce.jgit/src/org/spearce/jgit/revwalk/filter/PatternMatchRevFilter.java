@@ -38,12 +38,12 @@
 package org.spearce.jgit.revwalk.filter;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevWalk;
 import org.spearce.jgit.util.RawCharSequence;
@@ -64,13 +64,7 @@ public abstract class PatternMatchRevFilter extends RevFilter {
 	 *         character sequence {@link RawCharSequence}.
 	 */
 	protected static final String forceToRaw(final String patternText) {
-		final byte[] b;
-		try {
-			b = patternText.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new IllegalStateException("JVM lacks UTF-8 support.", e);
-		}
-
+		final byte[] b = Constants.encode(patternText);
 		final StringBuilder needle = new StringBuilder(b.length);
 		for (int i = 0; i < b.length; i++)
 			needle.append((char) (b[i] & 0xff));
