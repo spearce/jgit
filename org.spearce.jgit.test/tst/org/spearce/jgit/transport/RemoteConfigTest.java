@@ -38,26 +38,28 @@
 
 package org.spearce.jgit.transport;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 
-import org.spearce.jgit.lib.RepositoryTestCase;
+import junit.framework.TestCase;
 
-public class RemoteConfigTest extends RepositoryTestCase {
-	private void writeConfig(final String dat) throws FileNotFoundException,
-			IOException, UnsupportedEncodingException {
-		final File file = new File(db.getDirectory(), "config");
-		final FileOutputStream stream = new FileOutputStream(file, true);
-		try {
-			stream.write(dat.getBytes("UTF-8"));
-		} finally {
-			stream.close();
-		}
-		db.getConfig().load();
+import org.spearce.jgit.errors.ConfigInvalidException;
+import org.spearce.jgit.lib.Config;
+
+public class RemoteConfigTest extends TestCase {
+	private Config config;
+
+	protected void setUp() throws Exception {
+		super.setUp();
+		config = new Config();
+	}
+
+	private void readConfig(final String dat) throws ConfigInvalidException {
+		config = new Config();
+		config.fromText(dat);
+	}
+
+	private void checkConfig(final String exp) {
+		assertEquals(exp, config.toText());
 	}
 
 	private static void assertEquals(final String exp, final URIish act) {
@@ -65,11 +67,11 @@ public class RemoteConfigTest extends RepositoryTestCase {
 	}
 
 	public void testSimple() throws Exception {
-		writeConfig("[remote \"spearce\"]\n"
+		readConfig("[remote \"spearce\"]\n"
 				+ "url = http://www.spearce.org/egit.git\n"
 				+ "fetch = +refs/heads/*:refs/remotes/spearce/*\n");
 
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "spearce");
+		final RemoteConfig rc = new RemoteConfig(config, "spearce");
 		final List<URIish> allURIs = rc.getURIs();
 		RefSpec spec;
 
@@ -95,30 +97,30 @@ public class RemoteConfigTest extends RepositoryTestCase {
 	}
 
 	public void testSimpleNoTags() throws Exception {
-		writeConfig("[remote \"spearce\"]\n"
+		readConfig("[remote \"spearce\"]\n"
 				+ "url = http://www.spearce.org/egit.git\n"
 				+ "fetch = +refs/heads/*:refs/remotes/spearce/*\n"
 				+ "tagopt = --no-tags\n");
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "spearce");
+		final RemoteConfig rc = new RemoteConfig(config, "spearce");
 		assertSame(TagOpt.NO_TAGS, rc.getTagOpt());
 	}
 
 	public void testSimpleAlwaysTags() throws Exception {
-		writeConfig("[remote \"spearce\"]\n"
+		readConfig("[remote \"spearce\"]\n"
 				+ "url = http://www.spearce.org/egit.git\n"
 				+ "fetch = +refs/heads/*:refs/remotes/spearce/*\n"
 				+ "tagopt = --tags\n");
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "spearce");
+		final RemoteConfig rc = new RemoteConfig(config, "spearce");
 		assertSame(TagOpt.FETCH_TAGS, rc.getTagOpt());
 	}
 
 	public void testMirror() throws Exception {
-		writeConfig("[remote \"spearce\"]\n"
+		readConfig("[remote \"spearce\"]\n"
 				+ "url = http://www.spearce.org/egit.git\n"
 				+ "fetch = +refs/heads/*:refs/heads/*\n"
 				+ "fetch = refs/tags/*:refs/tags/*\n");
 
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "spearce");
+		final RemoteConfig rc = new RemoteConfig(config, "spearce");
 		final List<URIish> allURIs = rc.getURIs();
 		RefSpec spec;
 
@@ -148,13 +150,13 @@ public class RemoteConfigTest extends RepositoryTestCase {
 	}
 
 	public void testBackup() throws Exception {
-		writeConfig("[remote \"backup\"]\n"
+		readConfig("[remote \"backup\"]\n"
 				+ "url = http://www.spearce.org/egit.git\n"
 				+ "url = user@repo.or.cz:/srv/git/egit.git\n"
 				+ "push = +refs/heads/*:refs/heads/*\n"
 				+ "push = refs/tags/*:refs/tags/*\n");
 
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "backup");
+		final RemoteConfig rc = new RemoteConfig(config, "backup");
 		final List<URIish> allURIs = rc.getURIs();
 		RefSpec spec;
 
@@ -184,13 +186,13 @@ public class RemoteConfigTest extends RepositoryTestCase {
 	}
 
 	public void testUploadPack() throws Exception {
-		writeConfig("[remote \"example\"]\n"
+		readConfig("[remote \"example\"]\n"
 				+ "url = user@example.com:egit.git\n"
 				+ "fetch = +refs/heads/*:refs/remotes/example/*\n"
 				+ "uploadpack = /path/to/git/git-upload-pack\n"
 				+ "receivepack = /path/to/git/git-receive-pack\n");
 
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "example");
+		final RemoteConfig rc = new RemoteConfig(config, "example");
 		final List<URIish> allURIs = rc.getURIs();
 		RefSpec spec;
 
@@ -216,9 +218,9 @@ public class RemoteConfigTest extends RepositoryTestCase {
 	}
 
 	public void testUnknown() throws Exception {
-		writeConfig("");
+		readConfig("");
 
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "backup");
+		final RemoteConfig rc = new RemoteConfig(config, "backup");
 		assertEquals(0, rc.getURIs().size());
 		assertEquals(0, rc.getFetchRefSpecs().size());
 		assertEquals(0, rc.getPushRefSpecs().size());
@@ -227,10 +229,10 @@ public class RemoteConfigTest extends RepositoryTestCase {
 	}
 
 	public void testAddURI() throws Exception {
-		writeConfig("");
+		readConfig("");
 
 		final URIish uri = new URIish("/some/dir");
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "backup");
+		final RemoteConfig rc = new RemoteConfig(config, "backup");
 		assertEquals(0, rc.getURIs().size());
 
 		assertTrue(rc.addURI(uri));
@@ -242,12 +244,12 @@ public class RemoteConfigTest extends RepositoryTestCase {
 	}
 
 	public void testRemoveFirstURI() throws Exception {
-		writeConfig("");
+		readConfig("");
 
 		final URIish a = new URIish("/some/dir");
 		final URIish b = new URIish("/another/dir");
 		final URIish c = new URIish("/more/dirs");
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "backup");
+		final RemoteConfig rc = new RemoteConfig(config, "backup");
 		assertTrue(rc.addURI(a));
 		assertTrue(rc.addURI(b));
 		assertTrue(rc.addURI(c));
@@ -264,12 +266,12 @@ public class RemoteConfigTest extends RepositoryTestCase {
 	}
 
 	public void testRemoveMiddleURI() throws Exception {
-		writeConfig("");
+		readConfig("");
 
 		final URIish a = new URIish("/some/dir");
 		final URIish b = new URIish("/another/dir");
 		final URIish c = new URIish("/more/dirs");
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "backup");
+		final RemoteConfig rc = new RemoteConfig(config, "backup");
 		assertTrue(rc.addURI(a));
 		assertTrue(rc.addURI(b));
 		assertTrue(rc.addURI(c));
@@ -286,12 +288,12 @@ public class RemoteConfigTest extends RepositoryTestCase {
 	}
 
 	public void testRemoveLastURI() throws Exception {
-		writeConfig("");
+		readConfig("");
 
 		final URIish a = new URIish("/some/dir");
 		final URIish b = new URIish("/another/dir");
 		final URIish c = new URIish("/more/dirs");
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "backup");
+		final RemoteConfig rc = new RemoteConfig(config, "backup");
 		assertTrue(rc.addURI(a));
 		assertTrue(rc.addURI(b));
 		assertTrue(rc.addURI(c));
@@ -308,10 +310,10 @@ public class RemoteConfigTest extends RepositoryTestCase {
 	}
 
 	public void testRemoveOnlyURI() throws Exception {
-		writeConfig("");
+		readConfig("");
 
 		final URIish a = new URIish("/some/dir");
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "backup");
+		final RemoteConfig rc = new RemoteConfig(config, "backup");
 		assertTrue(rc.addURI(a));
 
 		assertEquals(1, rc.getURIs().size());
@@ -322,130 +324,102 @@ public class RemoteConfigTest extends RepositoryTestCase {
 	}
 
 	public void testCreateOrigin() throws Exception {
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "origin");
+		final RemoteConfig rc = new RemoteConfig(config, "origin");
 		rc.addURI(new URIish("/some/dir"));
 		rc.addFetchRefSpec(new RefSpec("+refs/heads/*:refs/remotes/"
 				+ rc.getName() + "/*"));
-		rc.update(db.getConfig());
-		db.getConfig().save();
-
-		checkFile(new File(db.getDirectory(), "config"), "[core]\n"
-				+ "\trepositoryformatversion = 0\n" + "\tfilemode = true\n"
-				+ "[remote \"origin\"]\n" + "\turl = /some/dir\n"
+		rc.update(config);
+		checkConfig("[remote \"origin\"]\n" + "\turl = /some/dir\n"
 				+ "\tfetch = +refs/heads/*:refs/remotes/origin/*\n");
 	}
 
 	public void testSaveAddURI() throws Exception {
-		writeConfig("[remote \"spearce\"]\n"
+		readConfig("[remote \"spearce\"]\n"
 				+ "url = http://www.spearce.org/egit.git\n"
 				+ "fetch = +refs/heads/*:refs/remotes/spearce/*\n");
 
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "spearce");
+		final RemoteConfig rc = new RemoteConfig(config, "spearce");
 		rc.addURI(new URIish("/some/dir"));
 		assertEquals(2, rc.getURIs().size());
-		rc.update(db.getConfig());
-		db.getConfig().save();
-
-		checkFile(new File(db.getDirectory(), "config"), "[core]\n"
-				+ "\trepositoryformatversion = 0\n" + "\tfilemode = true\n"
-				+ "[remote \"spearce\"]\n"
+		rc.update(config);
+		checkConfig("[remote \"spearce\"]\n"
 				+ "\turl = http://www.spearce.org/egit.git\n"
 				+ "\turl = /some/dir\n"
 				+ "\tfetch = +refs/heads/*:refs/remotes/spearce/*\n");
 	}
 
 	public void testSaveRemoveLastURI() throws Exception {
-		writeConfig("[remote \"spearce\"]\n"
+		readConfig("[remote \"spearce\"]\n"
 				+ "url = http://www.spearce.org/egit.git\n"
 				+ "url = /some/dir\n"
 				+ "fetch = +refs/heads/*:refs/remotes/spearce/*\n");
 
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "spearce");
+		final RemoteConfig rc = new RemoteConfig(config, "spearce");
 		assertEquals(2, rc.getURIs().size());
 		rc.removeURI(new URIish("/some/dir"));
 		assertEquals(1, rc.getURIs().size());
-		rc.update(db.getConfig());
-		db.getConfig().save();
-
-		checkFile(new File(db.getDirectory(), "config"), "[core]\n"
-				+ "\trepositoryformatversion = 0\n" + "\tfilemode = true\n"
-				+ "[remote \"spearce\"]\n"
+		rc.update(config);
+		checkConfig("[remote \"spearce\"]\n"
 				+ "\turl = http://www.spearce.org/egit.git\n"
 				+ "\tfetch = +refs/heads/*:refs/remotes/spearce/*\n");
 	}
 
 	public void testSaveRemoveFirstURI() throws Exception {
-		writeConfig("[remote \"spearce\"]\n"
+		readConfig("[remote \"spearce\"]\n"
 				+ "url = http://www.spearce.org/egit.git\n"
 				+ "url = /some/dir\n"
 				+ "fetch = +refs/heads/*:refs/remotes/spearce/*\n");
 
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "spearce");
+		final RemoteConfig rc = new RemoteConfig(config, "spearce");
 		assertEquals(2, rc.getURIs().size());
 		rc.removeURI(new URIish("http://www.spearce.org/egit.git"));
 		assertEquals(1, rc.getURIs().size());
-		rc.update(db.getConfig());
-		db.getConfig().save();
-
-		checkFile(new File(db.getDirectory(), "config"), "[core]\n"
-				+ "\trepositoryformatversion = 0\n" + "\tfilemode = true\n"
-				+ "[remote \"spearce\"]\n" + "\turl = /some/dir\n"
+		rc.update(config);
+		checkConfig("[remote \"spearce\"]\n" + "\turl = /some/dir\n"
 				+ "\tfetch = +refs/heads/*:refs/remotes/spearce/*\n");
 	}
 
 	public void testSaveNoTags() throws Exception {
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "origin");
+		final RemoteConfig rc = new RemoteConfig(config, "origin");
 		rc.addURI(new URIish("/some/dir"));
 		rc.addFetchRefSpec(new RefSpec("+refs/heads/*:refs/remotes/"
 				+ rc.getName() + "/*"));
 		rc.setTagOpt(TagOpt.NO_TAGS);
-		rc.update(db.getConfig());
-		db.getConfig().save();
-
-		checkFile(new File(db.getDirectory(), "config"), "[core]\n"
-				+ "\trepositoryformatversion = 0\n" + "\tfilemode = true\n"
-				+ "[remote \"origin\"]\n" + "\turl = /some/dir\n"
+		rc.update(config);
+		checkConfig("[remote \"origin\"]\n" + "\turl = /some/dir\n"
 				+ "\tfetch = +refs/heads/*:refs/remotes/origin/*\n"
 				+ "\ttagopt = --no-tags\n");
 	}
 
 	public void testSaveAllTags() throws Exception {
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "origin");
+		final RemoteConfig rc = new RemoteConfig(config, "origin");
 		rc.addURI(new URIish("/some/dir"));
 		rc.addFetchRefSpec(new RefSpec("+refs/heads/*:refs/remotes/"
 				+ rc.getName() + "/*"));
 		rc.setTagOpt(TagOpt.FETCH_TAGS);
-		rc.update(db.getConfig());
-		db.getConfig().save();
-
-		checkFile(new File(db.getDirectory(), "config"), "[core]\n"
-				+ "\trepositoryformatversion = 0\n" + "\tfilemode = true\n"
-				+ "[remote \"origin\"]\n" + "\turl = /some/dir\n"
+		rc.update(config);
+		checkConfig("[remote \"origin\"]\n" + "\turl = /some/dir\n"
 				+ "\tfetch = +refs/heads/*:refs/remotes/origin/*\n"
 				+ "\ttagopt = --tags\n");
 	}
 
 	public void testSimpleTimeout() throws Exception {
-		writeConfig("[remote \"spearce\"]\n"
+		readConfig("[remote \"spearce\"]\n"
 				+ "url = http://www.spearce.org/egit.git\n"
 				+ "fetch = +refs/heads/*:refs/remotes/spearce/*\n"
 				+ "timeout = 12\n");
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "spearce");
+		final RemoteConfig rc = new RemoteConfig(config, "spearce");
 		assertEquals(12, rc.getTimeout());
 	}
 
 	public void testSaveTimeout() throws Exception {
-		final RemoteConfig rc = new RemoteConfig(db.getConfig(), "origin");
+		final RemoteConfig rc = new RemoteConfig(config, "origin");
 		rc.addURI(new URIish("/some/dir"));
 		rc.addFetchRefSpec(new RefSpec("+refs/heads/*:refs/remotes/"
 				+ rc.getName() + "/*"));
 		rc.setTimeout(60);
-		rc.update(db.getConfig());
-		db.getConfig().save();
-
-		checkFile(new File(db.getDirectory(), "config"), "[core]\n"
-				+ "\trepositoryformatversion = 0\n" + "\tfilemode = true\n"
-				+ "[remote \"origin\"]\n" + "\turl = /some/dir\n"
+		rc.update(config);
+		checkConfig("[remote \"origin\"]\n" + "\turl = /some/dir\n"
 				+ "\tfetch = +refs/heads/*:refs/remotes/origin/*\n"
 				+ "\ttimeout = 60\n");
 	}

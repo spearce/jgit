@@ -56,9 +56,11 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.spearce.jgit.errors.ConfigInvalidException;
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.RevisionSyntaxException;
 import org.spearce.jgit.util.FS;
+import org.spearce.jgit.util.SystemReader;
 
 /**
  * Represents a Git repository. A repository holds all objects and refs used for
@@ -114,10 +116,28 @@ public class Repository {
 		gitDir = d.getAbsoluteFile();
 		refs = new RefDatabase(this);
 		objectDatabase = new ObjectDirectory(FS.resolve(gitDir, "objects"));
-		config = new RepositoryConfig(this);
+
+		final FileBasedConfig userConfig;
+		userConfig = SystemReader.getInstance().openUserConfig();
+		try {
+			userConfig.load();
+		} catch (ConfigInvalidException e1) {
+			IOException e2 = new IOException("User config file "
+					+ userConfig.getFile().getAbsolutePath() + " invalid: "
+					+ e1);
+			e2.initCause(e1);
+			throw e2;
+		}
+		config = new RepositoryConfig(userConfig, FS.resolve(gitDir, "config"));
 
 		if (objectDatabase.exists()) {
-			getConfig().load();
+			try {
+				getConfig().load();
+			} catch (ConfigInvalidException e1) {
+				IOException e2 = new IOException("Unknown repository format");
+				e2.initCause(e1);
+				throw e2;
+			}
 			final String repositoryFormatVersion = getConfig().getString(
 					"core", null, "repositoryFormatVersion");
 			if (!"0".equals(repositoryFormatVersion)) {

@@ -36,47 +36,31 @@
  */
 package org.spearce.jgit.lib;
 
-import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.concurrent.Callable;
 
+import org.spearce.jgit.errors.ConfigInvalidException;
 import org.spearce.jgit.treewalk.TreeWalk;
+import org.spearce.jgit.util.RawParseUtils;
 
 /**
  * The configuration file based on the blobs stored in the repository
  */
 public class BlobBasedConfig extends Config {
-	private Callable<byte[]> blobProvider;
-
-	/**
-	 * The constructor for blob based config
-	 *
-	 * @param base
-	 *            the base configuration file
-	 * @param blob
-	 *            the provider for blobs
-	 */
-	public BlobBasedConfig(Config base, Callable<byte[]> blob) {
-		super(base);
-		blobProvider = blob;
-	}
-
 	/**
 	 * The constructor from a byte array
 	 *
 	 * @param base
 	 *            the base configuration file
 	 * @param blob
-	 *            the byte array
+	 *            the byte array, should be UTF-8 encoded text.
+	 * @throws ConfigInvalidException
+	 *             the byte array is not a valid configuration format.
 	 */
-	public BlobBasedConfig(Config base, final byte[] blob) {
-		this(base, new Callable<byte[]>() {
-			public byte[] call() throws Exception {
-				return blob;
-			}
-		});
+	public BlobBasedConfig(Config base, final byte[] blob)
+			throws ConfigInvalidException {
+		super(base);
+		fromText(RawParseUtils.decode(blob));
 	}
 
 	/**
@@ -88,18 +72,18 @@ public class BlobBasedConfig extends Config {
 	 *            the repository
 	 * @param objectId
 	 *            the object identifier
+	 * @throws IOException
+	 *             the blob cannot be read from the repository.
+	 * @throws ConfigInvalidException
+	 *             the blob is not a valid configuration format.
 	 */
 	public BlobBasedConfig(Config base, final Repository r,
-			final ObjectId objectId) {
-		this(base, new Callable<byte[]>() {
-			public byte[] call() throws Exception {
-				ObjectLoader loader = r.openBlob(objectId);
-				if (loader == null) {
-					throw new IOException("Blob not found: " + objectId);
-				}
-				return loader.getBytes();
-			}
-		});
+			final ObjectId objectId) throws IOException, ConfigInvalidException {
+		super(base);
+		final ObjectLoader loader = r.openBlob(objectId);
+		if (loader == null)
+			throw new IOException("Blob not found: " + objectId);
+		fromText(RawParseUtils.decode(loader.getBytes()));
 	}
 
 	/**
@@ -111,36 +95,26 @@ public class BlobBasedConfig extends Config {
 	 *            the commit that contains the object
 	 * @param path
 	 *            the path within the tree of the commit
+	 * @throws FileNotFoundException
+	 *             the path does not exist in the commit's tree.
+	 * @throws IOException
+	 *             the tree and/or blob cannot be accessed.
+	 * @throws ConfigInvalidException
+	 *             the blob is not a valid configuration format.
 	 */
-	public BlobBasedConfig(Config base, final Commit commit, final String path) {
-		this(base, new Callable<byte[]>() {
-			public byte[] call() throws Exception {
-				final ObjectId treeId = commit.getTreeId();
-				final Repository r = commit.getRepository();
-				final TreeWalk tree = TreeWalk.forPath(r, path, treeId);
-				if (tree == null) {
-					throw new FileNotFoundException("Entry not found by path: " + path);
-				}
-				ObjectId blobId = tree.getObjectId(0);
-				ObjectLoader loader = tree.getRepository().openBlob(blobId);
-				if (loader == null) {
-					throw new IOException("Blob not found: " + blobId + " for path: " + path);
-				}
-				return loader.getBytes();
-			}
-		});
-	}
-
-	@Override
-	protected InputStream openInputStream() throws IOException {
-		try {
-			return new ByteArrayInputStream(blobProvider.call());
-		} catch (IOException e) {
-			throw e;
-		} catch (Exception e) {
-			final IOException e2 = new IOException("Unable to read config");
-			e2.initCause(e);
-			throw e2;
-		}
+	public BlobBasedConfig(Config base, final Commit commit, final String path)
+			throws FileNotFoundException, IOException, ConfigInvalidException {
+		super(base);
+		final ObjectId treeId = commit.getTreeId();
+		final Repository r = commit.getRepository();
+		final TreeWalk tree = TreeWalk.forPath(r, path, treeId);
+		if (tree == null)
+			throw new FileNotFoundException("Entry not found by path: " + path);
+		final ObjectId blobId = tree.getObjectId(0);
+		final ObjectLoader loader = tree.getRepository().openBlob(blobId);
+		if (loader == null)
+			throw new IOException("Blob not found: " + blobId + " for path: "
+					+ path);
+		fromText(RawParseUtils.decode(loader.getBytes()));
 	}
 }

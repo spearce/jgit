@@ -44,7 +44,7 @@ package org.spearce.jgit.lib;
 import java.io.File;
 import java.io.IOException;
 
-import org.spearce.jgit.util.FS;
+import org.spearce.jgit.errors.ConfigInvalidException;
 import org.spearce.jgit.util.SystemReader;
 
 /**
@@ -54,26 +54,12 @@ import org.spearce.jgit.util.SystemReader;
  * file depending on how it is instantiated.
  */
 public class RepositoryConfig extends FileBasedConfig {
-	/**
-	 * Obtain a new configuration instance for ~/.gitconfig.
-	 *
-	 * @return a new configuration instance to read the user's global
-	 *         configuration file from their home directory.
-	 */
-	public static FileBasedConfig openUserConfig() {
-		return SystemReader.getInstance().openUserConfig();
-	}
-
 	/** Section name for a branch configuration. */
 	public static final String BRANCH_SECTION = "branch";
 
 	CoreConfig core;
 
 	TransferConfig transfer;
-
-	RepositoryConfig(final Repository repo) {
-		this(openUserConfig(), FS.resolve(repo.getDirectory(), "config"));
-	}
 
 	/**
 	 * Create a Git configuration file reader/writer/cache for a specific file.
@@ -187,7 +173,6 @@ public class RepositoryConfig extends FileBasedConfig {
 	 */
 	public void create() {
 		clear();
-		setFileRead(true);
 		setInt("core", null, "repositoryformatversion", 0);
 		setBoolean("core", null, "filemode", true);
 
@@ -196,7 +181,7 @@ public class RepositoryConfig extends FileBasedConfig {
 	}
 
 	@Override
-	public void load() throws IOException {
+	public void load() throws IOException, ConfigInvalidException {
 		super.load();
 		core = new CoreConfig(this);
 		transfer = new TransferConfig(this);

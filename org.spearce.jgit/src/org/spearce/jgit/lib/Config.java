@@ -41,12 +41,6 @@
  */
 package org.spearce.jgit.lib;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -55,18 +49,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.spearce.jgit.errors.ConfigInvalidException;
 import org.spearce.jgit.util.StringUtils;
 
+
 /**
- * The configuration file stored in the format similar to the ".git/config"
- * file.
+ * Git style {@code .config}, {@code .gitconfig}, {@code .gitmodules} file.
  */
-public abstract class Config {
+public class Config {
 	private static final long KiB = 1024;
 	private static final long MiB = 1024 * KiB;
 	private static final long GiB = 1024 * MiB;
-
-	private boolean fileRead;
 
 	private List<Entry> entries;
 
@@ -86,26 +79,21 @@ public abstract class Config {
 	 */
 	private static final String MAGIC_EMPTY_VALUE = new String();
 
-	/**
-	 * The constructor for configuration file
-	 *
-	 * @param base
-	 *            the base configuration file to be consulted when value is
-	 *            missing from this file
-	 */
-	protected Config(Config base) {
-		baseConfig = base;
-		clear();
+	/** Create a configuration with no default fallback. */
+	public Config() {
+		this(null);
 	}
 
 	/**
-	 * Set file read indicator
+	 * Create an empty configuration with a fallback for missing keys.
 	 *
-	 * @param ok
-	 *            true if file does not need loading
+	 * @param defaultConfig
+	 *            the base configuration to be consulted when a key is missing
+	 *            from this configuration instance.
 	 */
-	protected void setFileRead(boolean ok) {
-		fileRead = ok;
+	public Config(Config defaultConfig) {
+		baseConfig = defaultConfig;
+		clear();
 	}
 
 	/**
@@ -373,8 +361,6 @@ public abstract class Config {
 	 */
 	public Set<String> getSubsections(final String section) {
 		final Set<String> result = new HashSet<String>();
-		ensureLoaded();
-
 		for (final Entry e : entries) {
 			if (StringUtils.equalsIgnoreCase(section, e.section)
 					&& e.subsection != null)
@@ -398,22 +384,8 @@ public abstract class Config {
 			return null;
 	}
 
-	private void ensureLoaded() {
-		if (!fileRead) {
-			try {
-				load();
-			} catch (FileNotFoundException err) {
-				// Oh well. No sense in complaining about it.
-				//
-			} catch (IOException err) {
-				err.printStackTrace();
-			}
-		}
-	}
-
 	private Object getRawEntry(final String section, final String subsection,
 			final String name) {
-		ensureLoaded();
 		return byName.get(concatenateKey(section, subsection, name));
 	}
 
@@ -678,127 +650,114 @@ public abstract class Config {
 	}
 
 	/**
-	 * Print configuration file to the PrintWriter
-	 *
-	 * @param r
-	 *             stream to write the configuration to.
+	 * @return this configuration, formatted as a Git style text file.
 	 */
-	protected void printConfig(final PrintWriter r) {
+	public String toText() {
+		final StringBuilder out = new StringBuilder();
 		for (final Entry e : entries) {
-			if (e.prefix != null) {
-				r.print(e.prefix);
-			}
+			if (e.prefix != null)
+				out.append(e.prefix);
 			if (e.section != null && e.name == null) {
-				r.print('[');
-				r.print(e.section);
+				out.append('[');
+				out.append(e.section);
 				if (e.subsection != null) {
-					r.print(' ');
-					r.print('"');
-					r.print(escapeValue(e.subsection));
-					r.print('"');
+					out.append(' ');
+					out.append('"');
+					out.append(escapeValue(e.subsection));
+					out.append('"');
 				}
-				r.print(']');
+				out.append(']');
 			} else if (e.section != null && e.name != null) {
-				if (e.prefix == null || "".equals(e.prefix)) {
-					r.print('\t');
-				}
-				r.print(e.name);
+				if (e.prefix == null || "".equals(e.prefix))
+					out.append('\t');
+				out.append(e.name);
 				if (e.value != null) {
 					if (MAGIC_EMPTY_VALUE != e.value) {
-						r.print(" = ");
-						r.print(escapeValue(e.value));
+						out.append(" = ");
+						out.append(escapeValue(e.value));
 					}
 				}
-				if (e.suffix != null) {
-					r.print(' ');
-				}
+				if (e.suffix != null)
+					out.append(' ');
 			}
-			if (e.suffix != null) {
-				r.print(e.suffix);
-			}
-			r.print('\n');
+			if (e.suffix != null)
+				out.append(e.suffix);
+			out.append('\n');
 		}
+		return out.toString();
 	}
 
 	/**
-	 * Read the config file
+	 * Clear this configuration and reset to the contents of the parsed string.
 	 *
-	 * @throws IOException in case of IO error
+	 * @param text
+	 *            Git style text file listing configuration properties.
+	 * @throws ConfigInvalidException
+	 *             the text supplied is not formatted correctly. No changes were
+	 *             made to {@code this}.
 	 */
-	public void load() throws IOException {
-		clear();
-		fileRead = true;
-		final BufferedReader r = new BufferedReader(new InputStreamReader(
-				openInputStream(), Constants.CHARSET));
-		try {
-			Entry last = null;
-			Entry e = new Entry();
-			for (;;) {
-				r.mark(1);
-				int input = r.read();
-				final char in = (char) input;
-				if (-1 == input) {
-					break;
-				} else if ('\n' == in) {
-					// End of this entry.
-					add(e);
-					if (e.section != null) {
-						last = e;
-					}
-					e = new Entry();
-				} else if (e.suffix != null) {
-					// Everything up until the end-of-line is in the suffix.
-					e.suffix += in;
-				} else if (';' == in || '#' == in) {
-					// The rest of this line is a comment; put into suffix.
-					e.suffix = String.valueOf(in);
-				} else if (e.section == null && Character.isWhitespace(in)) {
-					// Save the leading whitespace (if any).
-					if (e.prefix == null) {
-						e.prefix = "";
-					}
-					e.prefix += in;
-				} else if ('[' == in) {
-					// This is a section header.
-					e.section = readSectionName(r);
-					input = r.read();
-					if ('"' == input) {
-						e.subsection = readValue(r, true, '"');
-						input = r.read();
-					}
-					if (']' != input) {
-						throw new IOException("Bad group header.");
-					}
-					e.suffix = "";
-				} else if (last != null) {
-					// Read a value.
-					e.section = last.section;
-					e.subsection = last.subsection;
-					r.reset();
-					e.name = readKeyName(r);
-					if (e.name.endsWith("\n")) {
-						e.name = e.name.substring(0, e.name.length() - 1);
-						e.value = MAGIC_EMPTY_VALUE;
-					} else
-						e.value = readValue(r, false, -1);
-				} else {
-					throw new IOException("Invalid line in config file.");
+	public void fromText(final String text) throws ConfigInvalidException {
+		entries = new ArrayList<Entry>();
+		byName = new HashMap<String, Object>();
+
+		final StringReader in = new StringReader(text);
+		Entry last = null;
+		Entry e = new Entry();
+		for (;;) {
+			int input = in.read();
+			if (-1 == input)
+				break;
+
+			final char c = (char) input;
+			if ('\n' == c) {
+				// End of this entry.
+				add(e);
+				if (e.section != null)
+					last = e;
+				e = new Entry();
+
+			} else if (e.suffix != null) {
+				// Everything up until the end-of-line is in the suffix.
+				e.suffix += c;
+
+			} else if (';' == c || '#' == c) {
+				// The rest of this line is a comment; put into suffix.
+				e.suffix = String.valueOf(c);
+
+			} else if (e.section == null && Character.isWhitespace(c)) {
+				// Save the leading whitespace (if any).
+				if (e.prefix == null)
+					e.prefix = "";
+				e.prefix += c;
+
+			} else if ('[' == c) {
+				// This is a section header.
+				e.section = readSectionName(in);
+				input = in.read();
+				if ('"' == input) {
+					e.subsection = readValue(in, true, '"');
+					input = in.read();
 				}
-			}
-		} finally {
-			r.close();
+				if (']' != input)
+					throw new ConfigInvalidException("Bad group header");
+				e.suffix = "";
+
+			} else if (last != null) {
+				// Read a value.
+				e.section = last.section;
+				e.subsection = last.subsection;
+				in.reset();
+				e.name = readKeyName(in);
+				if (e.name.endsWith("\n")) {
+					e.name = e.name.substring(0, e.name.length() - 1);
+					e.value = MAGIC_EMPTY_VALUE;
+				} else
+					e.value = readValue(in, false, -1);
+
+			} else
+				throw new ConfigInvalidException("Invalid line in config file");
 		}
 	}
-
-	/**
-	 * Open input stream for configuration file. It is used during the
-	 * {@link #load()} method.
-	 *
-	 * @return input stream for the configuration file.
-	 * @throws IOException
-	 *             if the stream cannot be created
-	 */
-	protected abstract InputStream openInputStream() throws IOException;
 
 	/**
 	 * Clear the configuration file
@@ -827,132 +786,136 @@ public abstract class Config {
 		}
 	}
 
-	private static String readSectionName(final BufferedReader r)
-			throws IOException {
-		final StringBuffer name = new StringBuffer();
+	private static String readSectionName(final StringReader in)
+			throws ConfigInvalidException {
+		final StringBuilder name = new StringBuilder();
 		for (;;) {
-			r.mark(1);
-			int c = r.read();
-			if (c < 0) {
-				throw new IOException("Unexpected end of config file.");
-			} else if (']' == c) {
-				r.reset();
+			int c = in.read();
+			if (c < 0)
+				throw new ConfigInvalidException("Unexpected end of config file");
+
+			if (']' == c) {
+				in.reset();
 				break;
-			} else if (' ' == c || '\t' == c) {
+			}
+
+			if (' ' == c || '\t' == c) {
 				for (;;) {
-					r.mark(1);
-					c = r.read();
-					if (c < 0) {
-						throw new IOException("Unexpected end of config file.");
-					} else if ('"' == c) {
-						r.reset();
+					c = in.read();
+					if (c < 0)
+						throw new ConfigInvalidException("Unexpected end of config file");
+
+					if ('"' == c) {
+						in.reset();
 						break;
-					} else if (' ' == c || '\t' == c) {
-						// Skipped...
-					} else {
-						throw new IOException("Bad section entry. : " + name
-								+ "," + c);
 					}
+
+					if (' ' == c || '\t' == c)
+						continue; // Skipped...
+					throw new ConfigInvalidException("Bad section entry: " + name);
 				}
 				break;
-			} else if (Character.isLetterOrDigit((char) c) || '.' == c
-					|| '-' == c) {
-				name.append((char) c);
-			} else {
-				throw new IOException("Bad section entry. : " + name + ", " + c);
 			}
+
+			if (Character.isLetterOrDigit((char) c) || '.' == c || '-' == c)
+				name.append((char) c);
+			else
+				throw new ConfigInvalidException("Bad section entry: " + name);
 		}
 		return name.toString();
 	}
 
-	private static String readKeyName(final BufferedReader r)
-			throws IOException {
+	private static String readKeyName(final StringReader in)
+			throws ConfigInvalidException {
 		final StringBuffer name = new StringBuffer();
 		for (;;) {
-			r.mark(1);
-			int c = r.read();
-			if (c < 0) {
-				throw new IOException("Unexpected end of config file.");
-			} else if ('=' == c) {
+			int c = in.read();
+			if (c < 0)
+				throw new ConfigInvalidException("Unexpected end of config file");
+
+			if ('=' == c)
 				break;
-			} else if (' ' == c || '\t' == c) {
+
+			if (' ' == c || '\t' == c) {
 				for (;;) {
-					r.mark(1);
-					c = r.read();
-					if (c < 0) {
-						throw new IOException("Unexpected end of config file.");
-					} else if ('=' == c) {
+					c = in.read();
+					if (c < 0)
+						throw new ConfigInvalidException("Unexpected end of config file");
+
+					if ('=' == c)
 						break;
-					} else if (';' == c || '#' == c || '\n' == c) {
-						r.reset();
+
+					if (';' == c || '#' == c || '\n' == c) {
+						in.reset();
 						break;
-					} else if (' ' == c || '\t' == c) {
-						// Skipped...
-					} else {
-						throw new IOException("Bad entry delimiter.");
 					}
+
+					if (' ' == c || '\t' == c)
+						continue; // Skipped...
+					throw new ConfigInvalidException("Bad entry delimiter");
 				}
 				break;
-			} else if (Character.isLetterOrDigit((char) c) || c == '-') {
+			}
+
+			if (Character.isLetterOrDigit((char) c) || c == '-') {
 				// From the git-config man page:
 				// The variable names are case-insensitive and only
 				// alphanumeric characters and - are allowed.
 				name.append((char) c);
 			} else if ('\n' == c) {
-				r.reset();
+				in.reset();
 				name.append((char) c);
 				break;
-			} else {
-				throw new IOException("Bad config entry name: " + name
-						+ (char) c);
-			}
+			} else
+				throw new ConfigInvalidException("Bad entry name: " + name);
 		}
 		return name.toString();
 	}
 
-	private static String readValue(final BufferedReader r, boolean quote,
-			final int eol) throws IOException {
+	private static String readValue(final StringReader in, boolean quote,
+			final int eol) throws ConfigInvalidException {
 		final StringBuffer value = new StringBuffer();
 		boolean space = false;
 		for (;;) {
-			r.mark(1);
-			int c = r.read();
+			int c = in.read();
 			if (c < 0) {
 				if (value.length() == 0)
-					throw new IOException("Unexpected end of config file.");
+					throw new ConfigInvalidException("Unexpected end of config file");
 				break;
 			}
+
 			if ('\n' == c) {
-				if (quote) {
-					throw new IOException("Newline in quotes not allowed.");
-				}
-				r.reset();
+				if (quote)
+					throw new ConfigInvalidException("Newline in quotes not allowed");
+				in.reset();
 				break;
 			}
-			if (eol == c) {
+
+			if (eol == c)
 				break;
-			}
+
 			if (!quote) {
 				if (Character.isWhitespace((char) c)) {
 					space = true;
 					continue;
 				}
 				if (';' == c || '#' == c) {
-					r.reset();
+					in.reset();
 					break;
 				}
 			}
+
 			if (space) {
-				if (value.length() > 0) {
+				if (value.length() > 0)
 					value.append(' ');
-				}
 				space = false;
 			}
+
 			if ('\\' == c) {
-				c = r.read();
+				c = in.read();
 				switch (c) {
 				case -1:
-					throw new IOException("End of file in escape.");
+					throw new ConfigInvalidException("End of file in escape");
 				case '\n':
 					continue;
 				case 't':
@@ -971,13 +934,15 @@ public abstract class Config {
 					value.append('"');
 					continue;
 				default:
-					throw new IOException("Bad escape: " + ((char) c));
+					throw new ConfigInvalidException("Bad escape: " + ((char) c));
 				}
 			}
+
 			if ('"' == c) {
 				quote = !quote;
 				continue;
 			}
+
 			value.append((char) c);
 		}
 		return value.length() > 0 ? value.toString() : null;
@@ -1038,6 +1003,29 @@ public abstract class Config {
 			if (a == null || b == null)
 				return false;
 			return a.equals(b);
+		}
+	}
+
+	private static class StringReader {
+		private final char[] buf;
+
+		private int pos;
+
+		StringReader(final String in) {
+			buf = in.toCharArray();
+		}
+
+		int read() {
+			try {
+				return buf[pos++];
+			} catch (ArrayIndexOutOfBoundsException e) {
+				pos = buf.length;
+				return -1;
+			}
+		}
+
+		void reset() {
+			pos--;
 		}
 	}
 }

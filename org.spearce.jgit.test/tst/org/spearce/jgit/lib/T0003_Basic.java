@@ -47,6 +47,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import org.spearce.jgit.errors.ConfigInvalidException;
+
 public class T0003_Basic extends RepositoryTestCase {
 	public void test001_Initalize() {
 		final File gitdir = new File(trash, ".git");
@@ -118,7 +120,7 @@ public class T0003_Basic extends RepositoryTestCase {
 		assertTrue("Read-only " + o, !o.canWrite());
 	}
 
-	public void test004_CheckNewConfig() throws IOException {
+	public void test004_CheckNewConfig() {
 		final RepositoryConfig c = db.getConfig();
 		assertNotNull(c);
 		assertEquals("0", c.getString("core", null, "repositoryformatversion"));
@@ -126,13 +128,11 @@ public class T0003_Basic extends RepositoryTestCase {
 		assertEquals("true", c.getString("core", null, "filemode"));
 		assertEquals("true", c.getString("cOrE", null, "fIlEModE"));
 		assertNull(c.getString("notavalue", null, "reallyNotAValue"));
-		c.load();
 	}
 
-	public void test005_ReadSimpleConfig() throws IOException {
+	public void test005_ReadSimpleConfig() {
 		final RepositoryConfig c = db.getConfig();
 		assertNotNull(c);
-		c.load();
 		assertEquals("0", c.getString("core", null, "repositoryformatversion"));
 		assertEquals("0", c.getString("CoRe", null, "REPOSITORYFoRmAtVeRsIoN"));
 		assertEquals("true", c.getString("core", null, "filemode"));
@@ -140,7 +140,8 @@ public class T0003_Basic extends RepositoryTestCase {
 		assertNull(c.getString("notavalue", null, "reallyNotAValue"));
 	}
 
-	public void test006_ReadUglyConfig() throws IOException {
+	public void test006_ReadUglyConfig() throws IOException,
+			ConfigInvalidException {
 		final RepositoryConfig c = db.getConfig();
 		final File cfg = new File(db.getDirectory(), "config");
 		final FileWriter pw = new FileWriter(cfg);
@@ -192,7 +193,8 @@ public class T0003_Basic extends RepositoryTestCase {
 		}
 	}
 
-	public void test009_CreateCommitOldFormat() throws IOException {
+	public void test009_CreateCommitOldFormat() throws IOException,
+			ConfigInvalidException {
 		writeTrashFile(".git/config", "[core]\n" + "legacyHeaders=1\n");
 		db.getConfig().load();
 
@@ -417,8 +419,6 @@ public class T0003_Basic extends RepositoryTestCase {
 	}
 
 	public void test026_CreateCommitMultipleparents() throws IOException {
-		db.getConfig().load();
-
 		final Tree t = new Tree(db);
 		final FileTreeEntry f = t.addFile("i-am-a-file");
 		writeTrashFile(f.getName(), "and this is the data in me\n");
