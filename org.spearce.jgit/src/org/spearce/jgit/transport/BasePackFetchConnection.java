@@ -46,12 +46,13 @@ import java.util.Set;
 
 import org.spearce.jgit.errors.TransportException;
 import org.spearce.jgit.lib.AnyObjectId;
+import org.spearce.jgit.lib.Config;
 import org.spearce.jgit.lib.MutableObjectId;
 import org.spearce.jgit.lib.ObjectId;
 import org.spearce.jgit.lib.PackLock;
 import org.spearce.jgit.lib.ProgressMonitor;
 import org.spearce.jgit.lib.Ref;
-import org.spearce.jgit.lib.RepositoryConfig;
+import org.spearce.jgit.lib.Config.SectionParser;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevCommitList;
 import org.spearce.jgit.revwalk.RevFlag;
@@ -146,10 +147,10 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 	BasePackFetchConnection(final PackTransport packTransport) {
 		super(packTransport);
 
-		final RepositoryConfig cfg = local.getConfig();
+		final FetchConfig cfg = local.getConfig().get(FetchConfig.KEY);
 		includeTags = transport.getTagOpt() != TagOpt.NO_TAGS;
 		thinPack = transport.isFetchThin();
-		allowOfsDelta = cfg.getBoolean("repack", "usedeltabaseoffset", true);
+		allowOfsDelta = cfg.allowOfsDelta;
 
 		walk = new RevWalk(local);
 		reachableCommits = new RevCommitList<RevCommit>();
@@ -160,6 +161,20 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 		walk.carry(COMMON);
 		walk.carry(REACHABLE);
 		walk.carry(ADVERTISED);
+	}
+
+	private static class FetchConfig {
+		static final SectionParser<FetchConfig> KEY = new SectionParser<FetchConfig>() {
+			public FetchConfig parse(final Config cfg) {
+				return new FetchConfig(cfg);
+			}
+		};
+
+		final boolean allowOfsDelta;
+
+		FetchConfig(final Config c) {
+			allowOfsDelta = c.getBoolean("repack", "usedeltabaseoffset", true);
+		}
 	}
 
 	public final void fetch(final ProgressMonitor monitor,

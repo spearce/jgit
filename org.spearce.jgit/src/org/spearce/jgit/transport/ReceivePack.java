@@ -54,6 +54,7 @@ import java.util.Set;
 
 import org.spearce.jgit.errors.MissingObjectException;
 import org.spearce.jgit.errors.PackProtocolException;
+import org.spearce.jgit.lib.Config;
 import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.NullProgressMonitor;
 import org.spearce.jgit.lib.ObjectId;
@@ -62,7 +63,7 @@ import org.spearce.jgit.lib.PersonIdent;
 import org.spearce.jgit.lib.Ref;
 import org.spearce.jgit.lib.RefUpdate;
 import org.spearce.jgit.lib.Repository;
-import org.spearce.jgit.lib.RepositoryConfig;
+import org.spearce.jgit.lib.Config.SectionParser;
 import org.spearce.jgit.revwalk.ObjectWalk;
 import org.spearce.jgit.revwalk.RevCommit;
 import org.spearce.jgit.revwalk.RevFlag;
@@ -158,15 +159,43 @@ public class ReceivePack {
 		db = into;
 		walk = new RevWalk(db);
 
-		final RepositoryConfig cfg = db.getConfig();
-		checkReceivedObjects = cfg.getBoolean("receive", "fsckobjects", false);
-		allowCreates = true;
-		allowDeletes = !cfg.getBoolean("receive", "denydeletes", false);
-		allowNonFastForwards = !cfg.getBoolean("receive",
-				"denynonfastforwards", false);
-		allowOfsDelta = cfg.getBoolean("repack", "usedeltabaseoffset", true);
+		final ReceiveConfig cfg = db.getConfig().get(ReceiveConfig.KEY);
+		checkReceivedObjects = cfg.checkReceivedObjects;
+		allowCreates = cfg.allowCreates;
+		allowDeletes = cfg.allowDeletes;
+		allowNonFastForwards = cfg.allowNonFastForwards;
+		allowOfsDelta = cfg.allowOfsDelta;
 		preReceive = PreReceiveHook.NULL;
 		postReceive = PostReceiveHook.NULL;
+	}
+
+	private static class ReceiveConfig {
+		static final SectionParser<ReceiveConfig> KEY = new SectionParser<ReceiveConfig>() {
+			public ReceiveConfig parse(final Config cfg) {
+				return new ReceiveConfig(cfg);
+			}
+		};
+
+		final boolean checkReceivedObjects;
+
+		final boolean allowCreates;
+
+		final boolean allowDeletes;
+
+		final boolean allowNonFastForwards;
+
+		final boolean allowOfsDelta;
+
+		ReceiveConfig(final Config config) {
+			checkReceivedObjects = config.getBoolean("receive", "fsckobjects",
+					false);
+			allowCreates = true;
+			allowDeletes = !config.getBoolean("receive", "denydeletes", false);
+			allowNonFastForwards = !config.getBoolean("receive",
+					"denynonfastforwards", false);
+			allowOfsDelta = config.getBoolean("repack", "usedeltabaseoffset",
+					true);
+		}
 	}
 
 	/** @return the repository this receive completes into. */
