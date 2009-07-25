@@ -43,10 +43,8 @@ package org.spearce.jgit.lib;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.spearce.jgit.errors.ConfigInvalidException;
@@ -64,11 +62,6 @@ public class Config {
 	private List<Entry> entries;
 
 	final Config baseConfig;
-
-	/**
-	 * Map from name to values
-	 */
-	private Map<String, Object> byName;
 
 	/**
 	 * Magic value indicating a missing entry.
@@ -334,19 +327,9 @@ public class Config {
 	 */
 	public String[] getStringList(final String section, String subsection,
 			final String name) {
-		final Object o = getRawEntry(section, subsection, name);
-		if (o instanceof List) {
-			final List lst = (List) o;
-			final String[] r = new String[lst.size()];
-			for (int i = 0; i < r.length; i++)
-				r[i] = ((Entry) lst.get(i)).value;
-			return r;
-		}
-
-		if (o instanceof Entry) {
-			return new String[] { ((Entry) o).value };
-		}
-
+		final List<String> lst = getRawStringList(section, subsection, name);
+		if (lst != null)
+			return lst.toArray(new String[lst.size()]);
 		if (baseConfig != null)
 			return baseConfig.getStringList(section, subsection, name);
 		return new String[0];
@@ -373,43 +356,36 @@ public class Config {
 
 	private String getRawString(final String section, final String subsection,
 			final String name) {
-		final Object o = getRawEntry(section, subsection, name);
-		if (o instanceof List) {
-			return ((Entry) ((List) o).get(0)).value;
-		} else if (o instanceof Entry) {
-			return ((Entry) o).value;
-		} else if (baseConfig != null)
+		final List<String> lst = getRawStringList(section, subsection, name);
+		if (lst != null)
+			return lst.get(0);
+		else if (baseConfig != null)
 			return baseConfig.getRawString(section, subsection, name);
 		else
 			return null;
 	}
 
-	private Object getRawEntry(final String section, final String subsection,
-			final String name) {
-		return byName.get(concatenateKey(section, subsection, name));
+	private List<String> getRawStringList(final String section,
+			final String subsection, final String name) {
+		List<String> r = null;
+		for (final Entry e : entries) {
+			if (e.match(section, subsection, name))
+				r = add(r, e.value);
+		}
+		return r;
 	}
 
-	/**
-	 * Create simple a key name from the key components
-	 *
-	 * @param section
-	 *            the section name
-	 * @param subsection
-	 *            the subsection name
-	 * @param name
-	 *            the key name
-	 * @return a simple key name that have all components concatenated and the
-	 *         case converted
-	 */
-	private static String concatenateKey(final String section,
-			final String subsection, final String name) {
-		String ss;
-		if (subsection != null)
-			ss = "." + subsection;
-		else
-			ss = "";
-		return StringUtils.toLowerCase(section) + ss + "."
-				+ StringUtils.toLowerCase(name);
+	private static List<String> add(final List<String> curr, final String value) {
+		if (curr == null)
+			return Collections.singletonList(value);
+		if (curr.size() == 1) {
+			final List<String> r = new ArrayList<String>(2);
+			r.add(curr.get(0));
+			r.add(value);
+			return r;
+		}
+		curr.add(value);
+		return curr;
 	}
 
 	/**
@@ -551,31 +527,6 @@ public class Config {
 	 */
 	public void setStringList(final String section, final String subsection,
 			final String name, final List<String> values) {
-		// Update our parsed cache of values for future reference.
-		//
-		String key = concatenateKey(section, subsection, name);
-		if (values.size() == 0)
-			byName.remove(key);
-		else if (values.size() == 1) {
-			final Entry e = new Entry();
-			e.section = section;
-			e.subsection = subsection;
-			e.name = name;
-			e.value = values.get(0);
-			byName.put(key, e);
-		} else {
-			final ArrayList<Entry> eList = new ArrayList<Entry>(values.size());
-			for (final String v : values) {
-				final Entry e = new Entry();
-				e.section = section;
-				e.subsection = subsection;
-				e.name = name;
-				e.value = v;
-				eList.add(e);
-			}
-			byName.put(key, eList);
-		}
-
 		int entryIndex = 0;
 		int valueIndex = 0;
 		int insertPosition = -1;
@@ -697,9 +648,7 @@ public class Config {
 	 *             made to {@code this}.
 	 */
 	public void fromText(final String text) throws ConfigInvalidException {
-		entries = new ArrayList<Entry>();
-		byName = new HashMap<String, Object>();
-
+		final List<Entry> newEntries = new ArrayList<Entry>();
 		final StringReader in = new StringReader(text);
 		Entry last = null;
 		Entry e = new Entry();
@@ -711,7 +660,7 @@ public class Config {
 			final char c = (char) input;
 			if ('\n' == c) {
 				// End of this entry.
-				add(e);
+				newEntries.add(e);
 				if (e.section != null)
 					last = e;
 				e = new Entry();
@@ -757,6 +706,8 @@ public class Config {
 			} else
 				throw new ConfigInvalidException("Invalid line in config file");
 		}
+
+		entries = newEntries;
 	}
 
 	/**
@@ -764,26 +715,6 @@ public class Config {
 	 */
 	protected void clear() {
 		entries = new ArrayList<Entry>();
-		byName = new HashMap<String, Object>();
-	}
-
-	@SuppressWarnings("unchecked")
-	private void add(final Entry e) {
-		entries.add(e);
-		if (e.section != null && e.name != null) {
-			final String key = concatenateKey(e.section, e.subsection, e.name);
-			final Object o = byName.get(key);
-			if (o == null) {
-				byName.put(key, e);
-			} else if (o instanceof Entry) {
-				final ArrayList<Object> l = new ArrayList<Object>();
-				l.add(o);
-				l.add(e);
-				byName.put(key, l);
-			} else if (o instanceof List) {
-				((List<Entry>) o).add(e);
-			}
-		}
 	}
 
 	private static String readSectionName(final StringReader in)
