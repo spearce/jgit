@@ -44,7 +44,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.spearce.jgit.lib.Config;
-import org.spearce.jgit.lib.RepositoryConfig;
 
 /**
  * A remembered remote repository, including URLs and RefSpecs.
@@ -96,8 +95,8 @@ public class RemoteConfig {
 	 * @throws URISyntaxException
 	 *             one of the URIs within the remote's configuration is invalid.
 	 */
-	public static List<RemoteConfig> getAllRemoteConfigs(
-			final RepositoryConfig rc) throws URISyntaxException {
+	public static List<RemoteConfig> getAllRemoteConfigs(final Config rc)
+			throws URISyntaxException {
 		final List<String> names = new ArrayList<String>(rc
 				.getSubsections(SECTION));
 		Collections.sort(names);
