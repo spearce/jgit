@@ -53,7 +53,7 @@ class MockSystemReader extends SystemReader {
 		init(Constants.GIT_AUTHOR_EMAIL_KEY);
 		init(Constants.GIT_COMMITTER_NAME_KEY);
 		init(Constants.GIT_COMMITTER_EMAIL_KEY);
-		userGitConfig = new FileBasedConfig(null, null);
+		userGitConfig = new FileBasedConfig(null);
 	}
 
 	private void init(final String n) {

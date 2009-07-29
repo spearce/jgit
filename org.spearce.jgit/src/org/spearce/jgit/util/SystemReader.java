@@ -42,7 +42,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import org.spearce.jgit.lib.FileBasedConfig;
-import org.spearce.jgit.lib.RepositoryConfig;
 
 /**
  * Interface to read values from the system.
@@ -66,7 +65,7 @@ public abstract class SystemReader {
 
 		public FileBasedConfig openUserConfig() {
 			final File home = FS.userHome();
-			return new RepositoryConfig(null, new File(home, ".gitconfig"));
+			return new FileBasedConfig(new File(home, ".gitconfig"));
 		}
 
 		public String getHostname() {

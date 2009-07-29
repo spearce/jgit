@@ -237,7 +237,7 @@ public abstract class RepositoryTestCase extends TestCase {
 		}
 
 		final MockSystemReader mockSystemReader = new MockSystemReader();
-		mockSystemReader.userGitConfig = new FileBasedConfig(null, new File(
+		mockSystemReader.userGitConfig = new FileBasedConfig(new File(
 				trash_git, "usergitconfig"));
 		SystemReader.setInstance(mockSystemReader);
 

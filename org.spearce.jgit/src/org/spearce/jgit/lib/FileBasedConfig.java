@@ -55,6 +55,16 @@ public class FileBasedConfig extends Config {
 	private final File configFile;
 
 	/**
+	 * Create a configuration with no default fallback.
+	 *
+	 * @param cfgLocation
+	 *            the location of the configuration file on the file system
+	 */
+	public FileBasedConfig(File cfgLocation) {
+		this(null, cfgLocation);
+	}
+
+	/**
 	 * The constructor
 	 *
 	 * @param base
