@@ -98,6 +98,12 @@ public class FileBasedConfig extends Config {
 			fromText(RawParseUtils.decode(NB.readFully(getFile())));
 		} catch (FileNotFoundException noFile) {
 			clear();
+		} catch (IOException e) {
+			final IOException e2 = new IOException("Cannot read " + getFile());
+			e2.initCause(e);
+			throw e2;
+		} catch (ConfigInvalidException e) {
+			throw new ConfigInvalidException("Cannot read " + getFile(), e);
 		}
 	}
 
