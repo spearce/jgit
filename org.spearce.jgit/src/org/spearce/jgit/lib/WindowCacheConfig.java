@@ -160,7 +160,7 @@ public class WindowCacheConfig {
 	 *
 	 * @param rc configuration to read properties from.
 	 */
-	public void fromConfig(final RepositoryConfig rc) {
+	public void fromConfig(final Config rc) {
 		setPackedGitOpenFiles(rc.getInt("core", null, "packedgitopenfiles", getPackedGitOpenFiles()));
 		setPackedGitLimit(rc.getLong("core", null, "packedgitlimit", getPackedGitLimit()));
 		setPackedGitWindowSize(rc.getInt("core", null, "packedgitwindowsize", getPackedGitWindowSize()));
