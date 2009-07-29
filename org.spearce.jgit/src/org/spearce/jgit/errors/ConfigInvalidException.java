@@ -50,4 +50,16 @@ public class ConfigInvalidException extends Exception {
 	public ConfigInvalidException(final String message) {
 		super(message);
 	}
+
+	/**
+	 * Construct an invalid configuration error.
+	 *
+	 * @param message
+	 *            why the configuration is invalid.
+	 * @param cause
+	 *            root cause of the error.
+	 */
+	public ConfigInvalidException(final String message, final Throwable cause) {
+		super(message, cause);
+	}
 }
