@@ -547,7 +547,6 @@ public class ReceivePack {
 		if (adv.isEmpty())
 			adv.advertiseId(ObjectId.zeroId(), "capabilities^{}");
 		pckOut.end();
-		walk.disposeFlag(advertised);
 	}
 
 	private void recvCommands() throws IOException {
