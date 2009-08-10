@@ -3,6 +3,7 @@
 O_CLI=jgit
 O_JAR=jgit.jar
 O_SRC=jgit_src.zip
+O_DOC=jgit_docs.zip
 
 PLUGINS="
 	org.spearce.jgit
@@ -39,6 +40,7 @@ cleanup_bin() {
 	do
 		rm -rf $p/bin2
 	done
+	rm -rf docs
 }
 
 die() {
@@ -49,7 +51,7 @@ die() {
 }
 
 cleanup_bin
-rm -f $O_CLI $O_JAR $O_SRC
+rm -f $O_CLI $O_JAR $O_SRC $O_DOC
 
 VN=`git describe --abbrev=4 HEAD 2>/dev/null`
 git update-index -q --refresh
@@ -117,5 +119,14 @@ java org.spearce.jgit.pgm.build.JarLinkUtil \
 chmod 555 $O_CLI+ &&
 mv $O_CLI+ $O_CLI &&
 echo "Created $O_CLI." || die "Build failed."
+
+echo "Building Javadocs ..."
+for p in $PLUGINS; do
+	javadoc -sourcepath "$p/src/" -d "docs/$p/" \
+	`find "$p/src" -name "*.java"`
+done
+
+(cd docs && jar cf "../$O_DOC" .)
+echo "Created $O_DOC."
 
 cleanup_bin
