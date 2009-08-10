@@ -41,9 +41,6 @@ import java.io.IOException;
 
 import org.spearce.jgit.errors.IncorrectObjectTypeException;
 import org.spearce.jgit.errors.MissingObjectException;
-import org.spearce.jgit.revwalk.filter.AndRevFilter;
-import org.spearce.jgit.revwalk.filter.NotRevFilter;
-import org.spearce.jgit.revwalk.filter.OrRevFilter;
 import org.spearce.jgit.treewalk.TreeWalk;
 
 /**
@@ -74,9 +71,9 @@ import org.spearce.jgit.treewalk.TreeWalk;
  * <p>
  * <b>Boolean modifiers:</b>
  * <ul>
- * <li>AND: {@link AndRevFilter}</li>
- * <li>OR: {@link OrRevFilter}</li>
- * <li>NOT: {@link NotRevFilter}</li>
+ * <li>AND: {@link AndTreeFilter}</li>
+ * <li>OR: {@link OrTreeFilter}</li>
+ * <li>NOT: {@link NotTreeFilter}</li>
  * </ul>
  */
 public abstract class TreeFilter {
