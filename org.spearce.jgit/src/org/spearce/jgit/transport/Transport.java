@@ -624,7 +624,7 @@ public abstract class Transport {
 	}
 
 	/**
-	 * Default setting is: {@value RemoteConfig#DEFAULT_RECEIVE_PACK}
+	 * Default setting is: {@link RemoteConfig#DEFAULT_RECEIVE_PACK}
 	 *
 	 * @return remote executable providing receive-pack service for pack
 	 *         transports.
@@ -636,7 +636,7 @@ public abstract class Transport {
 
 	/**
 	 * Set remote executable providing receive-pack service for pack transports.
-	 * Default setting is: {@value RemoteConfig#DEFAULT_RECEIVE_PACK}
+	 * Default setting is: {@link RemoteConfig#DEFAULT_RECEIVE_PACK}
 	 *
 	 * @param optionReceivePack
 	 *            remote executable, if null or empty default one is set;
