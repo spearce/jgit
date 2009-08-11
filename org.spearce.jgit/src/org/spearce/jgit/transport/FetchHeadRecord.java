@@ -41,7 +41,8 @@ import static org.spearce.jgit.lib.Constants.R_HEADS;
 import static org.spearce.jgit.lib.Constants.R_REMOTES;
 import static org.spearce.jgit.lib.Constants.R_TAGS;
 
-import java.io.PrintWriter;
+import java.io.IOException;
+import java.io.Writer;
 
 import org.spearce.jgit.lib.ObjectId;
 
@@ -54,7 +55,7 @@ class FetchHeadRecord {
 
 	URIish sourceURI;
 
-	void write(final PrintWriter pw) {
+	void write(final Writer pw) throws IOException {
 		final String type;
 		final String name;
 		if (sourceName.startsWith(R_HEADS)) {
@@ -71,16 +72,16 @@ class FetchHeadRecord {
 			name = sourceName;
 		}
 
-		pw.print(newValue.name());
-		pw.print('\t');
+		pw.write(newValue.name());
+		pw.write('\t');
 		if (notForMerge)
-			pw.print("not-for-merge");
-		pw.print('\t');
-		pw.print(type);
-		pw.print(" '");
-		pw.print(name);
-		pw.print("' of ");
-		pw.print(sourceURI);
-		pw.println();
+			pw.write("not-for-merge");
+		pw.write('\t');
+		pw.write(type);
+		pw.write(" '");
+		pw.write(name);
+		pw.write("' of ");
+		pw.write(sourceURI.toString());
+		pw.write("\n");
 	}
 }

@@ -41,7 +41,7 @@ package org.spearce.jgit.transport;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -264,20 +264,21 @@ class FetchProcess {
 	private void updateFETCH_HEAD(final FetchResult result) throws IOException {
 		final LockFile lock = new LockFile(new File(transport.local
 				.getDirectory(), "FETCH_HEAD"));
-		if (lock.lock()) {
-			final PrintWriter pw = new PrintWriter(new OutputStreamWriter(lock
-					.getOutputStream())) {
-				@Override
-				public void println() {
-					print('\n');
+		try {
+			if (lock.lock()) {
+				final Writer w = new OutputStreamWriter(lock.getOutputStream());
+				try {
+					for (final FetchHeadRecord h : fetchHeadUpdates) {
+						h.write(w);
+						result.add(h);
+					}
+				} finally {
+					w.close();
 				}
-			};
-			for (final FetchHeadRecord h : fetchHeadUpdates) {
-				h.write(pw);
-				result.add(h);
+				lock.commit();
 			}
-			pw.close();
-			lock.commit();
+		} finally {
+			lock.unlock();
 		}
 	}
 
