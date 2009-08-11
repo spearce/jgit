@@ -122,7 +122,7 @@ echo "Created $O_CLI." || die "Build failed."
 
 echo "Building Javadocs ..."
 for p in $PLUGINS; do
-	javadoc -sourcepath "$p/src/" -d "docs/$p/" \
+	javadoc -quiet -sourcepath "$p/src/" -d "docs/$p/" \
 	`find "$p/src" -name "*.java"`
 done
 
