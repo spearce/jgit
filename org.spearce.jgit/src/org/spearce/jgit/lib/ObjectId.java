@@ -38,8 +38,7 @@
 
 package org.spearce.jgit.lib;
 
-import java.io.UnsupportedEncodingException;
-
+import org.spearce.jgit.errors.InvalidObjectIdException;
 import org.spearce.jgit.util.NB;
 import org.spearce.jgit.util.RawParseUtils;
 
@@ -230,12 +229,7 @@ public class ObjectId extends AnyObjectId {
 			final int e = RawParseUtils.parseHexInt32(bs, p + 32);
 			return new ObjectId(a, b, c, d, e);
 		} catch (ArrayIndexOutOfBoundsException e1) {
-			try {
-				final String str = new String(bs, p, STR_LEN, "US-ASCII");
-				throw new IllegalArgumentException("Invalid id: " + str);
-			} catch (UnsupportedEncodingException e2) {
-				throw new IllegalArgumentException("Invalid id");
-			}
+			throw new InvalidObjectIdException(bs, p, STR_LEN);
 		}
 	}
 

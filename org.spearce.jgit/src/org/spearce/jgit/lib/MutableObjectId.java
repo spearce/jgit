@@ -37,8 +37,7 @@
 
 package org.spearce.jgit.lib;
 
-import java.io.UnsupportedEncodingException;
-
+import org.spearce.jgit.errors.InvalidObjectIdException;
 import org.spearce.jgit.util.NB;
 import org.spearce.jgit.util.RawParseUtils;
 
@@ -166,14 +165,7 @@ public class MutableObjectId extends AnyObjectId {
 			w4 = RawParseUtils.parseHexInt32(bs, p + 24);
 			w5 = RawParseUtils.parseHexInt32(bs, p + 32);
 		} catch (ArrayIndexOutOfBoundsException e1) {
-			try {
-				final String str = new String(bs, p, STR_LEN, "US-ASCII");
-				throw new IllegalArgumentException("Invalid id: " + str);
-			} catch (UnsupportedEncodingException e2) {
-				throw new IllegalArgumentException("Invalid id");
-			} catch (StringIndexOutOfBoundsException e2) {
-				throw new IllegalArgumentException("Invalid id");
-			}
+			throw new InvalidObjectIdException(bs, p, STR_LEN);
 		}
 	}
 
