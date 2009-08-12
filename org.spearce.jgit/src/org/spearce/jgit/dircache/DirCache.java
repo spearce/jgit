@@ -738,6 +738,9 @@ public class DirCache {
 	 * @throws UnmergedPathException
 	 *             one or more paths contain higher-order stages (stage > 0),
 	 *             which cannot be stored in a tree object.
+	 * @throws IllegalStateException
+	 *             one or more paths contain an invalid mode which should never
+	 *             appear in a tree object.
 	 * @throws IOException
 	 *             an unexpected error occurred writing to the object store.
 	 */

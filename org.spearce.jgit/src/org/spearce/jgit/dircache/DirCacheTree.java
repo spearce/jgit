@@ -377,7 +377,8 @@ public class DirCacheTree {
 
 			final FileMode mode = e.getFileMode();
 			if (mode.getObjectType() == Constants.OBJ_BAD)
-				throw new UnmergedPathException(e);
+				throw new IllegalStateException("Entry \"" + e.getPathString()
+						+ "\" has incorrect mode set up.");
 
 			size += mode.copyToLength();
 			size += ep.length - pathOffset;
