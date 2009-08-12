@@ -41,6 +41,7 @@ package org.spearce.jgit.lib;
 import java.io.File;
 import java.io.IOException;
 
+import org.spearce.jgit.errors.GitlinksNotSupportedException;
 import org.spearce.jgit.errors.SymlinksNotSupportedException;
 
 /**
@@ -77,5 +78,11 @@ public class WriteTree extends TreeVisitorWithCurrentDirectory {
 	public void endVisitTree(final Tree t) throws IOException {
 		super.endVisitTree(t);
 		t.setId(ow.writeTree(t));
+	}
+
+	public void visitGitlink(GitlinkTreeEntry s) throws IOException {
+		if (s.isModified()) {
+			throw new GitlinksNotSupportedException(s.getFullName());
+		}
 	}
 }

@@ -61,4 +61,8 @@ public class ForceModified implements TreeVisitor {
 		// Eclipse
 		// and Pure Java does not know what to do about symbolic links.
 	}
+
+	public void visitGitlink(GitlinkTreeEntry s) throws IOException {
+		// TODO: handle gitlinks.
+	}
 }

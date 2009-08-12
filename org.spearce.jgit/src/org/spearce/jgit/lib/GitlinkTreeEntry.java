@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2007, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2007, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2009, Jonas Fonseca <fonseca@diku.dk>
  *
  * All rights reserved.
  *
@@ -41,48 +42,45 @@ package org.spearce.jgit.lib;
 import java.io.IOException;
 
 /**
- * A TreeVisitor is invoked depth first for every node in a tree and is expected
- * to perform different actions.
+ * A tree entry representing a symbolic link.
+ *
+ * Note. Java cannot really handle these as file system objects.
  */
-public interface TreeVisitor {
-	/**
-	 * Visit to a tree node before child nodes are visited.
-	 *
-	 * @param t
-	 *            Tree
-	 * @throws IOException
-	 */
-	public void startVisitTree(final Tree t) throws IOException;
+public class GitlinkTreeEntry extends TreeEntry {
+	private static final long serialVersionUID = 1L;
 
 	/**
-	 * Visit to a tree node. after child nodes have been visited.
+	 * Construct a {@link GitlinkTreeEntry} with the specified name and SHA-1 in
+	 * the specified parent
 	 *
-	 * @param t Tree
-	 * @throws IOException
+	 * @param parent
+	 * @param id
+	 * @param nameUTF8
 	 */
-	public void endVisitTree(final Tree t) throws IOException;
+	public GitlinkTreeEntry(final Tree parent, final ObjectId id,
+			final byte[] nameUTF8) {
+		super(parent, id, nameUTF8);
+	}
 
-	/**
-	 * Visit to a blob.
-	 *
-	 * @param f Blob
-	 * @throws IOException
-	 */
-	public void visitFile(final FileTreeEntry f) throws IOException;
+	public FileMode getMode() {
+		return FileMode.GITLINK;
+	}
 
-	/**
-	 * Visit to a symlink.
-	 *
-	 * @param s Symlink entry
-	 * @throws IOException
-	 */
-	public void visitSymlink(final SymlinkTreeEntry s) throws IOException;
+	public void accept(final TreeVisitor tv, final int flags)
+			throws IOException {
+		if ((MODIFIED_ONLY & flags) == MODIFIED_ONLY && !isModified()) {
+			return;
+		}
 
-	/**
-	 * Visit to a gitlink.
-	 *
-	 * @param s Gitlink entry
-	 * @throws IOException
-	 */
-	public void visitGitlink(final GitlinkTreeEntry s) throws IOException;
+		tv.visitGitlink(this);
+	}
+
+	@Override
+	public String toString() {
+		final StringBuffer r = new StringBuffer();
+		r.append(ObjectId.toString(getId()));
+		r.append(" G ");
+		r.append(getFullName());
+		return r.toString();
+	}
 }

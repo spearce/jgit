@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2007, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2007, Shawn O. Pearce <spearce@spearce.org>
+ * Copyright (C) 2009, Jonas Fonseca <fonseca@diku.dk>
  *
  * All rights reserved.
  *
@@ -36,53 +37,23 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.spearce.jgit.lib;
+package org.spearce.jgit.errors;
 
 import java.io.IOException;
 
 /**
- * A TreeVisitor is invoked depth first for every node in a tree and is expected
- * to perform different actions.
+ * An exception thrown when a gitlink entry is found and cannot be
+ * handled.
  */
-public interface TreeVisitor {
-	/**
-	 * Visit to a tree node before child nodes are visited.
-	 *
-	 * @param t
-	 *            Tree
-	 * @throws IOException
-	 */
-	public void startVisitTree(final Tree t) throws IOException;
+public class GitlinksNotSupportedException extends IOException {
+	private static final long serialVersionUID = 1L;
 
 	/**
-	 * Visit to a tree node. after child nodes have been visited.
+	 * Construct a GitlinksNotSupportedException for the specified link
 	 *
-	 * @param t Tree
-	 * @throws IOException
+	 * @param s name of link in tree or workdir
 	 */
-	public void endVisitTree(final Tree t) throws IOException;
-
-	/**
-	 * Visit to a blob.
-	 *
-	 * @param f Blob
-	 * @throws IOException
-	 */
-	public void visitFile(final FileTreeEntry f) throws IOException;
-
-	/**
-	 * Visit to a symlink.
-	 *
-	 * @param s Symlink entry
-	 * @throws IOException
-	 */
-	public void visitSymlink(final SymlinkTreeEntry s) throws IOException;
-
-	/**
-	 * Visit to a gitlink.
-	 *
-	 * @param s Gitlink entry
-	 * @throws IOException
-	 */
-	public void visitGitlink(final GitlinkTreeEntry s) throws IOException;
+	public GitlinksNotSupportedException(final String s) {
+		super(s);
+	}
 }
