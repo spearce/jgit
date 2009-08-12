@@ -428,7 +428,7 @@ public class Tree extends TreeEntry implements Treeish {
 	}
 
 	/**
-	 * @param path
+	 * @param path to the tree.
 	 * @return true if a tree with the specified path can be found under this
 	 *         tree.
 	 * @throws IOException
@@ -438,9 +438,9 @@ public class Tree extends TreeEntry implements Treeish {
 	}
 
 	/**
-	 * @param path
-	 * @return true if a blob or symlink with the specified name can be found
-	 *         under this tree.
+	 * @param path of the non-tree entry.
+	 * @return true if a blob, symlink, or gitlink with the specified name
+	 *         can be found under this tree.
 	 * @throws IOException
 	 */
 	public boolean existsBlob(String path) throws IOException {
@@ -576,10 +576,12 @@ public class Tree extends TreeEntry implements Treeish {
 				ent = new FileTreeEntry(this, id, name, false);
 			else if (FileMode.EXECUTABLE_FILE.equals(mode))
 				ent = new FileTreeEntry(this, id, name, true);
-			else if (FileMode.TREE.equals(mode)) {
+			else if (FileMode.TREE.equals(mode))
 				ent = new Tree(this, id, name);
-			} else if (FileMode.SYMLINK.equals(mode))
+			else if (FileMode.SYMLINK.equals(mode))
 				ent = new SymlinkTreeEntry(this, id, name);
+			else if (FileMode.GITLINK.equals(mode))
+				ent = new GitlinkTreeEntry(this, id, name);
 			else
 				throw new CorruptObjectException(getId(), "Invalid mode: "
 						+ Integer.toOctalString(mode));

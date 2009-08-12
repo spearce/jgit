@@ -271,4 +271,11 @@ public class T0002_Tree extends RepositoryTestCase {
 		assertSame(e4, ents[3]);
 		assertSame(e2, ents[4]);
 	}
+
+	public void test009_SymlinkAndGitlink() throws IOException {
+		final Tree symlinkTree = db.mapTree("symlink");
+		assertTrue("Symlink entry exists", symlinkTree.existsBlob("symlink.txt"));
+		final Tree gitlinkTree = db.mapTree("gitlink");
+		assertTrue("Gitlink entry exists", gitlinkTree.existsBlob("submodule"));
+	}
 }

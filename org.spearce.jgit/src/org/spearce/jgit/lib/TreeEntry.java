@@ -232,7 +232,7 @@ public abstract class TreeEntry implements Comparable {
 	 * @return '/' for Tree entries and NUL for non-treeish objects.
 	 */
 	final public static int lastChar(TreeEntry treeEntry) {
-		if (treeEntry instanceof FileTreeEntry)
+		if (!(treeEntry instanceof Tree))
 			return '\0';
 		else
 			return '/';

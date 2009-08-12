@@ -42,7 +42,7 @@ package org.spearce.jgit.lib;
 import java.io.IOException;
 
 /**
- * A tree entry representing a symbolic link.
+ * A tree entry representing a gitlink entry used for submodules.
  *
  * Note. Java cannot really handle these as file system objects.
  */
