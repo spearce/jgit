@@ -100,8 +100,8 @@ public class Repository {
 
 	private GitIndex index;
 
-	private List<RepositoryListener> listeners = new Vector<RepositoryListener>(); // thread safe
-	static private List<RepositoryListener> allListeners = new Vector<RepositoryListener>(); // thread safe
+	private final List<RepositoryListener> listeners = new Vector<RepositoryListener>(); // thread safe
+	static private final List<RepositoryListener> allListeners = new Vector<RepositoryListener>(); // thread safe
 
 	/**
 	 * Construct a representation of a Git repository.
