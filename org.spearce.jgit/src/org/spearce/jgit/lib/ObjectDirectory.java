@@ -41,14 +41,16 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.spearce.jgit.errors.PackMismatchException;
@@ -339,11 +341,23 @@ public class ObjectDirectory extends ObjectDatabase {
 
 	private PackFile[] scanPacksImpl(final PackFile[] old) {
 		final Map<String, PackFile> forReuse = reuseMap(old);
-		final String[] idxList = listPackIdx();
-		final List<PackFile> list = new ArrayList<PackFile>(idxList.length);
-		for (final String indexName : idxList) {
+		final Set<String> names = listPackDirectory();
+		final List<PackFile> list = new ArrayList<PackFile>(names.size() >> 2);
+		for (final String indexName : names) {
+			// Must match "pack-[0-9a-f]{40}.idx" to be an index.
+			//
+			if (indexName.length() != 49 || !indexName.endsWith(".idx"))
+				continue;
+
 			final String base = indexName.substring(0, indexName.length() - 4);
 			final String packName = base + ".pack";
+			if (!names.contains(packName)) {
+				// Sometimes C Git's HTTP fetch transport leaves a
+				// .idx file behind and does not download the .pack.
+				// We have to skip over such useless indexes.
+				//
+				continue;
+			}
 
 			final PackFile oldPack = forReuse.remove(packName);
 			if (oldPack != null) {
@@ -352,14 +366,6 @@ public class ObjectDirectory extends ObjectDatabase {
 			}
 
 			final File packFile = new File(packDirectory, packName);
-			if (!packFile.isFile()) {
-				// Sometimes C Git's HTTP fetch transport leaves a
-				// .idx file behind and does not download the .pack.
-				// We have to skip over such useless indexes.
-				//
-				continue;
-			}
-
 			final File idxFile = new File(packDirectory, indexName);
 			list.add(new PackFile(idxFile, packFile));
 		}
@@ -401,16 +407,17 @@ public class ObjectDirectory extends ObjectDatabase {
 		return forReuse;
 	}
 
-	private String[] listPackIdx() {
+	private Set<String> listPackDirectory() {
 		packDirectoryLastModified = packDirectory.lastModified();
-		final String[] idxList = packDirectory.list(new FilenameFilter() {
-			public boolean accept(final File baseDir, final String n) {
-				// Must match "pack-[0-9a-f]{40}.idx" to be an index.
-				return n.length() == 49 && n.endsWith(".idx")
-						&& n.startsWith("pack-");
-			}
-		});
-		return idxList != null ? idxList : new String[0];
+		final String[] nameList = packDirectory.list();
+		if (nameList == null)
+			return Collections.emptySet();
+		final Set<String> nameSet = new HashSet<String>(nameList.length << 1);
+		for (final String name : nameList) {
+			if (name.startsWith("pack-"))
+				nameSet.add(name);
+		}
+		return nameSet;
 	}
 
 	@Override
