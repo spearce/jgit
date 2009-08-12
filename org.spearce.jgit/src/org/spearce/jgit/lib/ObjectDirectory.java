@@ -260,10 +260,8 @@ public class ObjectDirectory extends ObjectDatabase {
 	@Override
 	protected boolean tryAgain1() {
 		final PackList old = packList.get();
-		if (old.tryAgain(packDirectory.lastModified())) {
-			scanPacks(old);
-			return true;
-		}
+		if (old.tryAgain(packDirectory.lastModified()))
+			return old != scanPacks(old);
 		return false;
 	}
 
@@ -317,6 +315,8 @@ public class ObjectDirectory extends ObjectDatabase {
 					return o;
 				}
 				n = scanPacksImpl(o);
+				if (n == o)
+					return n;
 			} while (!packList.compareAndSet(o, n));
 			return n;
 		}
@@ -327,6 +327,7 @@ public class ObjectDirectory extends ObjectDatabase {
 		final long lastModified = packDirectory.lastModified();
 		final Set<String> names = listPackDirectory();
 		final List<PackFile> list = new ArrayList<PackFile>(names.size() >> 2);
+		boolean foundNew = false;
 		for (final String indexName : names) {
 			// Must match "pack-[0-9a-f]{40}.idx" to be an index.
 			//
@@ -352,7 +353,16 @@ public class ObjectDirectory extends ObjectDatabase {
 			final File packFile = new File(packDirectory, packName);
 			final File idxFile = new File(packDirectory, indexName);
 			list.add(new PackFile(idxFile, packFile));
+			foundNew = true;
 		}
+
+		// If we did not discover any new files, the modification time was not
+		// changed, and we did not remove any files, then the set of files is
+		// the same as the set we were given. Instead of building a new object
+		// return the same collection.
+		//
+		if (!foundNew && lastModified == old.lastModified && forReuse.isEmpty())
+			return old;
 
 		for (final PackFile p : forReuse.values()) {
 			p.close();
