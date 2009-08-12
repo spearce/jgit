@@ -40,7 +40,7 @@ package org.spearce.jgit.lib;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -156,7 +156,7 @@ public class RepositoryCache {
 				db = ref != null ? ref.get() : null;
 				if (db == null) {
 					db = location.open(mustExist);
-					ref = new WeakReference<Repository>(db);
+					ref = new SoftReference<Repository>(db);
 					cacheMap.put(location, ref);
 				}
 			}
@@ -167,7 +167,7 @@ public class RepositoryCache {
 
 	private void registerRepository(final Key location, final Repository db) {
 		db.incrementOpen();
-		WeakReference<Repository> newRef = new WeakReference<Repository>(db);
+		SoftReference<Repository> newRef = new SoftReference<Repository>(db);
 		Reference<Repository> oldRef = cacheMap.put(location, newRef);
 		Repository oldDb = oldRef != null ? oldRef.get() : null;
 		if (oldDb != null)
