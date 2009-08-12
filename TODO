@@ -1,15 +1,9 @@
-= Eclipse Plugin Wishlist =
+= JGit Wishlist =
 
-Now that we have some basic features in the Eclipse plugin, we need
-to focus on making it usable by average users doing daily tasks.
+Below are some of the areas that needs work. Also take a look at JGit
+related issues in the EGit project:
 
-== Create Branch ==
-
-Create a new branch from any revision specification.
-
-== Delete Branch ==
-
-Delete a branch.
+ - http://code.google.com/p/egit/issues/list?q=label:Component-JGit
 
 == Switch Branch ==
 
