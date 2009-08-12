@@ -66,7 +66,7 @@ import org.spearce.jgit.util.FS;
  * {@link PackFile}s.
  */
 public class ObjectDirectory extends ObjectDatabase {
-	private static final PackList NO_PACKS = new PackList(-1, new PackFile[0]);
+	private static final PackList NO_PACKS = new PackList(-1, -1, new PackFile[0]);
 
 	private final File objects;
 
@@ -273,7 +273,7 @@ public class ObjectDirectory extends ObjectDatabase {
 			final PackFile[] newList = new PackFile[1 + oldList.length];
 			newList[0] = pf;
 			System.arraycopy(oldList, 0, newList, 1, oldList.length);
-			n = new PackList(o.lastModified, newList);
+			n = new PackList(o.lastRead, o.lastModified, newList);
 		} while (!packList.compareAndSet(o, n));
 	}
 
@@ -290,7 +290,7 @@ public class ObjectDirectory extends ObjectDatabase {
 			final PackFile[] newList = new PackFile[oldList.length - 1];
 			System.arraycopy(oldList, 0, newList, 0, j);
 			System.arraycopy(oldList, j + 1, newList, j, newList.length - j);
-			n = new PackList(o.lastModified, newList);
+			n = new PackList(o.lastRead, o.lastModified, newList);
 		} while (!packList.compareAndSet(o, n));
 		deadPack.close();
 	}
@@ -324,6 +324,7 @@ public class ObjectDirectory extends ObjectDatabase {
 
 	private PackList scanPacksImpl(final PackList old) {
 		final Map<String, PackFile> forReuse = reuseMap(old);
+		final long lastRead = System.currentTimeMillis();
 		final long lastModified = packDirectory.lastModified();
 		final Set<String> names = listPackDirectory();
 		final List<PackFile> list = new ArrayList<PackFile>(names.size() >> 2);
@@ -362,18 +363,18 @@ public class ObjectDirectory extends ObjectDatabase {
 		// return the same collection.
 		//
 		if (!foundNew && lastModified == old.lastModified && forReuse.isEmpty())
-			return old;
+			return old.updateLastRead(lastRead);
 
 		for (final PackFile p : forReuse.values()) {
 			p.close();
 		}
 
 		if (list.isEmpty())
-			return new PackList(lastModified, NO_PACKS.packs);
+			return new PackList(lastRead, lastModified, NO_PACKS.packs);
 
 		final PackFile[] r = list.toArray(new PackFile[list.size()]);
 		Arrays.sort(r, PackFile.SORT);
-		return new PackList(lastModified, r);
+		return new PackList(lastRead, lastModified, r);
 	}
 
 	private static Map<String, PackFile> reuseMap(final PackList old) {
@@ -449,19 +450,62 @@ public class ObjectDirectory extends ObjectDatabase {
 	}
 
 	private static final class PackList {
+		/** Last wall-clock time the directory was read. */
+		volatile long lastRead;
+
 		/** Last modification time of {@link ObjectDirectory#packDirectory}. */
 		final long lastModified;
 
 		/** All known packs, sorted by {@link PackFile#SORT}. */
 		final PackFile[] packs;
 
-		PackList(final long lastModified, final PackFile[] packs) {
+		private boolean cannotBeRacilyClean;
+
+		PackList(final long lastRead, final long lastModified,
+				final PackFile[] packs) {
+			this.lastRead = lastRead;
 			this.lastModified = lastModified;
 			this.packs = packs;
+			this.cannotBeRacilyClean = notRacyClean(lastRead);
+		}
+
+		private boolean notRacyClean(final long read) {
+			return read - lastModified > 2 * 60 * 1000L;
+		}
+
+		PackList updateLastRead(final long now) {
+			if (notRacyClean(now))
+				cannotBeRacilyClean = true;
+			lastRead = now;
+			return this;
 		}
 
 		boolean tryAgain(final long currLastModified) {
-			return lastModified < currLastModified;
+			// Any difference indicates the directory was modified.
+			//
+			if (lastModified != currLastModified)
+				return true;
+
+			// We have already determined the last read was far enough
+			// after the last modification that any new modifications
+			// are certain to change the last modified time.
+			//
+			if (cannotBeRacilyClean)
+				return false;
+
+			if (notRacyClean(lastRead)) {
+				// Our last read should have marked cannotBeRacilyClean,
+				// but this thread may not have seen the change. The read
+				// of the volatile field lastRead should have fixed that.
+				//
+				return false;
+			}
+
+			// We last read this directory too close to its last observed
+			// modification time. We may have missed a modification. Scan
+			// the directory again, to ensure we still see the same state.
+			//
+			return true;
 		}
 	}
 }
