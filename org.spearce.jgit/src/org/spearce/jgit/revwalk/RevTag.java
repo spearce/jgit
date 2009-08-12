@@ -56,7 +56,7 @@ public class RevTag extends RevObject {
 
 	private byte[] buffer;
 
-	private String name;
+	private String tagName;
 
 	/**
 	 * Create a new tag reference.
@@ -96,7 +96,7 @@ public class RevTag extends RevObject {
 
 		int p = pos.value += 4; // "tag "
 		final int nameEnd = RawParseUtils.nextLF(rawTag, p) - 1;
-		name = RawParseUtils.decode(Constants.CHARSET, rawTag, p, nameEnd);
+		tagName = RawParseUtils.decode(Constants.CHARSET, rawTag, p, nameEnd);
 
 		if (walk.isRetainBody())
 			buffer = rawTag;
@@ -186,7 +186,7 @@ public class RevTag extends RevObject {
 	 * @return parsed tag.
 	 */
 	public Tag asTag(final RevWalk walk) {
-		return new Tag(walk.db, this, name, buffer);
+		return new Tag(walk.db, this, tagName, buffer);
 	}
 
 	/**
@@ -203,8 +203,8 @@ public class RevTag extends RevObject {
 	 * 
 	 * @return name of the tag, according to the tag header.
 	 */
-	public final String getName() {
-		return name;
+	public final String getTagName() {
+		return tagName;
 	}
 
 	final void disposeBody() {

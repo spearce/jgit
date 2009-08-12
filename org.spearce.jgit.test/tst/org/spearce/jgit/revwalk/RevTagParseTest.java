@@ -75,7 +75,7 @@ public class RevTagParseTest extends RepositoryTestCase {
 
 		c = new RevTag(id("9473095c4cb2f12aefe1db8a355fe3fafba42f67"));
 		assertNull(c.getObject());
-		assertNull(c.getName());
+		assertNull(c.getTagName());
 
 		c.parseCanonical(rw, b.toString().getBytes("UTF-8"));
 		assertNotNull(c.getObject());
@@ -117,15 +117,15 @@ public class RevTagParseTest extends RepositoryTestCase {
 
 		c = new RevTag(id("9473095c4cb2f12aefe1db8a355fe3fafba42f67"));
 		assertNull(c.getObject());
-		assertNull(c.getName());
+		assertNull(c.getTagName());
 
 		c.parseCanonical(rw, body.toString().getBytes("UTF-8"));
 		assertNotNull(c.getObject());
 		assertEquals(treeId, c.getObject().getId());
 		assertSame(rw.lookupTree(treeId), c.getObject());
 
-		assertNotNull(c.getName());
-		assertEquals(name, c.getName());
+		assertNotNull(c.getTagName());
+		assertEquals(name, c.getTagName());
 		assertEquals("", c.getFullMessage());
 
 		final PersonIdent cTagger = c.getTaggerIdent();
