@@ -134,16 +134,16 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 	public byte[] idBuffer() {
 		if (contentIdFromPtr == ptr)
 			return contentId;
-		switch (mode & 0170000) {
-		case 0100000: /* normal files */
+		switch (mode & FileMode.TYPE_MASK) {
+		case FileMode.TYPE_FILE:
 			contentIdFromPtr = ptr;
 			return contentId = idBufferBlob(entries[ptr]);
-		case 0120000: /* symbolic links */
+		case FileMode.TYPE_SYMLINK:
 			// Java does not support symbolic links, so we should not
 			// have reached this particular part of the walk code.
 			//
 			return zeroid;
-		case 0160000: /* gitlink */
+		case FileMode.TYPE_GITLINK:
 			// TODO: Support obtaining current HEAD SHA-1 from nested repository
 			//
 			return zeroid;

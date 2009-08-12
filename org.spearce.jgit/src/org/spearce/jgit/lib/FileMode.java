@@ -50,21 +50,47 @@ import java.io.OutputStream;
  * </p>
  */
 public abstract class FileMode {
+	/**
+	 * Mask to apply to a file mode to obtain its type bits.
+	 *
+	 * @see #TYPE_TREE
+	 * @see #TYPE_SYMLINK
+	 * @see #TYPE_FILE
+	 * @see #TYPE_GITLINK
+	 * @see #TYPE_MISSING
+	 */
+	public static final int TYPE_MASK = 0170000;
+
+	/** Bit pattern for {@link #TYPE_MASK} matching {@link #TREE}. */
+	public static final int TYPE_TREE = 0040000;
+
+	/** Bit pattern for {@link #TYPE_MASK} matching {@link #SYMLINK}. */
+	public static final int TYPE_SYMLINK = 0120000;
+
+	/** Bit pattern for {@link #TYPE_MASK} matching {@link #REGULAR_FILE}. */
+	public static final int TYPE_FILE = 0100000;
+
+	/** Bit pattern for {@link #TYPE_MASK} matching {@link #GITLINK}. */
+	public static final int TYPE_GITLINK = 0160000;
+
+	/** Bit pattern for {@link #TYPE_MASK} matching {@link #MISSING}. */
+	public static final int TYPE_MISSING = 0000000;
+
 	/** Mode indicating an entry is a {@link Tree}. */
 	@SuppressWarnings("synthetic-access")
-	public static final FileMode TREE = new FileMode(0040000,
+	public static final FileMode TREE = new FileMode(TYPE_TREE,
 			Constants.OBJ_TREE) {
 		public boolean equals(final int modeBits) {
-			return (modeBits & 0170000) == 0040000;
+			return (modeBits & TYPE_MASK) == TYPE_TREE;
 		}
 	};
 
 	/** Mode indicating an entry is a {@link SymlinkTreeEntry}. */
 	@SuppressWarnings("synthetic-access")
-	public static final FileMode SYMLINK = new FileMode(0120000,
+	public static final FileMode SYMLINK = new FileMode(TYPE_SYMLINK,
 			Constants.OBJ_BLOB) {
 		public boolean equals(final int modeBits) {
-			return (modeBits & 0170000) == 0120000;
+			return (modeBits & TYPE_MASK) == TYPE_SYMLINK;
 		}
 	};
 
@@ -73,7 +99,7 @@ public abstract class FileMode {
 	public static final FileMode REGULAR_FILE = new FileMode(0100644,
 			Constants.OBJ_BLOB) {
 		public boolean equals(final int modeBits) {
-			return (modeBits & 0170000) == 0100000 && (modeBits & 0111) == 0;
+			return (modeBits & TYPE_MASK) == TYPE_FILE && (modeBits & 0111) == 0;
 		}
 	};
 
@@ -82,22 +108,22 @@ public abstract class FileMode {
 	public static final FileMode EXECUTABLE_FILE = new FileMode(0100755,
 			Constants.OBJ_BLOB) {
 		public boolean equals(final int modeBits) {
-			return (modeBits & 0170000) == 0100000 && (modeBits & 0111) != 0;
+			return (modeBits & TYPE_MASK) == TYPE_FILE && (modeBits & 0111) != 0;
 		}
 	};
 
 	/** Mode indicating an entry is a submodule commit in another repository. */
 	@SuppressWarnings("synthetic-access")
-	public static final FileMode GITLINK = new FileMode(0160000,
+	public static final FileMode GITLINK = new FileMode(TYPE_GITLINK,
 			Constants.OBJ_COMMIT) {
 		public boolean equals(final int modeBits) {
-			return (modeBits & 0170000) == 0160000;
+			return (modeBits & TYPE_MASK) == TYPE_GITLINK;
 		}
 	};
 
 	/** Mode indicating an entry is missing during parallel walks. */
 	@SuppressWarnings("synthetic-access")
-	public static final FileMode MISSING = new FileMode(0000000,
+	public static final FileMode MISSING = new FileMode(TYPE_MISSING,
 			Constants.OBJ_BAD) {
 		public boolean equals(final int modeBits) {
 			return modeBits == 0;
@@ -112,20 +138,20 @@ public abstract class FileMode {
 	 * @return the FileMode instance that represents the given bits.
 	 */
 	public static final FileMode fromBits(final int bits) {
-		switch (bits & 0170000) {
-		case 0000000:
+		switch (bits & TYPE_MASK) {
+		case TYPE_MISSING:
 			if (bits == 0)
 				return MISSING;
 			break;
-		case 0040000:
+		case TYPE_TREE:
 			return TREE;
-		case 0100000:
+		case TYPE_FILE:
 			if ((bits & 0111) != 0)
 				return EXECUTABLE_FILE;
 			return REGULAR_FILE;
-		case 0120000:
+		case TYPE_SYMLINK:
 			return SYMLINK;
-		case 0160000:
+		case TYPE_GITLINK:
 			return GITLINK;
 		}
 
