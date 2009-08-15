@@ -298,6 +298,67 @@ public class RefUpdateTest extends RepositoryTestCase {
 	}
 
 	/**
+	 * Test case originating from
+	 * <a href="http://bugs.eclipse.org/285991">bug 285991</a>
+	 *
+	 * Make sure the in memory cache is updated properly after
+	 * update of symref. This one did not fail because the
+	 * ref was packed due to implementation issues.
+	 *
+	 * @throws Exception
+	 */
+	public void testRefsCacheAfterUpdate() throws Exception {
+		// Do not use the defalt repo for this case.
+		Map<String, Ref> allRefs = db.getAllRefs();
+		ObjectId oldValue = db.resolve("HEAD");
+		ObjectId newValue = db.resolve("HEAD^");
+		// first make HEAD refer to loose ref
+		RefUpdate updateRef = db.updateRef(Constants.HEAD);
+		updateRef.setForceUpdate(true);
+		updateRef.setNewObjectId(newValue);
+		Result update = updateRef.update();
+		assertEquals(Result.FORCED, update);
+
+		// now update that ref
+		updateRef = db.updateRef(Constants.HEAD);
+		updateRef.setForceUpdate(true);
+		updateRef.setNewObjectId(oldValue);
+		update = updateRef.update();
+		assertEquals(Result.FAST_FORWARD, update);
+		allRefs = db.getAllRefs();
+		assertEquals("refs/heads/master", allRefs.get("refs/heads/master").getName());
+		assertEquals("refs/heads/master", allRefs.get("refs/heads/master").getOrigName());
+		assertEquals("refs/heads/master", allRefs.get("HEAD").getName());
+		assertEquals("HEAD", allRefs.get("HEAD").getOrigName());
+	}
+
+	/**
+	 * Test case originating from
+	 * <a href="http://bugs.eclipse.org/285991">bug 285991</a>
+	 *
+	 * Make sure the in memory cache is updated properly after
+	 * update of symref.
+	 *
+	 * @throws Exception
+	 */
+	public void testRefsCacheAfterUpdateLoosOnly() throws Exception {
+		// Do not use the defalt repo for this case.
+		Map<String, Ref> allRefs = db.getAllRefs();
+		ObjectId oldValue = db.resolve("HEAD");
+		db.writeSymref(Constants.HEAD, "refs/heads/newref");
+		RefUpdate updateRef = db.updateRef(Constants.HEAD);
+		updateRef.setForceUpdate(true);
+		updateRef.setNewObjectId(oldValue);
+		Result update = updateRef.update();
+		assertEquals(Result.NEW, update);
+		allRefs = db.getAllRefs();
+		assertEquals("refs/heads/newref", allRefs.get("HEAD").getName());
+		assertEquals("HEAD", allRefs.get("HEAD").getOrigName());
+		assertEquals("refs/heads/newref", allRefs.get("refs/heads/newref").getName());
+		assertEquals("refs/heads/newref", allRefs.get("refs/heads/newref").getOrigName());
+	}
+
+	/**
 	 * Try modify a ref, but get wrong expected old value
 	 *
 	 * @throws IOException

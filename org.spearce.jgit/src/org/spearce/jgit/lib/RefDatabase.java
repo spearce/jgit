@@ -140,7 +140,7 @@ class RefDatabase {
 
 	void stored(final String origName, final String name, final ObjectId id, final long time) {
 		synchronized (this) {
-			looseRefs.put(name, new Ref(Ref.Storage.LOOSE, origName, name, id));
+			looseRefs.put(name, new Ref(Ref.Storage.LOOSE, name, name, id));
 			looseRefsMTime.put(name, time);
 			setModified();
 		}
