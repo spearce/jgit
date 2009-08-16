@@ -82,6 +82,15 @@ public class RefUpdateTest extends RepositoryTestCase {
 		assertNotSame(newid, r.getObjectId());
 		assertSame(ObjectId.class, r.getObjectId().getClass());
 		assertEquals(newid.copy(), r.getObjectId());
+		List<org.spearce.jgit.lib.ReflogReader.Entry> reverseEntries1 = db.getReflogReader("refs/heads/abc").getReverseEntries();
+		org.spearce.jgit.lib.ReflogReader.Entry entry1 = reverseEntries1.get(0);
+		assertEquals(1, reverseEntries1.size());
+		assertEquals(ObjectId.zeroId(), entry1.getOldId());
+		assertEquals(r.getObjectId(), entry1.getNewId());
+		assertEquals(new PersonIdent(db).toString(),  entry1.getWho().toString());
+		assertEquals("", entry1.getComment());
+		List<org.spearce.jgit.lib.ReflogReader.Entry> reverseEntries2 = db.getReflogReader("HEAD").getReverseEntries();
+		assertEquals(0, reverseEntries2.size());
 	}
 
 	public void testNewNamespaceConflictWithLoosePrefixNameExists()
@@ -103,6 +112,8 @@ public class RefUpdateTest extends RepositoryTestCase {
 		ru.setNewObjectId(newid2);
 		Result update2 = ru2.update();
 		assertEquals(Result.LOCK_FAILURE, update2);
+		assertEquals(1, db.getReflogReader("refs/heads/z").getReverseEntries().size());
+		assertEquals(0, db.getReflogReader("HEAD").getReverseEntries().size());
 	}
 
 	public void testNewNamespaceConflictWithPackedPrefixNameExists()
@@ -115,6 +126,8 @@ public class RefUpdateTest extends RepositoryTestCase {
 		ru.setNewObjectId(newid);
 		Result update = ru.update();
 		assertEquals(Result.LOCK_FAILURE, update);
+		assertNull(db.getReflogReader("refs/heads/master/x"));
+		assertEquals(0, db.getReflogReader("HEAD").getReverseEntries().size());
 	}
 
 	public void testNewNamespaceConflictWithLoosePrefixOfExisting()
@@ -136,6 +149,9 @@ public class RefUpdateTest extends RepositoryTestCase {
 		ru.setNewObjectId(newid2);
 		Result update2 = ru2.update();
 		assertEquals(Result.LOCK_FAILURE, update2);
+		assertEquals(1, db.getReflogReader("refs/heads/z/a").getReverseEntries().size());
+		assertNull(db.getReflogReader("refs/heads/z"));
+		assertEquals(0, db.getReflogReader("HEAD").getReverseEntries().size());
 	}
 
 	public void testNewNamespaceConflictWithPackedPrefixOfExisting()
@@ -148,6 +164,8 @@ public class RefUpdateTest extends RepositoryTestCase {
 		ru.setNewObjectId(newid);
 		Result update = ru.update();
 		assertEquals(Result.LOCK_FAILURE, update);
+		assertNull(db.getReflogReader("refs/heads/prefix"));
+		assertEquals(0, db.getReflogReader("HEAD").getReverseEntries().size());
 	}
 
 	/**
@@ -167,6 +185,8 @@ public class RefUpdateTest extends RepositoryTestCase {
 		Result delete = updateRef2.delete();
 		assertEquals(Result.REJECTED_CURRENT_BRANCH, delete);
 		assertEquals(pid, db.resolve("refs/heads/master"));
+		assertEquals(1,db.getReflogReader("refs/heads/master").getReverseEntries().size());
+		assertEquals(0,db.getReflogReader("HEAD").getReverseEntries().size());
 	}
 
 	public void testLooseDelete() throws IOException {
@@ -175,11 +195,14 @@ public class RefUpdateTest extends RepositoryTestCase {
 		ref.update(); // create loose ref
 		ref = updateRef(newRef); // refresh
 		delete(ref, Result.NO_CHANGE);
+		assertNull(db.getReflogReader("refs/heads/abc"));
 	}
 
 	public void testDeleteHead() throws IOException {
 		final RefUpdate ref = updateRef(Constants.HEAD);
 		delete(ref, Result.REJECTED_CURRENT_BRANCH, true, false);
+		assertEquals(0, db.getReflogReader("refs/heads/master").getReverseEntries().size());
+		assertEquals(0, db.getReflogReader("HEAD").getReverseEntries().size());
 	}
 
 	/**
@@ -498,6 +521,10 @@ public class RefUpdateTest extends RepositoryTestCase {
 		assertNull(db.resolve("refs/heads/b"));
 		assertEquals("Branch: renamed b to new/name", db.getReflogReader(
 				"new/name").getLastEntry().getComment());
+		assertEquals(3, db.getReflogReader("refs/heads/new/name").getReverseEntries().size());
+		assertEquals("Branch: renamed b to new/name", db.getReflogReader("refs/heads/new/name").getReverseEntries().get(0).getComment());
+		assertEquals(0, db.getReflogReader("HEAD").getReverseEntries().size());
+		// make sure b's log file is gone too.
 		assertFalse(new File(db.getDirectory(), "logs/refs/heads/b").exists());
 
 		// Create new Repository instance, to reread caches and make sure our
@@ -640,6 +667,9 @@ public class RefUpdateTest extends RepositoryTestCase {
 				.getReverseEntries().get(1).getComment());
 		assertEquals("Setup", db.getReflogReader("a/b").getReverseEntries()
 				.get(2).getComment());
+		// same thing was logged to HEAD
+		assertEquals("Branch: renamed a to a/b", db.getReflogReader("HEAD")
+				.getReverseEntries().get(0).getComment());
 	}
 
 	public void testRenameRefNameColission2avoided() throws IOException {
@@ -673,5 +703,7 @@ public class RefUpdateTest extends RepositoryTestCase {
 				.getReverseEntries().get(1).getComment());
 		assertEquals("Setup", db.getReflogReader("prefix").getReverseEntries()
 				.get(2).getComment());
+		assertEquals("Branch: renamed prefix/a to prefix", db.getReflogReader(
+				"HEAD").getReverseEntries().get(0).getComment());
 	}
 }

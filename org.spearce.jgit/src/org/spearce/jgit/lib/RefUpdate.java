@@ -182,10 +182,19 @@ public class RefUpdate {
 	/**
 	 * Get the name of the ref this update will operate on.
 	 * 
-	 * @return name of this ref.
+	 * @return name of underlying ref.
 	 */
 	public String getName() {
 		return ref.getName();
+	}
+
+	/**
+	 * Get the requested name of the ref thit update will operate on
+	 *
+	 * @return original (requested) name of the underlying ref.
+	 */
+	public String getOrigName() {
+		return ref.getOrigName();
 	}
 
 	/**

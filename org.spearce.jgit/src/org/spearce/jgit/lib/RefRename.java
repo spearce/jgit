@@ -136,9 +136,13 @@ public class RefRename {
 			} else {
 				db.fireRefsMaybeChanged();
 			}
-			RefLogWriter.append(this, "Branch: renamed "
+			RefLogWriter.append(this, newToUpdate.getName(), "Branch: renamed "
 					+ db.shortenRefName(oldFromDelete.getName()) + " to "
 					+ db.shortenRefName(newToUpdate.getName()));
+			if (renameHEADtoo)
+				RefLogWriter.append(this, Constants.HEAD, "Branch: renamed "
+						+ db.shortenRefName(oldFromDelete.getName()) + " to "
+						+ db.shortenRefName(newToUpdate.getName()));
 			return renameResult = Result.RENAMED;
 		} catch (RuntimeException e) {
 			throw e;

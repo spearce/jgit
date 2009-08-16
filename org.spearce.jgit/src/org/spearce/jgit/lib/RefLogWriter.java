@@ -56,13 +56,15 @@ public class RefLogWriter {
 		final PersonIdent ident = u.getRefLogIdent();
 
 		appendOneRecord(oldId, newId, ident, msg, db, u.getName());
+		if (!u.getName().equals(u.getOrigName()))
+			appendOneRecord(oldId, newId, ident, msg, db, u.getOrigName());
 	}
 
-	static void append(RefRename refRename, String msg) throws IOException {
+	static void append(RefRename refRename, String logName, String msg) throws IOException {
 		final ObjectId id = refRename.getObjectId();
 		final Repository db = refRename.getRepository();
 		final PersonIdent ident = refRename.getRefLogIdent();
-		appendOneRecord(id, id, ident, msg, db, refRename.getToName());
+		appendOneRecord(id, id, ident, msg, db, logName);
 	}
 
 	static void renameTo(final Repository db, final RefUpdate from,
