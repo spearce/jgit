@@ -44,6 +44,8 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import org.spearce.jgit.util.SystemReader;
+
 /**
  * A combination of a person identity and time in Git.
  * 
@@ -70,8 +72,8 @@ public class PersonIdent {
 		final RepositoryConfig config = repo.getConfig();
 		name = config.getCommitterName();
 		emailAddress = config.getCommitterEmail();
-		when = System.currentTimeMillis();
-		tzOffset = TimeZone.getDefault().getOffset(when) / (60 * 1000);
+		when = SystemReader.getInstance().getCurrentTime();
+		tzOffset = SystemReader.getInstance().getTimezone(when);
 	}
 
 	/**

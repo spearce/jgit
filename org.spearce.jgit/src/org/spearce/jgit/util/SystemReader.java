@@ -40,6 +40,7 @@ package org.spearce.jgit.util;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.TimeZone;
 
 import org.spearce.jgit.lib.FileBasedConfig;
 
@@ -81,6 +82,16 @@ public abstract class SystemReader {
 			}
 			return hostname;
 		}
+
+		@Override
+		public long getCurrentTime() {
+			return System.currentTimeMillis();
+		}
+
+		@Override
+		public int getTimezone(long when) {
+			return TimeZone.getDefault().getOffset(when) / (60 * 1000);
+		}
 	};
 
 	/** @return the live instance to read system properties. */
@@ -120,4 +131,15 @@ public abstract class SystemReader {
 	 * @return the git configuration found in the user home
 	 */
 	public abstract FileBasedConfig openUserConfig();
+
+	/**
+	 * @return the current system time
+	 */
+	public abstract long getCurrentTime();
+
+	/**
+	 * @param when TODO
+	 * @return the local time zone
+	 */
+	public abstract int getTimezone(long when);
 }

@@ -39,6 +39,7 @@ package org.spearce.jgit.lib;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 
 import org.spearce.jgit.util.SystemReader;
 
@@ -74,5 +75,15 @@ class MockSystemReader extends SystemReader {
 
 	public String getHostname() {
 		return "fake.host.example.com";
+	}
+
+	@Override
+	public long getCurrentTime() {
+		return 1250379778668L; // Sat Aug 15 20:12:58 GMT-03:30 2009
+	}
+
+	@Override
+	public int getTimezone(long when) {
+		return TimeZone.getTimeZone("GMT-3:30").getOffset(when);
 	}
 }
