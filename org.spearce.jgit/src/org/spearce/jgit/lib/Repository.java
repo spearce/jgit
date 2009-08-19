@@ -729,7 +729,7 @@ public class Repository {
 					}
 				}
 				if (time != null)
-					throw new RevisionSyntaxException("reflogs not yet supported by revision parser yet", revstr);
+					throw new RevisionSyntaxException("reflogs not yet supported by revision parser", revstr);
 				i = m - 1;
 				break;
 			default:
@@ -1029,15 +1029,30 @@ public class Repository {
 	}
 
 	/**
-	 * Strip work dir and return normalized repository path
+	 * Strip work dir and return normalized repository path.
 	 *
-	 * @param wd Work dir
-	 * @param f File whose path shall be stripped of its workdir
-	 * @return normalized repository relative path
+	 * @param workDir Work dir
+	 * @param file File whose path shall be stripped of its workdir
+	 * @return normalized repository relative path or the empty
+	 *         string if the file is not relative to the work directory.
 	 */
-	public static String stripWorkDir(File wd, File f) {
-		String relName = f.getPath().substring(wd.getPath().length() + 1);
-		relName = relName.replace(File.separatorChar, '/');
+	public static String stripWorkDir(File workDir, File file) {
+		final String filePath = file.getPath();
+		final String workDirPath = workDir.getPath();
+
+		if (filePath.length() <= workDirPath.length() ||
+		    filePath.charAt(workDirPath.length()) != File.separatorChar ||
+		    !filePath.startsWith(workDirPath)) {
+			File absWd = workDir.isAbsolute() ? workDir : workDir.getAbsoluteFile();
+			File absFile = file.isAbsolute() ? file : file.getAbsoluteFile();
+			if (absWd == workDir && absFile == file)
+				return "";
+			return stripWorkDir(absWd, absFile);
+		}
+
+		String relName = filePath.substring(workDirPath.length() + 1);
+		if (File.separatorChar != '/')
+			relName = relName.replace(File.separatorChar, '/');
 		return relName;
 	}
 

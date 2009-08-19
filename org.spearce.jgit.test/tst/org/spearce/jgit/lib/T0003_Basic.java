@@ -545,6 +545,31 @@ public class T0003_Basic extends RepositoryTestCase {
 		assertEquals(Commit.class, db.mapObject(ObjectId.fromString("540a36d136cf413e4b064c2b0e0a4db60f77feab"), null).getClass());
 		assertEquals(Tree.class, db.mapObject(ObjectId.fromString("aabf2ffaec9b497f0950352b3e582d73035c2035"), null).getClass());
 		assertEquals(Tag.class, db.mapObject(ObjectId.fromString("17768080a2318cd89bba4c8b87834401e2095703"), null).getClass());
+	}
+
+	public void test30_stripWorkDir() {
+		File relCwd = new File(".");
+		File absCwd = relCwd.getAbsoluteFile();
+		File absBase = new File(new File(absCwd, "repo"), "workdir");
+		File relBase = new File(new File(relCwd, "repo"), "workdir");
+		assertEquals(absBase.getAbsolutePath(), relBase.getAbsolutePath());
+
+		File relBaseFile = new File(new File(relBase, "other"), "module.c");
+		File absBaseFile = new File(new File(absBase, "other"), "module.c");
+		assertEquals("other/module.c", Repository.stripWorkDir(relBase, relBaseFile));
+		assertEquals("other/module.c", Repository.stripWorkDir(relBase, absBaseFile));
+		assertEquals("other/module.c", Repository.stripWorkDir(absBase, relBaseFile));
+		assertEquals("other/module.c", Repository.stripWorkDir(absBase, absBaseFile));
+
+		File relNonFile = new File(new File(relCwd, "not-repo"), ".gitignore");
+		File absNonFile = new File(new File(absCwd, "not-repo"), ".gitignore");
+		assertEquals("", Repository.stripWorkDir(relBase, relNonFile));
+		assertEquals("", Repository.stripWorkDir(absBase, absNonFile));
+
+		assertEquals("", Repository.stripWorkDir(db.getWorkDir(), db.getWorkDir()));
+
+		File file = new File(new File(db.getWorkDir(), "subdir"), "File.java");
+		assertEquals("subdir/File.java", Repository.stripWorkDir(db.getWorkDir(), file));
 
 	}
 }
