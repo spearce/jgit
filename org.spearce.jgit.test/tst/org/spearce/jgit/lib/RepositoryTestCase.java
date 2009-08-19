@@ -217,7 +217,7 @@ public abstract class RepositoryTestCase extends TestCase {
 		final String name = getClass().getName() + "." + getName();
 		recursiveDelete(trashParent, true, name, false); // Cleanup old failed stuff
 		trash = new File(trashParent,"trash"+System.currentTimeMillis()+"."+(testcount++));
-		trash_git = new File(trash, ".git");
+		trash_git = new File(trash, ".git").getCanonicalFile();
 		if (shutdownhook == null) {
 			shutdownhook = new Thread() {
 				@Override
@@ -307,7 +307,7 @@ public abstract class RepositoryTestCase extends TestCase {
 	protected Repository createNewEmptyRepo(boolean bare) throws IOException {
 		final File newTestRepo = new File(trashParent, "new"
 				+ System.currentTimeMillis() + "." + (testcount++)
-				+ (bare ? "" : "/") + ".git");
+				+ (bare ? "" : "/") + ".git").getCanonicalFile();
 		assertFalse(newTestRepo.exists());
 		final Repository newRepo = new Repository(newTestRepo);
 		newRepo.create();
