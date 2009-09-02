@@ -500,8 +500,11 @@ class RefDatabase {
 		int n = buf.length;
 		if (n == 0)
 			return null;
-		if (buf[n - 1] == '\n')
+
+		// remove trailing whitespaces
+		while (n > 0 && Character.isWhitespace(buf[n - 1]))
 			n--;
+
 		return RawParseUtils.decode(buf, 0, n);
 	}
 
