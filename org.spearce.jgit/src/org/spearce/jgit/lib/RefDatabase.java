@@ -498,13 +498,13 @@ class RefDatabase {
 			throws FileNotFoundException, IOException {
 		final byte[] buf = NB.readFully(file, 4096);
 		int n = buf.length;
-		if (n == 0)
-			return null;
 
 		// remove trailing whitespaces
 		while (n > 0 && Character.isWhitespace(buf[n - 1]))
 			n--;
 
+		if (n == 0)
+			return null;
 		return RawParseUtils.decode(buf, 0, n);
 	}
 
