@@ -94,6 +94,23 @@ public class IntList {
 	}
 
 	/**
+	 * Assign an entry in the list.
+	 *
+	 * @param index
+	 *            index to set, must be in the range [0, {@link #size()}).
+	 * @param n
+	 *            value to store at the position.
+	 */
+	public void set(final int index, final int n) {
+		if (count < index)
+			throw new ArrayIndexOutOfBoundsException(index);
+		else if (count == index)
+			add(n);
+		else
+			entries[index] = n;
+	}
+
+	/**
 	 * Pad the list with entries.
 	 *
 	 * @param toIndex
