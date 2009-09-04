@@ -449,15 +449,8 @@ public class RefUpdate {
 		RevObject newObj;
 		RevObject oldObj;
 
-		int lastSlash = getName().lastIndexOf('/');
-		if (lastSlash > 0)
-			if (db.getRepository().getRef(getName().substring(0, lastSlash)) != null)
-				return Result.LOCK_FAILURE;
-		String rName = getName() + "/";
-		for (Ref r : db.getAllRefs().values()) {
-			if (r.getName().startsWith(rName))
-				return Result.LOCK_FAILURE;
-		}
+		if (isNameConflicting())
+			return Result.LOCK_FAILURE;
 		lock = new LockFile(looseFile);
 		if (!lock.lock())
 			return Result.LOCK_FAILURE;
@@ -488,6 +481,21 @@ public class RefUpdate {
 		} finally {
 			lock.unlock();
 		}
+	}
+
+	private boolean isNameConflicting() throws IOException {
+		final String myName = getName();
+		final int lastSlash = myName.lastIndexOf('/');
+		if (lastSlash > 0)
+			if (db.getRepository().getRef(myName.substring(0, lastSlash)) != null)
+				return true;
+
+		final String rName = myName + "/";
+		for (Ref r : db.getAllRefs().values()) {
+			if (r.getName().startsWith(rName))
+				return true;
+		}
+		return false;
 	}
 
 	private static RevObject safeParse(final RevWalk rw, final AnyObjectId id)
