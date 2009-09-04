@@ -466,7 +466,7 @@ public class RefUpdate {
 			if (expValue != null) {
 				final ObjectId o;
 				o = oldValue != null ? oldValue : ObjectId.zeroId();
-				if (!expValue.equals(o))
+				if (!AnyObjectId.equals(expValue, o))
 					return Result.LOCK_FAILURE;
 			}
 			if (oldValue == null)

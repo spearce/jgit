@@ -45,6 +45,7 @@ import java.util.Map.Entry;
 
 import org.spearce.jgit.lib.RefUpdate.Result;
 import org.spearce.jgit.revwalk.RevCommit;
+import org.spearce.jgit.revwalk.RevWalk;
 
 public class RefUpdateTest extends RepositoryTestCase {
 
@@ -393,6 +394,57 @@ public class RefUpdateTest extends RepositoryTestCase {
 		updateRef.setExpectedOldObjectId(db.resolve("refs/heads/master^"));
 		Result update = updateRef.update();
 		assertEquals(Result.LOCK_FAILURE, update);
+		assertEquals(pid, db.resolve("refs/heads/master"));
+	}
+
+	/**
+	 * Try modify a ref forward, fast forward, checking old value first
+	 *
+	 * @throws IOException
+	 */
+	public void testUpdateRefForwardWithCheck1() throws IOException {
+		ObjectId ppid = db.resolve("refs/heads/master^");
+		ObjectId pid = db.resolve("refs/heads/master");
+
+		RefUpdate updateRef = db.updateRef("refs/heads/master");
+		updateRef.setNewObjectId(ppid);
+		updateRef.setForceUpdate(true);
+		Result update = updateRef.update();
+		assertEquals(Result.FORCED, update);
+		assertEquals(ppid, db.resolve("refs/heads/master"));
+
+		// real test
+		RefUpdate updateRef2 = db.updateRef("refs/heads/master");
+		updateRef2.setExpectedOldObjectId(ppid);
+		updateRef2.setNewObjectId(pid);
+		Result update2 = updateRef2.update();
+		assertEquals(Result.FAST_FORWARD, update2);
+		assertEquals(pid, db.resolve("refs/heads/master"));
+	}
+
+	/**
+	 * Try modify a ref forward, fast forward, checking old commit first
+	 *
+	 * @throws IOException
+	 */
+	public void testUpdateRefForwardWithCheck2() throws IOException {
+		ObjectId ppid = db.resolve("refs/heads/master^");
+		ObjectId pid = db.resolve("refs/heads/master");
+
+		RefUpdate updateRef = db.updateRef("refs/heads/master");
+		updateRef.setNewObjectId(ppid);
+		updateRef.setForceUpdate(true);
+		Result update = updateRef.update();
+		assertEquals(Result.FORCED, update);
+		assertEquals(ppid, db.resolve("refs/heads/master"));
+
+		// real test
+		RevCommit old = new RevWalk(db).parseCommit(ppid);
+		RefUpdate updateRef2 = db.updateRef("refs/heads/master");
+		updateRef2.setExpectedOldObjectId(old);
+		updateRef2.setNewObjectId(pid);
+		Result update2 = updateRef2.update();
+		assertEquals(Result.FAST_FORWARD, update2);
 		assertEquals(pid, db.resolve("refs/heads/master"));
 	}
 
