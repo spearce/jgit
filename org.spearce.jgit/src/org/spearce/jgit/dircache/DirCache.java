@@ -583,8 +583,6 @@ public class DirCache {
 	 *         information. If < 0 the entry does not exist in the index.
 	 */
 	public int findEntry(final String path) {
-		if (entryCnt == 0)
-			return -1;
 		final byte[] p = Constants.encode(path);
 		return findEntry(p, p.length);
 	}
@@ -592,7 +590,7 @@ public class DirCache {
 	int findEntry(final byte[] p, final int pLen) {
 		int low = 0;
 		int high = entryCnt;
-		do {
+		while (low < high) {
 			int mid = (low + high) >>> 1;
 			final int cmp = cmp(p, pLen, sortedEntries[mid]);
 			if (cmp < 0)
@@ -603,7 +601,7 @@ public class DirCache {
 				return mid;
 			} else
 				low = mid + 1;
-		} while (low < high);
+		}
 		return -(low + 1);
 	}
 

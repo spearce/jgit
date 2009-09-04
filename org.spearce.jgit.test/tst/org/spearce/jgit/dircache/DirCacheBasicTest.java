@@ -39,6 +39,7 @@ package org.spearce.jgit.dircache;
 
 import java.io.File;
 
+import org.spearce.jgit.lib.Constants;
 import org.spearce.jgit.lib.RepositoryTestCase;
 
 public class DirCacheBasicTest extends RepositoryTestCase {
@@ -182,4 +183,9 @@ public class DirCacheBasicTest extends RepositoryTestCase {
 		assertEquals(0, dc.getEntryCount());
 	}
 
+	public void testFindOnEmpty() throws Exception {
+		final DirCache dc = DirCache.newInCore();
+		final byte[] path = Constants.encode("a");
+		assertEquals(-1, dc.findEntry(path, path.length));
+	}
 }
