@@ -111,7 +111,7 @@ public class DirCacheBuildIterator extends DirCacheIterator {
 		if (currentSubtree != null)
 			builder.keep(ptr, currentSubtree.getEntrySpan());
 		else
-			builder.add(currentEntry);
+			builder.keep(ptr, 1);
 		next(1);
 	}
 
