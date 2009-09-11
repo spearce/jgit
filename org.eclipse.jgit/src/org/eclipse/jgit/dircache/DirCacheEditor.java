@@ -138,11 +138,16 @@ public class DirCacheEditor extends BaseDirCacheEditor {
 			}
 
 			final DirCacheEntry ent;
-			if (missing)
+			if (missing) {
 				ent = new DirCacheEntry(e.path);
-			else
+				e.apply(ent);
+				if (ent.getRawMode() == 0)
+					throw new IllegalArgumentException("FileMode not set"
+							+ " for path " + ent.getPathString());							
+			} else {
 				ent = cache.getEntry(eIdx);
-			e.apply(ent);
+				e.apply(ent);
+			}
 			fastAdd(ent);
 		}
 

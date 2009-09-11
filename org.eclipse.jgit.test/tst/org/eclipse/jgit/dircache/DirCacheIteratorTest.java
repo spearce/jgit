@@ -68,8 +68,10 @@ public class DirCacheIteratorTest extends RepositoryTestCase {
 
 		final String[] paths = { "a.", "a0b" };
 		final DirCacheEntry[] ents = new DirCacheEntry[paths.length];
-		for (int i = 0; i < paths.length; i++)
+		for (int i = 0; i < paths.length; i++) {
 			ents[i] = new DirCacheEntry(paths[i]);
+			ents[i].setFileMode(FileMode.REGULAR_FILE);
+		}
 
 		final DirCacheBuilder b = dc.builder();
 		for (int i = 0; i < ents.length; i++)

@@ -40,6 +40,7 @@ package org.eclipse.jgit.dircache;
 import java.io.IOException;
 
 import org.eclipse.jgit.errors.CorruptObjectException;
+import org.eclipse.jgit.lib.FileMode;
 import org.eclipse.jgit.lib.RepositoryTestCase;
 
 public class DirCacheLargePathTest extends RepositoryTestCase {
@@ -70,6 +71,10 @@ public class DirCacheLargePathTest extends RepositoryTestCase {
 
 		final DirCacheEntry longEnt = new DirCacheEntry(longPath);
 		final DirCacheEntry shortEnt = new DirCacheEntry(shortPath);
+
+		longEnt.setFileMode(FileMode.REGULAR_FILE);
+		shortEnt.setFileMode(FileMode.REGULAR_FILE);
+
 		assertEquals(longPath, longEnt.getPathString());
 		assertEquals(shortPath, shortEnt.getPathString());
 
