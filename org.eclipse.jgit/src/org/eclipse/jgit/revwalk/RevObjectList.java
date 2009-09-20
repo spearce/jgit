@@ -50,13 +50,12 @@ public class RevObjectList<E extends RevObject> extends AbstractList<E> {
 
 	static final int BLOCK_SIZE = 1 << BLOCK_SHIFT;
 
-	Block contents;
+	protected Block contents = new Block(0);
 
-	int size;
+	protected int size = 0;
 
 	/** Create an empty object list. */
 	public RevObjectList() {
-		clear();
 	}
 
 	public void add(final int index, final E element) {
@@ -107,7 +106,7 @@ public class RevObjectList<E extends RevObject> extends AbstractList<E> {
 		size = 0;
 	}
 
-	static class Block {
+	protected static class Block {
 		final Object[] contents = new Object[BLOCK_SIZE];
 
 		final int shift;
