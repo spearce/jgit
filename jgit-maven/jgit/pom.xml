@@ -201,7 +201,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <dependency>
             <groupId>com.jcraft</groupId>
             <artifactId>jsch</artifactId>
-            <version>0.1.38</version>
+            <version>0.1.41</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
