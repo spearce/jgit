@@ -2,3 +2,5 @@
 /jgit.jar
 /jgit_src.zip
 /jgit_docs.zip
+/org.spearce.jgit/lib/jsch-*.jar
+/org.spearce.jgit.pgm/lib/args4j-*.jar
