@@ -6,12 +6,12 @@ O_SRC=jgit_src.zip
 O_DOC=jgit_docs.zip
 
 PLUGINS="
-	org.spearce.jgit
-	org.spearce.jgit.pgm
+	org.eclipse.jgit
+	org.eclipse.jgit.pgm
 "
 JARS="
-	org.spearce.jgit/lib/jsch-0.1.37.jar
-	org.spearce.jgit.pgm/lib/args4j-2.0.9.jar
+	org.eclipse.jgit/lib/jsch-0.1.37.jar
+	org.eclipse.jgit.pgm/lib/args4j-2.0.9.jar
 "
 
 PSEP=":"
@@ -94,26 +94,26 @@ echo Manifest-Version: 1.0 >$T_MF &&
 echo Implementation-Title: jgit >>$T_MF &&
 echo Implementation-Version: $VN >>$T_MF &&
 
-java org.spearce.jgit.pgm.build.JarLinkUtil \
-	-include org.spearce.jgit/bin2 \
+java org.eclipse.jgit.pgm.build.JarLinkUtil \
+	-include org.eclipse.jgit/bin2 \
 	-file META-INF/MANIFEST.MF=$T_MF \
 	>$O_JAR+ &&
 mv $O_JAR+ $O_JAR &&
 echo "Created $O_JAR." &&
 
-java org.spearce.jgit.pgm.build.JarLinkUtil \
-	-include org.spearce.jgit/src \
+java org.eclipse.jgit.pgm.build.JarLinkUtil \
+	-include org.eclipse.jgit/src \
 	-file META-INF/MANIFEST.MF=$T_MF \
 	>$O_SRC+ &&
 mv $O_SRC+ $O_SRC &&
 echo "Created $O_SRC." &&
 
-M_TB=META-INF/services/org.spearce.jgit.pgm.TextBuiltin &&
+M_TB=META-INF/services/org.eclipse.jgit.pgm.TextBuiltin &&
 sed s/@@use_self@@/1/ jgit.sh >$O_CLI+ &&
-java org.spearce.jgit.pgm.build.JarLinkUtil \
+java org.eclipse.jgit.pgm.build.JarLinkUtil \
 	`for p in $JARS   ; do printf %s " -include $p"     ;done` \
 	`for p in $PLUGINS; do printf %s " -include $p/bin2";done` \
-	-file $M_TB=org.spearce.jgit.pgm/src/$M_TB \
+	-file $M_TB=org.eclipse.jgit.pgm/src/$M_TB \
 	-file META-INF/MANIFEST.MF=$T_MF \
 	>>$O_CLI+ &&
 chmod 555 $O_CLI+ &&

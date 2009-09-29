@@ -2,7 +2,7 @@
 
 This package is licensed under the BSD.
 
-  org.spearce.jgit/
+  org.eclipse.jgit/
 
     A pure Java library capable of being run standalone, with no
     additional support libraries.  Some JUnit tests are provided
@@ -12,8 +12,8 @@ This package is licensed under the BSD.
     All portions of jgit are covered by the BSD.  Absolutely no GPL,
     LGPL or EPL contributions are accepted within this package.
 
-  org.spearce.jgit.test/
-    Unit tests for org.spearce.jgit and the same licensing rules.
+  org.eclipse.jgit.test/
+    Unit tests for org.eclipse.jgit and the same licensing rules.
 
             == WARNINGS / CAVEATS              ==
 
@@ -36,7 +36,7 @@ This package is licensed under the BSD.
 
             == Package Features                ==
 
-  org.spearce.jgit/
+  org.eclipse.jgit/
 
     * Read loose and packed commits, trees, blobs, including
       deltafied objects.
@@ -71,7 +71,7 @@ This package is licensed under the BSD.
       Push via ssh, git and Amazon S3. JGit does not yet deltify
       the pushed packs so they may be a lot larger than C Git packs.
 
-  org.spearce.jgit.pgm
+  org.eclipse.jgit.pgm/
 
     * Assorted set of command line utilities. Mostly for ad-hoc testing of jgit
       log, glog, fetch etc.
