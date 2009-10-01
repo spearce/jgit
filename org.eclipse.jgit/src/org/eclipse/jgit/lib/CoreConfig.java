@@ -57,9 +57,12 @@ public class CoreConfig {
 
 	private final int packIndexVersion;
 
+	private final boolean logAllRefUpdates;
+
 	private CoreConfig(final Config rc) {
 		compression = rc.getInt("core", "compression", DEFAULT_COMPRESSION);
 		packIndexVersion = rc.getInt("pack", "indexversion", 2);
+		logAllRefUpdates = rc.getBoolean("core", "logallrefupdates", true);
 	}
 
 	/**
@@ -76,5 +79,12 @@ public class CoreConfig {
 	 */
 	public int getPackIndexVersion() {
 		return packIndexVersion;
+	}
+
+	/**
+	 * @return whether to log all refUpdates
+	 */
+	public boolean isLogAllRefUpdates() {
+		return logAllRefUpdates;
 	}
 }
