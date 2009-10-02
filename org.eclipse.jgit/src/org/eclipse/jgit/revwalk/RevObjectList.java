@@ -50,12 +50,21 @@ public class RevObjectList<E extends RevObject> extends AbstractList<E> {
 
 	static final int BLOCK_SIZE = 1 << BLOCK_SHIFT;
 
+	/**
+	 * Items stored in this list.
+	 * <p>
+	 * If {@link Block#shift} = 0 this block holds the list elements; otherwise
+	 * it holds pointers to other {@link Block} instances which use a shift that
+	 * is {@link #BLOCK_SHIFT} smaller.
+	 */
 	protected Block contents = new Block(0);
 
+	/** Current number of elements in the list. */
 	protected int size = 0;
 
 	/** Create an empty object list. */
 	public RevObjectList() {
+		// Initialized above.
 	}
 
 	public void add(final int index, final E element) {
@@ -106,6 +115,7 @@ public class RevObjectList<E extends RevObject> extends AbstractList<E> {
 		size = 0;
 	}
 
+	/** One level of contents, either an intermediate level or a leaf level. */
 	protected static class Block {
 		final Object[] contents = new Object[BLOCK_SIZE];
 
