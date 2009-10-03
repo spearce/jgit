@@ -56,4 +56,16 @@ public class Die extends RuntimeException {
 	public Die(final String why) {
 		super(why);
 	}
+
+	/**
+	 * Construct a new message explaining what has gone wrong.
+	 *
+	 * @param why
+	 *            the message to show to the end-user.
+	 * @param cause
+	 *            why the command has failed.
+	 */
+	public Die(final String why, final Throwable cause) {
+		super(why, cause);
+	}
 }
