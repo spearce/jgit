@@ -112,16 +112,18 @@ public class RefLogWriter {
 		final byte[] rec = Constants.encode(r.toString());
 		final File logdir = new File(db.getDirectory(), Constants.LOGS);
 		final File reflog = new File(logdir, refName);
-		final File refdir = reflog.getParentFile();
+		if (reflog.exists() || db.getConfig().getCore().isLogAllRefUpdates()) {
+			final File refdir = reflog.getParentFile();
 
-		if (!refdir.exists() && !refdir.mkdirs())
-			throw new IOException("Cannot create directory " + refdir);
+			if (!refdir.exists() && !refdir.mkdirs())
+				throw new IOException("Cannot create directory " + refdir);
 
-		final FileOutputStream out = new FileOutputStream(reflog, true);
-		try {
-			out.write(rec);
-		} finally {
-			out.close();
+			final FileOutputStream out = new FileOutputStream(reflog, true);
+			try {
+				out.write(rec);
+			} finally {
+				out.close();
+			}
 		}
 	}
 
