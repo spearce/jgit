@@ -39,29 +39,20 @@ package org.eclipse.jgit.pgm;
 
 import java.io.IOException;
 import java.io.PrintStream;
-
 import java.util.ArrayList;
 import java.util.List;
 
 import org.kohsuke.args4j.Argument;
-import org.kohsuke.args4j.ExampleMode;
 import org.kohsuke.args4j.Option;
 
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.MyersDiff;
 import org.eclipse.jgit.diff.RawText;
-
-import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.FileMode;
 import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.Ref;
-
-import org.eclipse.jgit.pgm.opt.CmdLineParser;
 import org.eclipse.jgit.pgm.opt.PathTreeFilterHandler;
-
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.TreeWalk;
-
 import org.eclipse.jgit.treewalk.filter.AndTreeFilter;
 import org.eclipse.jgit.treewalk.filter.TreeFilter;
 
@@ -89,7 +80,6 @@ class Diff extends TextBuiltin {
 			walk.addTree(i);
 		walk.setFilter(AndTreeFilter.create(TreeFilter.ANY_DIFF, pathFilter));
 
-		final int nTree = walk.getTreeCount();
 		while (walk.next())
 			outputDiff(System.out, walk.getPathString(),
 				walk.getObjectId(0), walk.getFileMode(0),
@@ -103,10 +93,10 @@ class Diff extends TextBuiltin {
 		out.println("diff --git " + name1 + " " + name2);
 		boolean isNew=false;
 		boolean isDelete=false;
-		if (id1.equals(id1.zeroId())) {
+		if (id1.equals(ObjectId.zeroId())) {
 			out.println("new file mode " + mode2);
 			isNew=true;
-		} else if (id2.equals(id2.zeroId())) {
+		} else if (id2.equals(ObjectId.zeroId())) {
 			out.println("deleted file mode " + mode1);
 			isDelete=true;
 		} else if (!mode1.equals(mode2)) {
@@ -125,7 +115,7 @@ class Diff extends TextBuiltin {
 	}
 
 	private RawText getRawText(ObjectId id) throws IOException {
-		if (id.equals(id.zeroId()))
+		if (id.equals(ObjectId.zeroId()))
 			return new RawText(new byte[] { });
 		return new RawText(db.openBlob(id).getCachedBytes());
 	}
