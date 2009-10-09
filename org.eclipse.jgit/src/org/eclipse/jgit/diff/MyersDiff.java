@@ -35,6 +35,11 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+package org.eclipse.jgit.diff;
+
+import org.eclipse.jgit.util.IntList;
+import org.eclipse.jgit.util.LongList;
+
 /**
  * Diff algorithm, based on "An O(ND) Difference Algorithm and its
  * Variations", by Eugene Myers.
@@ -87,26 +92,37 @@
  * So the overall runtime complexity stays the same with linear space,
  * albeit with a larger constant factor.
  */
-
-package org.eclipse.jgit.diff;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import org.eclipse.jgit.util.IntList;
-import org.eclipse.jgit.util.LongList;
-
 public class MyersDiff {
+	/**
+	 * The list of edits found during the last call to {@link #calculateEdits()}
+	 */
 	protected EditList edits;
-	protected Sequence a, b;
 
+	/**
+	 * The first text to be compared. Referred to as "Text A" in the comments
+	 */
+	protected Sequence a;
+
+	/**
+	 * The second text to be compared. Referred to as "Text B" in the comments
+	 */
+	protected Sequence b;
+
+	/**
+	 * The only constructor
+	 *
+	 * @param a   the text A which should be compared
+	 * @param b   the text B which should be compared
+	 */
 	public MyersDiff(Sequence a, Sequence b) {
 		this.a = a;
 		this.b = b;
 		calculateEdits();
 	}
 
+	/**
+	 * @return the list of edits found during the last call to {@link #calculateEdits()}
+	 */
 	public EditList getEdits() {
 		return edits;
 	}
@@ -114,6 +130,10 @@ public class MyersDiff {
 	// TODO: use ThreadLocal for future multi-threaded operations
 	MiddleEdit middle = new MiddleEdit();
 
+	/**
+	 * Entrypoint into the algorithm this class is all about. This method triggers that the
+	 * differences between A and B are calculated in form of a list of edits.
+	 */
 	protected void calculateEdits() {
 		edits = new EditList();
 
@@ -126,6 +146,13 @@ public class MyersDiff {
 				middle.beginB, middle.endB);
 	}
 
+	/**
+	 * Calculates the differences between a given part of A against another given part of B
+	 * @param beginA start of the part of A which should be compared (0<=beginA<sizeof(A))
+	 * @param endA end of the part of A which should be compared (beginA<=endA<sizeof(A))
+	 * @param beginB start of the part of B which should be compared (0<=beginB<sizeof(B))
+	 * @param endB end of the part of B which should be compared (beginB<=endB<sizeof(B))
+	 */
 	protected void calculateEdits(int beginA, int endA,
 			int beginB, int endB) {
 		Edit edit = middle.calculate(beginA, endA, beginB, endB);
@@ -481,26 +508,9 @@ if (k < beginK || k > endK)
 		}
 	}
 
-	// debugging (TODO: remove)
-	public void print(Sequence s, int begin, int end) {
-		RawText raw = (RawText)s;
-		try {
-			while (begin < end) {
-				System.err.print("" + begin + ": ");
-				raw.writeLine(System.err, begin++);
-				System.err.println("");
-			}
-		} catch (Exception e) { e.printStackTrace(); }
-	}
-
-	public void print(int beginA, int endA, int beginB, int endB) {
-		System.err.println("<<<<<<");
-		print(a, beginA, endA);
-		System.err.println("======");
-		print(b, beginB, endB);
-		System.err.println(">>>>>>");
-	}
-
+	/**
+	 * @param args two filenames specifying the contents to be diffed
+	 */
 	public static void main(String[] args) {
 		if (args.length != 2) {
 			System.err.println("Need 2 arguments");
