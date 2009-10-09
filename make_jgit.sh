@@ -7,6 +7,7 @@ O_DOC=jgit_docs.zip
 
 PLUGINS="
 	org.eclipse.jgit
+	org.eclipse.jgit.ui
 	org.eclipse.jgit.pgm
 "
 JARS="
