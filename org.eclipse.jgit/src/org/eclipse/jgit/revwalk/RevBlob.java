@@ -44,7 +44,7 @@ import org.eclipse.jgit.lib.Constants;
 public class RevBlob extends RevObject {
 	/**
 	 * Create a new blob reference.
-	 * 
+	 *
 	 * @param id
 	 *            object name for the blob.
 	 */

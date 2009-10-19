@@ -43,7 +43,7 @@ import org.eclipse.jgit.lib.Ref;
 
 /**
  * A commit reference to a commit in the DAG.
- * 
+ *
  * @param <L>
  *            type of lane being used by the plotter.
  * @see PlotCommitList
@@ -63,7 +63,7 @@ public class PlotCommit<L extends PlotLane> extends RevCommit {
 
 	/**
 	 * Create a new commit.
-	 * 
+	 *
 	 * @param id
 	 *            the identity of this commit.
 	 * @param tags
@@ -106,7 +106,7 @@ public class PlotCommit<L extends PlotLane> extends RevCommit {
 
 	/**
 	 * Get the number of child commits listed in this commit.
-	 * 
+	 *
 	 * @return number of children; always a positive value but can be 0.
 	 */
 	public final int getChildCount() {
@@ -115,7 +115,7 @@ public class PlotCommit<L extends PlotLane> extends RevCommit {
 
 	/**
 	 * Get the nth child from this commit's child list.
-	 * 
+	 *
 	 * @param nth
 	 *            child index to obtain. Must be in the range 0 through
 	 *            {@link #getChildCount()}-1.
@@ -129,7 +129,7 @@ public class PlotCommit<L extends PlotLane> extends RevCommit {
 
 	/**
 	 * Determine if the given commit is a child (descendant) of this commit.
-	 * 
+	 *
 	 * @param c
 	 *            the commit to test.
 	 * @return true if the given commit built on top of this commit.
@@ -143,7 +143,7 @@ public class PlotCommit<L extends PlotLane> extends RevCommit {
 
 	/**
 	 * Obtain the lane this commit has been plotted into.
-	 * 
+	 *
 	 * @return the assigned lane for this commit.
 	 */
 	public final L getLane() {

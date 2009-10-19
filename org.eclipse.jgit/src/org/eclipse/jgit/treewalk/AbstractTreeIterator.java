@@ -69,7 +69,7 @@ import org.eclipse.jgit.treewalk.filter.TreeFilter;
  * In the second item, <code>A</code> is the name of a subtree and
  * <code>c</code> is a file within that subtree. The other two items are files
  * in the root level tree.
- * 
+ *
  * @see CanonicalTreeParser
  */
 public abstract class AbstractTreeIterator {
@@ -97,7 +97,7 @@ public abstract class AbstractTreeIterator {
 	 * <p>
 	 * A numerical value from FileMode is usually faster for an iterator to
 	 * obtain from its data source so this is the preferred representation.
-	 * 
+	 *
 	 * @see org.eclipse.jgit.lib.FileMode
 	 */
 	protected int mode;
@@ -205,7 +205,7 @@ public abstract class AbstractTreeIterator {
 
 	/**
 	 * Create an iterator for a subtree of an existing iterator.
-	 * 
+	 *
 	 * @param p
 	 *            parent tree iterator.
 	 */
@@ -246,7 +246,7 @@ public abstract class AbstractTreeIterator {
 
 	/**
 	 * Grow the path buffer larger.
-	 * 
+	 *
 	 * @param len
 	 *            number of live bytes in the path buffer. This many bytes will
 	 *            be moved into the larger buffer.
@@ -292,7 +292,7 @@ public abstract class AbstractTreeIterator {
 
 	/**
 	 * Compare the path of this current entry to another iterator's entry.
-	 * 
+	 *
 	 * @param p
 	 *            the other iterator to compare the path against.
 	 * @return -1 if this entry sorts first; 0 if the entries are equal; 1 if
@@ -352,7 +352,7 @@ public abstract class AbstractTreeIterator {
 	 * This method is faster than {@link #getEntryObjectId()} as it does not
 	 * require copying the bytes out of the buffers. A direct {@link #idBuffer}
 	 * compare operation is performed.
-	 * 
+	 *
 	 * @param otherIterator
 	 *            the other iterator to test against.
 	 * @return true if both iterators have the same object id; false otherwise.
@@ -364,7 +364,7 @@ public abstract class AbstractTreeIterator {
 
 	/**
 	 * Get the object id of the current entry.
-	 * 
+	 *
 	 * @return an object id for the current entry.
 	 */
 	public ObjectId getEntryObjectId() {
@@ -404,7 +404,7 @@ public abstract class AbstractTreeIterator {
 	 * all entries, or it can be a unique buffer per-entry. Implementations are
 	 * encouraged to expose their private buffer whenever possible to reduce
 	 * garbage generation and copying costs.
-	 * 
+	 *
 	 * @return byte array the implementation stores object IDs within.
 	 * @see #getEntryObjectId()
 	 */
@@ -412,7 +412,7 @@ public abstract class AbstractTreeIterator {
 
 	/**
 	 * Get the position within {@link #idBuffer()} of this entry's ObjectId.
-	 * 
+	 *
 	 * @return offset into the array returned by {@link #idBuffer()} where the
 	 *         ObjectId must be copied out of.
 	 */
@@ -424,7 +424,7 @@ public abstract class AbstractTreeIterator {
 	 * The parent reference of the iterator must be <code>this</code>,
 	 * otherwise the caller would not be able to exit out of the subtree
 	 * iterator correctly and return to continue walking <code>this</code>.
-	 * 
+	 *
 	 * @param repo
 	 *            repository to load the tree data from.
 	 * @return a new parser that walks over the current subtree.
@@ -489,7 +489,7 @@ public abstract class AbstractTreeIterator {
 	 * Is this tree iterator at its EOF point (no more entries)?
 	 * <p>
 	 * An iterator is at EOF if there is no current entry.
-	 * 
+	 *
 	 * @return true if we have walked all entries and have none left.
 	 */
 	public abstract boolean eof();
@@ -533,7 +533,7 @@ public abstract class AbstractTreeIterator {
 	 * as well as any implementation dependent information necessary to
 	 * accurately return data from {@link #idBuffer()} and {@link #idOffset()}
 	 * when demanded.
-	 * 
+	 *
 	 * @param delta
 	 *            number of entries to move the iterator by. Must be a positive,
 	 *            non-zero integer.

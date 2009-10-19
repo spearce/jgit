@@ -61,14 +61,14 @@ public class WorkDirCheckout {
 	File root;
 
 	GitIndex index;
-	
+
 	private boolean failOnConflict = true;
 
 	Tree merge;
 
-	
+
 	/**
-	 * If <code>true</code>, will scan first to see if it's possible to check out, 
+	 * If <code>true</code>, will scan first to see if it's possible to check out,
 	 * otherwise throw {@link CheckoutConflictException}. If <code>false</code>,
 	 * it will silently deal with the problem.
 	 * @param failOnConflict
@@ -84,7 +84,7 @@ public class WorkDirCheckout {
 		this.index = oldIndex;
 		this.merge = repo.mapTree(newIndex.writeTree());
 	}
-	
+
 	/**
 	 * Create a checkout class for checking out one tree, merging with the index
 	 *
@@ -93,7 +93,7 @@ public class WorkDirCheckout {
 	 * @param index current index
 	 * @param merge tree to check out
 	 */
-	public WorkDirCheckout(Repository repo, File root, 
+	public WorkDirCheckout(Repository repo, File root,
 			GitIndex index, Tree merge) {
 		this.repo = repo;
 		this.root = root;
@@ -114,7 +114,7 @@ public class WorkDirCheckout {
 		this(repo, root, index, merge);
 		this.head = head;
 	}
-	
+
 	/**
 	 * Execute this checkout
 	 *
@@ -130,7 +130,7 @@ public class WorkDirCheckout {
 				throw new CheckoutConflictException(entries);
 			}
 		}
-		
+
 		cleanUpConflicts();
 		if (head == null)
 			checkoutOutIndexNoHead();
@@ -141,7 +141,7 @@ public class WorkDirCheckout {
 		for (String path : removed) {
 			index.remove(root, new File(root, path));
 		}
-		
+
 		for (java.util.Map.Entry<String, ObjectId> entry : updated.entrySet()) {
 			Entry newEntry = index.addEntry(merge.findBlobMember(entry.getKey()));
 			index.checkoutEntry(root, newEntry);
@@ -154,7 +154,7 @@ public class WorkDirCheckout {
 	Tree head = null;
 
 	HashMap<String, ObjectId> updated = new HashMap<String, ObjectId>();
-	
+
 	private void checkoutOutIndexNoHead() throws IOException {
 		new IndexTreeWalker(index, merge, root, new AbstractIndexTreeVisitor() {
 			public void visitEntry(TreeEntry m, Entry i, File f) throws IOException {
@@ -170,7 +170,7 @@ public class WorkDirCheckout {
 					if (i.isModified(root, true))
 						needsCheckout = true;
 				} else needsCheckout = true;
-				
+
 				if (needsCheckout) {
 					Entry newEntry = index.addEntry(m);
 					index.checkoutEntry(root, newEntry);
@@ -199,9 +199,9 @@ public class WorkDirCheckout {
 			if (parentFile.list().length == 0)
 				parentFile.delete();
 			else break;
-			
+
 			parentFile = parentFile.getParentFile();
-		}	
+		}
 	}
 
 	void prescanOneTree() throws IOException {
@@ -221,12 +221,12 @@ public class WorkDirCheckout {
 		}).walk();
 		conflicts.removeAll(removed);
 	}
-	
+
 	private ArrayList<String> listFiles(File file) {
 		ArrayList<String> list = new ArrayList<String>();
 		listFiles(file, list);
 		return list;
-	}	
+	}
 
 	private void listFiles(File dir, ArrayList<String> list) {
 		for (File f : dir.listFiles()) {
@@ -261,24 +261,24 @@ public class WorkDirCheckout {
 				}
 				processEntry(treeEntry, auxEntry, indexEntry);
 			}
-	
+
 			@Override
 			public void finishVisitTree(Tree tree, Tree auxTree, String curDir) throws IOException {
 				if (curDir.length() == 0) return;
-				
+
 				if (auxTree != null) {
 					if (index.getEntry(curDir) != null)
 						removed.add(curDir);
-				} 
+				}
 			}
-			
+
 		}).walk();
-		
+
 		// if there's a conflict, don't list it under
 		// to-be-removed, since that messed up our next
 		// section
 		removed.removeAll(conflicts);
-		
+
 		for (String path : updated.keySet()) {
 			if (index.getEntry(path) == null) {
 				File file = new File(root, path);
@@ -289,8 +289,8 @@ public class WorkDirCheckout {
 				}
 			}
 		}
-		
-		
+
+
 		conflicts.removeAll(removed);
 	}
 
@@ -298,11 +298,11 @@ public class WorkDirCheckout {
 				ObjectId iId = (i == null ? null : i.getObjectId());
 				ObjectId mId = (m == null ? null : m.getId());
 				ObjectId hId = (h == null ? null : h.getId());
-				
-				String name = (i != null ? i.getName() : 
+
+				String name = (i != null ? i.getName() :
 					(h != null ? h.getFullName() :
 						m.getFullName()));
-				
+
 				if (i == null) {
 					/*
 				    I (index)                H        M        Result
@@ -311,7 +311,7 @@ public class WorkDirCheckout {
 			        1 nothing             nothing  exists   use M
 			        2 nothing             exists   nothing  remove path from index
 			        3 nothing             exists   exists   use M */
-					
+
 					if (h == null) {
 						updated.put(name,mId);
 					} else if (m == null) {
@@ -325,12 +325,12 @@ public class WorkDirCheckout {
 			         -----------------------------------------------------
 			        4 yes   N/A   N/A     nothing  nothing  keep index
 			        5 no    N/A   N/A     nothing  nothing  keep index
-			
+
 			        6 yes   N/A   yes     nothing  exists   keep index
 			        7 no    N/A   yes     nothing  exists   keep index
 			        8 yes   N/A   no      nothing  exists   fail
 			        9 no    N/A   no      nothing  exists   fail       */
-					
+
 					if (m == null || mId.equals(iId)) {
 						if (hasParentBlob(merge, name)) {
 							if (i.isModified(root, true)) {
@@ -349,7 +349,7 @@ public class WorkDirCheckout {
 			        12 yes   no    N/A     exists   nothing  fail
 			        13 no    no    N/A     exists   nothing  fail
 					 */
-			
+
 					if (hId.equals(iId)) {
 						if (i.isModified(root, true)) {
 							conflicts.add(name);
@@ -368,14 +368,14 @@ public class WorkDirCheckout {
 							conflicts.add(name);
 						else updated.put(name, mId);
 					}
-				} 
+				}
 			}
 
 	private boolean hasParentBlob(Tree t, String name) throws IOException {
 		if (name.indexOf("/") == -1) return false;
-		
+
 		String parent = name.substring(0, name.lastIndexOf("/"));
-		if (t.findBlobMember(parent) != null) 
+		if (t.findBlobMember(parent) != null)
 			return true;
 		return hasParentBlob(t, parent);
 	}

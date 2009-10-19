@@ -79,7 +79,7 @@ public class TransportException extends IOException {
 
 	/**
 	 * Constructs an TransportException with the specified detail message.
-	 * 
+	 *
 	 * @param s
 	 *            message
 	 */
@@ -89,7 +89,7 @@ public class TransportException extends IOException {
 
 	/**
 	 * Constructs an TransportException with the specified detail message.
-	 * 
+	 *
 	 * @param s
 	 *            message
 	 * @param cause

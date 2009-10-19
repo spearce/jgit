@@ -119,7 +119,7 @@ public final class RawParseUtils {
 	 * The argument and return values from this method make it easy to chain
 	 * writing, for example:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * final byte[] tmp = new byte[64];
 	 * int ptr = tmp.length;
@@ -130,7 +130,7 @@ public final class RawParseUtils {
 	 * tmp[--ptr] = 0;
 	 * final String str = new String(tmp, ptr, tmp.length - ptr);
 	 * </pre>
-	 * 
+	 *
 	 * @param b
 	 *            buffer to write into.
 	 * @param o
@@ -164,7 +164,7 @@ public final class RawParseUtils {
 	 * sequence, and may start with a '+' or a '-' to indicate sign position.
 	 * Any other characters will cause the method to stop and return the current
 	 * result to the caller.
-	 * 
+	 *
 	 * @param b
 	 *            buffer to scan.
 	 * @param ptr
@@ -218,7 +218,7 @@ public final class RawParseUtils {
 	 * sequence, and may start with a '+' or a '-' to indicate sign position.
 	 * Any other characters will cause the method to stop and return the current
 	 * result to the caller.
-	 * 
+	 *
 	 * @param b
 	 *            buffer to scan.
 	 * @param ptr
@@ -357,7 +357,7 @@ public final class RawParseUtils {
 	 * <p>
 	 * The sequence "-0315" will be parsed as the numeric value -195, as the
 	 * lower two positions count minutes, not 100ths of an hour.
-	 * 
+	 *
 	 * @param b
 	 *            buffer to scan.
 	 * @param ptr
@@ -373,7 +373,7 @@ public final class RawParseUtils {
 
 	/**
 	 * Locate the first position after a given character.
-	 * 
+	 *
 	 * @param b
 	 *            buffer to scan.
 	 * @param ptr
@@ -410,7 +410,7 @@ public final class RawParseUtils {
 	 * Locate the first position after either the given character or LF.
 	 * <p>
 	 * This method stops on the first match it finds from either chrA or '\n'.
-	 * 
+	 *
 	 * @param b
 	 *            buffer to scan.
 	 * @param ptr
@@ -527,7 +527,7 @@ public final class RawParseUtils {
 
 	/**
 	 * Locate the "author " header line data.
-	 * 
+	 *
 	 * @param b
 	 *            buffer to scan.
 	 * @param ptr
@@ -549,7 +549,7 @@ public final class RawParseUtils {
 
 	/**
 	 * Locate the "committer " header line data.
-	 * 
+	 *
 	 * @param b
 	 *            buffer to scan.
 	 * @param ptr
@@ -601,7 +601,7 @@ public final class RawParseUtils {
 
 	/**
 	 * Locate the "encoding " header line.
-	 * 
+	 *
 	 * @param b
 	 *            buffer to scan.
 	 * @param ptr
@@ -632,7 +632,7 @@ public final class RawParseUtils {
 	 * to apply to this buffer to evaluate its contents as character data.
 	 * <p>
 	 * If no encoding header is present, {@link Constants#CHARSET} is assumed.
-	 * 
+	 *
 	 * @param b
 	 *            buffer to scan.
 	 * @return the Java character set representation. Never null.
@@ -652,7 +652,7 @@ public final class RawParseUtils {
 	 * return value of {@link #author(byte[], int)} or
 	 * {@link #committer(byte[], int)}, as these methods provide the proper
 	 * position within the buffer.
-	 * 
+	 *
 	 * @param raw
 	 *            the buffer to parse character data from.
 	 * @param nameB
@@ -761,7 +761,7 @@ public final class RawParseUtils {
 	 *
 	 * If the byte stream cannot be decoded that way, the platform default is tried
 	 * and if that too fails, the fail-safe ISO-8859-1 encoding is tried.
-	 * 
+	 *
 	 * @param buffer
 	 *            buffer to pull raw bytes from.
 	 * @return a string representation of the range <code>[start,end)</code>,
@@ -797,7 +797,7 @@ public final class RawParseUtils {
 	 *
 	 * If the byte stream cannot be decoded that way, the platform default is tried
 	 * and if that too fails, the fail-safe ISO-8859-1 encoding is tried.
-	 * 
+	 *
 	 * @param cs
 	 *            character set to use when decoding the buffer.
 	 * @param buffer
@@ -814,7 +814,7 @@ public final class RawParseUtils {
 	 *
 	 * If the byte stream cannot be decoded that way, the platform default is tried
 	 * and if that too fails, the fail-safe ISO-8859-1 encoding is tried.
-	 * 
+	 *
 	 * @param cs
 	 *            character set to use when decoding the buffer.
 	 * @param buffer
@@ -935,7 +935,7 @@ public final class RawParseUtils {
 
 	/**
 	 * Locate the position of the commit message body.
-	 * 
+	 *
 	 * @param b
 	 *            buffer to scan.
 	 * @param ptr
@@ -983,7 +983,7 @@ public final class RawParseUtils {
 	 * Locate the end of a paragraph.
 	 * <p>
 	 * A paragraph is ended by two consecutive LF bytes.
-	 * 
+	 *
 	 * @param b
 	 *            buffer to scan.
 	 * @param start

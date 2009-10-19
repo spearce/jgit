@@ -59,7 +59,7 @@ import org.eclipse.jgit.lib.FileMode;
  * <code>java.io</code> package. Plugins for a Java based IDE may however wish
  * to create their own implementations of this class to allow traversal of the
  * IDE's project space, as well as benefit from any caching the IDE may have.
- * 
+ *
  * @see FileTreeIterator
  */
 public abstract class WorkingTreeIterator extends AbstractTreeIterator {
@@ -121,7 +121,7 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 
 	/**
 	 * Create an iterator for a subtree of an existing iterator.
-	 * 
+	 *
 	 * @param p
 	 *            parent tree iterator.
 	 */
@@ -348,7 +348,7 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 
 	/**
 	 * Obtain the current entry from this iterator.
-	 * 
+	 *
 	 * @return the currently selected entry.
 	 */
 	protected Entry current() {
@@ -389,7 +389,7 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 		 * The implementation of this method must be efficient. If a subclass
 		 * needs to compute the value they should cache the reference within an
 		 * instance member instead.
-		 * 
+		 *
 		 * @return a file mode constant from {@link FileMode}.
 		 */
 		public abstract FileMode getMode();
@@ -402,7 +402,7 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 		 * The implementation of this method must be efficient. If a subclass
 		 * needs to compute the value they should cache the reference within an
 		 * instance member instead.
-		 * 
+		 *
 		 * @return size of this file, in bytes.
 		 */
 		public abstract long getLength();
@@ -425,7 +425,7 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 		 * <p>
 		 * Efficient implementations are not required. The caller will obtain
 		 * the name only once and cache it once obtained.
-		 * 
+		 *
 		 * @return name of the entry.
 		 */
 		public abstract String getName();
@@ -441,7 +441,7 @@ public abstract class WorkingTreeIterator extends AbstractTreeIterator {
 		 * block IO operations.
 		 * <p>
 		 * The caller will close the stream once complete.
-		 * 
+		 *
 		 * @return a stream to read from the file.
 		 * @throws IOException
 		 *             the file could not be opened for reading.

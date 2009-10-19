@@ -63,7 +63,7 @@ public interface IndexTreeVisitor {
 	 * @throws IOException
 	 */
 	public void visitEntry(TreeEntry treeEntry, Entry indexEntry, File file) throws IOException;
-	
+
 	/**
 	 * Visit a blob, and corresponding tree nodes and associated index entry.
 	 *

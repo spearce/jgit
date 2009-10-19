@@ -122,7 +122,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * mark the commit REWRITE. Later we can rewrite the parents of a REWRITE
 	 * child to remove chains of REWRITE commits before we produce the child to
 	 * the application.
-	 * 
+	 *
 	 * @see RewriteGenerator
 	 */
 	static final int REWRITE = 1 << 3;
@@ -179,7 +179,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	/**
 	 * Create a new revision walker for a given repository.
-	 * 
+	 *
 	 * @param repo
 	 *            the repository the walker will obtain data from.
 	 */
@@ -199,7 +199,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	/**
 	 * Get the repository this walker loads objects from.
-	 * 
+	 *
 	 * @return the repository this walker was created to read.
 	 */
 	public Repository getRepository() {
@@ -218,7 +218,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * handling may be more difficult for the application to explain why a
 	 * RevCommit is not actually a commit. The object pool of this walker would
 	 * also be 'poisoned' by the non-commit RevCommit.
-	 * 
+	 *
 	 * @param c
 	 *            the commit to start traversing from. The commit passed must be
 	 *            from this same revision walker.
@@ -248,7 +248,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	/**
 	 * Mark commits to start graph traversal from.
-	 * 
+	 *
 	 * @param list
 	 *            commits to start traversing from. The commits passed must be
 	 *            from this same revision walker.
@@ -288,7 +288,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * handling may be more difficult for the application to explain why a
 	 * RevCommit is not actually a commit. The object pool of this walker would
 	 * also be 'poisoned' by the non-commit RevCommit.
-	 * 
+	 *
 	 * @param c
 	 *            the commit to start traversing from. The commit passed must be
 	 *            from this same revision walker.
@@ -324,7 +324,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * commits, and then executes a walk until an answer can be obtained.
 	 * Currently allocated RevFlags that have been added to RevCommit instances
 	 * will be retained through the reset.
-	 * 
+	 *
 	 * @param base
 	 *            commit the caller thinks is reachable from <code>tip</code>.
 	 * @param tip
@@ -364,7 +364,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	/**
 	 * Pop the next most recent commit.
-	 * 
+	 *
 	 * @return next most recent commit; null if traversal is over.
 	 * @throws MissingObjectException
 	 *             one or or more of the next commit's parents are not available
@@ -383,7 +383,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	/**
 	 * Obtain the sort types applied to the commits returned.
-	 * 
+	 *
 	 * @return the sorting strategies employed. At least one strategy is always
 	 *         used, but that strategy may be {@link RevSort#NONE}.
 	 */
@@ -407,7 +407,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * <p>
 	 * Disables all sorting strategies, then enables only the single strategy
 	 * supplied by the caller.
-	 * 
+	 *
 	 * @param s
 	 *            a sorting strategy to enable.
 	 */
@@ -424,7 +424,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * may take precedence over others. As an example, {@link RevSort#TOPO} must
 	 * take precedence over {@link RevSort#COMMIT_TIME_DESC}, otherwise it
 	 * cannot enforce its ordering.
-	 * 
+	 *
 	 * @param s
 	 *            a sorting strategy to enable or disable.
 	 * @param use
@@ -446,7 +446,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	/**
 	 * Get the currently configured commit filter.
-	 * 
+	 *
 	 * @return the current filter. Never null as a filter is always needed.
 	 */
 	public RevFilter getRevFilter() {
@@ -466,7 +466,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * unless the filter implementation specifically states it is (and always
 	 * will be) thread-safe. Callers may use {@link RevFilter#clone()} to create
 	 * a unique filter tree for this RevWalk instance.
-	 * 
+	 *
 	 * @param newFilter
 	 *            the new filter. If null the special {@link RevFilter#ALL}
 	 *            filter will be used instead, as it matches every commit.
@@ -480,7 +480,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	/**
 	 * Get the tree filter used to simplify commits by modified paths.
-	 * 
+	 *
 	 * @return the current filter. Never null as a filter is always needed. If
 	 *         no filter is being applied {@link TreeFilter#ALL} is returned.
 	 */
@@ -501,7 +501,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * Usually callers should be inserting a filter graph including
 	 * {@link TreeFilter#ANY_DIFF} along with one or more
 	 * {@link org.eclipse.jgit.treewalk.filter.PathFilter} instances.
-	 * 
+	 *
 	 * @param newFilter
 	 *            new filter. If null the special {@link TreeFilter#ALL} filter
 	 *            will be used instead, as it matches everything.
@@ -562,7 +562,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * <p>
 	 * The tree may or may not exist in the repository. It is impossible to tell
 	 * from this method's return value.
-	 * 
+	 *
 	 * @param id
 	 *            name of the tree object.
 	 * @return reference to the tree object. Never null.
@@ -581,7 +581,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * <p>
 	 * The commit may or may not exist in the repository. It is impossible to
 	 * tell from this method's return value.
-	 * 
+	 *
 	 * @param id
 	 *            name of the commit object.
 	 * @return reference to the commit object. Never null.
@@ -600,7 +600,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * <p>
 	 * The object may or may not exist in the repository. It is impossible to
 	 * tell from this method's return value.
-	 * 
+	 *
 	 * @param id
 	 *            name of the object.
 	 * @param type
@@ -637,7 +637,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * Unlike {@link #lookupCommit(AnyObjectId)} this method only returns
 	 * successfully if the commit object exists, is verified to be a commit, and
 	 * was parsed without error.
-	 * 
+	 *
 	 * @param id
 	 *            name of the commit object.
 	 * @return reference to the commit object. Never null.
@@ -707,7 +707,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * without error. Parsing an object can be expensive as the type must be
 	 * determined. For blobs this may mean the blob content was unpacked
 	 * unnecessarily, and thrown away.
-	 * 
+	 *
 	 * @param id
 	 *            name of the object.
 	 * @return reference to the object. Never null.
@@ -762,7 +762,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * <p>
 	 * This method only returns successfully if the object exists and was parsed
 	 * without error.
-	 * 
+	 *
 	 * @param obj
 	 *            the object the caller needs to be parsed.
 	 * @throws MissingObjectException
@@ -800,7 +800,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * Applications are only assured to be able to create 24 unique flags on any
 	 * given revision walker instance. Any flags beyond 24 are offered only if
 	 * the implementation has extra free space within its internal storage.
-	 * 
+	 *
 	 * @param name
 	 *            description of the flag, primarily useful for debugging.
 	 * @return newly constructed flag instance.
@@ -826,7 +826,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * <p>
 	 * A carried flag is copied from the child commit onto its parents when the
 	 * child commit is popped from the lowest level of walk's internal graph.
-	 * 
+	 *
 	 * @param flag
 	 *            the flag to carry onto parents, if set on a descendant.
 	 */
@@ -843,7 +843,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * <p>
 	 * A carried flag is copied from the child commit onto its parents when the
 	 * child commit is popped from the lowest level of walk's internal graph.
-	 * 
+	 *
 	 * @param set
 	 *            the flags to carry onto parents, if set on a descendant.
 	 */
@@ -861,7 +861,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * If the flag was previously being carried, the carrying request is
 	 * removed. Disposing of a carried flag while a traversal is in progress has
 	 * an undefined behavior.
-	 * 
+	 *
 	 * @param flag
 	 *            the to recycle.
 	 */
@@ -903,7 +903,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * Unlike {@link #dispose()} previously acquired RevObject (and RevCommit)
 	 * instances are not invalidated. RevFlag instances are not invalidated, but
 	 * are removed from all RevObjects.
-	 * 
+	 *
 	 * @param retainFlags
 	 *            application flags that should <b>not</b> be cleared from
 	 *            existing commit objects.
@@ -918,7 +918,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * Unlike {@link #dispose()} previously acquired RevObject (and RevCommit)
 	 * instances are not invalidated. RevFlag instances are not invalidated, but
 	 * are removed from all RevObjects.
-	 * 
+	 *
 	 * @param retainFlags
 	 *            application flags that should <b>not</b> be cleared from
 	 *            existing commit objects.
@@ -936,7 +936,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * Unlike {@link #dispose()} previously acquired RevObject (and RevCommit)
 	 * instances are not invalidated. RevFlag instances are not invalidated, but
 	 * are removed from all RevObjects.
-	 * 
+	 *
 	 * @param retainFlags
 	 *            application flags that should <b>not</b> be cleared from
 	 *            existing commit objects.
@@ -1006,7 +1006,7 @@ public class RevWalk implements Iterable<RevCommit> {
 	 * <p>
 	 * If a checked exception is thrown during the walk (see {@link #next()})
 	 * it is rethrown from the Iterator as a {@link RevWalkException}.
-	 * 
+	 *
 	 * @return an iterator over this walker's commits.
 	 * @see RevWalkException
 	 */
@@ -1062,7 +1062,7 @@ public class RevWalk implements Iterable<RevCommit> {
 
 	/**
 	 * Construct a new unparsed commit for the given object.
-	 * 
+	 *
 	 * @param id
 	 *            the object this walker requires a commit reference for.
 	 * @return a new unparsed reference for the object.

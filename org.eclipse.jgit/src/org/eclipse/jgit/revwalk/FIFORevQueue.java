@@ -76,7 +76,7 @@ public class FIFORevQueue extends BlockRevQueue {
 
 	/**
 	 * Insert the commit pointer at the front of the queue.
-	 * 
+	 *
 	 * @param c
 	 *            the commit to insert into the queue.
 	 */

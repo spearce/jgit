@@ -107,7 +107,7 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 
 	/**
 	 * Reset this parser to walk through the given tree data.
-	 * 
+	 *
 	 * @param treeData
 	 *            the raw tree content.
 	 */
@@ -121,7 +121,7 @@ public class CanonicalTreeParser extends AbstractTreeIterator {
 
 	/**
 	 * Reset this parser to walk through the given tree.
-	 * 
+	 *
 	 * @param repo
 	 *            repository to load the tree data from.
 	 * @param id

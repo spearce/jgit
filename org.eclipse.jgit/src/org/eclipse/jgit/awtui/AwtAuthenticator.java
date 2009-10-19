@@ -63,7 +63,7 @@ public class AwtAuthenticator extends Authenticator {
 
 	/**
 	 * Add a cached authentication for future use.
-	 * 
+	 *
 	 * @param ca
 	 *            the information we should remember.
 	 */
@@ -166,7 +166,7 @@ public class AwtAuthenticator extends Authenticator {
 
 		/**
 		 * Create a new cached authentication.
-		 * 
+		 *
 		 * @param aHost
 		 *            system this is for.
 		 * @param aPort

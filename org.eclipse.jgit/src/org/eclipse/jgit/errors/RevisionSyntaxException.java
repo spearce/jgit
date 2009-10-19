@@ -52,13 +52,13 @@ public class RevisionSyntaxException extends IOException {
 	/**
 	 * Construct a RevisionSyntaxException indicating a syntax problem with a
 	 * revision (or object) string.
-	 * 
+	 *
 	 * @param revstr The problematic revision string
 	 */
 	public RevisionSyntaxException(String revstr) {
 		this.revstr = revstr;
 	}
-	
+
 	/**
 	 * Construct a RevisionSyntaxException indicating a syntax problem with a
 	 * revision (or object) string.

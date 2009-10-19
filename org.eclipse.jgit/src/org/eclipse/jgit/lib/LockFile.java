@@ -75,7 +75,7 @@ public class LockFile {
 
 	/**
 	 * Create a new lock for any file.
-	 * 
+	 *
 	 * @param f
 	 *            the file that will be locked.
 	 */
@@ -86,7 +86,7 @@ public class LockFile {
 
 	/**
 	 * Try to establish the lock.
-	 * 
+	 *
 	 * @return true if the lock is now held by the caller; false if it is held
 	 *         by someone else.
 	 * @throws IOException
@@ -126,7 +126,7 @@ public class LockFile {
 
 	/**
 	 * Try to establish the lock for appending.
-	 * 
+	 *
 	 * @return true if the lock is now held by the caller; false if it is held
 	 *         by someone else.
 	 * @throws IOException
@@ -149,7 +149,7 @@ public class LockFile {
 	 * <p>
 	 * This method does nothing if the current file does not exist, or exists
 	 * but is empty.
-	 * 
+	 *
 	 * @throws IOException
 	 *             the temporary file could not be written, or a read error
 	 *             occurred while reading from the current file. The lock is
@@ -189,7 +189,7 @@ public class LockFile {
 
 	/**
 	 * Write an ObjectId and LF to the temporary file.
-	 * 
+	 *
 	 * @param id
 	 *            the id to store in the file. The id will be written in hex,
 	 *            followed by a sole LF.
@@ -225,7 +225,7 @@ public class LockFile {
 
 	/**
 	 * Write arbitrary data to the temporary file.
-	 * 
+	 *
 	 * @param content
 	 *            the bytes to store in the temporary file. No additional bytes
 	 *            are added, so if the file must end with an LF it must appear
@@ -263,7 +263,7 @@ public class LockFile {
 	 * The stream may only be accessed once, and only after {@link #lock()} has
 	 * been successfully invoked and returned true. Callers must close the
 	 * stream prior to calling {@link #commit()} to commit the change.
-	 * 
+	 *
 	 * @return a stream to write to the new file. The stream is unbuffered.
 	 */
 	public OutputStream getOutputStream() {
@@ -320,7 +320,7 @@ public class LockFile {
 
 	/**
 	 * Request that {@link #commit()} remember modification time.
-	 * 
+	 *
 	 * @param on
 	 *            true if the commit method must remember the modification time.
 	 */
@@ -332,7 +332,7 @@ public class LockFile {
 	 * Commit this change and release the lock.
 	 * <p>
 	 * If this method fails (returns false) the lock is still released.
-	 * 
+	 *
 	 * @return true if the commit was successful and the file contains the new
 	 *         data; false if the commit failed and the file remains with the
 	 *         old data.
@@ -362,7 +362,7 @@ public class LockFile {
 
 	/**
 	 * Get the modification time of the output file when it was committed.
-	 * 
+	 *
 	 * @return modification time of the lock file right before we committed it.
 	 */
 	public long getCommitLastModified() {

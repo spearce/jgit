@@ -56,7 +56,7 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 public abstract class AndTreeFilter extends TreeFilter {
 	/**
 	 * Create a filter with two filters, both of which must match.
-	 * 
+	 *
 	 * @param a
 	 *            first filter to test.
 	 * @param b
@@ -73,7 +73,7 @@ public abstract class AndTreeFilter extends TreeFilter {
 
 	/**
 	 * Create a filter around many filters, all of which must match.
-	 * 
+	 *
 	 * @param list
 	 *            list of filters to match against. Must contain at least 2
 	 *            filters.
@@ -91,7 +91,7 @@ public abstract class AndTreeFilter extends TreeFilter {
 
 	/**
 	 * Create a filter around many filters, all of which must match.
-	 * 
+	 *
 	 * @param list
 	 *            list of filters to match against. Must contain at least 2
 	 *            filters.

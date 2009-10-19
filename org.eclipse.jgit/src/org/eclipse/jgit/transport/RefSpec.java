@@ -102,7 +102,7 @@ public class RefSpec {
 	 * <li><code>+refs/head/*:refs/remotes/origin/*</code></li>
 	 * <li><code>:refs/head/master</code></li>
 	 * </ul>
-	 * 
+	 *
 	 * @param spec
 	 *            string describing the specification.
 	 * @throws IllegalArgumentException
@@ -144,7 +144,7 @@ public class RefSpec {
 
 	/**
 	 * Check if this specification wants to forcefully update the destination.
-	 * 
+	 *
 	 * @return true if this specification asks for updates without merge tests.
 	 */
 	public boolean isForceUpdate() {
@@ -153,7 +153,7 @@ public class RefSpec {
 
 	/**
 	 * Create a new RefSpec with a different force update setting.
-	 * 
+	 *
 	 * @param forceUpdate
 	 *            new value for force update in the returned instance.
 	 * @return a new RefSpec with force update as specified.
@@ -170,7 +170,7 @@ public class RefSpec {
 	 * If this is a wildcard pattern then the source and destination names
 	 * returned by {@link #getSource()} and {@link #getDestination()} will not
 	 * be actual ref names, but instead will be patterns.
-	 * 
+	 *
 	 * @return true if this specification could match more than one ref.
 	 */
 	public boolean isWildcard() {
@@ -183,7 +183,7 @@ public class RefSpec {
 	 * During a fetch this is the name of the ref on the remote repository we
 	 * are fetching from. During a push this is the name of the ref on the local
 	 * repository we are pushing out from.
-	 * 
+	 *
 	 * @return name (or wildcard pattern) to match the source ref.
 	 */
 	public String getSource() {
@@ -192,7 +192,7 @@ public class RefSpec {
 
 	/**
 	 * Create a new RefSpec with a different source name setting.
-	 * 
+	 *
 	 * @param source
 	 *            new value for source in the returned instance.
 	 * @return a new RefSpec with source as specified.
@@ -222,7 +222,7 @@ public class RefSpec {
 	 * ObjectId should be stored transiently in order to prepare a merge.
 	 * <p>
 	 * If null during a push, use {@link #getSource()} instead.
-	 * 
+	 *
 	 * @return name (or wildcard) pattern to match the destination ref.
 	 */
 	public String getDestination() {
@@ -231,7 +231,7 @@ public class RefSpec {
 
 	/**
 	 * Create a new RefSpec with a different destination name setting.
-	 * 
+	 *
 	 * @param destination
 	 *            new value for destination in the returned instance.
 	 * @return a new RefSpec with destination as specified.
@@ -252,7 +252,7 @@ public class RefSpec {
 
 	/**
 	 * Create a new RefSpec with a different source/destination name setting.
-	 * 
+	 *
 	 * @param source
 	 *            new value for source in the returned instance.
 	 * @param destination
@@ -286,7 +286,7 @@ public class RefSpec {
 
 	/**
 	 * Does this specification's source description match the ref?
-	 * 
+	 *
 	 * @param r
 	 *            ref whose name should be tested.
 	 * @return true if the names match; false otherwise.
@@ -308,7 +308,7 @@ public class RefSpec {
 
 	/**
 	 * Does this specification's destination description match the ref?
-	 * 
+	 *
 	 * @param r
 	 *            ref whose name should be tested.
 	 * @return true if the names match; false otherwise.
@@ -348,7 +348,7 @@ public class RefSpec {
 	 * <p>
 	 * Callers must first verify the passed ref matches this specification,
 	 * otherwise expansion results may be unpredictable.
-	 * 
+	 *
 	 * @param r
 	 *            a ref that matched our source specification. Could be a
 	 *            wildcard also.

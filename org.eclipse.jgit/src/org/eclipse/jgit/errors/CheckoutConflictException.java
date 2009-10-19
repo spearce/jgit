@@ -55,7 +55,7 @@ public class CheckoutConflictException extends IOException {
 	public CheckoutConflictException(String file) {
 		super("Checkout conflict with file: " + file);
 	}
-	
+
 	/**
 	 * Construct a CheckoutConflictException for the specified set of files
 	 *
@@ -67,7 +67,7 @@ public class CheckoutConflictException extends IOException {
 
 	private static String buildList(String[] files) {
 		StringBuilder builder = new StringBuilder();
-		for (String f : files) { 
+		for (String f : files) {
 			builder.append("\n");
 			builder.append(f);
 		}

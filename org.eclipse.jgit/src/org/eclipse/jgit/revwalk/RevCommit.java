@@ -69,7 +69,7 @@ public class RevCommit extends RevObject {
 
 	/**
 	 * Create a new commit reference.
-	 * 
+	 *
 	 * @param id
 	 *            object name for the commit.
 	 */
@@ -143,7 +143,7 @@ public class RevCommit extends RevObject {
 			buffer = raw;
 		flags |= PARSED;
 	}
-	
+
 	@Override
 	public final int getType() {
 		return Constants.OBJ_COMMIT;
@@ -181,7 +181,7 @@ public class RevCommit extends RevObject {
 	 * an unparsed commit or a commit with no parents is discovered. This
 	 * permits applications to force a flag through the history chain when
 	 * necessary.
-	 * 
+	 *
 	 * @param flag
 	 *            the single flag value to carry back onto parents.
 	 */
@@ -193,7 +193,7 @@ public class RevCommit extends RevObject {
 
 	/**
 	 * Time from the "committer " line of the buffer.
-	 * 
+	 *
 	 * @return time, expressed as seconds since the epoch.
 	 */
 	public final int getCommitTime() {
@@ -202,7 +202,7 @@ public class RevCommit extends RevObject {
 
 	/**
 	 * Parse this commit buffer for display.
-	 * 
+	 *
 	 * @param walk
 	 *            revision walker owning this reference.
 	 * @return parsed commit.
@@ -213,7 +213,7 @@ public class RevCommit extends RevObject {
 
 	/**
 	 * Get a reference to this commit's tree.
-	 * 
+	 *
 	 * @return tree of this commit.
 	 */
 	public final RevTree getTree() {
@@ -222,7 +222,7 @@ public class RevCommit extends RevObject {
 
 	/**
 	 * Get the number of parent commits listed in this commit.
-	 * 
+	 *
 	 * @return number of parents; always a positive value but can be 0.
 	 */
 	public final int getParentCount() {
@@ -231,7 +231,7 @@ public class RevCommit extends RevObject {
 
 	/**
 	 * Get the nth parent from this commit's parent list.
-	 * 
+	 *
 	 * @param nth
 	 *            parent index to obtain. Must be in the range 0 through
 	 *            {@link #getParentCount()}-1.
@@ -250,7 +250,7 @@ public class RevCommit extends RevObject {
 	 * this commit's parent list. Applications relying on this list should be
 	 * very careful to ensure they do not modify its contents during their use
 	 * of it.
-	 * 
+	 *
 	 * @return the array of parents.
 	 */
 	public final RevCommit[] getParents() {
@@ -264,7 +264,7 @@ public class RevCommit extends RevObject {
 	 * this commit's message buffer within a RevFilter. Applications relying on
 	 * this buffer should be very careful to ensure they do not modify its
 	 * contents during their use of it.
-	 * 
+	 *
 	 * @return the raw unparsed commit body. This is <b>NOT A COPY</b>.
 	 *         Altering the contents of this buffer may alter the walker's
 	 *         knowledge of this commit, and the results it produces.
@@ -287,7 +287,7 @@ public class RevCommit extends RevObject {
 	 * RevFilter implementations should try to use {@link RawParseUtils} to scan
 	 * the {@link #getRawBuffer()} instead, as this will allow faster evaluation
 	 * of commits.
-	 * 
+	 *
 	 * @return identity of the author (name, email) and the time the commit was
 	 *         made by the author; null if no author line was found.
 	 */
@@ -313,7 +313,7 @@ public class RevCommit extends RevObject {
 	 * RevFilter implementations should try to use {@link RawParseUtils} to scan
 	 * the {@link #getRawBuffer()} instead, as this will allow faster evaluation
 	 * of commits.
-	 * 
+	 *
 	 * @return identity of the committer (name, email) and the time the commit
 	 *         was made by the committer; null if no committer line was found.
 	 */
@@ -332,7 +332,7 @@ public class RevCommit extends RevObject {
 	 * after taking the commit's character set into account and decoding the
 	 * buffer using that character set. This method is a fairly expensive
 	 * operation and produces a new string on each invocation.
-	 * 
+	 *
 	 * @return decoded commit message as a string. Never null.
 	 */
 	public final String getFullMessage() {
@@ -354,7 +354,7 @@ public class RevCommit extends RevObject {
 	 * after taking the commit's character set into account and decoding the
 	 * buffer using that character set. This method is a fairly expensive
 	 * operation and produces a new string on each invocation.
-	 * 
+	 *
 	 * @return decoded commit message as a string. Never null. The returned
 	 *         string does not contain any LFs, even if the first paragraph
 	 *         spanned multiple lines. Embedded LFs are converted to spaces.

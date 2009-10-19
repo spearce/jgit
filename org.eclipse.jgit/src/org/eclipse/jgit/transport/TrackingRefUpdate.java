@@ -73,7 +73,7 @@ public class TrackingRefUpdate {
 	 * Get the name of the remote ref.
 	 * <p>
 	 * Usually this is of the form "refs/heads/master".
-	 * 
+	 *
 	 * @return the name used within the remote repository.
 	 */
 	public String getRemoteName() {
@@ -84,7 +84,7 @@ public class TrackingRefUpdate {
 	 * Get the name of the local tracking ref.
 	 * <p>
 	 * Usually this is of the form "refs/remotes/origin/master".
-	 * 
+	 *
 	 * @return the name used within this local repository.
 	 */
 	public String getLocalName() {
@@ -93,7 +93,7 @@ public class TrackingRefUpdate {
 
 	/**
 	 * Get the new value the ref will be (or was) updated to.
-	 * 
+	 *
 	 * @return new value. Null if the caller has not configured it.
 	 */
 	public ObjectId getNewObjectId() {
@@ -107,7 +107,7 @@ public class TrackingRefUpdate {
 	 * populated with the value of the ref before the lock is taken, but the old
 	 * value may change if someone else modified the ref between the time we
 	 * last read it and when the ref was locked for update.
-	 * 
+	 *
 	 * @return the value of the ref prior to the update being attempted; null if
 	 *         the updated has not been attempted yet.
 	 */
@@ -117,7 +117,7 @@ public class TrackingRefUpdate {
 
 	/**
 	 * Get the status of this update.
-	 * 
+	 *
 	 * @return the status of the update.
 	 */
 	public Result getResult() {

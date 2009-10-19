@@ -86,7 +86,7 @@ public class ObjectWalk extends RevWalk {
 
 	/**
 	 * Create a new revision and object walker for a given repository.
-	 * 
+	 *
 	 * @param repo
 	 *            the repository the walker will obtain data from.
 	 */
@@ -112,7 +112,7 @@ public class ObjectWalk extends RevWalk {
 	 * This method will automatically call {@link RevWalk#markStart(RevCommit)}
 	 * if passed RevCommit instance, or a RevTag that directly (or indirectly)
 	 * references a RevCommit.
-	 * 
+	 *
 	 * @param o
 	 *            the object to start traversing from. The object passed must be
 	 *            from this same revision walker.
@@ -163,7 +163,7 @@ public class ObjectWalk extends RevWalk {
 	 * This method will automatically call {@link RevWalk#markStart(RevCommit)}
 	 * if passed RevCommit instance, or a RevTag that directly (or indirectly)
 	 * references a RevCommit.
-	 * 
+	 *
 	 * @param o
 	 *            the object to start traversing from. The object passed must be
 	 * @throws MissingObjectException
@@ -223,7 +223,7 @@ public class ObjectWalk extends RevWalk {
 
 	/**
 	 * Pop the next most recent object.
-	 * 
+	 *
 	 * @return next most recent object; null if traversal is over.
 	 * @throws MissingObjectException
 	 *             one or or more of the next objects are not available from the
@@ -317,7 +317,7 @@ public class ObjectWalk extends RevWalk {
 	 * This method returns successfully if everything is connected; it throws an
 	 * exception if there is a connectivity problem. The exception message
 	 * provides some detail about the connectivity failure.
-	 * 
+	 *
 	 * @throws MissingObjectException
 	 *             one or or more of the next objects are not available from the
 	 *             object database, but were thought to be candidates for
@@ -351,7 +351,7 @@ public class ObjectWalk extends RevWalk {
 	 * and final output generation. Applications should try to avoid calling it,
 	 * and if invoked do so only once per interesting entry, where the name is
 	 * absolutely required for correct function.
-	 * 
+	 *
 	 * @return complete path of the current entry, from the root of the
 	 *         repository. If the current entry is in a subtree there will be at
 	 *         least one '/' in the returned string. Null if the current entry

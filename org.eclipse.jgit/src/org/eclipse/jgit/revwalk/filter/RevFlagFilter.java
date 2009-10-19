@@ -50,7 +50,7 @@ import org.eclipse.jgit.revwalk.RevWalk;
 public abstract class RevFlagFilter extends RevFilter {
 	/**
 	 * Create a new filter that tests for a single flag.
-	 * 
+	 *
 	 * @param a
 	 *            the flag to test.
 	 * @return filter that selects only commits with flag <code>a</code>.
@@ -63,7 +63,7 @@ public abstract class RevFlagFilter extends RevFilter {
 
 	/**
 	 * Create a new filter that tests all flags in a set.
-	 * 
+	 *
 	 * @param a
 	 *            set of flags to test.
 	 * @return filter that selects only commits with all flags in <code>a</code>.
@@ -77,7 +77,7 @@ public abstract class RevFlagFilter extends RevFilter {
 
 	/**
 	 * Create a new filter that tests all flags in a set.
-	 * 
+	 *
 	 * @param a
 	 *            set of flags to test.
 	 * @return filter that selects only commits with all flags in <code>a</code>.
@@ -88,7 +88,7 @@ public abstract class RevFlagFilter extends RevFilter {
 
 	/**
 	 * Create a new filter that tests for any flag in a set.
-	 * 
+	 *
 	 * @param a
 	 *            set of flags to test.
 	 * @return filter that selects only commits with any flag in <code>a</code>.
@@ -102,7 +102,7 @@ public abstract class RevFlagFilter extends RevFilter {
 
 	/**
 	 * Create a new filter that tests for any flag in a set.
-	 * 
+	 *
 	 * @param a
 	 *            set of flags to test.
 	 * @return filter that selects only commits with any flag in <code>a</code>.

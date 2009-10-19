@@ -52,7 +52,7 @@ public class RawSubStringPattern {
 
 	/**
 	 * Construct a new substring pattern.
-	 * 
+	 *
 	 * @param patternText
 	 *            text to locate. This should be a literal string, as no
 	 *            meta-characters are supported by this implementation. The
@@ -71,7 +71,7 @@ public class RawSubStringPattern {
 
 	/**
 	 * Match a character sequence against this pattern.
-	 * 
+	 *
 	 * @param rcs
 	 *            the sequence to match. Must not be null but the length of the
 	 *            sequence is permitted to be 0.
@@ -116,7 +116,7 @@ public class RawSubStringPattern {
 
 	/**
 	 * Get the literal pattern string this instance searches for.
-	 * 
+	 *
 	 * @return the pattern string given to our constructor.
 	 */
 	public String pattern() {

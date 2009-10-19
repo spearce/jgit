@@ -45,7 +45,7 @@ import java.util.Collection;
 /**
  * Writes out refs to the {@link Constants#INFO_REFS} and
  * {@link Constants#PACKED_REFS} files.
- * 
+ *
  * This class is abstract as the writing of the files must be handled by the
  * caller. This is because it is used by transport classes as well.
  */
@@ -67,8 +67,8 @@ public abstract class RefWriter {
 	 * <p>
 	 * This method rebuilds the contents of the {@link Constants#INFO_REFS} file
 	 * to match the passed list of references.
-	 * 
-	 * 
+	 *
+	 *
 	 * @throws IOException
 	 *             writing is not supported, or attempting to write the file
 	 *             failed, possibly due to permissions or remote disk full, etc.
@@ -106,7 +106,7 @@ public abstract class RefWriter {
 	 * This method rebuilds the contents of the {@link Constants#PACKED_REFS}
 	 * file to match the passed list of references, including only those refs
 	 * that have a storage type of {@link Ref.Storage#PACKED}.
-	 * 
+	 *
 	 * @throws IOException
 	 *             writing is not supported, or attempting to write the file
 	 *             failed, possibly due to permissions or remote disk full, etc.
@@ -151,7 +151,7 @@ public abstract class RefWriter {
 	/**
 	 * Handles actual writing of ref files to the git repository, which may
 	 * differ slightly depending on the destination and transport.
-	 * 
+	 *
 	 * @param file
 	 *            path to ref file.
 	 * @param content

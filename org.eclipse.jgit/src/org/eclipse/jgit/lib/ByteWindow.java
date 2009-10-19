@@ -73,7 +73,7 @@ abstract class ByteWindow {
 
 	/**
 	 * Copy bytes from the window to a caller supplied buffer.
-	 * 
+	 *
 	 * @param pos
 	 *            offset within the file to start copying from.
 	 * @param dstbuf
@@ -94,7 +94,7 @@ abstract class ByteWindow {
 
 	/**
 	 * Copy bytes from the window to a caller supplied buffer.
-	 * 
+	 *
 	 * @param pos
 	 *            offset within the window to start copying from.
 	 * @param dstbuf
@@ -113,7 +113,7 @@ abstract class ByteWindow {
 
 	/**
 	 * Pump bytes into the supplied inflater as input.
-	 * 
+	 *
 	 * @param pos
 	 *            offset within the file to start supplying input from.
 	 * @param dstbuf
@@ -142,7 +142,7 @@ abstract class ByteWindow {
 
 	/**
 	 * Pump bytes into the supplied inflater as input.
-	 * 
+	 *
 	 * @param pos
 	 *            offset within the window to start supplying input from.
 	 * @param dstbuf

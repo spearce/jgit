@@ -50,7 +50,7 @@ import org.eclipse.jgit.revwalk.RevWalk;
 public abstract class CommitTimeRevFilter extends RevFilter {
 	/**
 	 * Create a new filter to select commits before a given date/time.
-	 * 
+	 *
 	 * @param ts
 	 *            the point in time to cut on.
 	 * @return a new filter to select commits on or before <code>ts</code>.
@@ -61,7 +61,7 @@ public abstract class CommitTimeRevFilter extends RevFilter {
 
 	/**
 	 * Create a new filter to select commits after a given date/time.
-	 * 
+	 *
 	 * @param ts
 	 *            the point in time to cut on.
 	 * @return a new filter to select commits on or after <code>ts</code>.
