@@ -63,7 +63,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevFlag;
 import org.eclipse.jgit.revwalk.RevObject;
 import org.eclipse.jgit.revwalk.RevWalk;
-import org.eclipse.jgit.util.NB;
+import org.eclipse.jgit.util.IO;
 import org.eclipse.jgit.util.RawParseUtils;
 
 /**
@@ -151,9 +151,9 @@ class BundleFetchConnection extends BaseFetchConnection {
 		while (lf < cnt && hdrbuf[lf] != '\n')
 			lf++;
 		bin.reset();
-		NB.skipFully(bin, lf);
+		IO.skipFully(bin, lf);
 		if (lf < cnt && hdrbuf[lf] == '\n')
-			NB.skipFully(bin, 1);
+			IO.skipFully(bin, 1);
 		return RawParseUtils.decode(Constants.CHARSET, hdrbuf, 0, lf);
 	}
 

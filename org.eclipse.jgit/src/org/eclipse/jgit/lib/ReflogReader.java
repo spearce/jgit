@@ -43,7 +43,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.eclipse.jgit.util.NB;
+import org.eclipse.jgit.util.IO;
 import org.eclipse.jgit.util.RawParseUtils;
 
 /**
@@ -158,7 +158,7 @@ public class ReflogReader {
 	public List<Entry> getReverseEntries(int max) throws IOException {
 		final byte[] log;
 		try {
-			log = NB.readFully(logName);
+			log = IO.readFully(logName);
 		} catch (FileNotFoundException e) {
 			return Collections.emptyList();
 		}

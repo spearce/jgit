@@ -45,7 +45,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import org.eclipse.jgit.errors.ConfigInvalidException;
-import org.eclipse.jgit.util.NB;
+import org.eclipse.jgit.util.IO;
 import org.eclipse.jgit.util.RawParseUtils;
 
 /**
@@ -95,7 +95,7 @@ public class FileBasedConfig extends Config {
 	 */
 	public void load() throws IOException, ConfigInvalidException {
 		try {
-			fromText(RawParseUtils.decode(NB.readFully(getFile())));
+			fromText(RawParseUtils.decode(IO.readFully(getFile())));
 		} catch (FileNotFoundException noFile) {
 			clear();
 		} catch (IOException e) {

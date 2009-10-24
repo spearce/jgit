@@ -45,8 +45,8 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 import org.eclipse.jgit.errors.CorruptObjectException;
+import org.eclipse.jgit.util.IO;
 import org.eclipse.jgit.util.MutableInteger;
-import org.eclipse.jgit.util.NB;
 import org.eclipse.jgit.util.RawParseUtils;
 
 /**
@@ -73,7 +73,7 @@ public class UnpackedObjectLoader extends ObjectLoader {
 	 */
 	public UnpackedObjectLoader(final File path, final AnyObjectId id)
 			throws IOException {
-		this(NB.readFully(path), id);
+		this(IO.readFully(path), id);
 	}
 
 	/**

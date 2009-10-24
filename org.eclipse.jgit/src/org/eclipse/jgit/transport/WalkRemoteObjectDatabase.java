@@ -53,7 +53,7 @@ import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ProgressMonitor;
 import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.util.NB;
+import org.eclipse.jgit.util.IO;
 
 /**
  * Transfers object data through a dumb transport.
@@ -489,7 +489,7 @@ abstract class WalkRemoteObjectDatabase {
 			try {
 				if (length >= 0) {
 					final byte[] r = new byte[(int) length];
-					NB.readFully(in, r, 0, r.length);
+					IO.readFully(in, r, 0, r.length);
 					return r;
 				}
 
