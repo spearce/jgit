@@ -40,7 +40,7 @@ package org.eclipse.jgit.lib;
 
 import java.io.IOException;
 
-public class T0008_testparserev extends RepositoryTestCase {
+public class T0008_testparserev extends SampleDataRepositoryTestCase {
 
 	public void testObjectId_existing() throws IOException {
 		assertEquals("49322bb17d3acc9146f98c97d078513228bbf3c0",db.resolve("49322bb17d3acc9146f98c97d078513228bbf3c0").name());

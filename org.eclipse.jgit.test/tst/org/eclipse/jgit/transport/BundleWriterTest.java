@@ -52,11 +52,11 @@ import org.eclipse.jgit.lib.NullProgressMonitor;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.lib.RepositoryTestCase;
+import org.eclipse.jgit.lib.SampleDataRepositoryTestCase;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 
-public class BundleWriterTest extends RepositoryTestCase {
+public class BundleWriterTest extends SampleDataRepositoryTestCase {
 
 	public void testWrite0() throws Exception {
 		// Create a tiny bundle, (well one of) the first commits only
@@ -66,7 +66,7 @@ public class BundleWriterTest extends RepositoryTestCase {
 		// Then we clone a new repo from that bundle and do a simple test. This
 		// makes sure
 		// we could read the bundle we created.
-		Repository newRepo = createNewEmptyRepo();
+		Repository newRepo = createBareRepository();
 		FetchResult fetchResult = fetchFromBundle(newRepo, bundle);
 		Ref advertisedRef = fetchResult
 				.getAdvertisedRef("refs/heads/firstcommit");
@@ -93,7 +93,7 @@ public class BundleWriterTest extends RepositoryTestCase {
 		// Then we clone a new repo from that bundle and do a simple test. This
 		// makes sure
 		// we could read the bundle we created.
-		Repository newRepo = createNewEmptyRepo();
+		Repository newRepo = createBareRepository();
 		FetchResult fetchResult = fetchFromBundle(newRepo, bundle);
 		Ref advertisedRef = fetchResult.getAdvertisedRef("refs/heads/aa");
 
@@ -115,7 +115,7 @@ public class BundleWriterTest extends RepositoryTestCase {
 
 		try {
 			// Check that we actually needed the first bundle
-			Repository newRepo2 = createNewEmptyRepo();
+			Repository newRepo2 = createBareRepository();
 			fetchResult = fetchFromBundle(newRepo2, bundle);
 			fail("We should not be able to fetch from bundle with prerequisites that are not fulfilled");
 		} catch (MissingBundlePrerequisiteException e) {

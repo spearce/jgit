@@ -48,7 +48,7 @@ import org.eclipse.jgit.errors.CorruptObjectException;
 import org.eclipse.jgit.util.JGitTestUtil;
 import org.eclipse.jgit.util.MutableInteger;
 
-public class WindowCacheGetTest extends RepositoryTestCase {
+public class WindowCacheGetTest extends SampleDataRepositoryTestCase {
 	private List<TestObject> toLoad;
 
 	@Override
