@@ -132,7 +132,7 @@ public class Patch {
 	}
 
 	private static byte[] readFully(final InputStream is) throws IOException {
-		final TemporaryBuffer b = new TemporaryBuffer();
+		final TemporaryBuffer b = new TemporaryBuffer.LocalFile();
 		try {
 			b.copy(is);
 			b.close();

@@ -205,7 +205,7 @@ public class EGitPatchHistoryTest extends TestCase {
 						buf.destroy();
 					}
 					commitId = line.substring("commit ".length());
-					buf = new TemporaryBuffer();
+					buf = new TemporaryBuffer.LocalFile();
 				} else if (buf != null) {
 					buf.write(line.getBytes("ISO-8859-1"));
 					buf.write('\n');
