@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-   Copyright (C) 2009, Google Inc.
+   Copyright (C) 2009, Igor Fedorenko <igor@ifedorenko.com>
 
    All rights reserved.
 
@@ -47,32 +47,7 @@
     <version>0.6.0-SNAPSHOT</version>
   </parent>
 
-  <packaging>eclipse-plugin</packaging>
-  <artifactId>org.eclipse.jgit</artifactId>
-  <name>JGit - Core</name>
-
-  <description>
-    Repository access and algorithms
-  </description>
-
-  <dependencies>
-    <dependency>
-      <groupId>com.jcraft</groupId>
-      <artifactId>jsch</artifactId>
-    </dependency>
-  </dependencies>
-
-  <build>
-    <sourceDirectory>src/</sourceDirectory>
-
-    <resources>
-      <resource>
-        <directory>.</directory>
-        <includes>
-          <include>plugin.properties</include>
-        </includes>
-      </resource>
-    </resources>
-  </build>
+  <artifactId>org.eclipse.jgit-feature</artifactId>
+  <packaging>eclipse-feature</packaging>
 
 </project>
