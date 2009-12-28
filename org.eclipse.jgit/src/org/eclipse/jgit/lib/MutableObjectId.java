@@ -152,7 +152,7 @@ public class MutableObjectId extends AnyObjectId {
 	 *            the string to read from. Must be 40 characters long.
 	 */
 	public void fromString(final String str) {
-		if (str.length() != STR_LEN)
+		if (str.length() != Constants.OBJECT_ID_STRING_LENGTH)
 			throw new IllegalArgumentException("Invalid id: " + str);
 		fromHexString(Constants.encodeASCII(str), 0);
 	}
@@ -165,7 +165,8 @@ public class MutableObjectId extends AnyObjectId {
 			w4 = RawParseUtils.parseHexInt32(bs, p + 24);
 			w5 = RawParseUtils.parseHexInt32(bs, p + 32);
 		} catch (ArrayIndexOutOfBoundsException e1) {
-			throw new InvalidObjectIdException(bs, p, STR_LEN);
+			throw new InvalidObjectIdException(bs, p,
+					Constants.OBJECT_ID_STRING_LENGTH);
 		}
 	}
 
