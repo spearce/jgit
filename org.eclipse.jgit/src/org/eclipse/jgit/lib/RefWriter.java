@@ -77,7 +77,7 @@ public abstract class RefWriter {
 		final StringWriter w = new StringWriter();
 		final char[] tmp = new char[Constants.OBJECT_ID_STRING_LENGTH];
 		for (final Ref r : refs) {
-			if (Constants.HEAD.equals(r.getName())) {
+			if (Constants.HEAD.equals(r.getOrigName())) {
 				// Historically HEAD has never been published through
 				// the INFO_REFS file. This is a mistake, but its the
 				// way things are.
