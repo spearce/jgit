@@ -75,10 +75,10 @@ public class RevObjectTest extends RevWalkTestCase {
 	}
 
 	public void testRevObjectTypes() throws Exception {
-		assertEquals(Constants.OBJ_TREE, emptyTree.getType());
+		assertEquals(Constants.OBJ_TREE, tree().getType());
 		assertEquals(Constants.OBJ_COMMIT, commit().getType());
 		assertEquals(Constants.OBJ_BLOB, blob("").getType());
-		assertEquals(Constants.OBJ_TAG, tag("emptyTree", emptyTree).getType());
+		assertEquals(Constants.OBJ_TAG, tag("emptyTree", tree()).getType());
 	}
 
 	public void testHasRevFlag() throws Exception {

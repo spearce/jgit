@@ -90,8 +90,8 @@ public class RevWalkSortTest extends RevWalkTestCase {
 		final RevCommit b = commit(a);
 		final RevCommit c = commit(-5, b);
 		final RevCommit d = commit(10, c);
-		assertTrue(parse(a).getCommitTime() < parse(d).getCommitTime());
-		assertTrue(parse(c).getCommitTime() < parse(b).getCommitTime());
+		assertTrue(parseBody(a).getCommitTime() < parseBody(d).getCommitTime());
+		assertTrue(parseBody(c).getCommitTime() < parseBody(b).getCommitTime());
 
 		rw.sort(RevSort.COMMIT_TIME_DESC);
 		markStart(d);

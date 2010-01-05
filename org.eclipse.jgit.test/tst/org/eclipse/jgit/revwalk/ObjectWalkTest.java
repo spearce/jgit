@@ -40,6 +40,7 @@ package org.eclipse.jgit.revwalk;
 public class ObjectWalkTest extends RevWalkTestCase {
 	protected ObjectWalk objw;
 
+	@Override
 	protected RevWalk createRevWalk() {
 		return objw = new ObjectWalk(db);
 	}
@@ -58,7 +59,7 @@ public class ObjectWalkTest extends RevWalkTestCase {
 		assertCommit(a, objw.next());
 		assertNull(objw.next());
 
-		assertSame(emptyTree, objw.nextObject());
+		assertSame(tree(), objw.nextObject());
 		assertNull(objw.nextObject());
 	}
 

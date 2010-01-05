@@ -74,10 +74,10 @@ public class RevWalkPathFilter6012Test extends RevWalkTestCase {
 		b = commit(tree(file(pF, zI)), a);
 		c = commit(tree(file(pF, zI)), a);
 		d = commit(tree(file(pA, zS), file(pF, zI)), c);
-		parse(d);
+		parseBody(d);
 		e = commit(d.getTree(), d, b);
 		f = commit(tree(file(pA, zS), file(pE, zY), file(pF, zI)), e);
-		parse(f);
+		parseBody(f);
 		g = commit(tree(file(pE, zY), file(pF, zI)), b);
 		h = commit(f.getTree(), g, f);
 		i = commit(tree(file(pA, zS), file(pE, zY), file(pF, zF)), h);
