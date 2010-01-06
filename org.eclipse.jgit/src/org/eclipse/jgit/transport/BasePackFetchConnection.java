@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2009, Google Inc.
  * Copyright (C) 2008, Robin Rosenberg <robin.rosenberg@dewire.com>
  * Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
  *
@@ -44,9 +45,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
 
+import org.eclipse.jgit.errors.PackProtocolException;
 import org.eclipse.jgit.errors.TransportException;
 import org.eclipse.jgit.lib.AnyObjectId;
 import org.eclipse.jgit.lib.Config;
+import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.MutableObjectId;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.PackLock;
@@ -61,6 +64,8 @@ import org.eclipse.jgit.revwalk.RevSort;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.revwalk.filter.CommitTimeRevFilter;
 import org.eclipse.jgit.revwalk.filter.RevFilter;
+import org.eclipse.jgit.transport.PacketLineIn.AckNackResult;
+import org.eclipse.jgit.util.TemporaryBuffer;
 
 /**
  * Fetch implementation using the native Git pack transfer service.
@@ -73,6 +78,11 @@ import org.eclipse.jgit.revwalk.filter.RevFilter;
  * This connection requires only a bi-directional pipe or socket, and thus is
  * easily wrapped up into a local process pipe, anonymous TCP socket, or a
  * command executed through an SSH tunnel.
+ * <p>
+ * If {@link BasePackConnection#statelessRPC} is {@code true}, this connection
+ * can be tunneled over a request-response style RPC system like HTTP.  The RPC
+ * call boundary is determined by this class switching from writing to the
+ * OutputStream to reading from the InputStream.
  * <p>
  * Concrete implementations should just call
  * {@link #init(java.io.InputStream, java.io.OutputStream)} and
@@ -133,6 +143,9 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 	/** Marks a commit known to both sides of the connection. */
 	final RevFlag COMMON;
 
+	/** Like {@link #COMMON} but means its also in {@link #pckState}. */
+	private final RevFlag STATE;
+
 	/** Marks a commit listed in the advertised refs. */
 	final RevFlag ADVERTISED;
 
@@ -150,6 +163,11 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 
 	private PackLock packLock;
 
+	/** RPC state, if {@link BasePackConnection#statelessRPC} is true. */
+	private TemporaryBuffer.Heap state;
+
+	private PacketLineOut pckState;
+
 	BasePackFetchConnection(final PackTransport packTransport) {
 		super(packTransport);
 
@@ -162,6 +180,7 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 		reachableCommits = new RevCommitList<RevCommit>();
 		REACHABLE = walk.newFlag("REACHABLE");
 		COMMON = walk.newFlag("COMMON");
+		STATE = walk.newFlag("STATE");
 		ADVERTISED = walk.newFlag("ADVERTISED");
 
 		walk.carry(COMMON);
@@ -215,11 +234,18 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 			markRefsAdvertised();
 			markReachable(have, maxTimeWanted(want));
 
+			if (statelessRPC) {
+				state = new TemporaryBuffer.Heap(Integer.MAX_VALUE);
+				pckState = new PacketLineOut(state);
+			}
+
 			if (sendWants(want)) {
 				negotiate(monitor);
 
 				walk.dispose();
 				reachableCommits = null;
+				state = null;
+				pckState = null;
 
 				receivePack(monitor);
 			}
@@ -300,6 +326,7 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 	}
 
 	private boolean sendWants(final Collection<Ref> want) throws IOException {
+		final PacketLineOut p = statelessRPC ? pckState : pckOut;
 		boolean first = true;
 		for (final Ref r : want) {
 			try {
@@ -322,14 +349,16 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 				first = false;
 			}
 			line.append('\n');
-			pckOut.writeString(line.toString());
+			p.writeString(line.toString());
 		}
-		pckOut.end();
+		if (first)
+			return false;
+		p.end();
 		outNeedsEnd = false;
-		return !first;
+		return true;
 	}
 
-	private String enableCapabilities() {
+	private String enableCapabilities() throws TransportException {
 		final StringBuilder line = new StringBuilder();
 		if (includeTags)
 			includeTags = wantCapability(line, OPTION_INCLUDE_TAG);
@@ -349,6 +378,16 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 			sideband = true;
 		else if (wantCapability(line, OPTION_SIDE_BAND))
 			sideband = true;
+
+		if (statelessRPC && multiAck != MultiAck.DETAILED) {
+			// Our stateless RPC implementation relies upon the detailed
+			// ACK status to tell us common objects for reuse in future
+			// requests.  If its not enabled, we can't talk to the peer.
+			//
+			throw new PackProtocolException(uri, "stateless RPC requires "
+					+ OPTION_MULTI_ACK_DETAILED + " to be enabled");
+		}
+
 		return line.toString();
 	}
 
@@ -360,6 +399,9 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 		int havesSinceLastContinue = 0;
 		boolean receivedContinue = false;
 		boolean receivedAck = false;
+
+		if (statelessRPC)
+			state.writeTo(out, null);
 
 		negotiateBegin();
 		SEND_HAVES: for (;;) {
@@ -385,7 +427,7 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 			pckOut.end();
 			resultsPending++; // Each end will cause a result to come back.
 
-			if (havesSent == 32) {
+			if (havesSent == 32 && !statelessRPC) {
 				// On the first block we race ahead and try to send
 				// more of the second block while waiting for the
 				// remote to respond to our first block request.
@@ -395,9 +437,7 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 			}
 
 			READ_RESULT: for (;;) {
-				final PacketLineIn.AckNackResult anr;
-
-				anr = pckIn.readACK(ackId);
+				final AckNackResult anr = pckIn.readACK(ackId);
 				switch (anr) {
 				case NAK:
 					// More have lines are necessary to compute the
@@ -414,6 +454,8 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 					multiAck = MultiAck.OFF;
 					resultsPending = 0;
 					receivedAck = true;
+					if (statelessRPC)
+						state.writeTo(out, null);
 					break SEND_HAVES;
 
 				case ACK_CONTINUE:
@@ -424,7 +466,7 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 					// we need to continue to talk about other parts of
 					// our local history.
 					//
-					markCommon(walk.parseAny(ackId));
+					markCommon(walk.parseAny(ackId), anr);
 					receivedAck = true;
 					receivedContinue = true;
 					havesSinceLastContinue = 0;
@@ -435,13 +477,16 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 					throw new CancelledException();
 			}
 
+			if (statelessRPC)
+				state.writeTo(out, null);
+
 			if (receivedContinue && havesSinceLastContinue > MAX_HAVES) {
 				// Our history must be really different from the remote's.
 				// We just sent a whole slew of have lines, and it did not
 				// recognize any of them. Avoid sending our entire history
 				// to them by giving up early.
 				//
-				break;
+				break SEND_HAVES;
 			}
 		}
 
@@ -449,6 +494,11 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 		//
 		if (monitor.isCancelled())
 			throw new CancelledException();
+
+		// When statelessRPC is true we should always leave SEND_HAVES
+		// loop above while in the middle of a request. This allows us
+		// to just write done immediately.
+		//
 		pckOut.writeString("done\n");
 		pckOut.flush();
 
@@ -462,11 +512,8 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 		}
 
 		READ_RESULT: while (resultsPending > 0 || multiAck != MultiAck.OFF) {
-			final PacketLineIn.AckNackResult anr;
-
-			anr = pckIn.readACK(ackId);
+			final AckNackResult anr = pckIn.readACK(ackId);
 			resultsPending--;
-
 			switch (anr) {
 			case NAK:
 				// A NAK is a response to an end we queued earlier
@@ -536,7 +583,18 @@ abstract class BasePackFetchConnection extends BasePackConnection implements
 		}
 	}
 
-	private void markCommon(final RevObject obj) {
+	private void markCommon(final RevObject obj, final AckNackResult anr)
+			throws IOException {
+		if (statelessRPC && anr == AckNackResult.ACK_COMMON && !obj.has(STATE)) {
+			StringBuilder s;
+
+			s = new StringBuilder(6 + Constants.OBJECT_ID_STRING_LENGTH);
+			s.append("have "); //$NON-NLS-1$
+			s.append(obj.name());
+			s.append('\n');
+			pckState.writeString(s.toString());
+			obj.add(STATE);
+		}
 		obj.add(COMMON);
 		if (obj instanceof RevCommit)
 			((RevCommit) obj).carry(COMMON);
