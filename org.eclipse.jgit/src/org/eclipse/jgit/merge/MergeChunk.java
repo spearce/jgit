@@ -64,7 +64,7 @@ public class MergeChunk {
 		 * conflicting chunks. It's a subsequent one.
 		 */
 		NEXT_CONFLICTING_RANGE
-	};
+	}
 
 	private final int sequenceIndex;
 
