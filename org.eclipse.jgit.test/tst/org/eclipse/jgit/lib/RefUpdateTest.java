@@ -49,6 +49,18 @@ import org.eclipse.jgit.revwalk.RevWalk;
 
 public class RefUpdateTest extends SampleDataRepositoryTestCase {
 
+	private void writeSymref(String src, String dst) throws IOException {
+		RefUpdate u = db.updateRef(src);
+		switch (u.link(dst)) {
+		case NEW:
+		case FORCED:
+		case NO_CHANGE:
+			break;
+		default:
+			fail("link " + src + " to " + dst);
+		}
+	}
+
 	private RefUpdate updateRef(final String name) throws IOException {
 		final RefUpdate ref = db.updateRef(name);
 		ref.setNewObjectId(db.resolve(Constants.HEAD));
@@ -321,7 +333,7 @@ public class RefUpdateTest extends SampleDataRepositoryTestCase {
 	 */
 	public void testUpdateRefDetachedUnbornHead() throws Exception {
 		ObjectId ppid = db.resolve("refs/heads/master^");
-		db.writeSymref("HEAD", "refs/heads/unborn");
+		writeSymref("HEAD", "refs/heads/unborn");
 		RefUpdate updateRef = db.updateRef("HEAD", true);
 		updateRef.setForceUpdate(true);
 		updateRef.setNewObjectId(ppid);
@@ -430,7 +442,7 @@ public class RefUpdateTest extends SampleDataRepositoryTestCase {
 		// Do not use the defalt repo for this case.
 		Map<String, Ref> allRefs = db.getAllRefs();
 		ObjectId oldValue = db.resolve("HEAD");
-		db.writeSymref(Constants.HEAD, "refs/heads/newref");
+		writeSymref(Constants.HEAD, "refs/heads/newref");
 		RefUpdate updateRef = db.updateRef(Constants.HEAD);
 		updateRef.setForceUpdate(true);
 		updateRef.setNewObjectId(oldValue);
@@ -594,7 +606,7 @@ public class RefUpdateTest extends SampleDataRepositoryTestCase {
 
 	public void testRenameCurrentBranch() throws IOException {
 		ObjectId rb = db.resolve("refs/heads/b");
-		db.writeSymref(Constants.HEAD, "refs/heads/b");
+		writeSymref(Constants.HEAD, "refs/heads/b");
 		ObjectId oldHead = db.resolve(Constants.HEAD);
 		assertTrue("internal test condition, b == HEAD", rb.equals(oldHead));
 		writeReflog(db, rb, rb, "Just a message", "refs/heads/b");
@@ -652,7 +664,7 @@ public class RefUpdateTest extends SampleDataRepositoryTestCase {
 	public void tryRenameWhenLocked(String toLock, String fromName,
 			String toName, String headPointsTo) throws IOException {
 		// setup
-		db.writeSymref(Constants.HEAD, headPointsTo);
+		writeSymref(Constants.HEAD, headPointsTo);
 		ObjectId oldfromId = db.resolve(fromName);
 		ObjectId oldHeadId = db.resolve(Constants.HEAD);
 		writeReflog(db, oldfromId, oldfromId, "Just a message",
@@ -746,7 +758,7 @@ public class RefUpdateTest extends SampleDataRepositoryTestCase {
 	public void testRenameRefNameColission1avoided() throws IOException {
 		// setup
 		ObjectId rb = db.resolve("refs/heads/b");
-		db.writeSymref(Constants.HEAD, "refs/heads/a");
+		writeSymref(Constants.HEAD, "refs/heads/a");
 		RefUpdate updateRef = db.updateRef("refs/heads/a");
 		updateRef.setNewObjectId(rb);
 		updateRef.setRefLogMessage("Setup", false);
@@ -778,7 +790,7 @@ public class RefUpdateTest extends SampleDataRepositoryTestCase {
 	public void testRenameRefNameColission2avoided() throws IOException {
 		// setup
 		ObjectId rb = db.resolve("refs/heads/b");
-		db.writeSymref(Constants.HEAD, "refs/heads/prefix/a");
+		writeSymref(Constants.HEAD, "refs/heads/prefix/a");
 		RefUpdate updateRef = db.updateRef("refs/heads/prefix/a");
 		updateRef.setNewObjectId(rb);
 		updateRef.setRefLogMessage("Setup", false);
@@ -816,6 +828,6 @@ public class RefUpdateTest extends SampleDataRepositoryTestCase {
 		RefDirectoryUpdate update = refs.newUpdate(refName, true);
 		update.setOldObjectId(oldId);
 		update.setNewObjectId(newId);
-		refs.log(update, msg);
+		refs.log(update, msg, true);
 	}
 }
