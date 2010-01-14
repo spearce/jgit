@@ -41,6 +41,7 @@ import java.io.File;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
+import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
 
 @Command(common = false, usage = "Server side backend for 'jgit fetch'")
@@ -60,8 +61,8 @@ class UploadPack extends TextBuiltin {
 	protected void run() throws Exception {
 		final org.eclipse.jgit.transport.UploadPack rp;
 
-		if (new File(srcGitdir, ".git").isDirectory())
-			srcGitdir = new File(srcGitdir, ".git");
+		if (new File(srcGitdir, Constants.DOT_GIT).isDirectory())
+			srcGitdir = new File(srcGitdir, Constants.DOT_GIT);
 		db = new Repository(srcGitdir);
 		if (!db.getObjectsDirectory().isDirectory())
 			throw die("'" + srcGitdir.getPath() + "' not a git repository");

@@ -40,6 +40,7 @@ package org.eclipse.jgit.pgm;
 import java.io.File;
 
 import org.kohsuke.args4j.Argument;
+import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
 
 @Command(common = false, usage = "Server side backend for 'jgit push'")
@@ -56,8 +57,8 @@ class ReceivePack extends TextBuiltin {
 	protected void run() throws Exception {
 		final org.eclipse.jgit.transport.ReceivePack rp;
 
-		if (new File(dstGitdir, ".git").isDirectory())
-			dstGitdir = new File(dstGitdir, ".git");
+		if (new File(dstGitdir, Constants.DOT_GIT).isDirectory())
+			dstGitdir = new File(dstGitdir, Constants.DOT_GIT);
 		db = new Repository(dstGitdir);
 		if (!db.getObjectsDirectory().isDirectory())
 			throw die("'" + dstGitdir.getPath() + "' not a git repository");
