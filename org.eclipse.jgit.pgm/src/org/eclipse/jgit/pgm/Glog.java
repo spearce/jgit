@@ -51,6 +51,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import org.eclipse.jgit.awtui.CommitGraphPane;
+import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.revplot.PlotWalk;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevSort;
@@ -119,7 +120,7 @@ class Glog extends RevWalkTextBuiltin {
 	private String repoName() {
 		final File f = db.getDirectory();
 		String n = f.getName();
-		if (".git".equals(n))
+		if (Constants.DOT_GIT.equals(n))
 			n = f.getParentFile().getName();
 		return n;
 	}

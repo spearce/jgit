@@ -40,6 +40,7 @@ package org.eclipse.jgit.pgm;
 import java.io.File;
 
 import org.kohsuke.args4j.Option;
+import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
 
 @Command(common = true, usage = "Create an empty git repository")
@@ -55,7 +56,7 @@ class Init extends TextBuiltin {
 	@Override
 	protected void run() throws Exception {
 		if (gitdir == null)
-			gitdir = new File(bare ? "." : ".git");
+			gitdir = new File(bare ? "." : Constants.DOT_GIT);
 		db = new Repository(gitdir);
 		db.create(bare);
 		out.println("Initialized empty Git repository in "

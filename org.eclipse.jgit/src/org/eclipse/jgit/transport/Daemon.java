@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.RepositoryCache;
@@ -198,8 +199,8 @@ public class Daemon {
 	 *            the repository instance.
 	 */
 	public void exportRepository(String name, final Repository db) {
-		if (!name.endsWith(".git"))
-			name = name + ".git";
+		if (!name.endsWith(Constants.DOT_GIT_EXT))
+			name = name + Constants.DOT_GIT_EXT;
 		exports.put(name, db);
 		RepositoryCache.register(db);
 	}
@@ -352,7 +353,8 @@ public class Daemon {
 		name = name.substring(1);
 
 		Repository db;
-		db = exports.get(name.endsWith(".git") ? name : name + ".git");
+		db = exports.get(name.endsWith(Constants.DOT_GIT_EXT) ? name : name
+				+ Constants.DOT_GIT_EXT);
 		if (db != null) {
 			db.incrementOpen();
 			return db;

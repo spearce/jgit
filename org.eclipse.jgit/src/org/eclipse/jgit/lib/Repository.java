@@ -177,7 +177,7 @@ public class Repository {
 		if (workTree != null) {
 			workDir = workTree;
 			if (d == null)
-				gitDir = new File(workTree, ".git");
+				gitDir = new File(workTree, Constants.DOT_GIT);
 			else
 				gitDir = d;
 		} else {
