@@ -43,6 +43,7 @@ import java.util.NoSuchElementException;
 import junit.framework.TestCase;
 
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectIdRef;
 import org.eclipse.jgit.lib.Ref;
 
 public class RefListTest extends TestCase {
@@ -420,6 +421,6 @@ public class RefListTest extends TestCase {
 	}
 
 	private static Ref newRef(final String name) {
-		return new Ref(Ref.Storage.LOOSE, name, ID);
+		return new ObjectIdRef.Unpeeled(Ref.Storage.LOOSE, name, ID);
 	}
 }

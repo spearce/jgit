@@ -56,6 +56,7 @@ import org.eclipse.jgit.errors.PackProtocolException;
 import org.eclipse.jgit.errors.TransportException;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectIdRef;
 import org.eclipse.jgit.lib.PackLock;
 import org.eclipse.jgit.lib.ProgressMonitor;
 import org.eclipse.jgit.lib.Ref;
@@ -131,8 +132,8 @@ class BundleFetchConnection extends BaseFetchConnection {
 
 			final String name = line.substring(41, line.length());
 			final ObjectId id = ObjectId.fromString(line.substring(0, 40));
-			final Ref prior = avail.put(name, new Ref(Ref.Storage.NETWORK,
-					name, id));
+			final Ref prior = avail.put(name, new ObjectIdRef.Unpeeled(
+					Ref.Storage.NETWORK, name, id));
 			if (prior != null)
 				throw duplicateAdvertisement(name);
 		}

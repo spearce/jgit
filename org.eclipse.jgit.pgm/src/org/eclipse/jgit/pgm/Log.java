@@ -86,7 +86,7 @@ class Log extends RevWalkTextBuiltin {
 			if (list != null) {
 				out.print(" (");
 				for (Iterator<Ref> i = list.iterator(); i.hasNext(); ) {
-					out.print(i.next().getOrigName());
+					out.print(i.next().getName());
 					if (i.hasNext())
 						out.print(" ");
 				}

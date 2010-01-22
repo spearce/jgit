@@ -164,9 +164,9 @@ public abstract class RefAdvertiser {
 		for (final Ref r : RefComparator.sort(refs)) {
 			final RevObject obj = parseAnyOrNull(r.getObjectId());
 			if (obj != null) {
-				advertiseAny(obj, r.getOrigName());
+				advertiseAny(obj, r.getName());
 				if (derefTags && obj instanceof RevTag)
-					advertiseTag((RevTag) obj, r.getOrigName() + "^{}");
+					advertiseTag((RevTag) obj, r.getName() + "^{}");
 			}
 		}
 	}
