@@ -38,9 +38,10 @@
 package org.eclipse.jgit.transport;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 
 import org.eclipse.jgit.lib.AlternateRepositoryDatabase;
 import org.eclipse.jgit.lib.AnyObjectId;
@@ -53,6 +54,7 @@ import org.eclipse.jgit.revwalk.RevFlag;
 import org.eclipse.jgit.revwalk.RevObject;
 import org.eclipse.jgit.revwalk.RevTag;
 import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.util.RefMap;
 
 /** Support for the start of {@link UploadPack} and {@link ReceivePack}. */
 public abstract class RefAdvertiser {
@@ -116,7 +118,7 @@ public abstract class RefAdvertiser {
 	 * <p>
 	 * This method must be invoked prior to any of the following:
 	 * <ul>
-	 * <li>{@link #send(Collection)}
+	 * <li>{@link #send(Map)}
 	 * <li>{@link #advertiseHave(AnyObjectId)}
 	 * <li>{@link #includeAdditionalHaves()}
 	 * </ul>
@@ -134,7 +136,7 @@ public abstract class RefAdvertiser {
 	 * <p>
 	 * This method must be invoked prior to any of the following:
 	 * <ul>
-	 * <li>{@link #send(Collection)}
+	 * <li>{@link #send(Map)}
 	 * <li>{@link #advertiseHave(AnyObjectId)}
 	 * <li>{@link #includeAdditionalHaves()}
 	 * </ul>
@@ -154,14 +156,14 @@ public abstract class RefAdvertiser {
 	 *
 	 * @param refs
 	 *            zero or more refs to format for the client. The collection is
-	 *            copied and sorted before display and therefore may appear in
-	 *            any order.
+	 *            sorted before display if necessary, and therefore may appear
+	 *            in any order.
 	 * @throws IOException
 	 *             the underlying output stream failed to write out an
 	 *             advertisement record.
 	 */
-	public void send(final Collection<Ref> refs) throws IOException {
-		for (final Ref r : RefComparator.sort(refs)) {
+	public void send(final Map<String, Ref> refs) throws IOException {
+		for (final Ref r : getSortedRefs(refs)) {
 			final RevObject obj = parseAnyOrNull(r.getObjectId());
 			if (obj != null) {
 				advertiseAny(obj, r.getName());
@@ -169,6 +171,13 @@ public abstract class RefAdvertiser {
 					advertiseTag((RevTag) obj, r.getName() + "^{}");
 			}
 		}
+	}
+
+	private Iterable<Ref> getSortedRefs(Map<String, Ref> all) {
+		if (all instanceof RefMap
+				|| (all instanceof SortedMap && ((SortedMap) all).comparator() == null))
+			return all.values();
+		return RefComparator.sort(all.values());
 	}
 
 	/**

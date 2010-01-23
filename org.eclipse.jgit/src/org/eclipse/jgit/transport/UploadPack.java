@@ -324,7 +324,7 @@ public class UploadPack {
 		adv.advertiseCapability(OPTION_NO_PROGRESS);
 		adv.setDerefTags(true);
 		refs = db.getAllRefs();
-		adv.send(refs.values());
+		adv.send(refs);
 		adv.end();
 	}
 
