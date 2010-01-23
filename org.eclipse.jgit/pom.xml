@@ -54,6 +54,10 @@
     Repository access and algorithms
   </description>
 
+  <properties>
+    <translate-qualifier/>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.jcraft</groupId>
@@ -78,7 +82,7 @@
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
-            <manifestFile>META-INF/MANIFEST.MF</manifestFile>
+            <manifestFile>${bundle-manifest}</manifestFile>
           </archive>
         </configuration>
       </plugin>

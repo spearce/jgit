@@ -54,6 +54,10 @@
     AWT/Swing based UI
   </description>
 
+  <properties>
+    <translate-qualifier/>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.eclipse.jgit</groupId>
@@ -79,7 +83,7 @@
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
-            <manifestFile>META-INF/MANIFEST.MF</manifestFile>
+            <manifestFile>${bundle-manifest}</manifestFile>
           </archive>
         </configuration>
       </plugin>
