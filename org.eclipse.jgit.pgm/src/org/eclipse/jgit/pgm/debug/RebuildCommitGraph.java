@@ -57,6 +57,7 @@ import org.eclipse.jgit.lib.Commit;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.LockFile;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectIdRef;
 import org.eclipse.jgit.lib.ObjectWriter;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.ProgressMonitor;
@@ -297,7 +298,8 @@ class RebuildCommitGraph extends TextBuiltin {
 					}
 					throw new MissingObjectException(id, type);
 				}
-				refs.put(name, new Ref(Ref.Storage.PACKED, name, id));
+				refs.put(name, new ObjectIdRef.Unpeeled(Ref.Storage.PACKED,
+						name, id));
 			}
 		} finally {
 			br.close();

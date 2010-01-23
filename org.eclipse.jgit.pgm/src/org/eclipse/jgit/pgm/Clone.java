@@ -158,8 +158,11 @@ class Clone extends AbstractFetchCommand {
 	private void doCheckout(final Ref branch) throws IOException {
 		if (branch == null)
 			throw die("cannot checkout; no HEAD advertised by remote");
-		if (!Constants.HEAD.equals(branch.getName()))
-			db.writeSymref(Constants.HEAD, branch.getName());
+		if (!Constants.HEAD.equals(branch.getName())) {
+			RefUpdate u = db.updateRef(Constants.HEAD);
+			u.disableRefLog();
+			u.link(branch.getName());
+		}
 
 		final Commit commit = db.mapCommit(branch.getObjectId());
 		final RefUpdate u = db.updateRef(Constants.HEAD);

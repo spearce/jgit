@@ -139,7 +139,7 @@ final class AWTPlotRenderer extends AbstractPlotRenderer<SwingLane, Color> {
 	@Override
 	protected int drawLabel(int x, int y, Ref ref) {
 		String txt;
-		String name = ref.getOrigName();
+		String name = ref.getName();
 		if (name.startsWith(Constants.R_HEADS)) {
 			g.setBackground(Color.GREEN);
 			txt = name.substring(Constants.R_HEADS.length());
