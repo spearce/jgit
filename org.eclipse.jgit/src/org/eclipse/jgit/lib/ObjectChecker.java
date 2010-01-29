@@ -211,10 +211,10 @@ public class ObjectChecker {
 			throw new CorruptObjectException("no tag header");
 		ptr = nextLF(raw, ptr);
 
-		if ((ptr = match(raw, ptr, tagger)) < 0)
-			throw new CorruptObjectException("no tagger header");
-		if ((ptr = personIdent(raw, ptr)) < 0 || raw[ptr++] != '\n')
-			throw new CorruptObjectException("invalid tagger");
+		if ((ptr = match(raw, ptr, tagger)) > 0) {
+			if ((ptr = personIdent(raw, ptr)) < 0 || raw[ptr++] != '\n')
+				throw new CorruptObjectException("invalid tagger");
+		}
 	}
 
 	private static int lastPathChar(final int mode) {
