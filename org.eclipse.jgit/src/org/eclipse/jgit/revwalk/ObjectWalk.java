@@ -365,6 +365,7 @@ public class ObjectWalk extends RevWalk {
 	public void dispose() {
 		super.dispose();
 		pendingObjects = new BlockObjQueue();
+		treeWalk = new CanonicalTreeParser();
 		nextSubtree = null;
 		currentTree = null;
 	}
@@ -373,6 +374,7 @@ public class ObjectWalk extends RevWalk {
 	protected void reset(final int retainFlags) {
 		super.reset(retainFlags);
 		pendingObjects = new BlockObjQueue();
+		treeWalk = new CanonicalTreeParser();
 		nextSubtree = null;
 	}
 
