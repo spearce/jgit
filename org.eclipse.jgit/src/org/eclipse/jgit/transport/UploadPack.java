@@ -125,6 +125,9 @@ public class UploadPack {
 	/** The refs we advertised as existing at the start of the connection. */
 	private Map<String, Ref> refs;
 
+	/** Filter used while advertising the refs to the client. */
+	private RefFilter refFilter;
+
 	/** Capabilities requested by the client. */
 	private final Set<String> options = new HashSet<String>();
 
@@ -177,9 +180,10 @@ public class UploadPack {
 		SAVE.add(ADVERTISED);
 		SAVE.add(WANT);
 		SAVE.add(PEER_HAS);
+		refFilter = RefFilter.DEFAULT;
 	}
 
-	/** @return the repository this receive completes into. */
+	/** @return the repository this upload is reading from. */
 	public final Repository getRepository() {
 		return db;
 	}
@@ -225,6 +229,26 @@ public class UploadPack {
 	 */
 	public void setBiDirectionalPipe(final boolean twoWay) {
 		biDirectionalPipe = twoWay;
+	}
+
+	/** @return the filter used while advertising the refs to the client */
+	public RefFilter getRefFilter() {
+		return refFilter;
+	}
+
+	/**
+	 * Set the filter used while advertising the refs to the client.
+	 * <p>
+	 * Only refs allowed by this filter will be sent to the client. This can
+	 * be used by a server to restrict the list of references the client can
+	 * obtain through clone or fetch, effectively limiting the access to only
+	 * certain refs.
+	 *
+	 * @param refFilter
+	 *            the filter; may be null to show all refs.
+	 */
+	public void setRefFilter(final RefFilter refFilter) {
+		this.refFilter = refFilter != null ? refFilter : RefFilter.DEFAULT;
 	}
 
 	/**
@@ -279,7 +303,7 @@ public class UploadPack {
 		if (biDirectionalPipe)
 			sendAdvertisedRefs(new PacketLineOutRefAdvertiser(pckOut));
 		else {
-			refs = db.getAllRefs();
+			refs = refFilter.filter(db.getAllRefs());
 			for (Ref r : refs.values()) {
 				try {
 					walk.parseAny(r.getObjectId()).add(ADVERTISED);
@@ -323,7 +347,7 @@ public class UploadPack {
 		adv.advertiseCapability(OPTION_THIN_PACK);
 		adv.advertiseCapability(OPTION_NO_PROGRESS);
 		adv.setDerefTags(true);
-		refs = db.getAllRefs();
+		refs = refFilter.filter(db.getAllRefs());
 		adv.send(refs);
 		adv.end();
 	}
