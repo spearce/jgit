@@ -566,12 +566,7 @@ public class TransportHttp extends HttpTransport implements WalkTransport,
 
 			init(advertisement, DisabledOutputStream.INSTANCE);
 			outNeedsEnd = false;
-			try {
-				readAdvertisedRefs();
-			} catch (IOException err) {
-				close();
-				throw new TransportException(uri, "remote hung up", err);
-			}
+			readAdvertisedRefs();
 		}
 
 		@Override
@@ -592,12 +587,7 @@ public class TransportHttp extends HttpTransport implements WalkTransport,
 
 			init(advertisement, DisabledOutputStream.INSTANCE);
 			outNeedsEnd = false;
-			try {
-				readAdvertisedRefs();
-			} catch (IOException err) {
-				close();
-				throw new TransportException(uri, "remote hung up", err);
-			}
+			readAdvertisedRefs();
 		}
 
 		protected void doPush(final ProgressMonitor monitor,
