@@ -245,7 +245,7 @@ public class TimeoutOutputStreamTest extends TestCase {
 		// 50 ms of the expected timeout.
 		//
 		final long wait = now() - start;
-		assertTrue(Math.abs(wait - timeout) < 50);
+		assertTrue("waited only " + wait + " ms", timeout - wait < 50);
 	}
 
 	private static List<Thread> active() {
